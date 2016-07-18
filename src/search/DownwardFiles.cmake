@@ -470,6 +470,7 @@ fast_downward_plugin(
         pdbs/pattern_database.cc
         pdbs/pattern_collection_generator_combo.cc
         pdbs/pattern_collection_generator_genetic.cc
+        pdbs/pattern_collection_generator_genetic_Online_SS.h
         pdbs/pattern_collection_generator_hillclimbing.cc
         pdbs/pattern_collection_generator_manual.cc
         pdbs/pattern_collection_generator_systematic.cc
@@ -497,6 +498,19 @@ fast_downward_plugin(
         potentials/util.cc
     DEPENDS LP_SOLVER
 )
+
+fast_downward_plugin(
+    NAME SS
+    HELP "Plugin containing the code for Stratified Sampling (Levi Lelis)"
+    SOURCES
+	ss/type_child.h 
+	ss/type_children.h 
+	ss/type.h 
+	ss/type_system.h 
+	ss/node2.h 
+	ss/node.h 
+)
+
 
 fast_downward_add_plugin_sources(PLANNER_SOURCES)
 
