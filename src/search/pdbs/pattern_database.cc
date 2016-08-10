@@ -72,8 +72,7 @@ PatternDatabase::PatternDatabase(
     const Pattern &pattern,
     bool dump,
     const vector<int> &operator_costs)
-    : task_proxy(task_proxy),
-      pattern(pattern) {
+    : PatternDatabaseInterface (task_proxy, pattern, operator_costs) {
     verify_no_axioms(task_proxy);
     verify_no_conditional_effects(task_proxy);
     assert(operator_costs.empty() ||
@@ -95,7 +94,7 @@ PatternDatabase::PatternDatabase(
             utils::exit_with(utils::ExitCode::CRITICAL_ERROR);
         }
     }
-    create_pdb(operator_costs);
+    create_pdb();
     if (dump)
         cout << "PDB construction time: " << timer << endl;
 }
@@ -187,7 +186,7 @@ void PatternDatabase::build_abstract_operators(
                  operators);
 }
 
-void PatternDatabase::create_pdb(const std::vector<int> &operator_costs) {
+void PatternDatabase::create_pdb() {
     VariablesProxy vars = task_proxy.get_variables();
     vector<int> variable_to_index(vars.size(), -1);
     for (size_t i = 0; i < pattern.size(); ++i) {
@@ -287,6 +286,18 @@ int PatternDatabase::get_value(const State &state) const {
     return distances[hash_index(state)];
 }
 
+size_t PatternDatabase::hash_index(const vector<int> &state) const {
+    size_t index = 0;
+    for (size_t i = 0; i < pattern.size(); ++i) {
+        index += hash_multipliers[i] * state[pattern[i]];
+    }
+    return index;
+}
+
+int PatternDatabase::get_value(const vector<int> &state) const {
+    return distances[hash_index(state)];
+}
+
 double PatternDatabase::compute_mean_finite_h() const {
     double sum = 0;
     int size = 0;
@@ -303,13 +314,4 @@ double PatternDatabase::compute_mean_finite_h() const {
     }
 }
 
-bool PatternDatabase::is_operator_relevant(const OperatorProxy &op) const {
-    for (EffectProxy effect : op.get_effects()) {
-        int var_id = effect.get_fact().get_variable().get_id();
-        if (binary_search(pattern.begin(), pattern.end(), var_id)) {
-            return true;
-        }
-    }
-    return false;
-}
 }

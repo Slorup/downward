@@ -2,6 +2,7 @@
 #define PDBS_PATTERN_DATABASE_ONLINE_H
 
 #include "types.h"
+#include "pattern_database_interface.h"
 
 #include "../task_proxy.h"
 
@@ -72,12 +73,8 @@ public:
 };
 
 // Implements a single pattern database
-class PatternDatabaseOnline {
+class PatternDatabaseOnline : public PatternDatabaseInterface {
   friend class PDBHeuristicOnline;
-    TaskProxy task_proxy;
-
-    Pattern pattern;
-
     // size of the PDB
     std::size_t num_states;
 
@@ -94,7 +91,6 @@ class PatternDatabaseOnline {
     MatchTreeOnline match_tree;
     
     std::vector<std::pair<int, int>> abstract_goals;
-    std::vector<int> operator_costs_copy;
     /*
       Recursive method; called by build_abstract_operators. In the case
       of a precondition with value = -1 in the concrete operator, all
@@ -128,8 +124,7 @@ class PatternDatabaseOnline {
       specify individual operator costs for each operator for action
       cost partitioning. If left empty, default operator costs are used.
     */
-    void create_pdb(
-        const std::vector<int> &operator_costs = std::vector<int>());
+    void create_pdb();
 
     /*
       Sets the pattern for the PDB and initializes hash_multipliers and
@@ -156,6 +151,7 @@ class PatternDatabaseOnline {
 public:
     bool is_goal_state(const std::size_t state_index);
     std::size_t hash_index(const State &state) const;
+    std::size_t hash_index(const std::vector<int> &state) const;
     /*
       Important: It is assumed that the pattern (passed via Options) is
       sorted, contains no duplicates and is small enough so that the
@@ -173,7 +169,8 @@ public:
         const std::vector<int> &operator_costs = std::vector<int>());
     ~PatternDatabaseOnline() = default;
 
-    int get_value(const State &state) const;
+    virtual int get_value(const State &state) const override;
+    virtual int get_value(const std::vector<int> &state) const override;
 
     // Returns the pattern (i.e. all variables used) of the PDB
     const Pattern &get_pattern() const {
@@ -196,11 +193,8 @@ public:
       Note: This is only calculated when called; avoid repeated calls to
       this method!
     */
-    double compute_mean_finite_h() const;
+    double compute_mean_finite_h() const override;
 
-    // Returns true iff op has an effect on a variable in the pattern.
-    bool is_operator_relevant(const OperatorProxy &op) const;
-    std::vector<int> get_operator_costs_copy(){return operator_costs_copy;};
 };
 }
 

@@ -469,6 +469,7 @@ fast_downward_plugin(
         pdbs/max_cliques.cc
         pdbs/pattern_collection_information.cc
         pdbs/pattern_database.cc
+        pdbs/pattern_database_interface.cc
         pdbs/pattern_database_online.cc
         pdbs/pattern_collection_generator_combo.cc
         pdbs/pattern_collection_generator_genetic.cc

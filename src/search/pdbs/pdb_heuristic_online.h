@@ -35,7 +35,6 @@ protected:
     std::map<size_t,int> stored_abstract_distance;
     Pattern pattern;
     std::map<size_t,size_t> state_vars_values;
-    std::vector<int> operator_costs_copy;
     bool solving_heur=false;
     const CausalGraph &causal_graph;
 public:

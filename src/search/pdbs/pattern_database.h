@@ -1,6 +1,8 @@
 #ifndef PDBS_PATTERN_DATABASE_H
 #define PDBS_PATTERN_DATABASE_H
 
+#include "pattern_database_interface.h"
+
 #include "types.h"
 
 #include "../task_proxy.h"
@@ -70,11 +72,8 @@ public:
 };
 
 // Implements a single pattern database
-class PatternDatabase {
+class PatternDatabase : public PatternDatabaseInterface {
   friend class PDBHeuristic;
-    TaskProxy task_proxy;
-
-    Pattern pattern;
 
     // size of the PDB
     std::size_t num_states;
@@ -121,8 +120,7 @@ class PatternDatabase {
       specify individual operator costs for each operator for action
       cost partitioning. If left empty, default operator costs are used.
     */
-    void create_pdb(
-        const std::vector<int> &operator_costs = std::vector<int>());
+    void create_pdb();
 
     /*
       Sets the pattern for the PDB and initializes hash_multipliers and
@@ -150,6 +148,8 @@ class PatternDatabase {
       (distances) during search.
     */
     std::size_t hash_index(const State &state) const;
+
+    std::size_t hash_index(const std::vector<int> &state) const;
 public:
     /*
       Important: It is assumed that the pattern (passed via Options) is
@@ -168,15 +168,12 @@ public:
         const std::vector<int> &operator_costs = std::vector<int>());
     ~PatternDatabase() = default;
 
-    int get_value(const State &state) const;
+    virtual int get_value(const State &state) const override;
 
-    // Returns the pattern (i.e. all variables used) of the PDB
-    const Pattern &get_pattern() const {
-        return pattern;
-    }
+    virtual int get_value(const std::vector<int> &state) const override;
 
     // Returns the size (number of abstract states) of the PDB
-    std::size_t get_size() const {
+    virtual std::size_t get_size() const {
         return num_states;
     }
 
@@ -188,10 +185,7 @@ public:
       Note: This is only calculated when called; avoid repeated calls to
       this method!
     */
-    double compute_mean_finite_h() const;
-
-    // Returns true iff op has an effect on a variable in the pattern.
-    bool is_operator_relevant(const OperatorProxy &op) const;
+    virtual double compute_mean_finite_h() const override;
 };
 }
 

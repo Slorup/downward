@@ -10,7 +10,6 @@
 #include <memory>
 #include <climits>
 
-
 using namespace std;
 
 namespace pdbs {
@@ -39,6 +38,7 @@ int PDBHeuristic::compute_heuristic(const State &state) const {
         return DEAD_END;
     return h;
 }
+
 int PDBHeuristic::compute_heuristic_id(size_t state_id) {
   //cout<<"calling offline_compute_heuristic_id"<<endl;fflush(stdout);
   //cout<<"state_id="<<state_id<<",entries:"<<num_states<<endl;fflush(stdout);

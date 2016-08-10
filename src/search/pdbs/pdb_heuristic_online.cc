@@ -61,6 +61,7 @@ int PDBHeuristicOnline::compute_heuristic(const State &state) {
         return DEAD_END;
     return h;
 }
+
 void PDBHeuristicOnline::get_var_values(size_t set_id){
   int temp=0;
   //cout<<endl;
@@ -70,8 +71,10 @@ void PDBHeuristicOnline::get_var_values(size_t set_id){
 	//cout<<"pattern_var:"<<pattern[var]<<",state_vars_values["<<pattern[var]<<"]="<<state_vars_values[pattern[var]]<<endl;
   }
 }
-int PDBHeuristicOnline::OnlineDistanceCalculator(const State current_state,vector<PDBHeuristic*> &candidate_pdbs_offline,int h_value_to_beat){
-    
+
+int PDBHeuristicOnline::OnlineDistanceCalculator(const State current_state, 
+						 vector<PDBHeuristic*> & candidate_pdbs_offline,
+						 int h_value_to_beat) {  
   if(pattern.size()==0){
     return 0;
   }
@@ -127,7 +130,6 @@ int PDBHeuristicOnline::OnlineDistanceCalculator(const State current_state,vecto
       counter++;
 	cout<<"counter:,"<<counter<<", memory:,"<<utils::get_current_memory_in_kb()<<endl;fflush(stdout);
       if(counter%1000==0){
-	
 	if(utils::g_timer()-start_timer>0.01){
 	  //cout<<"\thelper_max_size:"<<helper_max_size<<endl;
 	    if(subset_patterns.size()<10&&helper_max_size<=get_pattern_size(pattern)&&helper_max_size<500000){
@@ -147,7 +149,7 @@ int PDBHeuristicOnline::OnlineDistanceCalculator(const State current_state,vecto
 		//opts2.set<TaskProxy *>("task", task);
 		opts2.set<int>("cost_type", cost_type);
 		opts2.set<vector<int> >("pattern", candidate_subset_pattern);
-		opts2.set<vector<int> >("operator_costs", pdb_online.operator_costs_copy);
+		opts2.set<vector<int> >("operator_costs", pdb_online.operator_costs);
 		PDBHeuristic *pdb_heuristic_helper1=new PDBHeuristic(opts2 );
 		candidate_pdbs_offline.push_back(pdb_heuristic_helper1);
 		set_transformer_subset(candidate_subset_pattern);
@@ -185,7 +187,7 @@ int PDBHeuristicOnline::OnlineDistanceCalculator(const State current_state,vecto
 		//opts2.set<TaskProxy *>("task", task);
 		opts2.set<int>("cost_type", cost_type);
 		opts2.set<vector<int> >("pattern", candidate_subset_pattern);
-		opts2.set<vector<int> >("operator_costs", pdb_online.operator_costs_copy);
+		opts2.set<vector<int> >("operator_costs", pdb_online.operator_costs);
 		PDBHeuristic *pdb_heuristic_helper1=new PDBHeuristic(opts2);
 		candidate_pdbs_offline.push_back(pdb_heuristic_helper1);
 		set_transformer_subset(candidate_subset_pattern);
@@ -387,6 +389,7 @@ int PDBHeuristicOnline::OnlineDistanceCalculator(const State current_state,vecto
     cout<<"DEAD_END FOUND"<<endl;
     return DEAD_END;
 }
+
 size_t PDBHeuristicOnline::get_subset_hash_unoptimized(size_t pdb_helper_index){
   //Make sure get_var_values was called, otherwise not doing correct state
   //only needs to be done once per state

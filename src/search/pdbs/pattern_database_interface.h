@@ -12,9 +12,12 @@ namespace pdbs {
 
 // Implements a single pattern database
 class PatternDatabaseInterface {
+protected: 
     TaskProxy task_proxy;
 
     Pattern pattern;
+
+    std::vector<int> operator_costs;
 
 public:
     /*
@@ -30,14 +33,20 @@ public:
         const TaskProxy &task_proxy,
         const Pattern &pattern,
         const std::vector<int> &operator_costs = std::vector<int>());
-    ~PatternDatabaseInterface() = default;
 
-    int get_value(const State &state) const;
+    virtual ~PatternDatabaseInterface() = default;
 
     // Returns the pattern (i.e. all variables used) of the PDB
     const Pattern &get_pattern() const {
         return pattern;
     }
+
+    // Returns true iff op has an effect on a variable in the pattern.
+    bool is_operator_relevant(const OperatorProxy &op) const;
+
+    virtual int get_value(const State &state) const = 0;
+
+    virtual int get_value(const std::vector<int> & state) const = 0;
 
     /*
       Returns the average h-value over all states, where dead-ends are
@@ -47,10 +56,7 @@ public:
       Note: This is only calculated when called; avoid repeated calls to
       this method!
     */
-    double compute_mean_finite_h() const;
-
-    // Returns true iff op has an effect on a variable in the pattern.
-    bool is_operator_relevant(const OperatorProxy &op) const;
+    virtual double compute_mean_finite_h() const = 0;
 };
 }
 
