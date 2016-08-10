@@ -24,7 +24,7 @@ public:
 
     void insert(const std::string &k, Factory f) {
         if (registered.count(k)) {
-            std::cerr << "duplicate key in registry: " << k << std::endl;
+            std::cerr << "duplicate key in registry: " << k << ",f:"<< f << std::endl;
             utils::exit_with(utils::ExitCode::CRITICAL_ERROR);
         }
         registered[k] = f;

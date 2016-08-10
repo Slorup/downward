@@ -1,5 +1,5 @@
-#ifndef PDBS_PATTERN_DATABASE_H
-#define PDBS_PATTERN_DATABASE_H
+#ifndef PDBS_PATTERN_DATABASE_ONLINE_H
+#define PDBS_PATTERN_DATABASE_ONLINE_H
 
 #include "types.h"
 
@@ -7,9 +7,11 @@
 
 #include <utility>
 #include <vector>
+#include "match_tree_online.h"
+#include "pdb_heuristic.h"
 
 namespace pdbs {
-class AbstractOperator {
+class AbstractOperatorOnline {
     /*
       This class represents an abstract operator how it is needed for
       the regression search performed during the PDB-construction. As
@@ -39,12 +41,12 @@ public:
       meaning prevail, preconditions and effects are all related to
       progression search.
     */
-    AbstractOperator(const std::vector<std::pair<int, int>> &prevail,
+    AbstractOperatorOnline(const std::vector<std::pair<int, int>> &prevail,
                      const std::vector<std::pair<int, int>> &preconditions,
                      const std::vector<std::pair<int, int>> &effects,
                      int cost,
                      const std::vector<std::size_t> &hash_multipliers);
-    ~AbstractOperator();
+    ~AbstractOperatorOnline();
 
     /*
       Returns variable value pairs which represent the preconditions of
@@ -70,8 +72,8 @@ public:
 };
 
 // Implements a single pattern database
-class PatternDatabase {
-  friend class PDBHeuristic;
+class PatternDatabaseOnline {
+  friend class PDBHeuristicOnline;
     TaskProxy task_proxy;
 
     Pattern pattern;
@@ -88,6 +90,11 @@ class PatternDatabase {
     // multipliers for each variable for perfect hash function
     std::vector<std::size_t> hash_multipliers;
 
+    //Need to declare MatchTree here so I can use it in the OnlineDistCalc fuction, not just the create_pdb as it would in offline PDBs
+    MatchTreeOnline match_tree;
+    
+    std::vector<std::pair<int, int>> abstract_goals;
+    std::vector<int> operator_costs_copy;
     /*
       Recursive method; called by build_abstract_operators. In the case
       of a precondition with value = -1 in the concrete operator, all
@@ -101,7 +108,7 @@ class PatternDatabase {
         std::vector<std::pair<int, int>> &pre_pairs,
         std::vector<std::pair<int, int>> &eff_pairs,
         const std::vector<std::pair<int, int>> &effects_without_pre,
-        std::vector<AbstractOperator> &operators);
+        std::vector<AbstractOperatorOnline> &operators);
 
     /*
       Computes all abstract operators for a given concrete operator (by
@@ -112,7 +119,7 @@ class PatternDatabase {
     void build_abstract_operators(
         const OperatorProxy &op, int cost,
         const std::vector<int> &variable_to_index,
-        std::vector<AbstractOperator> &operators);
+        std::vector<AbstractOperatorOnline> &operators);
 
     /*
       Computes all abstract operators, builds the match tree (successor
@@ -140,17 +147,15 @@ class PatternDatabase {
       given pairs of goal variables and values. Returns true iff the
       state is a goal state.
     */
-    bool is_goal_state(
-        const std::size_t state_index,
-        const std::vector<std::pair<int, int>> &abstract_goals) const;
 
     /*
       The given concrete state is used to calculate the index of the
       according abstract state. This is only used for table lookup
       (distances) during search.
     */
-    std::size_t hash_index(const State &state) const;
 public:
+    bool is_goal_state(const std::size_t state_index);
+    std::size_t hash_index(const State &state) const;
     /*
       Important: It is assumed that the pattern (passed via Options) is
       sorted, contains no duplicates and is small enough so that the
@@ -161,18 +166,21 @@ public:
        operator. This is useful for action cost partitioning. If left
        empty, default operator costs are used.
     */
-    PatternDatabase(
+    PatternDatabaseOnline(
         const TaskProxy &task_proxy,
         const Pattern &pattern,
         bool dump = false,
         const std::vector<int> &operator_costs = std::vector<int>());
-    ~PatternDatabase() = default;
+    ~PatternDatabaseOnline() = default;
 
     int get_value(const State &state) const;
 
     // Returns the pattern (i.e. all variables used) of the PDB
     const Pattern &get_pattern() const {
         return pattern;
+    }
+    std::vector<std::size_t> get_hash_multipliers() const {
+        return hash_multipliers;
     }
 
     // Returns the size (number of abstract states) of the PDB
@@ -192,6 +200,7 @@ public:
 
     // Returns true iff op has an effect on a variable in the pattern.
     bool is_operator_relevant(const OperatorProxy &op) const;
+    std::vector<int> get_operator_costs_copy(){return operator_costs_copy;};
 };
 }
 

@@ -464,10 +464,12 @@ fast_downward_plugin(
         pdbs/dominance_pruning.cc
         pdbs/incremental_canonical_pdbs.cc
         pdbs/match_tree.cc
+        pdbs/match_tree_online.cc
         pdbs/max_additive_pdb_sets.cc
         pdbs/max_cliques.cc
         pdbs/pattern_collection_information.cc
         pdbs/pattern_database.cc
+        pdbs/pattern_database_online.cc
         pdbs/pattern_collection_generator_combo.cc
         pdbs/pattern_collection_generator_genetic.cc
         pdbs/pattern_collection_generator_genetic_Online_SS.h
@@ -478,6 +480,7 @@ fast_downward_plugin(
         pdbs/pattern_generator_manual.cc
         pdbs/pattern_generator.cc
         pdbs/pdb_heuristic.cc
+	pdbs/pdb_heuristic_online.cc
         pdbs/types.cc
         pdbs/validation.cc
         pdbs/zero_one_pdbs.cc
@@ -501,7 +504,7 @@ fast_downward_plugin(
 
 fast_downward_plugin(
     NAME SS
-    HELP "Plugin containing the code for Stratified Sampling (Levi Lelis)"
+    HELP "Plugin containing the code for Stratified Sampling (Levi Lelis, Adapted by Santiago Franco & Marvin Abissor)"
     SOURCES
 	ss/type_child.h 
 	ss/type_children.h 

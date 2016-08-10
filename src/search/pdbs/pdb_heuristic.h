@@ -24,6 +24,7 @@ protected:
        for a State object. */
     int compute_heuristic(const State &state) const;
 public:
+    int compute_heuristic_id(size_t state_id);
     /*
       Important: It is assumed that the pattern (passed via Options) is
       sorted, contains no duplicates and is small enough so that the

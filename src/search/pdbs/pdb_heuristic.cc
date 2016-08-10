@@ -8,6 +8,8 @@
 
 #include <limits>
 #include <memory>
+#include <climits>
+
 
 using namespace std;
 
@@ -35,6 +37,15 @@ int PDBHeuristic::compute_heuristic(const State &state) const {
     int h = pdb.get_value(state);
     if (h == numeric_limits<int>::max())
         return DEAD_END;
+    return h;
+}
+int PDBHeuristic::compute_heuristic_id(size_t state_id) {
+  //cout<<"calling offline_compute_heuristic_id"<<endl;fflush(stdout);
+  //cout<<"state_id="<<state_id<<",entries:"<<num_states<<endl;fflush(stdout);
+    int h = pdb.distances[state_id];
+    //cout<<"h_offline:"<<h<<endl;fflush(stdout);
+    if (h == numeric_limits<int>::max())
+        return INT_MAX/2;//Better when doing maxes
     return h;
 }
 
