@@ -480,6 +480,9 @@ fast_downward_plugin(
         pdbs/pattern_generator_greedy.cc
         pdbs/pattern_generator_manual.cc
         pdbs/pattern_generator.cc
+	pdbs/pdb_factory.cc
+	pdbs/pdb_factory_explicit.cc
+	pdbs/pdb_factory_online.cc
         pdbs/pdb_heuristic.cc
 	pdbs/pdb_heuristic_online.cc
         pdbs/types.cc
