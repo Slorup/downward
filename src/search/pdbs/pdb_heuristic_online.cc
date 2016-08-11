@@ -274,6 +274,7 @@ int PDBHeuristicOnline::OnlineDistanceCalculator(const State current_state,
 
         // regress abstract_state
         vector<const AbstractOperatorOnline *> applicable_operators;
+	cout<<"calling get_applicable_operators"<<endl;fflush(stdout);
         pdb_online.match_tree.get_applicable_operators(state_index, applicable_operators);
 	cout<<"\t applicable operators:"<<applicable_operators.size()<<endl;fflush(stdout);
 	//expansion_counter++;
@@ -290,7 +291,7 @@ int PDBHeuristicOnline::OnlineDistanceCalculator(const State current_state,
 		continue;
 	      }
 	    }
-	    applicable_operators[i]->dump(pdb_online.pattern, pdb_online.task_proxy);
+	    //applicable_operators[i]->dump(pdb_online.pattern, pdb_online.task_proxy);
 	    cout<<"\tSuccessor["<<i<<"]:";fflush(stdout);cout<<successor<<endl;fflush(stdout);
 	    cout<<"\thash_effect2:"<<applicable_operators[i]->get_hash_effect()<<endl;fflush(stdout);
 	    cout<<",op cost:"<<applicable_operators[i]->get_cost()<<endl;fflush(stdout);

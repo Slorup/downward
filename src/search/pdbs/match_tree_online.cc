@@ -71,6 +71,7 @@ bool MatchTreeOnline::Node::is_leaf_node() const {
 void MatchTreeOnline::update(const vector<int> &pattern_, const vector<size_t> &hash_multipliers_){
     pattern=pattern_; 
     hash_multipliers=hash_multipliers_;
+    root=nullptr;
     //cout<<"Online hash_multipliers:"<<hash_multipliers<<endl;
     //cout<<"Online pattern:"<<pattern<<endl;
 }
@@ -148,6 +149,7 @@ void MatchTreeOnline::insert(const AbstractOperatorOnline &op) {
 void MatchTreeOnline::get_applicable_operators_recursive(
     Node *node, const size_t state_index,
     vector<const AbstractOperatorOnline *> &applicable_operators) const {
+    cout<<"calling get_applicable_operators_recursive"<<endl;fflush(stdout);
     /*
       Note: different from the code that builds the match tree, we do
       the test if node == 0 *before* calling traverse rather than *at
@@ -155,6 +157,7 @@ void MatchTreeOnline::get_applicable_operators_recursive(
       some informal experiments.
      */
 
+    cout<<"adding node->applicalbe_operators.size:"<<node->applicable_operators.size()<<endl;
     applicable_operators.insert(applicable_operators.end(),
                                 node->applicable_operators.begin(),
                                 node->applicable_operators.end());
@@ -180,6 +183,7 @@ void MatchTreeOnline::get_applicable_operators_recursive(
 void MatchTreeOnline::get_applicable_operators(
     size_t state_index,
     vector<const AbstractOperatorOnline *> &applicable_operators) const {
+    cout<<"calling get_applicable_operators"<<endl;fflush(stdout);
     if (root)
         get_applicable_operators_recursive(root, state_index,
                                            applicable_operators);

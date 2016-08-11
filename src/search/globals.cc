@@ -138,8 +138,54 @@ void read_variables(istream &in) {
             getline(in, fact_names[j]);
         g_fact_names.push_back(fact_names);
         check_magic(in, "end_variable");
+    //Alvaro, Vidal: Important set id_facts
+//    g_id_first_fact.push_back(g_num_facts);
+//    g_num_facts += range;
+
     }
 }
+//Vidal, Alvaro: Changed all the read_mutexes method
+//void read_mutexes(istream &in) {
+//  g_inconsistent_facts.resize(g_num_facts*g_num_facts, false);
+//
+//    int num_mutex_groups;
+//    in >> num_mutex_groups;
+//
+//    /* NOTE: Mutex groups can overlap, in which case the same mutex
+//       should not be represented multiple times. The current
+//       representation takes care of that automatically by using sets.
+//       If we ever change this representation, this is something to be
+//       aware of. */
+//
+//    for (size_t i = 0; i < num_mutex_groups; ++i) {
+//      MutexGroup mg = MutexGroup(in);
+//      g_mutex_groups.push_back(mg);
+//  
+//      const vector<pair<int, int> > & invariant_group = mg.getFacts();
+//        for (size_t j = 0; j < invariant_group.size(); ++j) {
+//            const pair<int, int> &fact1 = invariant_group[j];
+//            //int var1 = fact1.first, val1 = fact1.second;
+//            for (size_t k = 0; k < invariant_group.size(); ++k) {
+//                const pair<int, int> &fact2 = invariant_group[k];
+//     
+//                //int var2 = fact2.first;
+//                //if (var1 != var2) {
+//                    /* The "different variable" test makes sure we
+//                       don't mark a fact as mutex with itself
+//                       (important for correctness) and don't include
+//                       redundant mutexes (important to conserve
+//                       memory). Note that the preprocessor removes
+//                       mutex groups that contain *only* redundant
+//                       mutexes, but it can of course generate mutex
+//                       groups which lead to *some* redundant mutexes,
+//                       where some but not all facts talk about the
+//                       same variable. */
+//                set_mutex(fact1, fact2);
+//                //}
+//            }
+//        }
+//    }   
+//}
 
 void read_mutexes(istream &in) {
     g_inconsistent_facts.resize(g_variable_domain.size());

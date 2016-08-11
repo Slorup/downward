@@ -28,7 +28,7 @@ AbstractOperatorOnline::AbstractOperatorOnline(const vector<pair<int, int>> &pre
                                    const vector<size_t> &hash_multipliers)
     : cost(cost),
       regression_preconditions(prev_pairs) {
-	cout<<"\tAbstract_operator_cost:"<<cost<<endl;
+	//cout<<"\tAbstract_operator_cost:"<<cost<<endl;
     //regression_preconditions.insert(regression_preconditions.end(), eff_pairs.begin(), eff_pairs.end());
     regression_preconditions.insert(regression_preconditions.end(),
                                     pre_pairs.begin(),
@@ -203,25 +203,38 @@ void PatternDatabaseOnline::create_pdb() {
 
     // compute all abstract operators
     vector<AbstractOperatorOnline> operators;
+    int i=0;
+    int elim=0;
+    set<int> skip_list={233,235,237,239,241,243,245,247,249,251,253,255,257,259,261,263,265,267,269,271,273,275,277,279,280,282,284,286,288,290,292,294,296,298,300,302,304,306,308,310,312,314,316,318,320,322,324,326};
     for (OperatorProxy op : task_proxy.get_operators()) {
+      if(skip_list.find(i)!=skip_list.end()){
+	  elim++;
+	  i++;
+	  continue;
+	  }
         int op_cost;
         if (operator_costs.empty()) {
             op_cost = op.get_cost();
         } else {
             op_cost = operator_costs[op.get_id()];
         }
+	cout<<"op["<<i<<"]:"<< op.get_name()<<",cost:"<<op_cost<<endl;
         build_abstract_operators(op, op_cost, variable_to_index, operators);
+	i++;
     }
+    cout<<"g_operators.size:"<<task_proxy.get_operators().size()-elim<<",operators.size:"<<operators.size()<<endl;
 
     // build the match tree
     //MatchTreeOnline match_tree(task_proxy, pattern, hash_multipliers);
     match_tree.update(pattern, hash_multipliers);
+    cout<<"pattern:"<<pattern<<endl;
+    cout<<"hash_multipliers:"<<hash_multipliers<<endl;
     cout<<"operators for match tree size:"<<operators.size()<<endl;
     for (const AbstractOperatorOnline &op : operators) {
         match_tree.insert(op);
     }
-    cout<<"match_tree dump:"<<endl;
-    match_tree.dump();
+    //cout<<"match_tree dump:"<<endl;
+    //match_tree.dump();
     //exit(0);
     
     for (FactProxy goal : task_proxy.get_goals()) {
