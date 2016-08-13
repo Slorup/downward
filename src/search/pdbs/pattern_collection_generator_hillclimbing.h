@@ -24,7 +24,9 @@ class CountdownTimer;
 namespace pdbs {
 class CanonicalPDBsHeuristic;
 class IncrementalCanonicalPDBs;
-class PatternDatabase;
+class PatternDatabaseInterface;
+class PDBFactory;
+
 
 // Implementation of the pattern generation algorithm by Haslum et al.
 class PatternCollectionGeneratorHillclimbing : public PatternCollectionGenerator {
@@ -43,6 +45,8 @@ class PatternCollectionGeneratorHillclimbing : public PatternCollectionGenerator
     int num_rejected;
     utils::CountdownTimer *hill_climbing_timer;
 
+    std::shared_ptr<PDBFactory> pdb_factory;
+
     /*
       For the given pattern, all possible extensions of the pattern by one
       relevant variable are inserted into candidate_patterns. This may generate
@@ -50,7 +54,7 @@ class PatternCollectionGeneratorHillclimbing : public PatternCollectionGenerator
     */
     void generate_candidate_patterns(
         TaskProxy task_proxy,
-        const PatternDatabase &pdb,
+        const PatternDatabaseInterface &pdb,
         PatternCollection &candidate_patterns);
 
     /*
@@ -95,7 +99,7 @@ class PatternCollectionGeneratorHillclimbing : public PatternCollectionGenerator
       the h-value of the current pattern collection.
     */
     bool is_heuristic_improved(
-        const PatternDatabase &pdb,
+        const PatternDatabaseInterface &pdb,
         const State &sample,
         const MaxAdditivePDBSubsets &max_additive_subsets);
 

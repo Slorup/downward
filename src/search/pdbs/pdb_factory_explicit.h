@@ -27,7 +27,7 @@ namespace pdbs {
     // Type is shared because, in certain configurations, the factories
     // might want to store a copy of the result. 
 	virtual std::shared_ptr<pdbs::PatternDatabaseInterface> 
-	compute_pdb(std::shared_ptr<TaskProxy> task, 
+	compute_pdb(const TaskProxy & task, 
 		    const Pattern &pattern, 
 		    const std::vector<int> &operator_costs = std::vector<int>()
 	    );

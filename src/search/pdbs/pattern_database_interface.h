@@ -48,6 +48,13 @@ public:
 
     virtual int get_value(const std::vector<int> & state) const = 0;
 
+
+    // Returns the size (number of abstract states) of the PDB
+    virtual std::size_t get_size() const {
+	std::cerr << "Error: method not implemented in this type of PDBs" << std::endl;
+        utils::exit_with(utils::ExitCode::UNSUPPORTED);
+    }
+
     /*
       Returns the average h-value over all states, where dead-ends are
       ignored (they neither increase the sum of all h-values nor the
