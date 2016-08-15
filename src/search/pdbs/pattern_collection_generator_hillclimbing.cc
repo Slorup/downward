@@ -4,6 +4,8 @@
 #include "incremental_canonical_pdbs.h"
 #include "pattern_database.h"
 #include "validation.h"
+#include "pdb_factory.h"
+
 
 #include "../causal_graph.h"
 #include "../option_parser.h"
@@ -36,11 +38,12 @@ PatternCollectionGeneratorHillclimbing::PatternCollectionGeneratorHillclimbing(c
       min_improvement(opts.get<int>("min_improvement")),
       max_time(opts.get<double>("max_time")),
       num_rejected(0),
-      hill_climbing_timer(0) {
+      hill_climbing_timer(0), 
+      pdb_factory (opts.get<shared_ptr<PDBFactory>>("pdb_type")){
 }
 
 void PatternCollectionGeneratorHillclimbing::generate_candidate_patterns(
-    TaskProxy task_proxy, const PatternDatabase &pdb,
+    TaskProxy task_proxy, const PatternDatabaseInterface &pdb,
     PatternCollection &candidate_patterns) {
     const CausalGraph &causal_graph = task_proxy.get_causal_graph();
     const Pattern &pattern = pdb.get_pattern();
@@ -84,7 +87,7 @@ size_t PatternCollectionGeneratorHillclimbing::generate_pdbs_for_candidates(
     for (const Pattern &new_candidate : new_candidates) {
         if (generated_patterns.count(new_candidate) == 0) {
             candidate_pdbs.push_back(
-                make_shared<PatternDatabase>(task_proxy, new_candidate));
+		pdb_factory->compute_pdb(task_proxy, new_candidate));
             max_pdb_size = max(max_pdb_size,
                                candidate_pdbs.back()->get_size());
             generated_patterns.insert(new_candidate);
@@ -129,7 +132,7 @@ std::pair<int, int> PatternCollectionGeneratorHillclimbing::find_best_improving_
         if (hill_climbing_timer->is_expired())
             throw HillClimbingTimeout();
 
-        const shared_ptr<PatternDatabase> &pdb = candidate_pdbs[i];
+        const shared_ptr<PatternDatabaseInterface> &pdb = candidate_pdbs[i];
         if (!pdb) {
             /* candidate pattern is too large or has already been added to
                the canonical heuristic. */
@@ -176,7 +179,7 @@ std::pair<int, int> PatternCollectionGeneratorHillclimbing::find_best_improving_
 }
 
 bool PatternCollectionGeneratorHillclimbing::is_heuristic_improved(
-    const PatternDatabase &pdb, const State &sample,
+    const PatternDatabaseInterface &pdb, const State &sample,
     const MaxAdditivePDBSubsets &max_additive_subsets) {
     // h_pattern: h-value of the new pattern
     int h_pattern = pdb.get_value(sample);
@@ -192,7 +195,7 @@ bool PatternCollectionGeneratorHillclimbing::is_heuristic_improved(
 
     for (const auto &subset : max_additive_subsets) {
         int h_subset = 0;
-        for (const shared_ptr<PatternDatabase> &additive_pdb : subset) {
+        for (const shared_ptr<PatternDatabaseInterface> &additive_pdb : subset) {
             /* Experiments showed that it is faster to recompute the
                h values than to cache them in an unordered_map. */
             int h = additive_pdb->get_value(sample);
@@ -262,7 +265,7 @@ void PatternCollectionGeneratorHillclimbing::hill_climbing(
 
             // Add the best pattern to the CanonicalPDBsHeuristic.
             assert(best_pdb_index != -1);
-            const shared_ptr<PatternDatabase> &best_pdb =
+            const shared_ptr<PatternDatabaseInterface> &best_pdb =
                 candidate_pdbs[best_pdb_index];
             const Pattern &best_pattern = best_pdb->get_pattern();
             cout << "found a better pattern with improvement " << improvement
@@ -320,7 +323,7 @@ PatternCollectionInformation PatternCollectionGeneratorHillclimbing::generate(sh
         /* Generate initial candidate patterns (based on each pattern from
            the initial collection). */
         PatternCollection initial_candidate_patterns;
-        for (const shared_ptr<PatternDatabase> &current_pdb :
+        for (const shared_ptr<PatternDatabaseInterface> &current_pdb :
              *(current_pdbs->get_pattern_databases())) {
             generate_candidate_patterns(
                 task_proxy, *current_pdb, initial_candidate_patterns);
@@ -498,6 +501,11 @@ static Heuristic *_parse_ipdb(OptionParser &parser) {
         "the heuristic value because there are dominating patterns in the "
         "collection.",
         "true");
+
+    parser.add_option<shared_ptr<PDBFactory>>(
+        "pdb_type",
+        "See detailed documentation for pdb factories. ",
+	"explicit");
 
     Heuristic::add_options_to_parser(parser);
 

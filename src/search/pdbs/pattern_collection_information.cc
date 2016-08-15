@@ -40,14 +40,14 @@ bool PatternCollectionInformation::information_is_valid() const {
         }
     }
     if (max_additive_subsets) {
-        unordered_set<PatternDatabase *> pdbs_in_union;
+        unordered_set<PatternDatabaseInterface *> pdbs_in_union;
         for (const PDBCollection &additive_subset : *max_additive_subsets) {
-            for (const shared_ptr<PatternDatabase> &pdb : additive_subset) {
+            for (const shared_ptr<PatternDatabaseInterface> &pdb : additive_subset) {
                 pdbs_in_union.insert(pdb.get());
             }
         }
         unordered_set<Pattern> patterns_in_union;
-        for (PatternDatabase *pdb : pdbs_in_union) {
+        for (PatternDatabaseInterface *pdb : pdbs_in_union) {
             patterns_in_union.insert(pdb->get_pattern());
         }
         unordered_set<Pattern> patterns_in_list(patterns->begin(),
@@ -56,8 +56,8 @@ bool PatternCollectionInformation::information_is_valid() const {
             return false;
         }
         if (pdbs) {
-            unordered_set<PatternDatabase *> pdbs_in_list;
-            for (const shared_ptr<PatternDatabase> &pdb : *pdbs) {
+            unordered_set<PatternDatabaseInterface *> pdbs_in_list;
+            for (const shared_ptr<PatternDatabaseInterface> &pdb : *pdbs) {
                 pdbs_in_list.insert(pdb.get());
             }
             if (pdbs_in_list != pdbs_in_union) {
@@ -73,7 +73,7 @@ void PatternCollectionInformation::create_pdbs_if_missing() {
     if (!pdbs) {
         pdbs = make_shared<PDBCollection>();
         for (const Pattern &pattern : *patterns) {
-            shared_ptr<PatternDatabase> pdb =
+            shared_ptr<PatternDatabaseInterface> pdb =
                 make_shared<PatternDatabase>(task_proxy, pattern);
             pdbs->push_back(pdb);
         }

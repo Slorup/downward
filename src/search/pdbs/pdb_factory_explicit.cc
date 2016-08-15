@@ -17,10 +17,10 @@ PDBFactoryExplicit::PDBFactoryExplicit(const options::Options & opts) :
 }
 
     std::shared_ptr<PatternDatabaseInterface> 
-PDBFactoryExplicit::compute_pdb(std::shared_ptr<TaskProxy> task, 
+PDBFactoryExplicit::compute_pdb(const TaskProxy & task, 
 		    const Pattern &pattern, 
 		    const std::vector<int> &operator_costs){
-	return make_shared<PatternDatabase> (*task, pattern, dump, operator_costs);
+	return make_shared<PatternDatabase> (task, pattern, dump, operator_costs);
 }
 
 

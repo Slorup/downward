@@ -1,6 +1,7 @@
 #include "pattern_database_interface.h"
 
 #include "../task_tools.h" 
+#include "../utils/collections.h" 
 
 #include <algorithm>
 

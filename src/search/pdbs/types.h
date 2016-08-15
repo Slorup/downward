@@ -5,10 +5,10 @@
 #include <vector>
 
 namespace pdbs {
-class PatternDatabase;
+class PatternDatabaseInterface;
 using Pattern = std::vector<int>;
 using PatternCollection = std::vector<Pattern>;
-using PDBCollection = std::vector<std::shared_ptr<PatternDatabase>>;
+using PDBCollection = std::vector<std::shared_ptr<PatternDatabaseInterface>>;
 using MaxAdditivePDBSubsets = std::vector<PDBCollection>;
 }
 

@@ -17,10 +17,10 @@ PDBFactoryOnline::PDBFactoryOnline(const options::Options & opts) :
 }
 
     std::shared_ptr<PatternDatabaseInterface> 
-PDBFactoryOnline::compute_pdb(std::shared_ptr<TaskProxy> task, 
+PDBFactoryOnline::compute_pdb(const TaskProxy & task, 
 		    const Pattern &pattern, 
 		    const std::vector<int> &operator_costs){
-	return make_shared<PatternDatabaseOnline> (*task, pattern, dump, operator_costs);
+	return make_shared<PatternDatabaseOnline> (task, pattern, dump, operator_costs);
 }
 
 

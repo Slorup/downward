@@ -40,7 +40,7 @@ void PhOConstraints::initialize_constraints(
     pdbs = pattern_collection_info.get_pdbs();
     TaskProxy task_proxy(*task);
     constraint_offset = constraints.size();
-    for (const shared_ptr<pdbs::PatternDatabase> &pdb : *pdbs) {
+    for (const shared_ptr<pdbs::PatternDatabaseInterface> &pdb : *pdbs) {
         constraints.emplace_back(0, infinity);
         lp::LPConstraint &constraint = constraints.back();
         for (OperatorProxy op : task_proxy.get_operators()) {
@@ -55,7 +55,7 @@ bool PhOConstraints::update_constraints(const State &state,
                                         lp::LPSolver &lp_solver) {
     for (size_t i = 0; i < pdbs->size(); ++i) {
         int constraint_id = constraint_offset + i;
-        shared_ptr<pdbs::PatternDatabase> pdb = (*pdbs)[i];
+        shared_ptr<pdbs::PatternDatabaseInterface> pdb = (*pdbs)[i];
         int h = pdb->get_value(state);
         if (h == numeric_limits<int>::max()) {
             return true;
