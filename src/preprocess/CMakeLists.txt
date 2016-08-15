@@ -17,6 +17,7 @@ set(PREPROCESS_SOURCES
     axiom
     causal_graph
     domain_transition_graph
+    h2_mutexes
     helper_functions
     max_dag
     mutex_group
@@ -24,7 +25,12 @@ set(PREPROCESS_SOURCES
     scc
     state
     successor_generator
+    timer
     variable
 )
 
 add_executable(preprocess ${PREPROCESS_SOURCES})
+# On Linux, find the rt library for clock_gettime().
+if(UNIX AND NOT APPLE)
+    target_link_libraries(preprocess rt)
+endif()

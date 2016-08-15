@@ -23,6 +23,7 @@ set(CORE_SOURCES
         heuristic_cache.cc
         heuristic.cc
         int_packer.cc
+	    mutex_group.cc
         operator_cost.cc
         option_parser.h
         option_parser_util.h

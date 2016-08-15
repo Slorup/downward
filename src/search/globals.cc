@@ -7,6 +7,7 @@
 #include "heuristic.h"
 #include "int_packer.h"
 #include "successor_generator.h"
+#include "mutex_group.h"
 
 #include "tasks/root_task.h"
 
@@ -36,7 +37,7 @@ static const int PRE_FILE_VERSION = 3;
 //       are_mutex, which is at least better than exposing the data
 //       structure globally.)
 
-static vector<vector<set<Fact>>> g_inconsistent_facts;
+//static vector<vector<set<Fact>>> g_inconsistent_facts;
 
 bool test_goal(const GlobalState &state) {
     for (size_t i = 0; i < g_goal.size(); ++i) {
@@ -119,6 +120,7 @@ void read_metric(istream &in) {
 }
 
 void read_variables(istream &in) {
+    g_num_facts = 0;
     int count;
     in >> count;
     for (int i = 0; i < count; ++i) {
@@ -139,9 +141,8 @@ void read_variables(istream &in) {
         g_fact_names.push_back(fact_names);
         check_magic(in, "end_variable");
     //Alvaro, Vidal: Important set id_facts
-//    g_id_first_fact.push_back(g_num_facts);
-//    g_num_facts += range;
-
+    g_id_first_fact.push_back(g_num_facts);
+    g_num_facts += range;
     }
 }
 //Vidal, Alvaro: Changed all the read_mutexes method
@@ -188,9 +189,7 @@ void read_variables(istream &in) {
 //}
 
 void read_mutexes(istream &in) {
-    g_inconsistent_facts.resize(g_variable_domain.size());
-    for (size_t i = 0; i < g_variable_domain.size(); ++i)
-        g_inconsistent_facts[i].resize(g_variable_domain[i]);
+  g_inconsistent_facts.resize(g_num_facts*g_num_facts, false);
 
     int num_mutex_groups;
     in >> num_mutex_groups;
@@ -202,33 +201,15 @@ void read_mutexes(istream &in) {
        aware of. */
 
     for (int i = 0; i < num_mutex_groups; ++i) {
-        check_magic(in, "begin_mutex_group");
-        int num_facts;
-        in >> num_facts;
-        vector<Fact> invariant_group;
-        invariant_group.reserve(num_facts);
-        for (int j = 0; j < num_facts; ++j) {
-            int var;
-            int value;
-            in >> var >> value;
-            invariant_group.emplace_back(var, value);
-        }
-        check_magic(in, "end_mutex_group");
-        for (const Fact &fact1 : invariant_group) {
-            for (const Fact &fact2 : invariant_group) {
-                if (fact1.var != fact2.var) {
-                    /* The "different variable" test makes sure we
-                       don't mark a fact as mutex with itself
-                       (important for correctness) and don't include
-                       redundant mutexes (important to conserve
-                       memory). Note that the preprocessor removes
-                       mutex groups that contain *only* redundant
-                       mutexes, but it can of course generate mutex
-                       groups which lead to *some* redundant mutexes,
-                       where some but not all facts talk about the
-                       same variable. */
-                    g_inconsistent_facts[fact1.var][fact1.value].insert(fact2);
-                }
+      MutexGroup mg = MutexGroup(in);
+      g_mutex_groups.push_back(mg);
+      
+      const vector<Fact> & invariant_group = mg.getFacts();
+        for (size_t j = 0; j < invariant_group.size(); ++j) {
+            const Fact &fact1 = invariant_group[j];
+            for (size_t k = 0; k < invariant_group.size(); ++k) {
+                const Fact &fact2 = invariant_group[k];
+                set_mutex(fact1, fact2);
             }
         }
     }
@@ -394,11 +375,25 @@ void verify_no_axioms_no_conditional_effects() {
 }
 
 bool are_mutex(const Fact &a, const Fact &b) {
-    if (a.var == b.var) {
-        // Same variable: mutex iff different value.
-        return a.value != b.value;
-    }
-    return bool(g_inconsistent_facts[a.var][a.value].count(b));
+    // Vidal: if the value is unknown then they aren't mutex
+  if (a.value == -1 || b.value == -1)
+    return false;
+  if (a.var == b.var) // same variable: mutex iff different value
+    return a.value != b.value;
+  return g_inconsistent_facts[id_mutex(a, b)];
+}
+int id_mutex(const Fact & a, const Fact &b){
+  int id_a = g_id_first_fact [a.var] + a.value;
+  int id_b = g_id_first_fact [b.var] + b.value;
+  if(id_a < id_b){
+    return g_num_facts*id_a + id_b;
+  }else{
+    return g_num_facts*id_b + id_a;
+  }
+}
+
+void set_mutex(const Fact & a, const Fact &b){
+  g_inconsistent_facts[id_mutex(a, b)] = true;
 }
 
 const shared_ptr<AbstractTask> g_root_task() {
@@ -428,6 +423,11 @@ vector<GlobalOperator> g_operators;
 vector<GlobalOperator> g_axioms;
 AxiomEvaluator *g_axiom_evaluator;
 SuccessorGenerator *g_successor_generator;
+
+vector<MutexGroup> g_mutex_groups; 
+vector<bool> g_inconsistent_facts;
+int g_num_facts;
+vector<int> g_id_first_fact;
 
 string g_plan_filename = "sas_plan";
 int g_num_previously_generated_plans = 0;

@@ -62,7 +62,7 @@ static Heuristic *_parse(OptionParser &parser) {
     parser.add_option<shared_ptr<PatternGenerator>>(
         "pattern",
         "pattern generation method",
-        "greedy()");
+        "manual()");
     Heuristic::add_options_to_parser(parser);
 
     Options opts = parser.parse();

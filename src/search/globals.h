@@ -22,6 +22,7 @@ struct Log;
 class RandomNumberGenerator;
 }
 
+class MutexGroup;
 bool test_goal(const GlobalState &state);
 /*
   Set generates_multiple_plan_files to true if the planner can find more than
@@ -45,6 +46,17 @@ void verify_no_axioms_no_conditional_effects();
 void check_magic(std::istream &in, std::string magic);
 
 bool are_mutex(const Fact &a, const Fact &b);
+void set_mutex(const Fact & a, const Fact &b);
+int id_mutex(const Fact & a, const Fact &b);
+
+//Alvaro: Substituted previous mutex data structures by two list of
+//mutex groups (to iterate over invariants) and a vector of bools to
+//implement are_mutex (with an auxiliary vector to get the fluent id)
+//and the number of problem fluents
+extern std::vector<MutexGroup> g_mutex_groups; 
+extern std::vector<bool> g_inconsistent_facts;
+extern int g_num_facts;
+extern std::vector<int> g_id_first_fact;
 
 extern bool g_use_metric;
 extern int g_min_action_cost;

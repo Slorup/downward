@@ -1,155 +1,132 @@
 #include "match_tree_online.h"
 
-#include "pattern_database_online.h"
+#include "pdb_heuristic_online.h"
+
+#include "../globals.h"
+//#include "../utilities.h"
 
 #include <cassert>
 #include <iostream>
-#include <utility>
 
 using namespace std;
 
 namespace pdbs {
 struct MatchTreeOnline::Node {
-    static const int LEAF_NODE = -1;
-    Node();
+    Node(int test_var = -1, int test_var_size = 0);
     ~Node();
     std::vector<const AbstractOperatorOnline *> applicable_operators;
-    // The variable which this node represents.
-    int var_id;
-    int var_domain_size;
-    /*
-      Each node has one outgoing edge for each possible value of the variable
-      and one "star-edge" that is used when the value of the variable is
-      undefined.
-    */
-    Node **successors;
-    Node *star_successor;
-
-    void initialize(int var_id, int var_domain_size);
-    bool is_leaf_node() const;
+    int test_var; // variable which this node represents
+    int var_size;
+    Node **successors; // edges with specific values for test_var_
+    Node *star_successor; // star-edge (unspecified value for test_var)
 };
 
-
-MatchTreeOnline::Node::Node()
-    : var_id(LEAF_NODE),
-      var_domain_size(0),
-      successors(nullptr),
-      star_successor(nullptr) {
+MatchTreeOnline::Node::Node(int test_var_, int test_var_size) : test_var(test_var_), var_size(test_var_size), star_successor(0) {
+    if (test_var_size == 0) { // construct a default node (test_var = -1), successors doesn't get initialized
+        successors = 0;
+    } else { // a test var has been specified, initialize node accordingly
+        successors = new Node *[test_var_size];
+        for (int i = 0; i < test_var_size; ++i) {
+            successors[i] = 0;
+        }
+    }
 }
 
 MatchTreeOnline::Node::~Node() {
-    if (successors) {
-        for (int i = 0; i < var_domain_size; ++i) {
-            delete successors[i];
-        }
-        delete[] successors;
+    for (int i = 0; i < var_size; ++i) {
+        delete successors[i];
     }
+    delete[] successors;
     delete star_successor;
 }
 
-void MatchTreeOnline::Node::initialize(int var_id_, int var_domain_size_) {
-    assert(is_leaf_node());
-    assert(var_id_ >= 0);
-    var_id = var_id_;
-    var_domain_size = var_domain_size_;
-    if (var_domain_size > 0) {
-        successors = new Node *[var_domain_size];
-        for (int val = 0; val < var_domain_size; ++val) {
-            successors[val] = nullptr;
-        }
-    }
+MatchTreeOnline::MatchTreeOnline(){
+    root=0;
 }
-
-bool MatchTreeOnline::Node::is_leaf_node() const {
-    return var_id == LEAF_NODE;
-}
-//MatchTreeOnline::MatchTreeOnline()
-//    : task_proxy(task_proxy)
-//{
-//    root=0;
-//}
 void MatchTreeOnline::update(const vector<int> &pattern_, const vector<size_t> &hash_multipliers_){
     pattern=pattern_; 
     hash_multipliers=hash_multipliers_;
-    root=nullptr;
     //cout<<"Online hash_multipliers:"<<hash_multipliers<<endl;
     //cout<<"Online pattern:"<<pattern<<endl;
 }
-
-MatchTreeOnline::MatchTreeOnline(const TaskProxy &task_proxy,
-                     const Pattern &pattern,
-                     const vector<size_t> &hash_multipliers)
-    : task_proxy(task_proxy),
-      pattern(pattern),
-      hash_multipliers(hash_multipliers),
-      root(nullptr) {
+MatchTreeOnline::MatchTreeOnline(const vector<int> &pattern_, const vector<size_t> &hash_multipliers_)
+    : pattern(pattern_), hash_multipliers(hash_multipliers_), root(0) {
 }
 
 MatchTreeOnline::~MatchTreeOnline() {
     delete root;
 }
 
-void MatchTreeOnline::insert_recursive(
+void MatchTreeOnline::build_recursively(
     const AbstractOperatorOnline &op, int pre_index, Node **edge_from_parent) {
+    //static int call_number=0;
+    //call_number++;
+    //cout<<"call_number:"<<call_number<<",get_cost:"<<op.get_cost()<<"hash_effect:"<<op.get_hash_effect()<<endl;
     if (*edge_from_parent == 0) {
         // We don't exist yet: create a new node.
+	//cout<<"\t create new node"<<endl;
         *edge_from_parent = new Node();
     }
 
-    const vector<pair<int, int>> &regression_preconditions =
-        op.get_regression_preconditions();
+    const vector<pair<int, int> > &regression_preconditions = op.get_regression_preconditions();
     Node *node = *edge_from_parent;
     if (pre_index == static_cast<int>(regression_preconditions.size())) {
         // All preconditions have been checked, insert op.
+	//cout<<"applicable op size before insert:"<<node->applicable_operators.size()<<endl;
         node->applicable_operators.push_back(&op);
+	//cout<<"\t conditions met,insert op hash:"<<op.get_hash_effect()<<",cost:"<<op.get_cost()<<endl;
     } else {
         const pair<int, int> &var_val = regression_preconditions[pre_index];
-        int pattern_var_id = var_val.first;
-        int var_id = pattern[pattern_var_id];
-        VariableProxy var = task_proxy.get_variables()[var_id];
-        int var_domain_size = var.get_domain_size();
 
         // Set up node correctly or insert a new node if necessary.
-        if (node->is_leaf_node()) {
-            node->initialize(pattern_var_id, var_domain_size);
-        } else if (node->var_id > pattern_var_id) {
-            /* The variable to test has been left out: must insert new
-               node and treat it as the "node". */
-            Node *new_node = new Node();
-            new_node->initialize(pattern_var_id, var_domain_size);
-            // The new node gets the left out variable as its variable.
+        if (node->test_var == -1) { // node is a leaf
+	  //cout<<"\t node is leaf"<<endl;
+            node->test_var = var_val.first;
+	    //cout<<"\t var_val.first:"<<var_val.first<<endl;
+            int test_var_size = g_variable_domain[pattern[var_val.first]];
+	    //cout<<"\t test_var_size:"<<test_var_size<<endl;
+            node->successors = new Node *[test_var_size];
+            node->var_size = test_var_size;
+            for (int i = 0; i < test_var_size; ++i) {
+                node->successors[i] = 0;
+            }
+	    //cout<<"\t applicable_operators.size():"<<node->applicable_operators.size()<<endl;
+        } else if (node->test_var > var_val.first) {
+            // The variable to test has been left out: must insert new
+            // node and treat it as the "node".
+	    //cout<<"\tnew node:,test_var:"<<node->test_var<<",var_val:"<<var_val.first<<endl;
+            Node *new_node = new Node(var_val.first, g_variable_domain[pattern[var_val.first]]);
+            // The new node gets the left out variable as test_var.
             *edge_from_parent = new_node;
             new_node->star_successor = node;
-            // The new node is now the node of interest.
-            node = new_node;
+            node = new_node; // The new node is now the node of interest.
         }
 
-        /* Set up edge to the correct child (for which we want to call
-           this function recursively). */
+        // Set up edge to the correct child (for which we want to call
+        // this function recursively).
         Node **edge_to_child = 0;
-        if (node->var_id == var_val.first) {
-            // Operator has a precondition on the variable tested by node.
+        if (node->test_var == var_val.first) {
+            // Operator has a precondition on test_var.
             edge_to_child = &node->successors[var_val.second];
             ++pre_index;
         } else {
-            // Operator doesn't have a precondition on the variable tested by
-            // node: follow/create the star-edge.
-            assert(node->var_id < var_val.first);
+            // Operator doesn't have a precondition on test_var:
+            // follow/create *-edge.
+            assert(node->test_var < var_val.first);
             edge_to_child = &node->star_successor;
         }
 
-        insert_recursive(op, pre_index, edge_to_child);
+        build_recursively(op, pre_index, edge_to_child);
     }
 }
 
 void MatchTreeOnline::insert(const AbstractOperatorOnline &op) {
-    insert_recursive(op, 0, &root);
+  //cout<<"\t insert op hash:"<<op.get_hash_effect()<<",cost:"<<op.get_cost()<<endl;
+    build_recursively(op, 0, &root);
 }
 
-void MatchTreeOnline::get_applicable_operators_recursive(
-    Node *node, const size_t state_index,
-    vector<const AbstractOperatorOnline *> &applicable_operators) const {
-    cout<<"calling get_applicable_operators_recursive"<<endl;fflush(stdout);
+void MatchTreeOnline::traverse(Node *node, const size_t state_index,
+                         vector<const AbstractOperatorOnline *> &applicable_operators) const {
     /*
       Note: different from the code that builds the match tree, we do
       the test if node == 0 *before* calling traverse rather than *at
@@ -157,81 +134,90 @@ void MatchTreeOnline::get_applicable_operators_recursive(
       some informal experiments.
      */
 
-    cout<<"adding node->applicalbe_operators.size:"<<node->applicable_operators.size()<<endl;
+  //cout<<"\t\tOnline applicable_operators"<<endl;
+  //for(size_t i=0;i<node->applicable_operators.size();i++){
+    //cout<<"Online state_index:"<<state_index<<",op["<<i<<"],hash:"<<node->applicable_operators[i]->get_hash_effect()<<endl;
+  //}
+    //cout<<"adding node->applicalbe_operators.size:"<<node->applicable_operators.size()<<endl;
+    //for(size_t i=0;i<node->applicable_operators.size();i++){
+      //cout<<"\t op:"<<applicable_operators.size()+i<<",hash_effect2:"<<node->applicable_operators[i]->get_hash_effect()<<",cost:"<<node->applicable_operators[i]->get_cost()<<endl;fflush(stdout);
+      //if(node->applicable_operators[i]->get_cost()<0){
+	//cout<<"node op cost cant not be 0!"<<endl;
+	//node->applicable_operators[i]->set_cost(1);
+	//_dump(node);
+	//node->applicable_operators[i]->dump(pattern,task_proxy);
+	//exit(0);
+      //}
+    //}
     applicable_operators.insert(applicable_operators.end(),
                                 node->applicable_operators.begin(),
                                 node->applicable_operators.end());
 
-    if (node->is_leaf_node())
+    // leaf reached, return
+    if (node->test_var == -1)
         return;
 
-    int temp = state_index / hash_multipliers[node->var_id];
-    int val = temp % node->var_domain_size;
+    int var_index = node->test_var;
+    int temp = state_index / hash_multipliers[var_index];
+    int val = temp % node->var_size;
+    //cout<<"temp:"<<temp<<",val:"<<val<<endl;
 
-    if (node->successors[val]) {
-        // Follow the correct successor edge, if it exists.
-        get_applicable_operators_recursive(node->successors[val], state_index,
-                                           applicable_operators);
+    if (node->successors[val] != 0) { // follow the correct successor-edge, if exists
+        traverse(node->successors[val], state_index, applicable_operators);
     }
-    if (node->star_successor) {
-        // Always follow the star edge, if it exists.
-        get_applicable_operators_recursive(node->star_successor, state_index,
-                                           applicable_operators);
+    if (node->star_successor != 0) { // always follow the *-edge, if exists
+        traverse(node->star_successor, state_index, applicable_operators);
     }
 }
 
-void MatchTreeOnline::get_applicable_operators(
-    size_t state_index,
-    vector<const AbstractOperatorOnline *> &applicable_operators) const {
-    cout<<"calling get_applicable_operators"<<endl;fflush(stdout);
-    if (root)
-        get_applicable_operators_recursive(root, state_index,
-                                           applicable_operators);
+void MatchTreeOnline::get_applicable_operators(size_t state_index,
+                                         vector<const AbstractOperatorOnline *> &applicable_operators) const {
+    if (root != 0)
+        traverse(root, state_index, applicable_operators);
 }
 
-void MatchTreeOnline::dump_recursive(Node *node) const {
-    if (!node) {
-        // Node is the root node.
+void MatchTreeOnline::_dump(Node *node) const {
+      if (node == 0) { // root == 0
         cout << "Empty MatchTreeOnline" << endl;
         return;
     }
-    cout << endl;
-    cout << "node->var_id = " << node->var_id << endl;
-    cout << "Number of applicable operators at this node: "
-         << node->applicable_operators.size() << endl;
-    for (const AbstractOperatorOnline *op : node->applicable_operators) {
-        op->dump(pattern, task_proxy);
-	cout<<"op_cost:"<<op->get_cost()<<endl;
-	cout<<"hash_effect1:"<<op->get_hash_effect();
+      cout << endl;
+    cout << "node->test_var = " << node->test_var << endl;
+    if (node->applicable_operators.empty())
+        cout << "no applicable operators at this node" << endl;
+    else {
+        cout << "applicable_operators.size() = " << node->applicable_operators.size() << endl;
+        for (size_t i = 0; i < node->applicable_operators.size(); ++i) {
+            //node->applicable_operators[i]->dump(pattern);
+	    cout<<"\t op_cost["<<i<<"]"<<node->applicable_operators[i]->get_cost()<<endl;
+        }
     }
-    if (node->is_leaf_node()) {
-        cout << "leaf node." << endl;
-        assert(!node->successors);
-        assert(!node->star_successor);
+    if (node->test_var == -1) {
+        cout << "leaf node!" << endl;
+        assert(node->successors == 0);
+        assert(node->star_successor == 0);
     } else {
-        for (int val = 0; val < node->var_domain_size; ++val) {
-            if (node->successors[val]) {
-                cout << "recursive call for child with value " << val << endl;
-                dump_recursive(node->successors[val]);
-                cout << "back from recursive call (for successors[" << val
-                     << "]) to node with var_id = " << node->var_id
-                     << endl;
-            } else {
-                cout << "no child for value " << val << endl;
+        for (int i = 0; i < node->var_size; ++i) {
+            if (node->successors[i] == 0)
+                cout << "no child for value " << i << " of test_var" << endl;
+            else {
+                cout << "recursive call for child with value " << i << " of test_var" << endl;
+                _dump(node->successors[i]);
+                cout << "back from recursive call (for successors[" << i << "]) to node with test_var = " << node->test_var << endl;
             }
         }
-        if (node->star_successor) {
-            cout << "recursive call for star_successor" << endl;
-            dump_recursive(node->star_successor);
-            cout << "back from recursive call (for star_successor) "
-                 << "to node with var_id = " << node->var_id << endl;
-        } else {
+        if (node->star_successor == 0)
             cout << "no star_successor" << endl;
+        else {
+            cout << "recursive call for star_successor" << endl;
+            _dump(node->star_successor);
+            cout << "back from recursive call (for star_successor) to node with test_var = " << node->test_var << endl;
         }
     }
+    
 }
 
 void MatchTreeOnline::dump() const {
-    dump_recursive(root);
+    _dump(root);
 }
 }

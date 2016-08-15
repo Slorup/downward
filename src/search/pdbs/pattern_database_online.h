@@ -8,9 +8,13 @@
 
 #include <utility>
 #include <vector>
+#include <map>
 #include "match_tree_online.h"
 #include "pdb_heuristic.h"
 
+namespace options {
+class Options;
+}
 namespace pdbs {
 class AbstractOperatorOnline {
     /*
@@ -67,6 +71,7 @@ public:
       Returns the cost of the abstract operator (same as the cost of
       the original concrete operator)
     */
+    void set_cost(int cost_) {cost=cost_; }
     int get_cost() const {return cost; }
     void dump(const Pattern &pattern,
               const TaskProxy &task_proxy) const;
@@ -77,6 +82,10 @@ class PatternDatabaseOnline : public PatternDatabaseInterface {
   friend class PDBHeuristicOnline;
     // size of the PDB
     std::size_t num_states;
+    int helper_max_size=0;
+    std::vector<std::vector<int> > subset_patterns;
+    std::vector<std::vector<size_t> >subset_hash_multipliers;
+    double overall_extra_helper_gen_time=0;
 
     /*
       final h-values for abstract-states.
@@ -88,7 +97,10 @@ class PatternDatabaseOnline : public PatternDatabaseInterface {
     std::vector<std::size_t> hash_multipliers;
 
     //Need to declare MatchTree here so I can use it in the OnlineDistCalc fuction, not just the create_pdb as it would in offline PDBs
-    MatchTreeOnline match_tree;
+    //MatchTreeOnline* match_tree;
+    
+    std::map<size_t,size_t> stored_abstract_distance;
+    bool backward_search_fully_finished=false;
     
     std::vector<std::pair<int, int>> abstract_goals;
     /*
@@ -148,6 +160,13 @@ class PatternDatabaseOnline : public PatternDatabaseInterface {
       according abstract state. This is only used for table lookup
       (distances) during search.
     */
+    enum {DEAD_END = -1, NO_VALUE = -2};
+    OperatorCost cost_type;
+    bool solving_heur=false;
+    std::map<size_t,size_t> state_vars_values;
+    const CausalGraph &causal_graph;
+    std::vector<std::vector<int> >subsets_missing_vars;
+    std::vector<std::vector<int> >subsets_missing_index;
 public:
     bool is_goal_state(const std::size_t state_index);
     std::size_t hash_index(const State &state) const;
@@ -195,6 +214,15 @@ public:
     */
     double compute_mean_finite_h() const override;
 
+    // Returns true iff op has an effect on a variable in the pattern.
+    bool is_operator_relevant(const OperatorProxy &op) const;
+    //std::vector<int> get_operator_costs_copy(){return operator_costs_copy;};
+    int OnlineDistanceCalculator2(const State current_state,std::vector<PatternDatabase*> &candidate_pdbs_offline,int h_value_to_beat);
+    void get_var_values(size_t set_id);
+    size_t get_subset_hash_unoptimized(size_t pdb_helper_index);
+    int get_pattern_size(std::vector<int> pattern);
+    void remove_irrelevant_variables_util(std::vector<int> &pattern);
+    void set_transformer_subset(std::vector<int> subset_pat);
 };
 }
 

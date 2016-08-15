@@ -186,6 +186,7 @@ public:
       this method!
     */
     virtual double compute_mean_finite_h() const override;
+    int compute_heuristic_id(size_t state_id);
 };
 }
 

@@ -7,15 +7,20 @@
 #include "../utils/logging.h"
 #include "../utils/math.h"
 #include "../utils/timer.h"
+#include "../utils/rng.h"
+#include "../heuristic.h"//DEAD_END def
 
 #include <algorithm>
 #include <cassert>
 #include <cstdlib>
 #include <iostream>
 #include <limits>
+#include <climits>
 #include <string>
 #include <vector>
 
+#include "../option_parser.h"
+#include "../causal_graph.h"
 using namespace std;
 
 namespace pdbs {
@@ -70,6 +75,7 @@ void AbstractOperatorOnline::dump(const Pattern &pattern,
              << ", Index: " << i << ") Value: " << val << endl;
     }
     cout << "Hash effect:" << hash_effect << endl;
+    cout << "cost:" << cost << endl;
 }
 
 PatternDatabaseOnline::PatternDatabaseOnline(
@@ -78,7 +84,7 @@ PatternDatabaseOnline::PatternDatabaseOnline(
     bool dump,
     const vector<int> &operator_costs)
     : PatternDatabaseInterface(task_proxy, pattern, operator_costs),
-      match_tree(task_proxy,pattern,hash_multipliers){
+      causal_graph(task_proxy.get_causal_graph()){
     verify_no_axioms(task_proxy);
     verify_no_conditional_effects(task_proxy);
     assert(operator_costs.empty() ||
@@ -192,50 +198,48 @@ void PatternDatabaseOnline::build_abstract_operators(
                  operators);
 }
 
-//Modified, only want to create abstract operators and match_tree
+//Modified, only want to create abstract operators and match_tree_static
 void PatternDatabaseOnline::create_pdb() {
   //needed by the online operator search function OnlineDistCalculator
-    VariablesProxy vars = task_proxy.get_variables();
-    vector<int> variable_to_index(vars.size(), -1);
+    //VariablesProxy vars = task_proxy.get_variables();
+    //vector<int> variable_to_index(vars.size(), -1);
+    //for (size_t i = 0; i < pattern.size(); ++i) {
+    //    variable_to_index[pattern[i]] = i;
+    //}
+
+    vector<int> variable_to_index(g_variable_name.size(), -1);
+    //cout<<"Create_Online pdb,pattern:"<<pattern<<endl;
     for (size_t i = 0; i < pattern.size(); ++i) {
         variable_to_index[pattern[i]] = i;
     }
-
+    cout<<"variable_to_index="<<variable_to_index<<endl;
     // compute all abstract operators
     vector<AbstractOperatorOnline> operators;
     int i=0;
     int elim=0;
-    set<int> skip_list={233,235,237,239,241,243,245,247,249,251,253,255,257,259,261,263,265,267,269,271,273,275,277,279,280,282,284,286,288,290,292,294,296,298,300,302,304,306,308,310,312,314,316,318,320,322,324,326};
     for (OperatorProxy op : task_proxy.get_operators()) {
-      if(skip_list.find(i)!=skip_list.end()){
-	  elim++;
-	  i++;
-	  continue;
-	  }
         int op_cost;
         if (operator_costs.empty()) {
             op_cost = op.get_cost();
         } else {
             op_cost = operator_costs[op.get_id()];
         }
-	cout<<"op["<<i<<"]:"<< op.get_name()<<",cost:"<<op_cost<<endl;
         build_abstract_operators(op, op_cost, variable_to_index, operators);
+	//cout<<"op["<<i<<"]:"<< op.get_name()<<",cost:"<<op_cost<<",operators_count:"<<operators.size()<<",op_id:"<<op.get_id()<<endl;
 	i++;
     }
     cout<<"g_operators.size:"<<task_proxy.get_operators().size()-elim<<",operators.size:"<<operators.size()<<endl;
 
-    // build the match tree
-    //MatchTreeOnline match_tree(task_proxy, pattern, hash_multipliers);
-    match_tree.update(pattern, hash_multipliers);
+    //MatchTreeOnline match_tree_static2(task_proxy, pattern, hash_multipliers);
     cout<<"pattern:"<<pattern<<endl;
     cout<<"hash_multipliers:"<<hash_multipliers<<endl;
     cout<<"operators for match tree size:"<<operators.size()<<endl;
-    for (const AbstractOperatorOnline &op : operators) {
-        match_tree.insert(op);
-    }
-    //cout<<"match_tree dump:"<<endl;
-    //match_tree.dump();
-    //exit(0);
+    //for (const AbstractOperatorOnline &op : operators) {
+    //    match_tree_static.insert(op);
+    //}
+    //cout<<"match_tree_static dump:"<<endl;
+    //match_tree_static2.dump();
+    //exit, ;
     
     for (FactProxy goal : task_proxy.get_goals()) {
         int var_id = goal.get_variable().get_id();
@@ -274,7 +278,9 @@ size_t PatternDatabaseOnline::hash_index(const State &state) const {
     size_t index = 0;
     for (size_t i = 0; i < pattern.size(); ++i) {
         index += hash_multipliers[i] * state[pattern[i]].get_value();
+	//cout<<"i:"<<i<<",pattern["<<i<<"]:"<<pattern[i]<<",hash_multiplier:"<<hash_multipliers[i]<<",val:"<<state[pattern[i]].get_value()<<endl;
     }
+    //cout<<"final_index:"<<index<<endl;exit(0);
     return index;
 }
 
@@ -284,6 +290,422 @@ int PatternDatabaseOnline::get_value(const State &state) const {
 
 int PatternDatabaseOnline::get_value(const vector<int> &state) const {
     return distances[hash_index(state)];
+}
+int PatternDatabaseOnline::OnlineDistanceCalculator2(const State current_state,vector<PatternDatabase*> &candidate_pdbs_offline,int h_value_to_beat=0){
+  //cout<<"calling OnlineDistanceCalculator2"<<endl;fflush(stdout);
+  static bool first_call=true;
+ //FOR SOME REASON, MATCH TREE CORRUPTED IF DEFINED As a Pointer in class.h file, so defined here instead
+  static MatchTreeOnline match_tree_static_temp(pattern,hash_multipliers);
+  static vector<AbstractOperatorOnline> operators;
+   
+  if(first_call){
+    VariablesProxy vars = task_proxy.get_variables();
+    vector<int> variable_to_index(vars.size(), -1);
+  for (size_t i = 0; i < pattern.size(); ++i) {
+        variable_to_index[pattern[i]] = i;
+    }
+
+    // compute all abstract operators
+    for (OperatorProxy op : task_proxy.get_operators()) {
+        int op_cost;
+        if (operator_costs.empty()) {
+            op_cost = op.get_cost();
+        } else {
+            op_cost = operator_costs[op.get_id()];
+        }
+        build_abstract_operators(op, op_cost, variable_to_index, operators);
+    }
+      for (const AbstractOperatorOnline &op : operators) {
+	  match_tree_static_temp.insert(op);
+      }
+      first_call=false;
+  }
+ //DEBUG TEST OF MATCH INSITU FINISHED
+    //for (size_t i = 0; i < pattern.size(); ++i) {
+    //  cout<<"input var:"<<pattern[i]<<",value:"<<current_state[pattern[i]]<<endl;
+    //}
+	    
+    //Timer AbstractSearchTimer;
+    //int expansion_counter=0;
+    //static int call_counter=0;
+    //call_counter++;
+    if(pattern.size()==0){
+      return 0;
+    }
+    //cout<<"calling OnlineDistanceCalculator,utils::g_timer:"<<utils::g_timer()<<",pdb_size:"<<get_pattern_size()<<",stored_abstract_distances:"<<stored_abstract_distance.size()<<endl;fflush(stdout);
+    /*vector<pair<int, int> > abstract_initial_state;
+    for (size_t i = 0; i < variable_to_index.size(); ++i) {
+        if (variable_to_index[i] != -1) {
+            abstract_initial_state.push_back(make_pair(variable_to_index[i], current_state_data[i]));
+	    cout<<"abstract_initial_state["<<i<<"]="<<abstract_initial_state.back().first<<","<<current_state_data[i]<<endl;
+	}
+    }
+    cout<<"Now calculating state_index"<<endl;*/
+    //cout<<"OnlineDistanceCalculator,pattern_string:"<<get_pattern_string()<<endl;
+    //cout<<"Now calculating state_index"<<endl;
+    //cout<<"State:";
+    //current_state.dump_inline();
+    size_t state_index=hash_index(current_state);
+    //cout<<"initial_state:"<<state_index<<endl;fflush(stdout);
+    //size_t subset_index=get_subset_hash(state_index);
+    //cout<<"subset index:"<<subset_index<<endl;
+    if(stored_abstract_distance.find(state_index)!=stored_abstract_distance.end()){//We already know this state ;-)
+      //cout<<"initial_state:,"<<state_index<<", is stored"<<endl;//,absolute_call:"<<call_counter<<",relative call:"<<call_counter%1000<<",expansion_counter:"<<expansion_counter<<",stored_distance:"<<stored_abstract_distance[state_index]<<endl;
+      return stored_abstract_distance[state_index];
+    }
+    else if(backward_search_fully_finished){//Not storing all dead_ends, simply returning when state not found
+      //cout<<"initial_state is not stored"<<endl;fflush(stdout);
+      return DEAD_END;
+    }
+
+
+    size_t initial_state_index=state_index;
+    //cout<<"initial_state_index:"<<initial_state_index<<endl;fflush(stdout);
+
+    //cout<<"now we add it to pq with distance=0"<<endl;
+    AdaptiveQueue<pair<size_t,size_t> > pq; // (first implicit entry: priority,) second entry: index for an abstract state
+    int initial_h=0;
+    if(candidate_pdbs_offline.size()>0){
+      get_var_values(state_index);
+      //cout<<"candidate_pdbs_ofline.size:"<<candidate_pdbs_offline.size()<<endl;fflush(stdout);
+      for(size_t i=0;i<candidate_pdbs_offline.size();i++){
+	//cout<<"subset_has["<<i<<"],state_index:"<<state_index<<endl;fflush(stdout);
+	//cout<<",hash:"<<get_subset_hash(state_index,i);fflush(stdout);
+	//initial_h=max(candidate_pdbs_offline[i]->compute_heuristi<<endl;_id(get_subset_hash(state_index,i)),initial_h);
+	initial_h=max(candidate_pdbs_offline[i]->compute_heuristic_id(get_subset_hash_unoptimized(i)),initial_h);
+	//cout<<"\t\tpattern:"<<candidate_pdbs_offline[i]->get_pattern()<<",pdb_helper["<<i<<"]:"<<candidate_pdbs_offline[i]->compute_heuristic_id(get_subset_hash(state_index,i))<<endl;fflush(stdout);
+      }
+    }
+    if(initial_h==0){//heuristic has to be admissible!
+      if (is_goal_state(state_index)) {//no need to search, this state is abstract goal already!
+	//cout<<"absolute_call:"<<call_counter<<",relative call:"<<call_counter%1000<<",expansion_counter:"<<expansion_counter<<endl;
+	//cout<<"initial_state is goal"<<endl;fflush(stdout);
+	return 0;
+      }
+    }
+    //cout<<"initial_h:"<<initial_h<<endl;
+    if(initial_h==INT_MAX/2){
+      //cout<<"initial_state:,"<<state_index<<", is DEAD_END according to helper_pdb,absolute_call:"<<call_counter<<",relative call:"<<call_counter%1000<<",expansion_counter:"<<expansion_counter<<",stored_distance:"<<stored_abstract_distance[state_index]<<endl;
+      return DEAD_END;
+    }
+    pq.push(initial_h,make_pair(state_index,0) );
+    map<size_t,pair<int,int> > backtracking_ops;//storing hash_effect and op_cost
+    backtracking_ops[state_index]=make_pair(0, 0);
+    //map<size_t,size_t> expanded_depth;
+    //cout<<"\tinitial state:"<<state_index<<",g:"<<0<<endl;
+    //distances_map[state_index]=0;
+        
+
+    // initialize queue
+    /*for (size_t state_index = 0; state_index < num_states; ++state_index) {
+        if (is_goal_state(state_index, abstract_goal)) {
+            pq.push(0, state_index);
+            distances.push_back(0);
+        } else {
+            distances.push_back(numeric_limits<int>::max());
+        }
+    }*/
+    //pq is now only initial state, we are doing forward search, this might save a lot of effort as quite a few of the states reachable from grounding of abstract goals into real states
+
+    // Dijkstra loop
+    int stored_alternative_cost;
+    int alternative_cost;
+    int best_stored_goal_distance=INT_MAX;
+    size_t goal_state_index=-1;
+    int current_boundary=0;
+    int counter=0;
+    double start_timer=utils::g_timer();
+    if(helper_max_size==0){
+      if(num_states<100000){
+	helper_max_size=get_pattern_size(pattern)/1;
+      }
+      else{
+	helper_max_size=get_pattern_size(pattern)/1000;
+      }
+    }
+    //cout<<"initial helper_max_size:"<<helper_max_size<<endl;
+    while (!pq.empty()) {
+      counter++;
+      if(counter%1000==0){
+	//cout<<"counter:,"<<counter<<", memory:,"<<get_peak_memory_in_kb()<<endl;
+	
+	if(utils::g_timer()-start_timer>0.01){
+	  //cout<<"\thelper_max_size:"<<helper_max_size<<endl;
+	    if(subset_patterns.size()<10&&helper_max_size<=get_pattern_size(pattern)&&helper_max_size<500000){
+	      double start_extra_helper_gen_time=utils::g_timer();
+	      //we are going to add a new pdb_helper to hopefully speed up things
+	      vector<int> candidate_subset_pattern=pattern;
+		//skip, already gen biggest PDB, we should do instead code to generate the full PDB when online search is worse
+	      helper_max_size=helper_max_size*5;
+	      while(get_pattern_size(candidate_subset_pattern)>helper_max_size&&candidate_subset_pattern.size()>1){
+		//size_t var_to_remove=g_rng()*candidate_subset_pattern.size();
+		size_t var_to_remove=(*g_rng())(candidate_subset_pattern.size());
+		candidate_subset_pattern.erase(candidate_subset_pattern.begin()+var_to_remove); //pattern_collection_helper.erase(pattern_collection_helper.begin());
+		remove_irrelevant_variables_util(candidate_subset_pattern);
+	      }
+	      if(candidate_subset_pattern.size()>1){
+		//cout<<"generating extra pdb_helper["<<subset_patterns.size()<<"],subset_par:"<<candidate_subset_pattern<<",mem size:"<<get_pattern_size(candidate_subset_pattern)<<endl;
+		//Options opts2;
+		//opts2.set<TaskProxy *>("task", task);
+		//opts2.set<int>("cost_type", cost_type);
+		//opts2.set<vector<int> >("pattern", candidate_subset_pattern);
+		//PatternDatabase *pattern_database_helper1=new PatternDatabse(opts2);
+		PatternDatabase *pdb_database_helper1=new PatternDatabase(task_proxy, candidate_subset_pattern);
+		candidate_pdbs_offline.push_back(pdb_database_helper1);
+		set_transformer_subset(candidate_subset_pattern);
+		overall_extra_helper_gen_time+=utils::g_timer()-start_extra_helper_gen_time;
+		cout<<"extra,helper["<<subset_patterns.size()<<",helper_max_size:"<<helper_max_size<<",pattern_size:"<<get_pattern_size(pattern)<<",overall_extra_helper_gen_time:"<<overall_extra_helper_gen_time<<endl;
+		//if(utils::g_timer()-start_extra_helper_gen_time>0.2){
+		//  create_pdb_time_limit(operator_costs_copy,0.2);
+		//}
+	      }
+	      //So we need to at least run another 0.01 secs of search before we build another PDB
+	      start_timer=utils::g_timer();
+	    }
+	  if(solving_heur){
+	    //cout<<"online_search time="<<utils::g_timer()-start_timer<<",return current_boundary,pdb_size:"<<num_states<<",calling backward_search"<<endl;
+	    //cout<<"first_call_create_pdb_time_limit"<<endl;
+	    //cout<<"second call"<<endl;
+	    //create_pdb_time_limit(void_operator_costs,2.0);
+	    //exit(0);
+	    if((double(utils::get_current_memory_in_kb())/1024)<2500){
+	      cout<<"USE SYMBOLIC PDBS FOR BACKWARD SEARCH"<<endl;exit(0);
+	      //cout<<"call_create_pdb_time_limit, memory:"<<utils::get_current_memory_in_kb()<<endl;
+	      //vector<int> void_operator_costs;
+	      //create_pdb_time_limit(void_operator_costs,2.0);
+	    }
+	    if(subset_patterns.size()<30&&(double(utils::get_current_memory_in_kb())/1024)<3000){
+	      double start_extra_helper_gen_time=utils::g_timer();
+	      //we are going to add a new pdb_helper to hopefully speed up things
+	      vector<int> candidate_subset_pattern=pattern;
+	      helper_max_size=helper_max_size*10;
+	      cout<<"call_extra_pdb_helper, memory:"<<utils::get_current_memory_in_kb()<<",helper_max_size:"<<helper_max_size<<endl;
+	      while(get_pattern_size(candidate_subset_pattern)>=helper_max_size&&candidate_subset_pattern.size()>1){
+		size_t var_to_remove=(*g_rng())(candidate_subset_pattern.size());
+		candidate_subset_pattern.erase(candidate_subset_pattern.begin()+var_to_remove); //pattern_collection_helper.erase(pattern_collection_helper.begin());
+		remove_irrelevant_variables_util(candidate_subset_pattern);
+	      }
+	      if(candidate_subset_pattern.size()>1){
+		//cout<<"generating extra pdb_helper["<<subset_patterns.size()<<"],subset_par:"<<candidate_subset_pattern<<",mem size:"<<get_pattern_size(candidate_subset_pattern)<<endl;
+		//Options opts2;
+		//opts2.set<TaskProxy *>("task", task);
+		//opts2.set<int>("cost_type", cost_type);
+		//opts2.set<vector<int> >("pattern", candidate_subset_pattern);
+		//PDBHeuristic *pdb_heuristic_helper1=new PDBHeuristic(opts2);
+		
+		PatternDatabase *pdb_database_helper1=new PatternDatabase(task_proxy, candidate_subset_pattern);
+		candidate_pdbs_offline.push_back(pdb_database_helper1);
+		set_transformer_subset(candidate_subset_pattern);
+		overall_extra_helper_gen_time+=utils::g_timer()-start_extra_helper_gen_time;
+		cout<<"extra,pdb_helper_patterns:"<<subset_patterns.size()<<",overall_extra_helper_gen_time:"<<overall_extra_helper_gen_time<<endl;
+	      }
+	    }
+	    return current_boundary;
+	  }
+	}
+      }
+        pair<int, pair<size_t,size_t> > node = pq.pop();
+        int current_f = node.first;
+	if(h_value_to_beat>0){
+	  if(current_f>h_value_to_beat){//past h_value_to_beat so we are finished
+	    return current_f;
+	  }
+	}
+        size_t state_index = node.second.first;
+        int current_g = node.second.second;
+	if(current_f>current_boundary){
+	  //cout<<"current_boundary:"<<current_f<<endl;fflush(stdout);
+	  current_boundary=current_f;
+	}
+	//cout<<"\t next state:"<<state_index<<",current_g:"<<current_g<<",current_f:"<<current_f<<endl;
+	if(current_f>=best_stored_goal_distance){//if pulling states past or equal to best stored optimal path, we already found optimal path
+	  //cout<<"found cached goal is optimal path, returning "<<best_stored_goal_distance<<",expansion_counter:"<<expansion_counter<<",current_f:"<<current_f<<endl;
+	  //if(expansion_counter>best_stored_goal_distance){
+	    //cout<<"goal distance<expansion_counter!,goal_distance:"<<best_stored_goal_distance<<",expansion_counter:"<<expansion_counter<<endl;
+	  //}
+	  //cout<<"found cached goal is optimal path, returning "<<best_stored_goal_distance<<endl;
+	  while(initial_state_index!=goal_state_index){
+	      goal_state_index-= backtracking_ops[goal_state_index].first;
+	      if(stored_abstract_distance.find(goal_state_index)!=stored_abstract_distance.end()){//we are finished backtracking
+		//cout<<"breaking, goal_state stored seen before"<<endl;
+		break;
+	      }
+	      stored_alternative_cost=best_stored_goal_distance-backtracking_ops[goal_state_index].second;
+	      stored_abstract_distance[goal_state_index]=stored_alternative_cost;
+	      //cout<<"\tbacktracked_successor:"<<goal_state_index<<",stored_abstract_distance:"<<stored_alternative_cost<<",stored_abstract_distance.size:"<<stored_abstract_distance.size()<<endl;
+	  }
+	  //cout<<"returning best_stored_goal_distance"<<endl;
+	  return best_stored_goal_distance;
+	}
+
+	//Checking if state already in hashed states   
+	//If it is, check the recored goal is smaller than actual goal, if it is, update
+	if(stored_abstract_distance.find(state_index)!=stored_abstract_distance.end()){
+	  if(stored_abstract_distance[state_index]==INT_MAX/2){//Skip DEAD_ENDs!
+	    //cout<<"\tskipping stored DEAD_END"<<endl;
+	    continue;
+	  }
+	   alternative_cost=current_g+stored_abstract_distance[state_index];
+	   if(alternative_cost<best_stored_goal_distance){
+	     //cout<<"state_index:"<<state_index<<",maximum goal distance is stored_abstract_distance:"<<stored_abstract_distance[state_index]<<"+current_g:"<<current_g<<"="<<alternative_cost<<endl;
+	      best_stored_goal_distance=alternative_cost;
+	      goal_state_index=state_index;
+	      //NO POINT KEEPING DONIG SEARCH IF GUARANTEED BIGGEST POSSIBLE GOAL DIST IS LESS THAN 
+	      //BEST HEURISTIC VALUE ALREADY
+	      if(h_value_to_beat>best_stored_goal_distance){
+		//cout<<"\t\th_value_to_beat:"<<h_value_to_beat<<",best_stored_goal_distance:"<<best_stored_goal_distance<<",utils::g_timer:"<<utils::g_timer()<<",finished"<<endl;
+		return best_stored_goal_distance;
+	      }
+	   }
+	   continue;
+	}
+	//cout<<"\t state_index:"<<state_index<<",g:"<<current_g<<endl;fflush(stdout);
+	if(backtracking_ops.find(state_index)!=backtracking_ops.end()){
+	  if (current_g > backtracking_ops[state_index].second) {
+	    //cout<<"\tskipping state_index at g:"<<current_g<<"it is dup, prev dist:"<<backtracking_ops[state_index].second<<endl;
+	      continue;
+	  }
+	}
+
+
+        // regress abstract_state
+        vector<const AbstractOperatorOnline *> applicable_operators;
+	//cout<<"calling get_applicable_operators"<<endl;fflush(stdout);
+        match_tree_static_temp.get_applicable_operators(state_index, applicable_operators);
+	//cout<<"\t applicable operators:"<<applicable_operators.size()<<endl;fflush(stdout);
+	//expansion_counter++;
+	//expanded_depth[state_index]=current_g;//node first expanded at this depth
+	//cout<<"\tstate_index added to expanded_depth:"<<current_g<<endl;
+	//cout<<"Pulled state_index:"<<state_index<<",g:"<<current_g<<endl;
+	//cout<<"\t Applicable operators:"<<applicable_operators.size()<<endl;fflush(stdout);
+        for (size_t i = 0; i < applicable_operators.size(); i++) {
+	    //cout<<"\thash_effect2:"<<applicable_operators[i]->get_hash_effect()<<endl;fflush(stdout);
+	    //continue;
+	  //cout<<"\t\ti:"<<i<<" out of "<<applicable_operators.size()<<endl;fflush(stdout);
+            size_t successor = state_index + applicable_operators[i]->get_hash_effect();
+	    if(stored_abstract_distance.find(successor)!=stored_abstract_distance.end()){
+	      if(stored_abstract_distance[successor]==INT_MAX/2){//Skip DEAD_ENDs!
+		//cout<<"Skipping adding stored DEAD_END!"<<endl;fflush(stdout);
+		continue;
+	      }
+	    }
+	    //cout<<"\tSuccessor["<<i<<"]:";fflush(stdout);cout<<successor<<endl;fflush(stdout);
+	    int alternative_cost = current_g + applicable_operators[i]->get_cost();
+	    //cout<<"\thash_effect2:"<<applicable_operators[i]->get_hash_effect()<<endl;fflush(stdout);
+	    //cout<<",op cost:"<<applicable_operators[i]->get_cost()<<endl;fflush(stdout);
+	    //cout<<"\talternative_cost:"<<alternative_cost<<",parent_g:"<<current_g<<",op cost:"<<applicable_operators[i]->get_cost()<<endl;fflush(stdout);
+	    //if(applicable_operators[i]->get_cost()<0){
+	      //cout<<"op["<<i<<"] Cost cant be negative!!!"<<endl;fflush(stdout);
+	      //applicable_operators[i]->dump(pattern,task_proxy);
+	      //exit(0);
+	      //alternative_cost = current_g + 1;
+	    //}
+		
+	    int h=0;
+	    if(backtracking_ops.find(successor)!=backtracking_ops.end()){
+	      //cout<<"found prev state_index:"<<successor<<"with distance:";fflush(stdout);cout<<backtracking_ops[successor].second<<endl;
+	      if (alternative_cost < backtracking_ops[successor].second) {
+		if(alternative_cost<best_stored_goal_distance){//Found new goal distance
+		  if (is_goal_state(successor)) {
+		     //cout<<"\tfound shortest goal distance, new shortest goal_state:"<<successor<<",g:"<<alternative_cost<<endl;fflush(stdout);
+		     best_stored_goal_distance=alternative_cost;
+		     goal_state_index=successor;
+		     if(h_value_to_beat>best_stored_goal_distance){
+		       //cout<<"\t\th_value_to_beat:"<<h_value_to_beat<<",best_stored_goal_distance:"<<best_stored_goal_distance<<",utils::g_timer:"<<utils::g_timer()<<",finished"<<endl;
+		       return best_stored_goal_distance;
+		     }
+		   }
+		}
+		//cout<<"successor:"<<successor<<",parent:"<<state_index<<",g:"<<alternative_cost<<endl;
+		//cout<<"\top:"<<i<<",alternative_cost:"<<alternative_cost<<"is smaller than stored distance:"<<backtracking_ops[successor].second<<",so updating"<<endl;
+		if(candidate_pdbs_offline.size()>0){
+		  get_var_values(successor);
+		  for(size_t j=0;j<candidate_pdbs_offline.size();j++){
+		    h=max(candidate_pdbs_offline[j]->compute_heuristic_id(get_subset_hash_unoptimized(j)),h);
+		    //cout<<",pdb_helper["<<j<<"]:"<<candidate_pdbs_offline[j]->compute_heuristic_id(get_subset_hash(successor,j))<<endl;//fflush(stdout);
+		  }
+		  //cout<<"h:"<<h<<endl;fflush(stdout);
+		  if(h==INT_MAX/2){
+		    stored_abstract_distance[successor]=INT_MAX/2;
+		    //cout<<"Skipping adding helper_pdb DEAD_END!"<<endl;fflush(stdout);
+		    continue;//skipping dead_end
+		  }
+		}
+		else{
+		  h=0;
+		}
+		//cout<<"pq.push,successor:"<<successor<<",alternative_cost:"<<alternative_cost<<",h:"<<h<<endl;
+		  pq.push(alternative_cost+h, make_pair(successor,alternative_cost));
+		  backtracking_ops[successor]=make_pair(applicable_operators[i]->get_hash_effect(), alternative_cost);//storing hash_effect and op_cost
+		  //expanded_depth.erase(successor);
+		  //cout<<"\talternative successor:"<<successor<<",new g:"<<alternative_cost<<endl;
+		/*if(successor==2||successor==3||successor==0){
+		  cout<<"new alternative successor:"<<successor<<",cost:"<<applicable_operators[i]->get_cost()<<endl;;
+		}*/
+	      }
+	      else{
+		//cout<<"\top:"<<i<<",dup,prev state_index:"<<successor<<"with distance:"<<backtracking_ops[successor].second<<",alternative_cost:"<<alternative_cost<<endl;
+		continue;
+	      }
+	    }
+	    else{
+	      //cout<<"\top:"<<i<<",successor_state:"<<successor<<" is new,distance:"<<alternative_cost<<endl;
+	      backtracking_ops[successor]=make_pair(applicable_operators[i]->get_hash_effect(), alternative_cost);//storing hash_effect and op_cost
+	      //distances_map[successor] = alternative_cost;
+	      if(candidate_pdbs_offline.size()>0){
+		get_var_values(successor);
+		for(size_t j=0;j<candidate_pdbs_offline.size();j++){
+		  h=max(candidate_pdbs_offline[j]->compute_heuristic_id(get_subset_hash_unoptimized(j)),h);
+		  //cout<<"\th["<<j<<"]:"<<candidate_pdbs_offline[j]->compute_heuristic_id(get_subset_hash(successor,j))<<endl;//fflush(stdout);
+		}
+		if(h==INT_MAX/2){
+		  stored_abstract_distance[successor]=INT_MAX/2;
+		  continue;//Not adding a dead end to queue!
+		}
+	      }
+	      else{
+		h=0;
+	      }
+	    
+	    //cout<<"\th:"<<h<<",succesor_f:"<<h+alternative_cost<<endl;fflush(stdout);
+	      //cout<<"pq.push,successor:"<<successor<<",alternative_cost:"<<alternative_cost<<",h:"<<h<<endl;
+	      pq.push(alternative_cost+h, make_pair(successor,alternative_cost));
+	      /*  if(successor==2||successor==3||successor==0){
+		  cout<<"new successor:"<<successor<<",hash_effect:"<<successor-state_index<<",cost:"<<applicable_operators[i]->get_cost()<<endl;;
+	      }*/
+	      //cout<<"\tnew successor:"<<successor<<",g:"<<alternative_cost<<endl;
+	      if (is_goal_state(successor)) {
+	       if(alternative_cost<best_stored_goal_distance){
+		 //cout<<"\tgenerated new shortest goal_state:"<<successor<<",g:"<<alternative_cost<<endl;
+		 best_stored_goal_distance=alternative_cost;
+		 goal_state_index=successor;
+		 if(h_value_to_beat>best_stored_goal_distance){
+		   //cout<<"\t\th_value_to_beat:"<<h_value_to_beat<<",best_stored_goal_distance:"<<best_stored_goal_distance<<",utils::g_timer:"<<utils::g_timer()<<",finished"<<endl;
+		   return best_stored_goal_distance;
+		 }
+	       }
+	      }
+	    }
+        }
+	//exit(0);
+    }
+    if(best_stored_goal_distance<INT_MAX){//if we found a stored goal distance, return the optimal one
+      //cout<<"found cached goal is optimal path, returning "<<best_stored_goal_distance<<",expansion_counter:"<<expansion_counter<<",initial_h:"<<initial_h<<endl;
+      while(initial_state_index!=goal_state_index){
+	  goal_state_index-= backtracking_ops[goal_state_index].first;
+	  stored_alternative_cost=best_stored_goal_distance-backtracking_ops[goal_state_index].second;
+	  stored_abstract_distance[goal_state_index]=stored_alternative_cost;
+	  //cout<<"\tbacktracked_successor:"<<state_index<<",distance:"<<stored_alternative_cost<<endl;
+	}
+      //cout<<"absolute_call:"<<call_counter<<",relative call:"<<call_counter%1000<<",expansion_counter:"<<expansion_counter<<endl;
+      return best_stored_goal_distance;
+    }
+  //cout<<"Broken!, abstract solution was not found"<<endl;
+    //cout<<"PDBOnline:Dead end found"<<endl;
+    stored_abstract_distance[initial_state_index]=INT_MAX/2;
+    //unconfirmed_stored_abstract_distance[initial_state_index]=DEAD_END;
+    //cout<<"absolute_call:"<<call_counter<<",relative call:"<<call_counter%1000<<",expansion_counter:"<<expansion_counter<<endl;
+    return DEAD_END;
 }
 
 double PatternDatabaseOnline::compute_mean_finite_h() const {
@@ -301,4 +723,122 @@ double PatternDatabaseOnline::compute_mean_finite_h() const {
         return sum / size;
     }
 }
+
+bool PatternDatabaseOnline::is_operator_relevant(const OperatorProxy &op) const {
+    for (EffectProxy effect : op.get_effects()) {
+        int var_id = effect.get_fact().get_variable().get_id();
+        if (binary_search(pattern.begin(), pattern.end(), var_id)) {
+            return true;
+        }
+    }
+    return false;
+}
+
+void PatternDatabaseOnline::get_var_values(size_t set_id){
+  int temp=0;
+  //cout<<endl;
+  for (size_t var = 0; var < pattern.size(); ++var) {
+        temp = set_id/hash_multipliers[var];
+        state_vars_values[pattern[var]] = temp % g_variable_domain[pattern[var]];
+	//cout<<"pattern_var:"<<pattern[var]<<",state_vars_values["<<pattern[var]<<"]="<<state_vars_values[pattern[var]]<<endl;
+  }
+}
+size_t PatternDatabaseOnline::get_subset_hash_unoptimized(size_t pdb_helper_index){
+  //Make sure get_var_values was called, otherwise not doing correct state
+  //only needs to be done once per state
+  size_t subset_index=0;
+  for (size_t var = 0; var < subset_patterns[pdb_helper_index].size(); ++var) {
+    subset_index+=state_vars_values[subset_patterns[pdb_helper_index][var]]*subset_hash_multipliers[pdb_helper_index][var];
+    //cout<<"subset_index:"<<subset_index<<",pdb_helper_index:"<<pdb_helper_index;fflush(stdout);
+    //cout<<",var:"<<subset_patterns[pdb_helper_index][var]<<",hash_multiplier:"<<subset_hash_multipliers[pdb_helper_index][var]<<",value:"<<subset_patterns[pdb_helper_index][var]<<endl;
+  }
+  //cout<<",final set_id:"<<subset_index<<endl;fflush(stdout);
+  return subset_index;
+}
+void PatternDatabaseOnline::remove_irrelevant_variables_util(
+    vector<int> &pattern) {
+  
+  unordered_set<int> in_original_pattern(pattern.begin(), pattern.end());
+  unordered_set<int> in_pruned_pattern;
+
+    vector<int> vars_to_check;
+    for (size_t i = 0; i < g_goal.size(); ++i) {
+        int var_no = g_goal[i].first;
+        if (in_original_pattern.count(var_no)) {
+            // Goals are causally relevant.
+            vars_to_check.push_back(var_no);
+            in_pruned_pattern.insert(var_no);
+        }
+    }
+
+    while (!vars_to_check.empty()) {
+        int var = vars_to_check.back();
+        vars_to_check.pop_back();
+        // A variable is relevant to the pattern if it is a goal variable or if
+        // there is a pre->eff arc from the variable to a relevant variable.
+        // Note that there is no point in considering eff->eff arcs here.
+        const vector<int> &rel = causal_graph.get_eff_to_pre(var);
+        for (size_t i = 0; i < rel.size(); ++i) {
+            int var_no = rel[i];
+            if (in_original_pattern.count(var_no) &&
+                !in_pruned_pattern.count(var_no)) {
+                // Parents of relevant variables are causally relevant.
+                vars_to_check.push_back(var_no);
+                in_pruned_pattern.insert(var_no);
+            }
+        }
+    }
+
+    //if(in_pruned_pattern.size()!=in_original_pattern.size()){
+      //cout<<"util_version,found "<<in_original_pattern.size()-in_pruned_pattern.size()<<" irrelevant pattern vars"<<endl;
+      //cout<<"util,in_original_pattern.size() "<<in_original_pattern.size()<<",prunned size:"<<in_pruned_pattern.size()<<endl;
+    //}
+    pattern.assign(in_pruned_pattern.begin(), in_pruned_pattern.end());
+    sort(pattern.begin(), pattern.end());
+}
+void PatternDatabaseOnline::set_transformer_subset(vector<int> subset_pat){
+  std::vector<int> subset_missing_vars;
+  std::vector<int> subset_missing_index;
+  subset_patterns.push_back(subset_pat);
+  
+    
+  vector<size_t> temp_hash_multipliers;
+  int temp_num_states=1;
+  for (size_t i = 0; i < subset_pat.size(); ++i) {
+      temp_hash_multipliers.push_back(temp_num_states);
+      temp_num_states *= g_variable_domain[subset_pat[i]];
+  }
+  subset_hash_multipliers.push_back(temp_hash_multipliers);
+  //sort(subset_pat.begin(),subset_pat.end());//just in case it is not sorted already
+  std::set_difference(
+    pattern.begin(), pattern.end(),
+    subset_pat.begin(), subset_pat.end(),
+    std::back_inserter( subset_missing_vars )
+    );
+  subsets_missing_vars.push_back(subset_missing_vars);
+
+  //cout<<"subset pattern:"<<subset_pat<<endl;fflush(stdout);
+  //cout<<"subset_missing_vars:"<<subset_missing_vars<<endl;
+  //cout<<"transformer_subset online pattern:"<<subset_pat<<",subset_hash_multiplier:"<<subset_hash_multipliers.back()<<endl;
+  for(size_t i=0;i<subset_missing_vars.size();i++){
+    for(size_t j=0;j<pattern.size();j++){
+      if(pattern[j]==subset_missing_vars[i]){
+	subset_missing_index.push_back(j);
+	break;
+      }
+    }
+  }
+  subsets_missing_index.push_back(subset_missing_index);
+  //cout<<"subset_missing_index:"<<subset_missing_index<<endl;
+}
+int PatternDatabaseOnline::get_pattern_size(vector<int> pattern){
+    // test if the pattern respects the memory limit
+    int mem = 1;
+    for (size_t j = 0; j < pattern.size(); ++j) {
+        int domain_size = g_variable_domain[pattern[j]];
+        mem *= domain_size;
+    }   
+    return mem;
+}
+
 }
