@@ -20,7 +20,7 @@ namespace pdbs {
   Heuristics. Proceedings of the 4th Workshop on Model Checking and
   Artificial Intelligence (MoChArt 2006), pp. 35-50, 2007.
 */
-class PatternCollectionGeneratorGenetic : public PatternCollectionGenerator {
+class PatternCollectionGeneratorGeneticSS : public PatternCollectionGenerator {
     // Maximum number of states for each pdb
     const int pdb_max_size;
     const int num_collections;
@@ -107,8 +107,8 @@ class PatternCollectionGeneratorGenetic : public PatternCollectionGenerator {
     */
     void genetic_algorithm(std::shared_ptr<AbstractTask> task);
 public:
-    PatternCollectionGeneratorGeneticOnlineSS(const options::Options &opts);
-    virtual ~PatternCollectionGeneratorGeneticOnlineSS() = default;
+    PatternCollectionGeneratorGeneticSS(const options::Options &opts);
+    virtual ~PatternCollectionGeneratorGeneticSS() = default;
 
     virtual PatternCollectionInformation generate(
         std::shared_ptr<AbstractTask> task) override;

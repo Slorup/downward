@@ -474,7 +474,6 @@ fast_downward_plugin(
         pdbs/pattern_database_online.cc
         pdbs/pattern_collection_generator_combo.cc
         pdbs/pattern_collection_generator_genetic.cc
-        pdbs/pattern_collection_generator_genetic_Online_SS.h
         pdbs/pattern_collection_generator_hillclimbing.cc
         pdbs/pattern_collection_generator_manual.cc
         pdbs/pattern_collection_generator_systematic.cc
@@ -490,6 +489,7 @@ fast_downward_plugin(
         pdbs/validation.cc
         pdbs/zero_one_pdbs.cc
         pdbs/zero_one_pdbs_heuristic.cc
+
 )
 
 fast_downward_plugin(

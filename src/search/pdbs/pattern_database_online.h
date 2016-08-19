@@ -96,10 +96,12 @@ class PatternDatabaseOnline : public PatternDatabaseInterface {
     // multipliers for each variable for perfect hash function
     std::vector<std::size_t> hash_multipliers;
 
-    //Need to declare MatchTree here so I can use it in the OnlineDistCalc fuction, not just the create_pdb as it would in offline PDBs
-    //MatchTreeOnline* match_tree;
+    //Need to declare as pointer, keeps getting reused after generated in create_pdb
+    //By OnlineDistCalculator
+    MatchTreeOnline* match_tree;
     
     std::map<size_t,size_t> stored_abstract_distance;
+    std::vector<AbstractOperatorOnline> operators;
     bool backward_search_fully_finished=false;
     
     std::vector<std::pair<int, int>> abstract_goals;
@@ -186,7 +188,7 @@ public:
         const Pattern &pattern,
         bool dump = false,
         const std::vector<int> &operator_costs = std::vector<int>());
-    ~PatternDatabaseOnline() = default;
+    ~PatternDatabaseOnline();
 
     virtual int get_value(const State &state) const override;
     virtual int get_value(const std::vector<int> &state) const override;

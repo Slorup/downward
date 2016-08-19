@@ -1,4 +1,4 @@
-#include "pattern_collection_generator_genetic_Online_SS.h"
+#include "pattern_collection_generator_genetic__SS.h"
 
 #include "validation.h"
 #include "zero_one_pdbs.h"
@@ -23,7 +23,7 @@
 using namespace std;
 
 namespace pdbs {
-PatternCollectionGeneratorGenetic::PatternCollectionGeneratorGeneticOnlineSS(
+PatternCollectionGeneratorGeneticSS::PatternCollectionGeneratorGeneticSS(
     const Options &opts)
     : pdb_max_size(opts.get<int>("pdb_max_size")),
       num_collections(opts.get<int>("num_collections")),
@@ -32,7 +32,7 @@ PatternCollectionGeneratorGenetic::PatternCollectionGeneratorGeneticOnlineSS(
       disjoint_patterns(opts.get<bool>("disjoint")) {
 }
 
-void PatternCollectionGeneratorGenetic::select(
+void PatternCollectionGeneratorGeneticSS::select(
     const vector<double> &fitness_values) {
     vector<double> cumulative_fitness;
     cumulative_fitness.reserve(fitness_values.size());
@@ -63,7 +63,7 @@ void PatternCollectionGeneratorGenetic::select(
     pattern_collections.swap(new_pattern_collections);
 }
 
-void PatternCollectionGeneratorGenetic::mutate() {
+void PatternCollectionGeneratorGeneticSS::mutate() {
     for (auto &collection : pattern_collections) {
         for (vector<bool> &pattern : collection) {
             for (size_t k = 0; k < pattern.size(); ++k) {
@@ -76,7 +76,7 @@ void PatternCollectionGeneratorGenetic::mutate() {
     }
 }
 
-Pattern PatternCollectionGeneratorGenetic::transform_to_pattern_normal_form(
+Pattern PatternCollectionGeneratorGeneticSS::transform_to_pattern_normal_form(
     const vector<bool> &bitvector) const {
     Pattern pattern;
     for (size_t i = 0; i < bitvector.size(); ++i) {
@@ -86,7 +86,7 @@ Pattern PatternCollectionGeneratorGenetic::transform_to_pattern_normal_form(
     return pattern;
 }
 
-void PatternCollectionGeneratorGenetic::remove_irrelevant_variables(
+void PatternCollectionGeneratorGeneticSS::remove_irrelevant_variables(
     Pattern &pattern) const {
     TaskProxy task_proxy(*task);
 
@@ -129,7 +129,7 @@ void PatternCollectionGeneratorGenetic::remove_irrelevant_variables(
     sort(pattern.begin(), pattern.end());
 }
 
-bool PatternCollectionGeneratorGenetic::is_pattern_too_large(
+bool PatternCollectionGeneratorGeneticSS::is_pattern_too_large(
     const Pattern &pattern) const {
     // Test if the pattern respects the memory limit.
     TaskProxy task_proxy(*task);
@@ -145,7 +145,7 @@ bool PatternCollectionGeneratorGenetic::is_pattern_too_large(
     return false;
 }
 
-bool PatternCollectionGeneratorGenetic::mark_used_variables(
+bool PatternCollectionGeneratorGeneticSS::mark_used_variables(
     const Pattern &pattern, vector<bool> &variables_used) const {
     for (size_t i = 0; i < pattern.size(); ++i) {
         int var_id = pattern[i];
@@ -156,7 +156,7 @@ bool PatternCollectionGeneratorGenetic::mark_used_variables(
     return false;
 }
 
-void PatternCollectionGeneratorGenetic::evaluate(vector<double> &fitness_values) {
+void PatternCollectionGeneratorGeneticSS::evaluate(vector<double> &fitness_values) {
     TaskProxy task_proxy(*task);
     for (const auto &collection : pattern_collections) {
         //cout << "evaluate pattern collection " << (i + 1) << " of "
@@ -206,7 +206,7 @@ void PatternCollectionGeneratorGenetic::evaluate(vector<double> &fitness_values)
     }
 }
 
-void PatternCollectionGeneratorGenetic::bin_packing() {
+void PatternCollectionGeneratorGeneticSS::bin_packing() {
     TaskProxy task_proxy(*task);
     VariablesProxy variables = task_proxy.get_variables();
 
@@ -253,7 +253,7 @@ void PatternCollectionGeneratorGenetic::bin_packing() {
     }
 }
 
-void PatternCollectionGeneratorGenetic::genetic_algorithm(
+void PatternCollectionGeneratorGeneticSS::genetic_algorithm(
     shared_ptr<AbstractTask> task_) {
     task = task_;
     best_fitness = -1;
@@ -272,7 +272,7 @@ void PatternCollectionGeneratorGenetic::genetic_algorithm(
     }
 }
 
-PatternCollectionInformation PatternCollectionGeneratorGenetic::generate(
+PatternCollectionInformation PatternCollectionGeneratorGeneticSS::generate(
     shared_ptr<AbstractTask> task) {
     utils::Timer timer;
     genetic_algorithm(task);
@@ -368,7 +368,7 @@ static shared_ptr<PatternCollectionGenerator> _parse(OptionParser &parser) {
     if (parser.dry_run())
         return 0;
 
-    return make_shared<PatternCollectionGeneratorGenetic>(opts);
+    return make_shared<PatternCollectionGeneratorGeneticSS>(opts);
 }
 
 static PluginShared<PatternCollectionGenerator> _plugin("genetic", _parse);

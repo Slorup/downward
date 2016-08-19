@@ -284,6 +284,9 @@ size_t PatternDatabase::hash_index(const State &state) const {
 }
 
 int PatternDatabase::get_value(const State &state) const {
+  //if(distances[hash_index(state)]>1){
+    //cout<<"Pattern:"<<pattern<<",initial_state:,"<<hash_index(state)<<",h:"<<distances[hash_index(state)]<<endl;
+  //}
     return distances[hash_index(state)];
 }
 

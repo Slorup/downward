@@ -110,6 +110,9 @@ PatternDatabaseOnline::PatternDatabaseOnline(
     if (dump)
         cout << "PDB construction time: " << timer << endl;
 }
+PatternDatabaseOnline::~PatternDatabaseOnline(){
+  delete match_tree;
+}
 
 void PatternDatabaseOnline::multiply_out(
     int pos, int cost, vector<pair<int, int>> &prev_pairs,
@@ -207,16 +210,16 @@ void PatternDatabaseOnline::create_pdb() {
     //    variable_to_index[pattern[i]] = i;
     //}
 
-    vector<int> variable_to_index(g_variable_name.size(), -1);
-    //cout<<"Create_Online pdb,pattern:"<<pattern<<endl;
+    //cout<<"Create_Online pdb,pattern:"<<pattern<<endl;fflush(stdout);
+    VariablesProxy vars = task_proxy.get_variables();
+    vector<int> variable_to_index(vars.size(), -1);
     for (size_t i = 0; i < pattern.size(); ++i) {
         variable_to_index[pattern[i]] = i;
     }
-    cout<<"variable_to_index="<<variable_to_index<<endl;
+    
+    match_tree=new MatchTreeOnline(pattern,hash_multipliers);
+
     // compute all abstract operators
-    vector<AbstractOperatorOnline> operators;
-    int i=0;
-    int elim=0;
     for (OperatorProxy op : task_proxy.get_operators()) {
         int op_cost;
         if (operator_costs.empty()) {
@@ -225,22 +228,11 @@ void PatternDatabaseOnline::create_pdb() {
             op_cost = operator_costs[op.get_id()];
         }
         build_abstract_operators(op, op_cost, variable_to_index, operators);
-	//cout<<"op["<<i<<"]:"<< op.get_name()<<",cost:"<<op_cost<<",operators_count:"<<operators.size()<<",op_id:"<<op.get_id()<<endl;
-	i++;
     }
-    cout<<"g_operators.size:"<<task_proxy.get_operators().size()-elim<<",operators.size:"<<operators.size()<<endl;
+      for (const AbstractOperatorOnline &op : operators) {
+	  match_tree->insert(op);
+      }
 
-    //MatchTreeOnline match_tree_static2(task_proxy, pattern, hash_multipliers);
-    cout<<"pattern:"<<pattern<<endl;
-    cout<<"hash_multipliers:"<<hash_multipliers<<endl;
-    cout<<"operators for match tree size:"<<operators.size()<<endl;
-    //for (const AbstractOperatorOnline &op : operators) {
-    //    match_tree_static.insert(op);
-    //}
-    //cout<<"match_tree_static dump:"<<endl;
-    //match_tree_static2.dump();
-    //exit, ;
-    
     for (FactProxy goal : task_proxy.get_goals()) {
         int var_id = goal.get_variable().get_id();
         int val = goal.get_value();
@@ -285,42 +277,24 @@ size_t PatternDatabaseOnline::hash_index(const State &state) const {
 }
 
 int PatternDatabaseOnline::get_value(const State &state) const {
-    return distances[hash_index(state)];
+  vector<PatternDatabase*> temp_vector;
+    int val=const_cast<PatternDatabaseOnline*>(this)->OnlineDistanceCalculator2(state,temp_vector,0);
+    //if(val>0){
+    //  cout<<"Pattern:"<<pattern<<",initial_state:,"<<hash_index(state)<<",h:"<<val<<endl;
+    //}
+    if ( val== DEAD_END){
+        return numeric_limits<int>::max();
+    }
+    else{
+      return val;
+    }
 }
 
 int PatternDatabaseOnline::get_value(const vector<int> &state) const {
     return distances[hash_index(state)];
 }
 int PatternDatabaseOnline::OnlineDistanceCalculator2(const State current_state,vector<PatternDatabase*> &candidate_pdbs_offline,int h_value_to_beat=0){
-  //cout<<"calling OnlineDistanceCalculator2"<<endl;fflush(stdout);
-  static bool first_call=true;
- //FOR SOME REASON, MATCH TREE CORRUPTED IF DEFINED As a Pointer in class.h file, so defined here instead
-  static MatchTreeOnline match_tree_static_temp(pattern,hash_multipliers);
-  static vector<AbstractOperatorOnline> operators;
-   
-  if(first_call){
-    VariablesProxy vars = task_proxy.get_variables();
-    vector<int> variable_to_index(vars.size(), -1);
-  for (size_t i = 0; i < pattern.size(); ++i) {
-        variable_to_index[pattern[i]] = i;
-    }
-
-    // compute all abstract operators
-    for (OperatorProxy op : task_proxy.get_operators()) {
-        int op_cost;
-        if (operator_costs.empty()) {
-            op_cost = op.get_cost();
-        } else {
-            op_cost = operator_costs[op.get_id()];
-        }
-        build_abstract_operators(op, op_cost, variable_to_index, operators);
-    }
-      for (const AbstractOperatorOnline &op : operators) {
-	  match_tree_static_temp.insert(op);
-      }
-      first_call=false;
-  }
- //DEBUG TEST OF MATCH INSITU FINISHED
+  //cout<<"Calling OnlineDistCalculator2,stored_abstract_distances:"<<stored_abstract_distance.size()<<endl;
     //for (size_t i = 0; i < pattern.size(); ++i) {
     //  cout<<"input var:"<<pattern[i]<<",value:"<<current_state[pattern[i]]<<endl;
     //}
@@ -330,6 +304,7 @@ int PatternDatabaseOnline::OnlineDistanceCalculator2(const State current_state,v
     //static int call_counter=0;
     //call_counter++;
     if(pattern.size()==0){
+      cout<<"pattern size is 0!!!"<<endl;
       return 0;
     }
     //cout<<"calling OnlineDistanceCalculator,utils::g_timer:"<<utils::g_timer()<<",pdb_size:"<<get_pattern_size()<<",stored_abstract_distances:"<<stored_abstract_distance.size()<<endl;fflush(stdout);
@@ -350,11 +325,11 @@ int PatternDatabaseOnline::OnlineDistanceCalculator2(const State current_state,v
     //size_t subset_index=get_subset_hash(state_index);
     //cout<<"subset index:"<<subset_index<<endl;
     if(stored_abstract_distance.find(state_index)!=stored_abstract_distance.end()){//We already know this state ;-)
-      //cout<<"initial_state:,"<<state_index<<", is stored"<<endl;//,absolute_call:"<<call_counter<<",relative call:"<<call_counter%1000<<",expansion_counter:"<<expansion_counter<<",stored_distance:"<<stored_abstract_distance[state_index]<<endl;
+      //cout<<"initial_state:,"<<state_index<<", is stored,h:"<<stored_abstract_distance[state_index]<<endl;//,absolute_call:"<<call_counter<<",relative call:"<<call_counter%1000<<",expansion_counter:"<<expansion_counter<<",stored_distance:"<<stored_abstract_distance[state_index]<<endl;
       return stored_abstract_distance[state_index];
     }
     else if(backward_search_fully_finished){//Not storing all dead_ends, simply returning when state not found
-      //cout<<"initial_state is not stored"<<endl;fflush(stdout);
+      cout<<"initial_state is not stored"<<endl;fflush(stdout);
       return DEAD_END;
     }
 
@@ -379,13 +354,13 @@ int PatternDatabaseOnline::OnlineDistanceCalculator2(const State current_state,v
     if(initial_h==0){//heuristic has to be admissible!
       if (is_goal_state(state_index)) {//no need to search, this state is abstract goal already!
 	//cout<<"absolute_call:"<<call_counter<<",relative call:"<<call_counter%1000<<",expansion_counter:"<<expansion_counter<<endl;
-	//cout<<"initial_state is goal"<<endl;fflush(stdout);
+	cout<<"initial_state is goal"<<endl;fflush(stdout);
 	return 0;
       }
     }
     //cout<<"initial_h:"<<initial_h<<endl;
     if(initial_h==INT_MAX/2){
-      //cout<<"initial_state:,"<<state_index<<", is DEAD_END according to helper_pdb,absolute_call:"<<call_counter<<",relative call:"<<call_counter%1000<<",expansion_counter:"<<expansion_counter<<",stored_distance:"<<stored_abstract_distance[state_index]<<endl;
+      //cout<<"initial_state:,"<<state_index<<", is DEAD_END according to helper_pdb"<<endl;
       return DEAD_END;
     }
     pq.push(initial_h,make_pair(state_index,0) );
@@ -500,6 +475,7 @@ int PatternDatabaseOnline::OnlineDistanceCalculator2(const State current_state,v
 		cout<<"extra,pdb_helper_patterns:"<<subset_patterns.size()<<",overall_extra_helper_gen_time:"<<overall_extra_helper_gen_time<<endl;
 	      }
 	    }
+	    cout<<"solving_heur,initial_state:"<<initial_state_index<<",h:"<<current_boundary<<endl;
 	    return current_boundary;
 	  }
 	}
@@ -508,6 +484,7 @@ int PatternDatabaseOnline::OnlineDistanceCalculator2(const State current_state,v
         int current_f = node.first;
 	if(h_value_to_beat>0){
 	  if(current_f>h_value_to_beat){//past h_value_to_beat so we are finished
+	    //cout<<"current_f>h_value_to_beat,initial_state:"<<initial_state_index<<",h:"<<current_f<<endl;
 	    return current_f;
 	  }
 	}
@@ -534,7 +511,8 @@ int PatternDatabaseOnline::OnlineDistanceCalculator2(const State current_state,v
 	      stored_abstract_distance[goal_state_index]=stored_alternative_cost;
 	      //cout<<"\tbacktracked_successor:"<<goal_state_index<<",stored_abstract_distance:"<<stored_alternative_cost<<",stored_abstract_distance.size:"<<stored_abstract_distance.size()<<endl;
 	  }
-	  //cout<<"returning best_stored_goal_distance"<<endl;
+	  //cout<<"returning best_stored_goal_distance.current_f="<<current_f<<endl;
+	  //cout<<"initial_state:"<<initial_state_index<<",h:"<<best_stored_goal_distance<<endl;
 	  return best_stored_goal_distance;
 	}
 
@@ -554,6 +532,7 @@ int PatternDatabaseOnline::OnlineDistanceCalculator2(const State current_state,v
 	      //BEST HEURISTIC VALUE ALREADY
 	      if(h_value_to_beat>best_stored_goal_distance){
 		//cout<<"\t\th_value_to_beat:"<<h_value_to_beat<<",best_stored_goal_distance:"<<best_stored_goal_distance<<",utils::g_timer:"<<utils::g_timer()<<",finished"<<endl;
+		//cout<<"initial_state:"<<initial_state_index<<",h:"<<best_stored_goal_distance<<endl;
 		return best_stored_goal_distance;
 	      }
 	   }
@@ -571,7 +550,7 @@ int PatternDatabaseOnline::OnlineDistanceCalculator2(const State current_state,v
         // regress abstract_state
         vector<const AbstractOperatorOnline *> applicable_operators;
 	//cout<<"calling get_applicable_operators"<<endl;fflush(stdout);
-        match_tree_static_temp.get_applicable_operators(state_index, applicable_operators);
+        match_tree->get_applicable_operators(state_index, applicable_operators);
 	//cout<<"\t applicable operators:"<<applicable_operators.size()<<endl;fflush(stdout);
 	//expansion_counter++;
 	//expanded_depth[state_index]=current_g;//node first expanded at this depth
@@ -593,7 +572,7 @@ int PatternDatabaseOnline::OnlineDistanceCalculator2(const State current_state,v
 	    int alternative_cost = current_g + applicable_operators[i]->get_cost();
 	    //cout<<"\thash_effect2:"<<applicable_operators[i]->get_hash_effect()<<endl;fflush(stdout);
 	    //cout<<",op cost:"<<applicable_operators[i]->get_cost()<<endl;fflush(stdout);
-	    //cout<<"\talternative_cost:"<<alternative_cost<<",parent_g:"<<current_g<<",op cost:"<<applicable_operators[i]->get_cost()<<endl;fflush(stdout);
+	    //cout<<"\tpattern:"<<pattern<<",op:"<<i<<",parent_state:"<<state_index<<",successor_state:"<<successor<<",alternative_cost:"<<alternative_cost<<",parent_g:"<<current_g<<",op cost:"<<applicable_operators[i]->get_cost()<<",hash_effect:"<<applicable_operators[i]->get_hash_effect()<<endl;fflush(stdout);
 	    //if(applicable_operators[i]->get_cost()<0){
 	      //cout<<"op["<<i<<"] Cost cant be negative!!!"<<endl;fflush(stdout);
 	      //applicable_operators[i]->dump(pattern,task_proxy);
@@ -675,6 +654,7 @@ int PatternDatabaseOnline::OnlineDistanceCalculator2(const State current_state,v
 	      }*/
 	      //cout<<"\tnew successor:"<<successor<<",g:"<<alternative_cost<<endl;
 	      if (is_goal_state(successor)) {
+		//cout<<"successor:"<<successor<<" is goal_state"<<endl;
 	       if(alternative_cost<best_stored_goal_distance){
 		 //cout<<"\tgenerated new shortest goal_state:"<<successor<<",g:"<<alternative_cost<<endl;
 		 best_stored_goal_distance=alternative_cost;
@@ -698,13 +678,15 @@ int PatternDatabaseOnline::OnlineDistanceCalculator2(const State current_state,v
 	  //cout<<"\tbacktracked_successor:"<<state_index<<",distance:"<<stored_alternative_cost<<endl;
 	}
       //cout<<"absolute_call:"<<call_counter<<",relative call:"<<call_counter%1000<<",expansion_counter:"<<expansion_counter<<endl;
+		
+      //cout<<"no more pq,initial_state:"<<initial_state_index<<",h:"<<best_stored_goal_distance<<endl;
       return best_stored_goal_distance;
     }
   //cout<<"Broken!, abstract solution was not found"<<endl;
     //cout<<"PDBOnline:Dead end found"<<endl;
     stored_abstract_distance[initial_state_index]=INT_MAX/2;
     //unconfirmed_stored_abstract_distance[initial_state_index]=DEAD_END;
-    //cout<<"absolute_call:"<<call_counter<<",relative call:"<<call_counter%1000<<",expansion_counter:"<<expansion_counter<<endl;
+    //cout<<"no more pq,initial_state is dead_end"<<initial_state_index<<",h:"<<DEAD_END<<endl;
     return DEAD_END;
 }
 
