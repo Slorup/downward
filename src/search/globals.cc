@@ -37,8 +37,6 @@ static const int PRE_FILE_VERSION = 3;
 //       are_mutex, which is at least better than exposing the data
 //       structure globally.)
 
-//static vector<vector<set<Fact>>> g_inconsistent_facts;
-
 bool test_goal(const GlobalState &state) {
     for (size_t i = 0; i < g_goal.size(); ++i) {
         if (state[g_goal[i].first] != g_goal[i].second) {
@@ -146,48 +144,6 @@ void read_variables(istream &in) {
     }
 }
 //Vidal, Alvaro: Changed all the read_mutexes method
-//void read_mutexes(istream &in) {
-//  g_inconsistent_facts.resize(g_num_facts*g_num_facts, false);
-//
-//    int num_mutex_groups;
-//    in >> num_mutex_groups;
-//
-//    /* NOTE: Mutex groups can overlap, in which case the same mutex
-//       should not be represented multiple times. The current
-//       representation takes care of that automatically by using sets.
-//       If we ever change this representation, this is something to be
-//       aware of. */
-//
-//    for (size_t i = 0; i < num_mutex_groups; ++i) {
-//      MutexGroup mg = MutexGroup(in);
-//      g_mutex_groups.push_back(mg);
-//  
-//      const vector<pair<int, int> > & invariant_group = mg.getFacts();
-//        for (size_t j = 0; j < invariant_group.size(); ++j) {
-//            const pair<int, int> &fact1 = invariant_group[j];
-//            //int var1 = fact1.first, val1 = fact1.second;
-//            for (size_t k = 0; k < invariant_group.size(); ++k) {
-//                const pair<int, int> &fact2 = invariant_group[k];
-//     
-//                //int var2 = fact2.first;
-//                //if (var1 != var2) {
-//                    /* The "different variable" test makes sure we
-//                       don't mark a fact as mutex with itself
-//                       (important for correctness) and don't include
-//                       redundant mutexes (important to conserve
-//                       memory). Note that the preprocessor removes
-//                       mutex groups that contain *only* redundant
-//                       mutexes, but it can of course generate mutex
-//                       groups which lead to *some* redundant mutexes,
-//                       where some but not all facts talk about the
-//                       same variable. */
-//                set_mutex(fact1, fact2);
-//                //}
-//            }
-//        }
-//    }   
-//}
-
 void read_mutexes(istream &in) {
   g_inconsistent_facts.resize(g_num_facts*g_num_facts, false);
 
@@ -379,9 +335,9 @@ bool are_mutex(const Fact &a, const Fact &b) {
   if (a.value == -1 || b.value == -1)
     return false;
   if (a.var == b.var) // same variable: mutex iff different value
-    return a.value != b.value;
+        return a.value != b.value;
   return g_inconsistent_facts[id_mutex(a, b)];
-}
+    }
 int id_mutex(const Fact & a, const Fact &b){
   int id_a = g_id_first_fact [a.var] + a.value;
   int id_b = g_id_first_fact [b.var] + b.value;
@@ -423,7 +379,6 @@ vector<GlobalOperator> g_operators;
 vector<GlobalOperator> g_axioms;
 AxiomEvaluator *g_axiom_evaluator;
 SuccessorGenerator *g_successor_generator;
-
 vector<MutexGroup> g_mutex_groups; 
 vector<bool> g_inconsistent_facts;
 int g_num_facts;
