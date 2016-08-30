@@ -19,19 +19,18 @@
 using namespace std;
 
 namespace pdbs {
-  //Name already taken in pdb_heuristc.cc, hence t he numeral
-PatternDatabaseOnline get_pdb_from_options2(const shared_ptr<AbstractTask> task,
-                                     const Options &opts) {
+
+Pattern get_pattern_from_options2(const shared_ptr<AbstractTask> task,
+				 const Options &opts) {
     shared_ptr<PatternGenerator> pattern_generator =
         opts.get<shared_ptr<PatternGenerator>>("pattern");
-    Pattern pattern = pattern_generator->generate(task);
-    TaskProxy task_proxy(*task);
-    return PatternDatabaseOnline(task_proxy, pattern, true);
+    return pattern_generator->generate(task);
 }
+
 
 PDBHeuristicOnline::PDBHeuristicOnline(const Options &opts)
     : Heuristic(opts),
-      pdb_online(get_pdb_from_options2(task, opts)), 
+      pdb_online(TaskProxy(*task), get_pattern_from_options2(task, opts), true), 
       causal_graph(task_proxy.get_causal_graph())
 {
 }

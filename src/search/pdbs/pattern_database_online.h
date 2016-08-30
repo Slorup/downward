@@ -98,7 +98,7 @@ class PatternDatabaseOnline : public PatternDatabaseInterface {
 
     //Need to declare as pointer, keeps getting reused after generated in create_pdb
     //By OnlineDistCalculator
-    MatchTreeOnline* match_tree;
+    std::unique_ptr<MatchTreeOnline> match_tree;
     
     std::map<size_t,size_t> stored_abstract_distance;
     std::vector<AbstractOperatorOnline> operators;
@@ -188,7 +188,7 @@ public:
         const Pattern &pattern,
         bool dump = false,
         const std::vector<int> &operator_costs = std::vector<int>());
-    ~PatternDatabaseOnline();
+    virtual ~PatternDatabaseOnline() = default;
 
     virtual int get_value(const State &state) const override;
     virtual int get_value(const std::vector<int> &state) const override;

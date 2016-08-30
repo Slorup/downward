@@ -13,18 +13,16 @@
 using namespace std;
 
 namespace pdbs {
-PatternDatabase get_pdb_from_options(const shared_ptr<AbstractTask> task,
-                                     const Options &opts) {
+Pattern get_pattern_from_options(const shared_ptr<AbstractTask> task,
+				 const Options &opts) {
     shared_ptr<PatternGenerator> pattern_generator =
         opts.get<shared_ptr<PatternGenerator>>("pattern");
-    Pattern pattern = pattern_generator->generate(task);
-    TaskProxy task_proxy(*task);
-    return PatternDatabase(task_proxy, pattern, true);
+    return pattern_generator->generate(task);
 }
 
 PDBHeuristic::PDBHeuristic(const Options &opts)
     : Heuristic(opts),
-      pdb(get_pdb_from_options(task, opts)) {
+      pdb(TaskProxy (*task), get_pattern_from_options(task, opts), true) {
 }
 
 int PDBHeuristic::compute_heuristic(const GlobalState &global_state) {

@@ -8,7 +8,6 @@
 #include "../utils/math.h"
 #include "../utils/timer.h"
 #include "../utils/rng.h"
-#include "../heuristic.h"//DEAD_END def
 
 #include <algorithm>
 #include <cassert>
@@ -110,9 +109,6 @@ PatternDatabaseOnline::PatternDatabaseOnline(
     if (dump)
         cout << "PDB construction time: " << timer << endl;
 }
-PatternDatabaseOnline::~PatternDatabaseOnline(){
-  delete match_tree;
-}
 
 void PatternDatabaseOnline::multiply_out(
     int pos, int cost, vector<pair<int, int>> &prev_pairs,
@@ -201,7 +197,7 @@ void PatternDatabaseOnline::build_abstract_operators(
                  operators);
 }
 
-//Modified, only want to create abstract operators and match_tree_static
+//Modified, only want to create abstract operators and match_tre_estatic
 void PatternDatabaseOnline::create_pdb() {
   //needed by the online operator search function OnlineDistCalculator
     //VariablesProxy vars = task_proxy.get_variables();
@@ -217,7 +213,7 @@ void PatternDatabaseOnline::create_pdb() {
         variable_to_index[pattern[i]] = i;
     }
     
-    match_tree=new MatchTreeOnline(pattern,hash_multipliers);
+    match_tree.reset(new MatchTreeOnline(pattern,hash_multipliers));
 
     // compute all abstract operators
     for (OperatorProxy op : task_proxy.get_operators()) {
