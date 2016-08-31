@@ -488,6 +488,7 @@ fast_downward_plugin(
         pdbs/types.cc
         pdbs/validation.cc
         pdbs/zero_one_pdbs.cc
+        pdbs/group_zero_one_pdbs.cc
         pdbs/zero_one_pdbs_heuristic.cc
 
 )

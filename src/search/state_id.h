@@ -32,6 +32,10 @@ public:
     bool operator!=(const StateID &other) const {
         return !(*this == other);
     }
+    
+    bool operator<(const StateID &other) const {
+        return value < other.value;
+    }
 
     size_t hash() const {
         return value;

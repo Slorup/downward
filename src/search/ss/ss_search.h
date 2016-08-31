@@ -18,10 +18,15 @@
 #include "../state_id.h"
 #include "../ext/boost/dynamic_bitset.hpp"
 
+#include "../utils/timer.h"
+
 class GlobalOperator;
 class Heuristic;
-class Options;
+//class Options;
 class ScalarEvaluator;
+namespace options {
+class Options;
+}
 
 
 using namespace std;
@@ -99,8 +104,8 @@ private:
 	int initial_value;
         
         GlobalState current_state;
-	Timer search_time;
-	Timer level_time; //time required to expand an entire level
+	utils::Timer search_time;
+	utils::Timer level_time; //time required to expand an entire level
 
 	TypeSystem * sampler;
 
@@ -122,7 +127,7 @@ protected:
 
 public:
 	
-	SSSearch(const Options &opts);
+	SSSearch(const options::Options &opts);
 	virtual ~SSSearch();
         void printQueue(); 
         void generateExpandedReport();

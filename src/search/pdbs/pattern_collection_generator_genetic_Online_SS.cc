@@ -1,4 +1,4 @@
-#include "pattern_collection_generator_genetic__SS.h"
+#include "pattern_collection_generator_genetic_Online_SS.h"
 
 #include "validation.h"
 #include "zero_one_pdbs.h"
@@ -371,5 +371,5 @@ static shared_ptr<PatternCollectionGenerator> _parse(OptionParser &parser) {
     return make_shared<PatternCollectionGeneratorGeneticSS>(opts);
 }
 
-static PluginShared<PatternCollectionGenerator> _plugin("genetic", _parse);
+static PluginShared<PatternCollectionGenerator> _plugin("genetic_ss", _parse);
 }

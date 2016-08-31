@@ -6,6 +6,8 @@
 
 #include <memory>
 #include <vector>
+#include "../ss/ss_search.h"
+#include "../state_registry.h"
 
 class AbstractTask;
 
@@ -14,6 +16,13 @@ class Options;
 }
 
 namespace pdbs {
+
+struct SS_state
+{
+  StateID id;
+  int g;
+  double weight;
+};
 /*
   Implementation of the pattern generation algorithm by Edelkamp. See:
   Stefan Edelkamp, Automated Creation of Pattern Database Search
@@ -22,21 +31,51 @@ namespace pdbs {
 */
 class PatternCollectionGeneratorGeneticSS : public PatternCollectionGenerator {
     // Maximum number of states for each pdb
-    const int pdb_max_size;
-    const int num_collections;
-    const int num_episodes;
-    const double mutation_probability;
+  vector<SS_state> SS_states_vector;
+  map<StateID,pair<int,double> > SS_states;
+  int sampling_threshold=0;
+  int modifier=1;
+  int current_episode;
+  bool best_heuristic_populated=false;
+  bool bin_packed_episode;
+    int pdb_max_size; // maximum number of states for each pdb
+    int num_collections; // maximum number of states for each pdb
+    int num_episodes;
+    double mutation_probability;
+    bool disjoint_patterns; // specifies whether patterns in each pattern collection need to be disjoint or not
+    double time_limit;
+    utils::Timer timer;
+    vector<int> best_heuristic_values;
+    std::vector<std::vector<std::vector<bool> > > pattern_collections; // all current pattern collections
+    bool best_fitness_was_duplicate;
+    int count_mutated=0;
+    double overall_sample_generation_timer=0;
+    double overall_pdb_gen_time=0;
+    double overall_online_samp_time=0;
+    double overall_probe_time=0;
+    int total_online_samples=0;
+    int overall_sampled_states=0;
+    int initial_h=0;
+    double overall_collector=0;
+    double prev_current_collector=0;
+    double max_collector=0;
 
     std::shared_ptr<AbstractTask> task;
-    /* Specifies whether patterns in each pattern collection need to be disjoint
-       or not. */
-    const bool disjoint_patterns;
-    // All current pattern collections.
-    std::vector<std::vector<std::vector<bool>>> pattern_collections;
+
 
     // Store best pattern collection over all episodes and its fitness value.
     std::shared_ptr<PatternCollection> best_patterns;
     double best_fitness;
+    // pointer to the heuristic in evaluate from the episode before, used to free memory.
+    GroupZeroOnePDBs *best_heuristic;
+    ZeroOnePDBsOnline *current_heuristic;
+    //ZeroOnePDBsHeuristic *current_heuristic;
+    double average_operator_cost;
+    StateRegistry sample_registry;
+    int num_samples;
+    vector<GlobalState> samples;
+    set<GlobalState,GlobalStateCompare> unique_samples;
+    //PDBHeuristicOnline *current_heuristic,
 
     /*
       The fitness values (from evaluate) are used as probabilities. Then
