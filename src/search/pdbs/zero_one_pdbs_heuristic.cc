@@ -17,7 +17,17 @@ ZeroOnePDBs get_zero_one_pdbs_from_options(
     shared_ptr<PatternCollection> patterns =
         pattern_collection_info.get_patterns();
     TaskProxy task_proxy(*task);
-    return ZeroOnePDBs(task_proxy, *patterns);
+    
+    if (opts.contains("pdb_type")) {
+	shared_ptr<PDBFactory> pdb_factory (opts.get<shared_ptr<PDBFactory>>("pdb_type"));
+	return ZeroOnePDBs(task_proxy, *patterns, *pdb_factory);
+    } else if (pattern_generator->get_factory()) {
+	return ZeroOnePDBs(task_proxy, *patterns, *(pattern_generator->get_factory()));
+    } else {
+	cerr << "Error: no pdb_factory in zopdbs and the pattern generator does not provide one." << endl;
+	utils::exit_with(utils::ExitCode::CRITICAL_ERROR);
+    }
+
 }
 
 ZeroOnePDBsHeuristic::ZeroOnePDBsHeuristic(
@@ -62,7 +72,14 @@ static Heuristic *_parse(OptionParser &parser) {
         "patterns",
         "pattern generation method",
         "systematic(1)");
+
+    parser.add_option<shared_ptr<PDBFactory>>(
+        "pdb_type",
+        "See detailed documentation for pdb factories. ",
+	OptionParser::NONE);
+
     Heuristic::add_options_to_parser(parser);
+
 
     Options opts = parser.parse();
     if (parser.dry_run())

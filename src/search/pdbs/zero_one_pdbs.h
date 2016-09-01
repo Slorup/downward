@@ -7,10 +7,12 @@ class State;
 class TaskProxy;
 
 namespace pdbs {
+class PDBFactory;
+
 class ZeroOnePDBs {
     PDBCollection pattern_databases;
 public:
-    ZeroOnePDBs(TaskProxy task_proxy, const PatternCollection &patterns);
+    ZeroOnePDBs(TaskProxy task_proxy, const PatternCollection &patterns, PDBFactory & factory);
     ~ZeroOnePDBs() = default;
 
     int get_value(const State &state) const;

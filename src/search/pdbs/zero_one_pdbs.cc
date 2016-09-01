@@ -1,6 +1,7 @@
 #include "zero_one_pdbs.h"
 
 #include "pattern_database.h"
+#include "pdb_factory.h"
 
 #include "../task_proxy.h"
 
@@ -14,7 +15,7 @@
 using namespace std;
 
 namespace pdbs {
-ZeroOnePDBs::ZeroOnePDBs(TaskProxy task_proxy, const PatternCollection &patterns) {
+ZeroOnePDBs::ZeroOnePDBs(TaskProxy task_proxy, const PatternCollection &patterns, PDBFactory & pdb_factory) {
     vector<int> operator_costs;
     OperatorsProxy operators = task_proxy.get_operators();
     operator_costs.reserve(operators.size());
@@ -23,9 +24,8 @@ ZeroOnePDBs::ZeroOnePDBs(TaskProxy task_proxy, const PatternCollection &patterns
 
     pattern_databases.reserve(patterns.size());
     for (const Pattern &pattern : patterns) {
-        shared_ptr<PatternDatabaseInterface> pdb = make_shared<PatternDatabase>(
-            task_proxy, pattern, false, operator_costs);
-
+	shared_ptr<PatternDatabaseInterface> pdb = pdb_factory.compute_pdb(task_proxy, pattern, operator_costs);
+         
         /* Set cost of relevant operators to 0 for further iterations
            (action cost partitioning). */
         for (OperatorProxy op : operators) {

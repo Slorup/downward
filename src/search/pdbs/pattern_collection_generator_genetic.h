@@ -14,6 +14,7 @@ class Options;
 }
 
 namespace pdbs {
+class PDBFactory;
 /*
   Implementation of the pattern generation algorithm by Edelkamp. See:
   Stefan Edelkamp, Automated Creation of Pattern Database Search
@@ -21,6 +22,8 @@ namespace pdbs {
   Artificial Intelligence (MoChArt 2006), pp. 35-50, 2007.
 */
 class PatternCollectionGeneratorGenetic : public PatternCollectionGenerator {
+
+    std::shared_ptr<PDBFactory> pdb_factory;
     // Maximum number of states for each pdb
     const int pdb_max_size;
     const int num_collections;
@@ -112,6 +115,11 @@ public:
 
     virtual PatternCollectionInformation generate(
         std::shared_ptr<AbstractTask> task) override;
+
+    virtual std::shared_ptr<PDBFactory> get_factory () override {
+	return pdb_factory;
+    }
+
 };
 }
 

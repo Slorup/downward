@@ -135,6 +135,11 @@ public:
     */
     virtual PatternCollectionInformation generate(
         std::shared_ptr<AbstractTask> task) override;
+
+    virtual std::shared_ptr<PDBFactory> get_factory () override {
+	return pdb_factory;
+    }
+
 };
 }
 

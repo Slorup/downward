@@ -25,7 +25,8 @@ using namespace std;
 namespace pdbs {
 PatternCollectionGeneratorGenetic::PatternCollectionGeneratorGenetic(
     const Options &opts)
-    : pdb_max_size(opts.get<int>("pdb_max_size")),
+    : pdb_factory (opts.get<shared_ptr<PDBFactory>>("pdb_type")),
+      pdb_max_size(opts.get<int>("pdb_max_size")),
       num_collections(opts.get<int>("num_collections")),
       num_episodes(opts.get<int>("num_episodes")),
       mutation_probability(opts.get<double>("mutation_probability")),
@@ -193,7 +194,8 @@ void PatternCollectionGeneratorGenetic::evaluate(vector<double> &fitness_values)
         } else {
             /* Generate the pattern collection heuristic and get its fitness
                value. */
-            ZeroOnePDBs zero_one_pdbs(task_proxy, *pattern_collection);
+
+            ZeroOnePDBs zero_one_pdbs(task_proxy, *pattern_collection, *pdb_factory );
             fitness = zero_one_pdbs.compute_approx_mean_finite_h();
             // Update the best heuristic found so far.
             if (fitness > best_fitness) {
@@ -363,6 +365,11 @@ static shared_ptr<PatternCollectionGenerator> _parse(OptionParser &parser) {
         "consider a pattern collection invalid (giving it very low "
         "fitness) if its patterns are not disjoint",
         "false");
+
+    parser.add_option<shared_ptr<PDBFactory>>(
+        "pdb_type",
+        "See detailed documentation for pdb factories. ",
+	"explicit");
 
     Options opts = parser.parse();
     if (parser.dry_run())

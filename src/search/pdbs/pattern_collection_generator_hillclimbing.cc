@@ -324,7 +324,7 @@ PatternCollectionInformation PatternCollectionGeneratorHillclimbing::generate(sh
            the initial collection). */
         PatternCollection initial_candidate_patterns;
         for (const shared_ptr<PatternDatabaseInterface> &current_pdb :
-             *(current_pdbs->get_pattern_databases())) {
+		 *(current_pdbs->get_pattern_databases())) {
             generate_candidate_patterns(
                 task_proxy, *current_pdb, initial_candidate_patterns);
         }
@@ -377,6 +377,12 @@ void add_hillclimbing_options(OptionParser &parser) {
         "is performed at all.",
         "infinity",
         Bounds("0.0", "infinity"));
+
+    parser.add_option<shared_ptr<PDBFactory>>(
+        "pdb_type",
+        "See detailed documentation for pdb factories. ",
+	"explicit");
+
 }
 
 void check_hillclimbing_options(

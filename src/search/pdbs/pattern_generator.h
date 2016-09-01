@@ -9,9 +9,13 @@
 class AbstractTask;
 
 namespace pdbs {
+class PDBFactory;
 class PatternCollectionGenerator {
 public:
     virtual PatternCollectionInformation generate(std::shared_ptr<AbstractTask> task) = 0;
+    virtual std::shared_ptr<PDBFactory> get_factory () {
+	return nullptr;
+    }
 };
 
 class PatternGenerator {
