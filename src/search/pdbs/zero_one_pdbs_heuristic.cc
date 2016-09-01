@@ -2,6 +2,8 @@
 
 #include "pattern_generator.h"
 
+#include "pdb_factory_explicit.h"
+
 #include "../option_parser.h"
 #include "../plugin.h"
 
@@ -18,15 +20,16 @@ ZeroOnePDBs get_zero_one_pdbs_from_options(
         pattern_collection_info.get_patterns();
     TaskProxy task_proxy(*task);
     
+    shared_ptr<PDBFactory> pdb_factory;
     if (opts.contains("pdb_type")) {
-	shared_ptr<PDBFactory> pdb_factory (opts.get<shared_ptr<PDBFactory>>("pdb_type"));
-	return ZeroOnePDBs(task_proxy, *patterns, *pdb_factory);
+	 pdb_factory = opts.get<shared_ptr<PDBFactory>>("pdb_type");
     } else if (pattern_generator->get_factory()) {
-	return ZeroOnePDBs(task_proxy, *patterns, *(pattern_generator->get_factory()));
+	pdb_factory = pattern_generator->get_factory();
     } else {
-	cerr << "Error: no pdb_factory in zopdbs and the pattern generator does not provide one." << endl;
-	utils::exit_with(utils::ExitCode::CRITICAL_ERROR);
+	pdb_factory = make_shared <PDBFactoryExplicit>();
     }
+    return ZeroOnePDBs(task_proxy, *patterns, *pdb_factory);
+
 
 }
 

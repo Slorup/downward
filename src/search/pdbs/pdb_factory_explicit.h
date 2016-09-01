@@ -21,6 +21,7 @@ namespace pdbs {
     protected:
 	virtual void dump_strategy_specific_options() const override;
     public:
+        PDBFactoryExplicit();
 	explicit PDBFactoryExplicit(const options::Options &options);
 	virtual ~PDBFactoryExplicit() override = default;
 

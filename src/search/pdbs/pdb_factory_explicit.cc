@@ -15,6 +15,9 @@ namespace pdbs {
 PDBFactoryExplicit::PDBFactoryExplicit(const options::Options & opts) : 
     dump (opts.get<bool>("dump")) {
 }
+PDBFactoryExplicit::PDBFactoryExplicit() : 
+    dump (false) {
+}
 
     std::shared_ptr<PatternDatabaseInterface> 
 PDBFactoryExplicit::compute_pdb(const TaskProxy & task, 
