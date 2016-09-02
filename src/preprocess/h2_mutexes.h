@@ -21,7 +21,7 @@ using namespace std;
 enum Reachability {SPURIOUS, REACHED, NOT_REACHED};
 
 static const int UNSOLVABLE = -2;
-static const int  TIMEOUT = -1;
+static const int TIMEOUT = -1;
 
 class Op_h2 {
 public:
@@ -57,7 +57,7 @@ private:
 
 class H2Mutexes {
     bool check_initial_state_is_dead_end(const vector <Variable *> &variables,
-						    const State &initial_state) const;
+                                         const State &initial_state) const;
 
     bool check_goal_state_is_unreachable(const vector<pair<Variable *, int>> &goal) const;
 public:
@@ -101,9 +101,9 @@ public:
     }
 
 
-    int detect_unreachable_fluents(const vector <Variable *> &variables, 
-				    const State &initial_state, 
-				   const vector<pair<Variable *, int>> &goal);
+    int detect_unreachable_fluents(const vector <Variable *> &variables,
+                                   const State &initial_state,
+                                   const vector<pair<Variable *, int>> &goal);
 
     bool remove_spurious_operators(vector<Operator> &operators);
     void set_unreachable_propositions(const vector <Variable *> &variables);
@@ -126,15 +126,15 @@ protected:
     vector< vector<unsigned>> p_index;
     vector< pair<unsigned, unsigned>> p_index_reverse;
 
-    Reachability eval_propositions(const vector<unsigned> & props);
+    Reachability eval_propositions(const vector<unsigned> &props);
 
     inline unsigned position(unsigned a, unsigned b) const {
         return (a * number_props) + b;
     }
 
-    bool set_unreachable(int var, int val, const vector <Variable *> &variables, 
-			 const State &initial_state, 
-			 const vector<pair<Variable *, int>> &goal); 
+    bool set_unreachable(int var, int val, const vector <Variable *> &variables,
+                         const State &initial_state,
+                         const vector<pair<Variable *, int>> &goal);
 
     void print_pair(unsigned pair);
 

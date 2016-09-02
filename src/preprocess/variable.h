@@ -17,7 +17,7 @@ public:
     Variable(istream &in);
     void set_level(int level);
     void set_necessary();
-    void reset_necessary(){necessary= false;}
+    void reset_necessary() {necessary = false; }
     int get_level() const;
     bool is_necessary() const;
     int get_range() const;

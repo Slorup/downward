@@ -65,6 +65,13 @@ struct TypeNamer<bool> {
 };
 
 template <>
+struct TypeNamer<long> {
+    static std::string name() {
+        return "long";
+    }
+};
+
+template <>
 struct TypeNamer<double> {
     static std::string name() {
         return "double";

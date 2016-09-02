@@ -17,6 +17,10 @@ struct GlobalCondition {
         return state[var] == val;
     }
 
+    bool is_applicable(const std::vector<int> &state) const {
+        return state[var] == val;
+    }
+
     bool operator==(const GlobalCondition &other) const {
         return var == other.var && val == other.val;
     }
@@ -36,6 +40,13 @@ struct GlobalEffect {
     GlobalEffect(int variable, int value, const std::vector<GlobalCondition> &conds);
 
     bool does_fire(const GlobalState &state) const {
+        for (size_t i = 0; i < conditions.size(); ++i)
+            if (!conditions[i].is_applicable(state))
+                return false;
+        return true;
+    }
+
+    bool does_fire(const std::vector<int> &state) const {
         for (size_t i = 0; i < conditions.size(); ++i)
             if (!conditions[i].is_applicable(state))
                 return false;

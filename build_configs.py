@@ -8,5 +8,8 @@ release64nolp = ["-DCMAKE_BUILD_TYPE=Release", "-DALLOW_64_BIT=True", "-DCMAKE_C
 debug64nolp = ["-DCMAKE_BUILD_TYPE=Debug",   "-DALLOW_64_BIT=True", "-DCMAKE_CXX_FLAGS='-m64'", "-DUSE_LP=NO"]
 minimal = ["-DCMAKE_BUILD_TYPE=Release", "-DDISABLE_PLUGINS_BY_DEFAULT=YES"]
 
+symbolic = ["-DCMAKE_BUILD_TYPE=Release", "-DDISABLE_PLUGINS_BY_DEFAULT=YES", "-DPLUGIN_SYMBOLIC_ENABLED=TRUE", "-DPLUGIN_EAGER_SEARCH_ENABLED=TRUE"]
+symbolic_debug = symbolic + ["-DDEBUG=TRUE", "-DCMAKE_BUILD_TYPE=Debug"]
+
 DEFAULT = "release32"
 DEBUG = "debug32"

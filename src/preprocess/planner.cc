@@ -38,8 +38,8 @@ int main(int argc, const char **argv) {
     for (int i = 1; i < argc; ++i) {
         string arg = string(argv[i]);
         if (arg.compare("--no_rel") == 0) {
-        cout << "*** do not perform relevance analysis ***" << endl;
-        g_do_not_prune_variables = true;
+            cout << "*** do not perform relevance analysis ***" << endl;
+            g_do_not_prune_variables = true;
         } else if (arg.compare("--h2_time_limit") == 0) {
             i++;
             if (i < argc) {
@@ -98,17 +98,17 @@ int main(int argc, const char **argv) {
         if (conditional_effects)
             disable_bw_h2 = true;
 
-        if(!compute_h2_mutexes(ordering, operators, axioms,
-                           mutexes, initial_state, goals,
-			       h2_mutex_time, disable_bw_h2)){
-	                // TODO: don't duplicate the code to return an unsolvable task, log and exit here
+        if (!compute_h2_mutexes(ordering, operators, axioms,
+                                mutexes, initial_state, goals,
+                                h2_mutex_time, disable_bw_h2)) {
+            // TODO: don't duplicate the code to return an unsolvable task, log and exit here
             cout << "Unsolvable task in preprocessor" << endl;
             generate_unsolvable_cpp_input();
             cout << "Preprocessor time: " << utils::g_timer << endl;
             cout << "Preprocessor peak memory: " << get_peak_memory_in_kb() << " KB" << endl;
             cout << "done" << endl;
             return 0;
-	}
+        }
 
         //Update the causal graph and remove unneccessary variables
         strip_mutexes(mutexes);
@@ -276,9 +276,9 @@ int main(int argc, const char **argv) {
     } else {
         generate_cpp_input(
             solveable_in_poly_time, ordering, metric,
-                       mutexes, initial_state, goals,
-                       operators, axioms, successor_generator,
-                       transition_graphs, causal_graph);
+            mutexes, initial_state, goals,
+            operators, axioms, successor_generator,
+            transition_graphs, causal_graph);
     }
     cout << "Preprocessor time: " << utils::g_timer << endl;
     cout << "Preprocessor peak memory: " << get_peak_memory_in_kb() << " KB" << endl;

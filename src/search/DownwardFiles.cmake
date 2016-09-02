@@ -480,16 +480,11 @@ fast_downward_plugin(
         pdbs/pattern_generator_greedy.cc
         pdbs/pattern_generator_manual.cc
         pdbs/pattern_generator.cc
-	pdbs/pdb_factory.cc
-	pdbs/pdb_factory_explicit.cc
-	pdbs/pdb_factory_online.cc
         pdbs/pdb_heuristic.cc
-	pdbs/pdb_heuristic_online.cc
         pdbs/types.cc
         pdbs/validation.cc
         pdbs/zero_one_pdbs.cc
         pdbs/zero_one_pdbs_heuristic.cc
-
 )
 
 fast_downward_plugin(
@@ -506,7 +501,6 @@ fast_downward_plugin(
         potentials/util.cc
     DEPENDS LP_SOLVER
 )
-
 fast_downward_plugin(
     NAME SS
     HELP "Plugin containing the code for Stratified Sampling (Levi Lelis, Adapted by Santiago Franco & Marvin Abissor)"
@@ -518,6 +512,33 @@ fast_downward_plugin(
 	ss/node2.h 
 	ss/node.h 
 )
+
+fast_downward_plugin(
+    NAME SYMBOLIC
+    HELP "Plugin containing the base for symbolic search"
+    SOURCES
+        symbolic/sym_variables.cc
+        symbolic/opt_order.cc
+        symbolic/sym_util.cc
+        symbolic/sym_enums.cc
+        symbolic/sym_transition.cc
+        symbolic/sym_bucket.cc
+        symbolic/sym_controller.cc
+        symbolic/sym_solution.cc
+        symbolic/sym_state_space_manager.cc
+        symbolic/original_state_space.cc
+        symbolic/sym_pdb.cc
+	symbolic/closed_list.cc
+        symbolic/sym_heuristic.cc
+        symbolic/sym_estimate.cc
+        symbolic/sym_params_search.cc
+        symbolic/sym_state_space_manager.cc
+	symbolic/sym_search.cc
+	symbolic/unidirectional_search.cc
+
+    DEPENDENCY_ONLY 
+)
+
 
 
 fast_downward_add_plugin_sources(PLANNER_SOURCES)
