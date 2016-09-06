@@ -20,7 +20,7 @@ public:
     SymPDB(SymVariables *bdd_vars, const SymParamsMgr &params, OperatorCost cost_type_,
            AbsTRsStrategy absTRsStrategy, const std::set<int> &relVars);
 
-    SymPDB(std::shared_ptr<SymStateSpaceManager> &parent,
+    SymPDB(std::shared_ptr<SymStateSpaceManager> parent,
            AbsTRsStrategy absTRsStrategy, const std::set<int> &relVars);
 
     virtual ~SymPDB() {}

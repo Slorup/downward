@@ -135,7 +135,7 @@ public:
                          const SymParamsMgr &params,
                          OperatorCost cost_type_); //Original state space: All vars are relevant
 
-    SymStateSpaceManager(std::shared_ptr<SymStateSpaceManager> &parent,
+    SymStateSpaceManager(std::shared_ptr<SymStateSpaceManager> parent,
                          AbsTRsStrategy abs_trs_strategy_,
                          const std::set<int> &relevantVars); //Abstract state space (PDBs)
 
@@ -310,12 +310,19 @@ public:
     void dumpMutexBDDs(bool fw) const;
 
     //Methods that require of TRs initialized
-    inline int getMinTransitionCost() {
+    inline int getMinTransitionCost() const {
         assert(!transitions.empty());
         return min_transition_cost;
     }
 
-    inline bool hasTransitions0() {
+    inline int getAbsoluteMinTransitionCost() const {
+        assert(!transitions.empty());
+	if(hasTR0) return 0;
+        return min_transition_cost;
+    }
+
+
+    inline bool hasTransitions0() const {
         assert(!transitions.empty());
         return hasTR0;
     }

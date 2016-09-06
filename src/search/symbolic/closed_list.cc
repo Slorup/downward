@@ -25,8 +25,9 @@ namespace symbolic {
     ClosedList::ClosedList() : mgr(nullptr) {
     }
 
-    void ClosedList::init(SymStateSpaceManager *manager) {
+    void ClosedList::init(SymStateSpaceManager *manager, UnidirectionalSearch * search) {
 	mgr = manager;
+	my_search = search;
 	set<int>().swap(h_values);
 	map<int, BDD>().swap(closedUpTo);
 	map <int, vector<BDD>>().swap(zeroCostClosed);
@@ -37,8 +38,9 @@ namespace symbolic {
     }
 
 
-    void ClosedList::init(SymStateSpaceManager *manager, const ClosedList &other) {
+    void ClosedList::init(SymStateSpaceManager *manager, UnidirectionalSearch * search, const ClosedList &other) {
 	mgr = manager;
+	my_search = search;
 	set<int>().swap(h_values);
 	map<int, BDD>().swap(closedUpTo);
 	map <int, vector<BDD>>().swap(zeroCostClosed);
@@ -267,7 +269,7 @@ namespace symbolic {
 	    );
     }
 
-    SymSolution ClosedList::checkCut(const BDD &states, int g, bool fw) const {
+    SymSolution ClosedList::checkCut(SymSearch * search, const BDD &states, int g, bool fw) const {
 	BDD cut_candidate = states * closedTotal;
 	if (cut_candidate.IsZero()) {
 	    return SymSolution(); //No solution yet :(
@@ -276,14 +278,13 @@ namespace symbolic {
 	for (const auto &closedH : closed) {
 	    int h = closedH.first;
 
-	    DEBUG_MSG(cout << "Check cut of g=" << g << " with h=" << h << endl;
-		);
+	    DEBUG_MSG(cout << "Check cut of g=" << g << " with h=" << h << endl;);
 	    BDD cut = closedH.second * cut_candidate;
 	    if (!cut.IsZero()) {
 		if (fw) //Solution reconstruction will fail
-		    return SymSolution(nullptr, g, h, cut);
+		    return SymSolution(search, my_search, g, h, cut);
 		else
-		    return SymSolution(nullptr, h, g, cut);
+		    return SymSolution(my_search, search, h, g, cut);
 	    }
 	}
 
@@ -332,8 +333,9 @@ namespace symbolic {
 	    }*/
 	BDD statesWithHNotClosed = !closedTotal;
 	ADD h = mgr->mgr()->constant(-1);
+	cout << "New heuristic with h [";
 	for (auto &it : closed) {
-	    cout << "Adding states with h = " << it.first << endl;
+	    cout << it.first << " ";
 	    int h_val = it.first;
 
 	    /*If h_val < previousMaxH we can put it to that value
@@ -348,8 +350,8 @@ namespace symbolic {
 		statesWithHNotClosed += it.second;
 	    }
 	}
+	cout << hNotClosed << "]" << endl;
 
-	cout << "Adding not closedTotal to " << hNotClosed << endl;
 	if (hNotClosed != numeric_limits<int>::max() && hNotClosed >= 0 && !statesWithHNotClosed.IsZero()) {
 	    h += statesWithHNotClosed.Add() * mgr->mgr()->constant(hNotClosed + 1);
 	}
@@ -368,6 +370,27 @@ namespace symbolic {
 	assert(h_values.count(hNotClosed));
     
 	return h_values;
+    }
+
+
+    double ClosedList::average_hvalue() const {
+	double averageHeuristic = 0;
+	double heuristicSize = 0; 
+	for (const auto & item : closed) {
+	    double currentSize = mgr->getVars()->numStates(item.second);
+	    DEBUG_MSG(cout << item.first << " " << currentSize << endl;);
+	    averageHeuristic += currentSize * item.first;
+	    heuristicSize += currentSize;
+	}
+	double notClosedSize = mgr->getVars()->numStates(notClosed());
+	heuristicSize += notClosedSize;
+	int maxH = (closed.empty() ? 0 : closed.rbegin()->first);
+    
+	DEBUG_MSG(cout << maxH << " " << notClosedSize << endl;
+		  cout << "Max size: " << heuristicSize << endl << endl;);
+        
+	averageHeuristic += notClosedSize * maxH;
+	return averageHeuristic / heuristicSize;
     }
 
 

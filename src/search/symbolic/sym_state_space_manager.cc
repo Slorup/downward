@@ -19,16 +19,18 @@
 using namespace std;
 
 namespace symbolic {
-SymStateSpaceManager::SymStateSpaceManager(shared_ptr<SymStateSpaceManager> &parent,
+SymStateSpaceManager::SymStateSpaceManager(shared_ptr<SymStateSpaceManager> parent,
                                            AbsTRsStrategy abs_trs_strategy_,
                                            const std::set<int> &relevantVars)
     :
       vars(parent->vars), p(parent->p), cost_type(parent->cost_type),
       parent_mgr(parent), abs_trs_strategy(abs_trs_strategy_),
       fullVars(relevantVars),
+      initialState(vars->zeroBDD()), goal(vars->zeroBDD()),
       min_transition_cost(parent->min_transition_cost),
       hasTR0(parent->hasTR0), mutexInitialized(false),
       mutexByFluentInitialized(false) {
+
     for (size_t i = 0; i < g_variable_name.size(); i++) {
         if (!fullVars.count(i)) {
             nonRelVars.insert(i);
@@ -285,7 +287,7 @@ void SymStateSpaceManager::init_mutex(const std::vector<MutexGroup> &mutex_group
         std::reverse(notMutexBDDs.begin(), notMutexBDDs.end());
         DEBUG_MSG(cout << "Mutex initialized " << (fw ? "fw" : "bw") << ". Total mutex added: " << num_mutex << " Invariant groups: " << num_invariants << endl;
                   );
-        dumpMutexBDDs(fw);
+        DEBUG_MSG(dumpMutexBDDs(fw););
     }
 
     //gst_mutex.check_mutexes(*this);

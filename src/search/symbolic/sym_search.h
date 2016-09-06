@@ -39,10 +39,6 @@ public:
 	return mgr->isOriginal();
     }
 
-    inline bool isUseful() const {
-        return isUseful(p.ratioUseful);
-    }
-
     inline bool isSearchable() const {
         return isSearchableWithNodes(p.getMaxStepNodes());
     }
@@ -71,7 +67,6 @@ public:
 
     virtual void statistics() const = 0;
 
-    virtual bool isUseful(double ratio) const = 0;
     virtual bool isSearchableWithNodes(int maxNodes) const = 0;
 
     virtual void getPlan(const BDD &cut, int g, int h, std::vector <const GlobalOperator *> &path) const = 0;

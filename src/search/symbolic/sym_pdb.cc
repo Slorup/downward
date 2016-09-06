@@ -46,7 +46,7 @@ SymPDB::SymPDB(SymVariables *bdd_vars, const SymParamsMgr &params,
     }
 }
 
-SymPDB::SymPDB(shared_ptr<SymStateSpaceManager> &parent,
+SymPDB::SymPDB(shared_ptr<SymStateSpaceManager> parent,
                AbsTRsStrategy absTRsStrategy,
                const std::set<int> &relevantVars) :
     SymStateSpaceManager(parent, absTRsStrategy, relevantVars) {

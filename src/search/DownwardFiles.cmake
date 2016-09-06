@@ -472,6 +472,7 @@ fast_downward_plugin(
         pdbs/pattern_database.cc
         pdbs/pattern_database_interface.cc
         pdbs/pattern_database_online.cc
+	pdbs/pattern_database_symbolic.cc
         pdbs/pattern_collection_generator_combo.cc
         pdbs/pattern_collection_generator_genetic.cc
         pdbs/pattern_collection_generator_hillclimbing.cc
@@ -480,11 +481,25 @@ fast_downward_plugin(
         pdbs/pattern_generator_greedy.cc
         pdbs/pattern_generator_manual.cc
         pdbs/pattern_generator.cc
+	pdbs/pdb_factory.cc
+	pdbs/pdb_factory_explicit.cc
+	pdbs/pdb_factory_online.cc
         pdbs/pdb_heuristic.cc
+	pdbs/pdb_heuristic_online.cc
         pdbs/types.cc
         pdbs/validation.cc
         pdbs/zero_one_pdbs.cc
         pdbs/zero_one_pdbs_heuristic.cc
+)
+
+
+fast_downward_plugin(
+    NAME SYMBOLIC_PDBS
+    HELP "Plugin containing the code for symbolic PDBs"
+    SOURCES
+	pdbs/pattern_database_symbolic.cc
+	pdbs/pdb_factory_symbolic.cc
+    DEPENDS PDBS SYMBOLIC
 )
 
 fast_downward_plugin(
@@ -501,6 +516,7 @@ fast_downward_plugin(
         potentials/util.cc
     DEPENDS LP_SOLVER
 )
+
 fast_downward_plugin(
     NAME SS
     HELP "Plugin containing the code for Stratified Sampling (Levi Lelis, Adapted by Santiago Franco & Marvin Abissor)"
@@ -529,12 +545,15 @@ fast_downward_plugin(
         symbolic/original_state_space.cc
         symbolic/sym_pdb.cc
 	symbolic/closed_list.cc
+	symbolic/open_list.cc
+	symbolic/frontier.cc
         symbolic/sym_heuristic.cc
         symbolic/sym_estimate.cc
         symbolic/sym_params_search.cc
         symbolic/sym_state_space_manager.cc
 	symbolic/sym_search.cc
 	symbolic/unidirectional_search.cc
+	symbolic/uniform_cost_search.cc
 
     DEPENDENCY_ONLY 
 )

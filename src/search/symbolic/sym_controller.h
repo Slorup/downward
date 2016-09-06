@@ -24,7 +24,7 @@ class SymPH;
 
 class SymController {
 protected:
-    SymVariables *vars; //The symbolic variables are declared here
+    std::shared_ptr<SymVariables> vars; //The symbolic variables are declared here
 
     SymParamsMgr mgrParams; //Parameters for SymStateSpaceManager configuration.
     SymParamsSearch searchParams; //Parameters to search the original state space
@@ -40,7 +40,7 @@ public:
     virtual bool solved() const {return false; }
 
     inline SymVariables *getVars() {
-        return vars;
+        return vars.get();
     }
 
     inline const SymParamsMgr &getMgrParams() const {

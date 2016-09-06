@@ -15,6 +15,8 @@
 #include <set>
 #include <string>
 #include <map>
+#include <cassert>
+
 
 namespace options {
 class Options;
@@ -154,11 +156,16 @@ public:
         return _manager->ReadMemoryInUse();
     }
 
+    inline double totalMemoryGB() const {
+        return _manager->ReadMemoryInUse()/(1024*1024*1024);
+    }
+
     inline BDD zeroBDD() const {
         return _manager->bddZero();
     }
 
     inline BDD oneBDD() const {
+	assert(_manager);
         return _manager->bddOne();
     }
 
@@ -188,8 +195,9 @@ public:
     }
 
     void print();
-
-    inline int *getBinaryDescription(const GlobalState &state) {
+    
+    template <class T> 
+    int *getBinaryDescription(const T &state) {
         int pos = 0;
         //  cout << "State " << endl;
         for (int v : var_order) {
@@ -209,6 +217,7 @@ public:
 
         return &(binState[0]);
     }
+
 
     inline ADD getADD(int value) {
         return _manager->constant(value);

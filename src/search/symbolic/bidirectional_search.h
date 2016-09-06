@@ -1,5 +1,5 @@
-#ifndef SYMBOLIC_BD_ASTAR_H
-#define SYMBOLIC_BD_ASTAR_H
+#ifndef SYMBOLIC_BIDIRECTIONAL_SEARCH_H
+#define SYMBOLIC_BIDIRECTIONAL_SEARCH_H
 
 #include "sym_search.h"
 #include "unidirectional_search.h"
@@ -38,10 +38,6 @@ public:
     virtual bool isSearchableWithNodes(int maxNodes) const override {
         return (searchDir != Dir::BW && fw->isSearchableWithNodes(maxNodes)) ||
                (searchDir != Dir::FW && bw->isSearchableWithNodes(maxNodes));
-    }
-
-    virtual bool isUseful(double ratio) const override {
-         return fw->isUseful(ratio) || bw->isUseful(ratio);
     }
 
     virtual long nextStepTime() const override {
@@ -95,7 +91,7 @@ public:
 
     friend std::ostream &operator<<(std::ostream &os, const BidirectionalSearch &other);
 
-    virtual void getPlan(const BDD &cut, int g, int h, std::vector <const GlobalOperator *> &path) const override;
+    // virtual void getPlan(const BDD &cut, int g, int h, std::vector <const GlobalOperator *> &path) const override;
 };
 }
 #endif

@@ -102,7 +102,7 @@ public:
         return state_space.get();
     }
 
-    std::shared_ptr<SymStateSpaceManager> &getStateSpaceRef() {
+    std::shared_ptr<SymStateSpaceManager> getStateSpaceRef() {
         return state_space;
     }
 

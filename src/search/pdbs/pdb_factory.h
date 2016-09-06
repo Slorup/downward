@@ -13,7 +13,7 @@ namespace pdbs {
 
 class PatternDatabaseInterface;
 
-class PDBFactory {
+class PDBFactory  {
 protected:
     virtual void dump_strategy_specific_options() const = 0;
 

@@ -17,7 +17,8 @@ using namespace std;
 
 namespace symbolic {
 SymController::SymController(const Options &opts)
-    : vars(new SymVariables(opts)), mgrParams(opts), searchParams(opts) {
+    : vars(make_shared<SymVariables>(opts)), 
+      mgrParams(opts), searchParams(opts) {
     mgrParams.print_options();
     searchParams.print_options();
 

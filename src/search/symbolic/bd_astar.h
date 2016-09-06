@@ -172,7 +172,7 @@ public:
 
     friend std::ostream &operator<<(std::ostream &os, const BidirectionalSearch &other);
 
-    void getPlan(const BDD &cut, int g, int h, std::vector <const GlobalOperator *> &path) const;
+    //void getPlan(const BDD &cut, int g, int h, std::vector <const GlobalOperator *> &path) const;
 };
 }
 #endif

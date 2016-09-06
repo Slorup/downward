@@ -110,7 +110,8 @@ void SymVariables::init(const vector <int> &v_order) {
     BDD TEST = getCubePre(testsetaaa);
     TEST.print(2, 2);
     */
-    cout << "Generating predicate BDDs" << endl;
+    cout << "Generating predicate BDDs: " << num_fd_vars << endl;
+    cout << var_order.size() << endl;
     preconditionBDDs.resize(num_fd_vars);
     effectBDDs.resize(num_fd_vars);
     biimpBDDs.resize(num_fd_vars);
@@ -118,6 +119,7 @@ void SymVariables::init(const vector <int> &v_order) {
     validBDD = oneBDD();
     //Generate predicate (precondition (s) and effect (s')) BDDs
     for (int var : var_order) {
+	cout << var << endl;
         for (int j = 0; j < g_variable_domain[var]; j++) {
             preconditionBDDs[var].push_back(createPreconditionBDD(var, j));
             effectBDDs[var].push_back(createEffectBDD(var, j));

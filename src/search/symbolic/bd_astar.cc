@@ -144,80 +144,80 @@ std::ostream &operator<<(std::ostream &os, const BidirectionalSearch &bdexp) {
     return os;
 }
 
-void BidirectionalSearch::getPlan(const BDD &cut,
-                       int g, int h,
-                       std::vector <const GlobalOperator *> &path) const {
-    DEBUG_MSG(cout << "Extract path forward: " << g << endl;
-              );
+// void BidirectionalSearch::getPlan(const BDD &cut,
+//                        int g, int h,
+//                        std::vector <const GlobalOperator *> &path) const {
+//     DEBUG_MSG(cout << "Extract path forward: " << g << endl;
+//               );
 
-    fw->getClosed()->extract_path(cut, g, true, path);
-    std::reverse(path.begin(), path.end());
+//     fw->getClosed()->extract_path(cut, g, true, path);
+//     std::reverse(path.begin(), path.end());
 
-    vector<int> s = g_initial_state_data;
-    //Get state
-    for (auto op : path) {
-        /*DEBUG_MSG(
-          BDD state = state_space_manager->getVars()->getStateBDD(s);
-          BDD res = state*state_space_manager->getNotMutexBDDs(false)[0];
-          if (res.IsZero()){
-          s.dump_pddl();
+//     vector<int> s = g_initial_state_data;
+//     //Get state
+//     for (auto op : path) {
+//         /*DEBUG_MSG(
+//           BDD state = state_space_manager->getVars()->getStateBDD(s);
+//           BDD res = state*state_space_manager->getNotMutexBDDs(false)[0];
+//           if (res.IsZero()){
+//           s.dump_pddl();
 
-          for(auto & mg : g_mutex_groups){
-          int count = 0;
-          for(auto f : mg.getFacts()){
-          if(s[f.first] == f.second){
-          count ++;
-          }
-          }
-          if(count > 1){
-          cout <<endl << mg << endl;
-          exit(0);
-          }else if (count == 0 && mg.isExactlyOne()){
-          cout << "EXACTLY ONE: " << endl << mg << endl;
-          exit(0);
-          }
-          }
-          cout << "No mutex group " << endl;
-          exit(0);
-          }
-          cout << op->get_name() << endl;
-          if(!op->is_applicable(s)){
-          cout << "ERROR: bad plan reconstruction" << endl;
-          cout << op->get_name() << " is not applicable" << endl;
-          exit(-1);
-          });*/
+//           for(auto & mg : g_mutex_groups){
+//           int count = 0;
+//           for(auto f : mg.getFacts()){
+//           if(s[f.first] == f.second){
+//           count ++;
+//           }
+//           }
+//           if(count > 1){
+//           cout <<endl << mg << endl;
+//           exit(0);
+//           }else if (count == 0 && mg.isExactlyOne()){
+//           cout << "EXACTLY ONE: " << endl << mg << endl;
+//           exit(0);
+//           }
+//           }
+//           cout << "No mutex group " << endl;
+//           exit(0);
+//           }
+//           cout << op->get_name() << endl;
+//           if(!op->is_applicable(s)){
+//           cout << "ERROR: bad plan reconstruction" << endl;
+//           cout << op->get_name() << " is not applicable" << endl;
+//           exit(-1);
+//           });*/
 
-        for (const GlobalEffect &eff : op->get_effects()) {
-            if (eff.does_fire(s)) {
-                s[eff.var] = eff.val;
-            }
-        }
-    }
+//         for (const GlobalEffect &eff : op->get_effects()) {
+//             if (eff.does_fire(s)) {
+//                 s[eff.var] = eff.val;
+//             }
+//         }
+//     }
 
-    BDD newCut = state_space_manager->getVars()->getStateBDD(s);
+//     BDD newCut = state_space_manager->getVars()->getStateBDD(s);
 
-    DEBUG_MSG(cout << "Extract path backward: " << h << endl;
-              );
+//     DEBUG_MSG(cout << "Extract path backward: " << h << endl;
+//               );
 
-    bw->getClosed()->extract_path(newCut, h, false, path);
-    /*DEBUG_MSG(cout << "Path extracted" << endl;
-      State s2 (*g_initial_state);
-      //Get state
-      for(auto op : path){
-      cout << op->get_name() << endl;
-      if(!op->is_applicable(s2)){
-      cout << "ERROR: bad plan reconstruction" << endl;
-      cout << op->get_name() << " is not applicable" << endl;
-      exit(-1);
-      }
-      s2 = State(s2, *op);
-      }
-      if(!test_goal(s2)){
-      cout << "ERROR: bad plan reconstruction" << endl;
-      cout << "The plan ends on a non-goal state" << endl;
-      exit(-1);
-      });*/
-}
+//     bw->getClosed()->extract_path(newCut, h, false, path);
+//     /*DEBUG_MSG(cout << "Path extracted" << endl;
+//       State s2 (*g_initial_state);
+//       //Get state
+//       for(auto op : path){
+//       cout << op->get_name() << endl;
+//       if(!op->is_applicable(s2)){
+//       cout << "ERROR: bad plan reconstruction" << endl;
+//       cout << op->get_name() << " is not applicable" << endl;
+//       exit(-1);
+//       }
+//       s2 = State(s2, *op);
+//       }
+//       if(!test_goal(s2)){
+//       cout << "ERROR: bad plan reconstruction" << endl;
+//       cout << "The plan ends on a non-goal state" << endl;
+//       exit(-1);
+//       });*/
+// }
 
 bool BidirectionalSearch::isExpFor(BidirectionalSearch *bdExp) const {
     if (!parent) {
