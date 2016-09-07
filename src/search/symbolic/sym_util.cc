@@ -2,7 +2,7 @@
 
 
 namespace symbolic {
-SymTransition mergeTR(SymTransition tr, const SymTransition &tr2, int maxSize) {
+TransitionRelation mergeTR(TransitionRelation tr, const TransitionRelation &tr2, int maxSize) {
     tr.merge(tr2, maxSize);
     return tr;
 }

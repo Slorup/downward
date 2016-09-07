@@ -206,7 +206,7 @@ void SymAstarClosed::extract_path(const BDD &c, int h, bool fw,
                   cout << c.first << " ";
               cout << endl;
               );
-    const map<int, vector<SymTransition>> &trs = mgr->getIndividualTRs();
+    const map<int, vector<TransitionRelation>> &trs = mgr->getIndividualTRs();
     BDD cut = c;
     size_t steps0 = 0;
     if (zeroCostClosed.count(h)) {
@@ -223,7 +223,7 @@ void SymAstarClosed::extract_path(const BDD &c, int h, bool fw,
             DEBUG_MSG(cout << "cut not found with steps0. Try to find with preimage: " << trs.count(0) << endl;
                       );
             bool foundZeroCost = false;
-            for (const SymTransition &tr : trs.at(0)) {
+            for (const TransitionRelation &tr : trs.at(0)) {
                 if (foundZeroCost)
                     break;
                 BDD succ;
@@ -266,7 +266,7 @@ void SymAstarClosed::extract_path(const BDD &c, int h, bool fw,
             bool foundZeroCost = false;
             //Apply 0-cost operators
             if (trs.count(0)) {
-                for (const SymTransition &tr : trs.at(0)) {
+                for (const TransitionRelation &tr : trs.at(0)) {
                     if (foundZeroCost)
                         break;
                     BDD succ;
@@ -316,7 +316,7 @@ void SymAstarClosed::extract_path(const BDD &c, int h, bool fw,
                 int newH = h - key.first;
                 if (key.first == 0 || closed.count(newH) == 0)
                     continue;
-                for (SymTransition &tr : key.second) {
+                for (TransitionRelation &tr : key.second) {
                     //DEBUG_MSG(cout << "Check " << tr.getOps().size() << " " << (*(tr.getOps().begin()))->get_name() << " of cost " << key.first << " in h=" << newH << endl;);
                     BDD succ;
                     if (fw) {

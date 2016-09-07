@@ -2,7 +2,7 @@
 #define SYMBOLIC_SYM_UTIL_H
 
 #include "sym_variables.h"
-#include "sym_transition.h"
+#include "transition_relation.h"
 #include "sym_bucket.h"
 
 #include <math.h>
@@ -124,7 +124,7 @@ void merge(std::vector<T> &elems, FunctionMerge f, int maxSize) {
 }
 
 
-SymTransition mergeTR(SymTransition tr, const SymTransition &tr2, int maxSize);
+TransitionRelation mergeTR(TransitionRelation tr, const TransitionRelation &tr2, int maxSize);
 BDD mergeAndBDD(const BDD &bdd, const BDD &bdd2, int maxSize);
 BDD mergeOrBDD(const BDD &bdd, const BDD &bdd2, int maxSize);
 

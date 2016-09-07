@@ -1,7 +1,7 @@
 #include "sym_pdb.h"
 
 #include "sym_util.h"
-#include "sym_transition.h"
+#include "transition_relation.h"
 
 #include "../utils/system.h"
 
@@ -103,7 +103,7 @@ void SymPDB::init_individual_trs() {
 // }
 
 
-/*void SymPDB::getTransitions(map<int, std::vector <SymTransition> > & trs) const{
+/*void SymPDB::getTransitions(map<int, std::vector <TransitionRelation> > & trs) const{
   cout << "Initialize trs "<< *this << endl;
   for(int i = 0; i < g_operators.size(); i++){
   const Operator * op = &(g_operators[i]);
@@ -114,9 +114,9 @@ void SymPDB::init_individual_trs() {
   int cost = op->get_cost();
 
   if(cost == 0){
-  trs[0].push_back(SymTransition(vars, op, cost, *this));
+  trs[0].push_back(TransitionRelation(vars, op, cost, *this));
   }else{
-  trs[cost].push_back(SymTransition(vars, op, cost, *this));
+  trs[cost].push_back(TransitionRelation(vars, op, cost, *this));
   }
   }
   }*/

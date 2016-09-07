@@ -36,7 +36,7 @@ void OriginalStateSpace::init_individual_trs() {
         int cost = cost_type->get_adjusted_cost(i);
         DEBUG_MSG(cout << "Creating TR of op " << i << " of cost " << cost << endl;
                   );
-        indTRs[cost].push_back(move(SymTransition(vars, op, cost)));
+        indTRs[cost].push_back(move(TransitionRelation(vars, op, cost)));
         if (p.mutex_type == MutexType::MUTEX_EDELETION) {
             indTRs[cost].back().edeletion(*this);
         }

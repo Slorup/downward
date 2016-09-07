@@ -20,7 +20,7 @@ class Options;
 
 namespace symbolic {
 class SymVariables;
-class SymTransition;
+class TransitionRelation;
 
 /*
  * All the methods may throw exceptions in case the time or nodes are exceeded.
@@ -63,12 +63,12 @@ protected:
     BDD initialState; // initial state
     BDD goal; // bdd representing the true (i.e. not simplified) goal-state
 
-    std::map<int, std::vector <SymTransition>> transitions; //TRs
+    std::map<int, std::vector <TransitionRelation>> transitions; //TRs
     int min_transition_cost; //minimum cost of non-zero cost transitions
     bool hasTR0; //If there is transitions with cost 0
 
     //Individual TRs: Useful for shrink and plan construction
-    std::map<int, std::vector <SymTransition>> indTRs;
+    std::map<int, std::vector <TransitionRelation>> indTRs;
 
     bool mutexInitialized, mutexByFluentInitialized;
 
@@ -94,15 +94,15 @@ protected:
     virtual ADD getExplicitHeuristicADD(bool fw) = 0;
     virtual void getExplicitHeuristicBDD(bool fw, std::map<int, BDD> &res) = 0;
 
-    virtual void getTransitions(const std::map<int, std::vector <SymTransition>> & /*individualTRs*/,
-                                std::map<int, std::vector <SymTransition>> & /*res*/) const {
+    virtual void getTransitions(const std::map<int, std::vector <TransitionRelation>> & /*individualTRs*/,
+                                std::map<int, std::vector <TransitionRelation>> & /*res*/) const {
         std::cerr << "REBUILD TRs not supported by " << *this << std::endl;
         utils::exit_with(utils::ExitCode::UNSUPPORTED);
     }
 
-    void shrinkTransitions(const std::map<int, std::vector <SymTransition>> &trs,
-                           const std::map<int, std::vector <SymTransition>> &indTRs,
-                           std::map<int, std::vector <SymTransition>> &res,
+    void shrinkTransitions(const std::map<int, std::vector <TransitionRelation>> &trs,
+                           const std::map<int, std::vector <TransitionRelation>> &indTRs,
+                           std::map<int, std::vector <TransitionRelation>> &res,
                            int maxTime, int maxNodes) const;
 
     BDD getRelVarsCubePre() const {
@@ -240,7 +240,7 @@ public:
         return goal;
     }
 
-    const std::map<int, std::vector <SymTransition>> &getIndividualTRs() {
+    const std::map<int, std::vector <TransitionRelation>> &getIndividualTRs() {
         if (indTRs.empty())
             init_individual_trs();
         return indTRs;

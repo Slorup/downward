@@ -22,7 +22,7 @@ class DominanceRelation;
  * Label refers to variables not considered in the merge-and-shrink
  * Each label has one or more abstract state transitions
  */
-class SymTransition {
+class TransitionRelation {
     SymVariables *sV; //To call basic BDD creation methods
     int cost; // transition cost
     BDD tBDD; // bdd for making the relprod
@@ -37,16 +37,16 @@ class SymTransition {
     const SymStateSpaceManager *absAfterImage;
 public:
     //Constructor for abstraction transitions
-    SymTransition(SymStateSpaceManager *mgr,
+    TransitionRelation(SymStateSpaceManager *mgr,
                   const DominanceRelation &sim_relations);
 
     //Constructor for transitions irrelevant for the abstraction
-    SymTransition(SymVariables *sVars,
+    TransitionRelation(SymVariables *sVars,
                   const GlobalOperator *op, int cost_);
 
 
     //Copy constructor
-    SymTransition(const SymTransition &) = default;
+    TransitionRelation(const TransitionRelation &) = default;
 
     BDD image(const BDD &from) const;
     BDD preimage(const BDD &from) const;
@@ -55,7 +55,7 @@ public:
 
     void edeletion(SymStateSpaceManager &mgr); //Includes mutex into the transition
 
-    void merge(const SymTransition &t2,
+    void merge(const TransitionRelation &t2,
                int maxNodes);
 
     //shrinks the transition to another abstract state space (useful to preserve edeletion)
@@ -91,7 +91,7 @@ public:
         return tBDD;
     }
 
-    friend std::ostream &operator<<(std::ostream &os, const SymTransition &tr);
+    friend std::ostream &operator<<(std::ostream &os, const TransitionRelation &tr);
 };
 }
 #endif

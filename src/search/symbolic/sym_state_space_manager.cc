@@ -69,13 +69,13 @@ void SymStateSpaceManager::init_transitions_from_individual_trs() {
 
     DEBUG_MSG(cout << "Generate individual TRs" << endl;
               );
-    transitions = map<int, vector <SymTransition>> (indTRs);     //Copy
+    transitions = map<int, vector <TransitionRelation>> (indTRs);     //Copy
     DEBUG_MSG(cout << "Individual TRs generated" << endl;
               );
     min_transition_cost = 0;
     hasTR0 = transitions.count(0) > 0;
 
-    for (map<int, vector<SymTransition>>::iterator it = transitions.begin();
+    for (map<int, vector<TransitionRelation>>::iterator it = transitions.begin();
          it != transitions.end(); ++it) {
         merge(vars, it->second, mergeTR, p.max_tr_time, p.max_tr_size);
 
@@ -498,7 +498,7 @@ void SymStateSpaceManager::init_transitions() {
         auto parent = parent_mgr.lock();
         assert(!parent->transitions.empty());
 
-        map<int, vector <SymTransition>> failedToShrink;
+        map<int, vector <TransitionRelation>> failedToShrink;
         switch (abs_trs_strategy) {
         case AbsTRsStrategy::TR_SHRINK:
             for (const auto &trsParent : parent->transitions) {
@@ -509,7 +509,7 @@ void SymStateSpaceManager::init_transitions() {
 
                 double num_trs = parent->transitions.size() * trsParent.second.size();
                 for (const auto &trParent : trsParent.second) {
-                    SymTransition absTransition = SymTransition(trParent);
+                    TransitionRelation absTransition = TransitionRelation(trParent);
                     DEBUG_MSG(cout << "SHRINK: " << absTransition << " time_out: "
                                    << 1 + p.max_aux_time / num_trs << " max nodes: "
                                    << 1 + p.max_aux_nodes << endl;
@@ -533,7 +533,7 @@ void SymStateSpaceManager::init_transitions() {
                     cout << "Failed ops" << endl;
                     for (const auto &trParent : indTRs.at(cost)) {
                         if (trParent.hasOp(failed_ops)) {
-                            SymTransition absTransition = SymTransition(trParent);
+                            TransitionRelation absTransition = TransitionRelation(trParent);
                             vars->setTimeLimit(p.max_aux_time);
                             try{
                                 absTransition.shrink(*this, p.max_aux_nodes);
@@ -556,7 +556,7 @@ void SymStateSpaceManager::init_transitions() {
                           );
 
                 for (const auto &trParent : indTRsCost.second) {
-                    SymTransition absTransition = SymTransition(trParent);
+                    TransitionRelation absTransition = TransitionRelation(trParent);
                     try{
                         vars->setTimeLimit(p.max_aux_time);
                         absTransition.shrink(*this, p.max_aux_nodes);
@@ -576,7 +576,7 @@ void SymStateSpaceManager::init_transitions() {
                 int cost = t.first;
 
                 for (const auto &tr : t.second) {
-                    SymTransition newTR = tr;
+                    TransitionRelation newTR = tr;
                     newTR.setAbsAfterImage(this);
                     transitions[cost].push_back(newTR);
                 }

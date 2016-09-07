@@ -538,7 +538,7 @@ fast_downward_plugin(
         symbolic/opt_order.cc
         symbolic/sym_util.cc
         symbolic/sym_enums.cc
-        symbolic/sym_transition.cc
+        symbolic/transition_relation.cc
         symbolic/sym_bucket.cc
         symbolic/sym_controller.cc
         symbolic/sym_solution.cc

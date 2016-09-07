@@ -1,4 +1,4 @@
-#include "sym_transition.h"
+#include "transition_relation.h"
 
 #include <algorithm>
 #include <cassert>
@@ -14,7 +14,7 @@
 using namespace std;
 
 namespace symbolic {
-// SymTransition::SymTransition(SymStateSpaceManager * mgr,
+// TransitionRelation::TransitionRelation(SymStateSpaceManager * mgr,
 //                           const DominanceRelation & dominance_relation) :
 //   sV(mgr->getVars()), cost(0), tBDD (mgr->getVars()->oneBDD()),
 //   existsVars(mgr->getVars()->oneBDD()), existsBwVars(mgr->getVars()->oneBDD()),
@@ -76,7 +76,7 @@ namespace symbolic {
 //   }
 // }
 
-SymTransition::SymTransition(SymVariables *sVars,
+TransitionRelation::TransitionRelation(SymVariables *sVars,
                              const GlobalOperator *op, int cost_) :
     sV(sVars),
     cost(cost_), tBDD(sVars->oneBDD()),
@@ -150,7 +150,7 @@ SymTransition::SymTransition(SymVariables *sVars,
     //DEBUG_MSG(cout << "Computing tr took " << tr_timer; tBDD.print(1, 1););
 }
 
-void SymTransition::shrink(const SymStateSpaceManager &abs, int maxNodes) {
+void TransitionRelation::shrink(const SymStateSpaceManager &abs, int maxNodes) {
     tBDD = abs.shrinkTBDD(tBDD, maxNodes);
 
     // effVars
@@ -163,7 +163,7 @@ void SymTransition::shrink(const SymStateSpaceManager &abs, int maxNodes) {
     newEffVars.swap(effVars);
 }
 
-// bool SymTransition::setMaSAbstraction(SymAbstraction */* abs*/,
+// bool TransitionRelation::setMaSAbstraction(SymAbstraction */* abs*/,
 //                                    const BDD & bddSrc,
 //                                    const BDD & bddTarget){
 //   // existsVars += abs.getRelVarsCubePre();
@@ -178,13 +178,13 @@ void SymTransition::shrink(const SymStateSpaceManager &abs, int maxNodes) {
 //   return true;
 // }
 
-// SymTransition::SymTransition(const SymTransition & ot) : cost(ot.cost), tBDD(ot.tBDD),
+// TransitionRelation::TransitionRelation(const TransitionRelation & ot) : cost(ot.cost), tBDD(ot.tBDD),
 //                                                       existsVars (ot.existsVars), existsBwVars (ot.existsBwVars),
 //                                                       swapVarsS(ot.swapVarsS), swapVarsSp (ot.swapVarsSp),
 //                                                       id(ot.id), effVars(ot.effVars), ops(ot.ops){
 //   }
 
-BDD SymTransition::image(const BDD &from) const {
+BDD TransitionRelation::image(const BDD &from) const {
     BDD aux = from;
     if (!swapVarsA.empty()) {
         aux = from.SwapVariables(swapVarsA, swapVarsAp);
@@ -198,7 +198,7 @@ BDD SymTransition::image(const BDD &from) const {
     return res;
 }
 
-BDD SymTransition::image(const BDD &from, int maxNodes) const {
+BDD TransitionRelation::image(const BDD &from, int maxNodes) const {
     DEBUG_MSG(cout << "Image cost " << cost << " from " << from.nodeCount() << " with " << tBDD.nodeCount();
               );
     BDD aux = from;
@@ -223,7 +223,7 @@ BDD SymTransition::image(const BDD &from, int maxNodes) const {
     return res;
 }
 
-BDD SymTransition::preimage(const BDD &from) const {
+BDD TransitionRelation::preimage(const BDD &from) const {
     BDD tmp = from.SwapVariables(swapVarsS, swapVarsSp);
     BDD res = tBDD.AndAbstract(tmp, existsBwVars);
     if (!swapVarsA.empty()) {
@@ -235,7 +235,7 @@ BDD SymTransition::preimage(const BDD &from) const {
     return res;
 }
 
-BDD SymTransition::preimage(const BDD &from, int maxNodes) const {
+BDD TransitionRelation::preimage(const BDD &from, int maxNodes) const {
     utils::Timer t;
     DEBUG_MSG(cout << "Image cost " << cost << " from " << from.nodeCount() << " with " << tBDD.nodeCount() << flush;
               );
@@ -259,7 +259,7 @@ BDD SymTransition::preimage(const BDD &from, int maxNodes) const {
     return res;
 }
 
-void SymTransition::merge(const SymTransition &t2,
+void TransitionRelation::merge(const TransitionRelation &t2,
                           int maxNodes) {
     assert(cost == t2.cost);
     if (cost != t2.cost) {
@@ -381,7 +381,7 @@ void SymTransition::merge(const SymTransition &t2,
 
 
 
-// SymTransition::SymTransition(const SymAbstraction & abs,
+// TransitionRelation::TransitionRelation(const SymAbstraction & abs,
 //                           const SymVariables * sV,
 //                           const GlobalOperator * op, int cost_) :
 //   cost (cost_),
@@ -474,7 +474,7 @@ void SymTransition::merge(const SymTransition &t2,
 // }
 
 
-void SymTransition::edeletion(SymStateSpaceManager &mgr) {
+void TransitionRelation::edeletion(SymStateSpaceManager &mgr) {
     if (ops.size() != 1) {
         cerr << "Error, trying to apply edeletion over a transition with more than one op" << endl;
         utils::exit_with(utils::ExitCode::CRITICAL_ERROR);
@@ -514,7 +514,7 @@ void SymTransition::edeletion(SymStateSpaceManager &mgr) {
 }
 
 
-ostream &operator<<(std::ostream &os, const SymTransition &tr) {
+ostream &operator<<(std::ostream &os, const TransitionRelation &tr) {
     os << "TR(";
     for (auto op : tr.ops) {
         os << op->get_name() << ", ";
@@ -525,7 +525,7 @@ ostream &operator<<(std::ostream &os, const SymTransition &tr) {
 
 
 
-// SymTransition::SymTransition(const SymVariables * sV, const Operator * op,
+// TransitionRelation::TransitionRelation(const SymVariables * sV, const Operator * op,
 //            int cost_, const SymAbstraction & abs):
 //   cost (cost_), tBDD (sV->oneBDD()),
 //   existsVars(sV->oneBDD()), existsBwVars(sV->oneBDD()), id (op->get_name()) {
