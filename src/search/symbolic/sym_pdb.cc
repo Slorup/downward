@@ -60,7 +60,6 @@ SymPDB::SymPDB(shared_ptr<SymStateSpaceManager> parent,
     }
 }
 
-
 BDD SymPDB::shrinkExists(const BDD &bdd, int maxNodes) const {
     return bdd.ExistAbstract(nonRelVarsCube, maxNodes);
 }

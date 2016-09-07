@@ -19,9 +19,9 @@
 using namespace std;
 
 namespace symbolic {
-SymStateSpaceManager::SymStateSpaceManager(shared_ptr<SymStateSpaceManager> parent,
-                                           AbsTRsStrategy abs_trs_strategy_,
-                                           const std::set<int> &relevantVars)
+    SymStateSpaceManager::SymStateSpaceManager(shared_ptr<SymStateSpaceManager> parent,
+					       AbsTRsStrategy abs_trs_strategy_,
+					       const std::set<int> &relevantVars)
     :
       vars(parent->vars), p(parent->p), cost_type(parent->cost_type),
       parent_mgr(parent), abs_trs_strategy(abs_trs_strategy_),
@@ -36,74 +36,30 @@ SymStateSpaceManager::SymStateSpaceManager(shared_ptr<SymStateSpaceManager> pare
             nonRelVars.insert(i);
         }
     }
+
+
 }
 
 SymStateSpaceManager::SymStateSpaceManager(SymVariables *v,
-                                           const SymParamsMgr &params,
-                                           OperatorCost cost_type_) :
-    vars(v), p(params), cost_type(cost_type_),
-    abs_trs_strategy(AbsTRsStrategy::REBUILD_TRS),
-    initialState(v->zeroBDD()), goal(v->zeroBDD()),
-    min_transition_cost(0), hasTR0(false),
-    mutexInitialized(false),
-    mutexByFluentInitialized(false) {
-    for (const auto &op : g_operators) {
-        //if (op.is_dead()) continue;
-
-        if (min_transition_cost == 0 || min_transition_cost > get_adjusted_action_cost(op, cost_type)) {
-            min_transition_cost = get_adjusted_action_cost(op, cost_type);
-        }
-        if (get_adjusted_action_cost(op, cost_type) == 0) {
-            hasTR0 = true;
-        }
+					       const SymParamsMgr &params,
+					       OperatorCost cost_type_) :
+	vars(v), p(params), cost_type(make_shared<OperatorCostConstant>(cost_type_)),
+	abs_trs_strategy(AbsTRsStrategy::REBUILD_TRS),
+	initialState(v->zeroBDD()), goal(v->zeroBDD()),
+	min_transition_cost(0), hasTR0(false),
+	mutexInitialized(false),
+	mutexByFluentInitialized(false) {
+    for (size_t i = 0; i < g_operators.size(); ++i) {
+	if (min_transition_cost == 0 || min_transition_cost > cost_type->get_adjusted_cost(i)) {
+	    min_transition_cost = cost_type->get_adjusted_cost(i);
+	}
+	if (cost_type->get_adjusted_cost(i) == 0) {
+	    hasTR0 = true;
+	}
     }
 }
 
 
-// SymStateSpaceManager::SymStateSpaceManager(SymVariables * v, const SymParamsMgr & params,
-//                                             OperatorCost cost_type_, const set<int> & /*relVars*/) :
-//      vars(v), p(params), cost_type(cost_type_),
-//      initialState(v->zeroBDD()), goal(v->zeroBDD()),
-//      min_transition_cost(0), hasTR0(false),
-//      mutexInitialized(false),
-//      mutexByFluentInitialized(false)  {
-
-//      for(const auto & op : g_operators){
-//          //if (op.is_dead()) continue;
-
-//          if(min_transition_cost == 0 || min_transition_cost > get_adjusted_action_cost(op, cost_type)){
-//              min_transition_cost = get_adjusted_action_cost(op, cost_type);
-//          }
-//          if(get_adjusted_action_cost(op, cost_type) == 0){
-//              hasTR0 = true;
-//          }
-//      }
-// }
-
-
-// SymStateSpaceManager::SymStateSpaceManager(SymStateSpaceManager * mgr,
-//                                             const SymParamsMgr & params) : vars(mgr->vars), p(params), cost_type(mgr->cost_type),
-//                                                                            parentMgr(mgr),  initialState(mgr->zeroBDD()),
-//                                                                            goal(mgr->zeroBDD()),
-//                                                                            min_transition_cost(0), hasTR0(false),
-
-//                                                                            mutexInitialized(false), mutexByFluentInitialized(false)   {
-//      if(mgr){
-//          min_transition_cost = mgr->getMinTransitionCost();
-//          hasTR0 = mgr->hasTransitions0();
-//      }else{
-//          for(const auto & op : g_operators){
-//              //if (op.is_dead()) continue;
-
-//              if(min_transition_cost == 0 || min_transition_cost >  get_adjusted_action_cost(op, cost_type)){
-//                  min_transition_cost = get_adjusted_action_cost(op, cost_type);
-//              }
-//              if(get_adjusted_action_cost(op, cost_type) == 0){
-//                  hasTR0 = true;
-//              }
-//          }
-//      }
-// }
 
 void SymStateSpaceManager::init_transitions_from_individual_trs() {
     if (!transitions.empty())

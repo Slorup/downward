@@ -2,9 +2,9 @@
 #define SYMBOLIC_SYM_TRANSITION_H
 
 #include "../global_operator.h"
+
+
 #include "sym_variables.h"
-//#include "../cudd-2.5.0/cudd/cudd.h"
-//#include "../cudd-2.5.0/obj/cuddObj.hh"
 
 #include <set>
 #include <vector>
@@ -43,6 +43,7 @@ public:
     //Constructor for transitions irrelevant for the abstraction
     SymTransition(SymVariables *sVars,
                   const GlobalOperator *op, int cost_);
+
 
     //Copy constructor
     SymTransition(const SymTransition &) = default;

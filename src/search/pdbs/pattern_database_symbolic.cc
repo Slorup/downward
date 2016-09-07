@@ -42,6 +42,7 @@ namespace pdbs {
 	       /*&& (!solution.solved() || originalsearch.getF() < solution.getCost())*/) {
 	    search.step();
 	} 
+	
 	average = search.getClosed()->average_hvalue();
 	//cout << "Average: " << average << endl;
 	heuristic = make_unique<ADD>(search.getHeuristic());

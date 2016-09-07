@@ -55,7 +55,7 @@ namespace symbolic {
 	DEBUG_MSG(cout << "Init perfect heuristic: " << endl;);
 	if (closed_opposite) {
 	    perfectHeuristic = closed_opposite;
-	} else {
+	} else if (!isAbstracted()) { 
 	    if(fw){
 	        perfectHeuristic = make_shared<OppositeFrontierFixed>(mgr->getGoal(), *mgr);
 	    }else{
@@ -68,19 +68,6 @@ namespace symbolic {
 	if(!isAbstracted()) engine->setLowerBound(getF());
 
 	return true;
-    }
-
-    void UniformCostSearch::closeStates(Bucket & bucket, int g_val) {
-	if(!isAbstracted() && lastStepCost && g_val == 0){
-	    return; //Avoid closing init twice
-	} 
-	DEBUG_MSG (cout <<"Insert g="<< g_val << " states into closed: " << nodeCount(bucket) << " (" << bucket.size() << " bdds)" << endl;);
-
-	for(const BDD & states : bucket){
-	    DEBUG_MSG (cout <<"Closing: " << states.nodeCount() << endl;);
-
-	    closed->insert(g_val, states);
-	}
     }
 
     void UniformCostSearch::checkCutOriginal(Bucket & bucket, int g_val){
@@ -101,50 +88,50 @@ namespace symbolic {
 	}
     }
 
-
-
-/* pop() must recompute the current g and f value, 
-   extract states with those values from open,
-   remove duplicates, classify h and put them on Sfilter. */
-    void UniformCostSearch::pop(){
-	DEBUG_MSG(cout << "POP: bucketReady: " << frontier.bucketReady() << endl;);
-	if(frontier.bucketReady() || frontier.expansionReady() || engine->solved()){
-	    return;
-	}
-
-	if(open_list.empty()){
-	    return; //Search finished
-	}
-
-	open_list.pop(frontier);
-	
-	if (mgr->isOriginal()) {
-	    checkCutOriginal(frontier.bucket(), frontier.g());
-	}
-	frontier.filter(!closed->notClosed());
-	if (perfectHeuristic && perfectHeuristic->exhausted()) {
-	    frontier.filter(perfectHeuristic->notClosed());
-	}
-	mgr->filterMutex(frontier.bucket(), fw, initialization());
-	removeZero(frontier.bucket());
-	
-	// Close and move to reopen
-	closeStates(frontier.bucket(), frontier.g());
-	closed->setHNotClosed(open_list.minNextG(frontier.g(), mgr->getAbsoluteMinTransitionCost()));
-	closed->setFNotClosed(getF());
-   
-	computeEstimation(true);
-    }
-
-
-    bool UniformCostSearch::prepareBucket(){
+    void UniformCostSearch::prepareBucket(){
 	if(!frontier.bucketReady()){
-	    pop();
+	    DEBUG_MSG(cout << "POP: bucketReady: " << frontier.bucketReady() << endl;);
+
+	    if(open_list.empty()){
+		closed->setHNotClosed(numeric_limits<int>::max());
+		closed->setFNotClosed(numeric_limits<int>::max());
+		return; //Search finished
+	    }
+
+	    open_list.pop(frontier);
+	    assert(!frontier.empty() || frontier.g() == numeric_limits<int>::max() );
+	    if (mgr->isOriginal()) {
+		checkCutOriginal(frontier.bucket(), frontier.g());
+	    }
+	    frontier.filter(!closed->notClosed());
+	    if (perfectHeuristic && perfectHeuristic->exhausted()) {
+		frontier.filter(perfectHeuristic->notClosed());
+	    }
+	    mgr->filterMutex(frontier.bucket(), fw, initialization());
+	    removeZero(frontier.bucket());
+	
+	    // Close and move to reopen
+
+	    if(isAbstracted() || !lastStepCost || frontier.g() != 0){
+		//Avoid closing init twice
+		DEBUG_MSG (cout <<"Insert g="<< frontier.g() << " states into closed: " << 
+			   nodeCount(frontier.bucket()) << " (" << frontier.bucket().size() << " bdds)" << endl;);
+		for(const BDD & states : frontier.bucket()){
+		    DEBUG_MSG (cout <<"Closing: " << states.nodeCount() << endl;);
+
+		    closed->insert(frontier.g(), states);
+		}
+	    } 
+
+	    closed->setHNotClosed(open_list.minNextG(frontier.g(), mgr->getAbsoluteMinTransitionCost()));
+	    closed->setFNotClosed(getF());
+   
+	    computeEstimation(true);
 	}
 
 	if(engine->solved()){
 	    DEBUG_MSG(cout << "SOLVED!!!: "<< engine->getLowerBound() << " >= " << engine->getUpperBound() << endl;);
-	    return true; //If it has been solved, return 
+	    return; //If it has been solved, return 
 	}
 
 	if(initialization()){
@@ -157,9 +144,7 @@ namespace symbolic {
         Result res = frontier.prepare(maxTime, maxNodes, fw, initialization()); 
 	if(!res.ok) {
 	    violated(res.truncated_reason, res.time_spent, maxTime, maxNodes);
-	    return false;
 	}
-        return true;
     }
 
     bool UniformCostSearch::stepImage(int maxTime, int maxNodes){
@@ -227,7 +212,6 @@ namespace symbolic {
 		}
 	    }
 	    stats.add_image_time(res_expansion.time_spent);
-
 	} else {
 	    stats.add_image_time_failed(res_expansion.time_spent);
 	} 

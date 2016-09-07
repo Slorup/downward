@@ -119,7 +119,6 @@ void SymVariables::init(const vector <int> &v_order) {
     validBDD = oneBDD();
     //Generate predicate (precondition (s) and effect (s')) BDDs
     for (int var : var_order) {
-	cout << var << endl;
         for (int j = 0; j < g_variable_domain[var]; j++) {
             preconditionBDDs[var].push_back(createPreconditionBDD(var, j));
             effectBDDs[var].push_back(createEffectBDD(var, j));
@@ -281,8 +280,6 @@ void SymVariables::print() {
             file << fact << endl;
     }
 }
-
-
 
 void SymVariables::print_options() const {
     cout << "CUDD Init: nodes=" << cudd_init_nodes <<

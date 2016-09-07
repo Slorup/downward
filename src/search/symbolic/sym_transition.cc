@@ -2,7 +2,6 @@
 
 #include <algorithm>
 #include <cassert>
-
 #include "../utils/debug_macros.h"
 #include "sym_state_space_manager.h"
 //#include "sym_pdb.h"

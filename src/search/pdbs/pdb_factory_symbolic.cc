@@ -30,6 +30,8 @@ namespace pdbs {
 PDBFactorySymbolic::compute_pdb(const TaskProxy & task, 
 		    const Pattern &pattern, 
 		    const std::vector<int> &operator_costs){
+	
+
 	DEBUG_MSG(cout << "COMPUTE SYMBOLIC PDB" << endl;);
 	std::set<int> pattern_set (pattern.begin(), pattern.end()); 
 	DEBUG_MSG(cout << "Make copy" << endl;);

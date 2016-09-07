@@ -33,7 +33,7 @@ void OriginalStateSpace::init_individual_trs() {
         /*if (op->is_dead()){
           continue;
           }*/
-        int cost = get_adjusted_action_cost(*op, cost_type);
+        int cost = cost_type->get_adjusted_cost(i);
         DEBUG_MSG(cout << "Creating TR of op " << i << " of cost " << cost << endl;
                   );
         indTRs[cost].push_back(move(SymTransition(vars, op, cost)));

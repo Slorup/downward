@@ -1,7 +1,7 @@
 #ifndef SYMBOLIC_SYM_STATE_SPACE_MANAGER_H
 #define SYMBOLIC_SYM_STATE_SPACE_MANAGER_H
 
-#include "../operator_cost.h"
+#include "../operator_cost_function.h"
 #include "sym_enums.h"
 #include "sym_bucket.h"
 #include "sym_variables.h"
@@ -48,7 +48,7 @@ class SymStateSpaceManager {
 protected:
     SymVariables *vars;
     const SymParamsMgr p;
-    const OperatorCost cost_type;
+    const std::shared_ptr<OperatorCostFunction> cost_type;
 
     // Hold a reference to the parent manager that can be used during
     // initialization. Uses weak_ptr in order to allow releasing the
@@ -138,6 +138,11 @@ public:
     SymStateSpaceManager(std::shared_ptr<SymStateSpaceManager> parent,
                          AbsTRsStrategy abs_trs_strategy_,
                          const std::set<int> &relevantVars); //Abstract state space (PDBs)
+    
+    SymStateSpaceManager(std::shared_ptr<SymStateSpaceManager> parent,
+                         AbsTRsStrategy abs_trs_strategy_,
+                         const std::set<int> &relevantVars, 
+			 std::shared_ptr<OperatorCostFunction> cost_type); //Abstract state space (PDBs)
 
     virtual void init_mutex(const std::vector<MutexGroup> &mutex_groups);
 

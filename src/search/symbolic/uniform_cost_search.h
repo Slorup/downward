@@ -68,21 +68,7 @@ namespace symbolic {
 
 	void closeStates(Bucket & bucket, int g);
 
-	/*Get the next set from the open list and update g and f.
-	  Remove duplicate and spurious states. */
-	void pop();
-
-	bool prepareBucket(/*int maxTime, int maxNodes, bool afterPop*/);
-
-	/* Apply 0-cost operators over Szero. */
-	/* Puts the result on Szero. */
-	/* Includes the result on S or open (depends on the heuristic value).*/  
-	bool expand_zero(int maxTime, int maxNodes);
-  
-	/* Apply cost-operators over S. */
-	/* Insert S on closed. */
-	/* Insert successors on open.  */
-	bool expand_cost(int maxTime, int maxNodes);
+	void prepareBucket();
 
 	// Returns the subset with h_value h
 	BDD compute_heuristic(const BDD & from, int fVal, int hVal, bool store_eval); 
@@ -102,33 +88,18 @@ namespace symbolic {
 
 
 	virtual bool finished() const {
+	    assert(!open_list.empty() || !frontier.empty() || closed->getHNotClosed() == std::numeric_limits<int>::max());
 	    return open_list.empty() && frontier.empty(); 
 	}
 
 	virtual bool stepImage(int maxTime, int maxNodes);
-
 
 	bool init(std::shared_ptr<SymStateSpaceManager> manager, bool fw, 
 		  std::shared_ptr<ClosedList> closed_opposite = nullptr); // Init forward or backward search
 
 	virtual void getPlan(const BDD &cut, int g, int h, std::vector <const GlobalOperator *> &path) const override;
 
-	//Then, relaxFrontier only relaxes the first bucket to expand. 
-	//The caller should check if expansion is feasible and useful
-	//Finally, all the open list is relaxed to the new abstract state space
-	bool relaxFrontier(SymStateSpaceManager * manager, int maxTime, int maxNodes);
-
-	bool relax_open(int , int ){
-	    std::cerr << "Not implemented relax_open in sym_ucs.h" << std::endl;
-	    utils::exit_with(utils::ExitCode::UNSUPPORTED);
-	    return false;
-	}
-	void relaxClosed();
-
 	virtual ADD getHeuristic() const;
-	void notifyPrunedBy(int fVal, int gVal);
-	void notify(const Bucket & bucket, int fNotClosed = 0); //May prune  
-	void notifyNotClosed(int fValue, int hValue);
 
 	virtual bool isSearchableWithNodes(int maxNodes) const;
 

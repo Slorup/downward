@@ -28,7 +28,6 @@ class PDBFactorySymbolic : public PDBFactory, public symbolic::SymController {
 
         std::shared_ptr<symbolic::OriginalStateSpace> manager;
 
-
     protected:
 	virtual void dump_strategy_specific_options() const override;
     public:
