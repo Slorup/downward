@@ -507,11 +507,12 @@ void SymStateSpaceManager::init_transitions() {
             break;
         case AbsTRsStrategy::IND_TR_SHRINK:
             for (const auto &indTRsCost : parent->indTRs) {
-                int cost = indTRsCost.first;
-                DEBUG_MSG(cout << "Init trs with IND_TR_SHRINK: " << cost << endl;);
-
+		
                 for (const auto &trParent : indTRsCost.second) {
                     TransitionRelation absTransition = TransitionRelation(trParent);
+		    assert (absTransition.getOps().size == 1);
+		    int cost = cost_type->get_adjusted_cost(*(absTransition.getOps().begin()));
+		    if(cost != absTransition.getCost()) absTransition.set_cost(cost);
                     try{
                         vars->setTimeLimit(p.max_aux_time);
                         absTransition.shrink(*this, p.max_aux_nodes);
@@ -522,8 +523,12 @@ void SymStateSpaceManager::init_transitions() {
                         failedToShrink[cost].push_back(absTransition);
                     }
                 }
-                merge(vars, transitions[cost], mergeTR, p.max_aux_time, p.max_tr_size);
             }
+
+	    for (auto & trs : transitions) {
+                merge(vars, trs.second, mergeTR, p.max_aux_time, p.max_tr_size);
+	    }
+
             break;
         case AbsTRsStrategy::SHRINK_AFTER_IMG:
             //SetAbsAfterImage

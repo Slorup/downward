@@ -43,7 +43,6 @@ public:
     TransitionRelation(SymVariables *sVars,
                   const GlobalOperator *op, int cost_);
 
-
     //Copy constructor
     TransitionRelation(const TransitionRelation &) = default;
 
@@ -69,6 +68,10 @@ public:
 
     inline int getCost() const {
         return cost;
+    }
+
+    inline void set_cost(int cost_) {
+        cost = cost_;
     }
     inline int nodeCount() const {
         return tBDD.nodeCount();
