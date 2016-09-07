@@ -1,13 +1,12 @@
-#ifndef SYMBOLIC_SYM_TRANSITION_H
-#define SYMBOLIC_SYM_TRANSITION_H
-
-#include "../global_operator.h"
-
+#ifndef SYMBOLIC_TRANSITION_RELATION_H
+#define SYMBOLIC_TRANSITION_RELATION_H
 
 #include "sym_variables.h"
 
 #include <set>
 #include <vector>
+
+class GlobalOperator;
 
 namespace symbolic {
 class SymStateSpaceManager;

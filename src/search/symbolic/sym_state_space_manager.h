@@ -69,6 +69,7 @@ protected:
 
     //Individual TRs: Useful for shrink and plan construction
     std::map<int, std::vector <TransitionRelation>> indTRs;
+    //std::vector<TransitionRelation> indTRs;
 
     bool mutexInitialized, mutexByFluentInitialized;
 
@@ -133,7 +134,7 @@ protected:
 public:
     SymStateSpaceManager(SymVariables *v,
                          const SymParamsMgr &params,
-                         OperatorCost cost_type_); //Original state space: All vars are relevant
+                         std::shared_ptr<OperatorCostFunction> cost_type_); //Original state space: All vars are relevant
 
     SymStateSpaceManager(std::shared_ptr<SymStateSpaceManager> parent,
                          AbsTRsStrategy abs_trs_strategy_,

@@ -17,7 +17,6 @@
 #include <map>
 #include <cassert>
 
-
 namespace options {
 class Options;
 class OptionParser;
@@ -49,7 +48,7 @@ class SymVariables {
     //The variable order must be complete.
     std::vector <int> var_order; //Variable(FD) order in the BDD
     std::vector <std::vector <int>> bdd_index_pre, bdd_index_eff, bdd_index_abs; //vars(BDD) for each var(FD)
-
+    
     std::vector <std::vector <BDD>> preconditionBDDs; // BDDs associated with the precondition of a predicate
     std::vector <std::vector <BDD>> effectBDDs;      // BDDs associated with the effect of a predicate
     std::vector<BDD> biimpBDDs;  //BDDs associated with the biimplication of one variable(FD)

@@ -16,12 +16,17 @@ class SymPDB : public SymStateSpaceManager {
     virtual void init_individual_trs() override;
 
 public:
-    SymPDB(SymVariables *bdd_vars, const SymParamsMgr &params, OperatorCost cost_type_); //Creates a BDD with all variables relevant
-    SymPDB(SymVariables *bdd_vars, const SymParamsMgr &params, OperatorCost cost_type_,
-           AbsTRsStrategy absTRsStrategy, const std::set<int> &relVars);
+    SymPDB(SymVariables *bdd_vars, const SymParamsMgr &params, 
+	   std::shared_ptr<OperatorCostFunction> cost_type_); //Creates a BDD with all variables relevant
 
-    SymPDB(std::shared_ptr<SymStateSpaceManager> parent,
-           AbsTRsStrategy absTRsStrategy, const std::set<int> &relVars);
+    SymPDB(SymVariables *bdd_vars, const SymParamsMgr &params,
+           AbsTRsStrategy absTRsStrategy, const std::set<int> &relVars, 
+	   std::shared_ptr<OperatorCostFunction> cost_type_);
+
+    SymPDB(std::shared_ptr<SymStateSpaceManager> parent, 
+           AbsTRsStrategy absTRsStrategy, 
+	   const std::set<int> &relVars, 
+	   std::shared_ptr<OperatorCostFunction> cost_type_);
 
     virtual ~SymPDB() {}
     virtual BDD shrinkExists(const BDD &bdd, int maxNodes) const override;

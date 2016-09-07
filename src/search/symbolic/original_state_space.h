@@ -12,7 +12,8 @@ protected:
 
 public:
 
-    OriginalStateSpace(SymVariables *v, const SymParamsMgr &params, OperatorCost cost_type_);
+    OriginalStateSpace(SymVariables *v, const SymParamsMgr &params, 
+		       std::shared_ptr<OperatorCostFunction> cost_type_);
 
 
     virtual std::string tag() const override {

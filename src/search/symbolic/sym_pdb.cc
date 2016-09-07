@@ -9,7 +9,7 @@
 using namespace std;
 
 namespace symbolic {
-SymPDB::SymPDB(SymVariables *bdd_vars, const SymParamsMgr &params, OperatorCost cost_type_) :
+SymPDB::SymPDB(SymVariables *bdd_vars, const SymParamsMgr &params, shared_ptr<OperatorCostFunction> cost_type_) :
     SymStateSpaceManager(bdd_vars, params, cost_type_) {
     for (size_t i = 0; i < g_variable_name.size(); i++) {
         fullVars.insert(i);
@@ -26,8 +26,8 @@ SymPDB::SymPDB(SymVariables *bdd_vars, const SymParamsMgr &params, OperatorCost 
 }
 
 SymPDB::SymPDB(SymVariables *bdd_vars, const SymParamsMgr &params,
-               OperatorCost cost_type_, AbsTRsStrategy,
-               const set<int> &relevantVars) :
+	       AbsTRsStrategy, const set<int> &relevantVars, 
+               shared_ptr<OperatorCostFunction> cost_type_) :
     SymStateSpaceManager(bdd_vars, params, cost_type_) {
     fullVars = relevantVars;
     for (size_t i = 0; i < g_variable_name.size(); i++) {
@@ -46,19 +46,20 @@ SymPDB::SymPDB(SymVariables *bdd_vars, const SymParamsMgr &params,
     }
 }
 
-SymPDB::SymPDB(shared_ptr<SymStateSpaceManager> parent,
-               AbsTRsStrategy absTRsStrategy,
-               const std::set<int> &relevantVars) :
-    SymStateSpaceManager(parent, absTRsStrategy, relevantVars) {
-    nonRelVarsCube = vars->getCubePre(nonRelVars);    // * vars->getCubep(nonRelVars);
-    nonRelVarsCubeWithPrimes = nonRelVarsCube * vars->getCubeEff(nonRelVars);
-    if (!nonRelVarsCube.IsCube()) {
-        cout << "Error in sym_pdb: nonRelVars should be a cube";
-        nonRelVarsCube.print(0, 1);
-        cout << endl;
-        utils::exit_with(utils::ExitCode::CRITICAL_ERROR);
+    SymPDB::SymPDB(shared_ptr<SymStateSpaceManager> parent, 
+		   AbsTRsStrategy absTRsStrategy,
+		   const std::set<int> &relevantVars, 
+		   std::shared_ptr<OperatorCostFunction> cost_type_) :
+	SymStateSpaceManager(parent, absTRsStrategy, relevantVars, cost_type_) {
+	nonRelVarsCube = vars->getCubePre(nonRelVars);    // * vars->getCubep(nonRelVars);
+	nonRelVarsCubeWithPrimes = nonRelVarsCube * vars->getCubeEff(nonRelVars);
+	if (!nonRelVarsCube.IsCube()) {
+	    cout << "Error in sym_pdb: nonRelVars should be a cube";
+	    nonRelVarsCube.print(0, 1);
+	    cout << endl;
+	    utils::exit_with(utils::ExitCode::CRITICAL_ERROR);
+	}
     }
-}
 
 BDD SymPDB::shrinkExists(const BDD &bdd, int maxNodes) const {
     return bdd.ExistAbstract(nonRelVarsCube, maxNodes);

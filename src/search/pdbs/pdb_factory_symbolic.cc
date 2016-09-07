@@ -8,7 +8,7 @@
 #include "../options/option_parser.h"
 #include "../options/plugin.h"
 #include "../utils/debug_macros.h"
-#include "../operator_cost.h"
+#include "../operator_cost_function.h"
 
 
 using namespace std;
@@ -22,7 +22,8 @@ namespace pdbs {
 	generationMemoryGB(opts.get<double>("max_memory_gb")), 
 	absTRsStrategy(AbsTRsStrategy(opts.get_enum("tr_st"))),
 	dump (opts.get<bool>("dump")) {
-	manager = make_shared<OriginalStateSpace>(vars.get(), mgrParams, OperatorCost::NORMAL);
+	manager = make_shared<OriginalStateSpace>(vars.get(), mgrParams,
+						  OperatorCostFunction::get_cost_function());
 	manager->init();
     }
 
@@ -37,7 +38,8 @@ PDBFactorySymbolic::compute_pdb(const TaskProxy & task,
 	DEBUG_MSG(cout << "Make copy" << endl;);
 	
 	assert(manager);
-	auto state_space_mgr = make_shared<SymPDB> (manager, absTRsStrategy, pattern_set);
+	auto state_space_mgr = make_shared<SymPDB> (manager, absTRsStrategy, pattern_set, 
+						    OperatorCostFunction::get_cost_function(operator_costs));
 	DEBUG_MSG(cout << "INIT PatternDatabaseSymbolic" << endl;);
 
 	return make_shared<PatternDatabaseSymbolic> (task, pattern, operator_costs,

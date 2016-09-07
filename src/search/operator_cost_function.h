@@ -8,9 +8,14 @@
 class OperatorCostFunction {
 public:
     virtual int get_adjusted_cost(int op_id) const = 0;
+    static std::shared_ptr<OperatorCostFunction> default_cost_function;
+    static std::shared_ptr<OperatorCostFunction> get_cost_function(const std::vector<int> & costs = std::vector<int>());
+
 };
 
 class OperatorCostConstant : public OperatorCostFunction {
+
+    
     OperatorCost cost_type;
 public:
     
@@ -30,5 +35,7 @@ public:
 	return costs[op_id];
     }	
 };
+
+
 
 #endif
