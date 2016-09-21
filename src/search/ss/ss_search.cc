@@ -1,5 +1,6 @@
 #include "ss_search.h"
 
+#include "../task_proxy.h"
 #include "../globals.h"
 #include "../heuristic.h"
 #include "../option_parser.h"
@@ -13,7 +14,6 @@
 #include <fstream>
 #include "../ext/boost/dynamic_bitset.hpp"
 #include <boost/lexical_cast.hpp>
-#include "../global_state.h"
 #include <stdlib.h>
 
 bool ss_debug=false;

@@ -122,6 +122,7 @@ class PatternCollectionGeneratorHillclimbing : public PatternCollectionGenerator
         const SuccessorGenerator &successor_generator,
         double average_operator_costs,
         PatternCollection &initial_candidate_patterns);
+    int get_pattern_size(Pattern pattern);
 
 public:
     explicit PatternCollectionGeneratorHillclimbing(const options::Options &opts);

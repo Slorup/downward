@@ -300,7 +300,7 @@ int PatternDatabaseOnline::OnlineDistanceCalculator2(const State current_state,v
     //static int call_counter=0;
     //call_counter++;
     if(pattern.size()==0){
-      cout<<"pattern size is 0!!!"<<endl;
+      //cout<<"pattern size is 0!!!"<<endl;
       return 0;
     }
     //cout<<"calling OnlineDistanceCalculator,utils::g_timer:"<<utils::g_timer()<<",pdb_size:"<<get_pattern_size()<<",stored_abstract_distances:"<<stored_abstract_distance.size()<<endl;fflush(stdout);

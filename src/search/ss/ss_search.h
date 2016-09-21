@@ -15,7 +15,7 @@
 
 #include "../randomc/randomc.h"
 #include "../randomc/mersenne.cpp"
-#include "../state_id.h"
+//#include "../state_id.h"
 #include "../ext/boost/dynamic_bitset.hpp"
 
 #include "../utils/timer.h"
@@ -34,17 +34,17 @@ using namespace std;
 
 class SSNode{
 private:
-	StateID id;
+	size_t id;
 	double weight;
         int g_real;
 	int h;
 	bool iPDB_expanding;//for early term
 	bool lmcut_expanding;//for early term
 public:
-        SSNode(): id(StateID::no_state), weight(0.0), g_real(0),iPDB_expanding(false),lmcut_expanding(false) {}
-        SSNode(StateID identifier, double w, int g) : id(identifier), weight(w), g_real(g){}
-        StateID get_id() const {return this->id;}
-	void setId(StateID identifier) {this->id = identifier;}
+        SSNode(): id(0), weight(0.0), g_real(0),iPDB_expanding(false),lmcut_expanding(false) {}
+        SSNode(size_t identifier, double w, int g) : id(identifier), weight(w), g_real(g){}
+        size_t get_id() const {return this->id;}
+	void setId(size_t identifier) {this->id = identifier;}
         double getWeight()  {return this->weight;}
         void setWeight(double w) {this->weight = w;}
         int getGreal() const {return this->g_real;}
@@ -83,60 +83,3 @@ struct classcomp2 {
 
 #endif /*MRW_H_*/
 
-class SSSearch : public SearchEngine { 
-private:
-
-
-	map<Type, SSNode> queue;
- 
-        vector<double> vweight;
-        std::map<Node2, double> expanded;
-
-        std::map<Node2, double> generated;
-        double totalPrediction;         
-
-	std::vector<Heuristic*> heuristics; 
-	std::vector<Heuristic*> ipdb_heuristics; 
-	std::vector<Heuristic*> lmcut_heuristic; 
-	Heuristic* heuristic;
-	
-	
-	int initial_value;
-        
-        GlobalState current_state;
-	utils::Timer search_time;
-	utils::Timer level_time; //time required to expand an entire level
-
-	TypeSystem * sampler;
-
-        CRandomMersenne* RanGen2;
-
-	//IDA* - BFS
-	std::set<SSQueue, classcomp> L;
-	std::set<SSNode, classcomp2> check;
-
-        //ss+culprits
-        int threshold;
-        map<boost::dynamic_bitset<>,  double> collector;
-                
-
-protected:
-
-	virtual SearchStatus step();
-	virtual void initialize();
-
-public:
-	
-	SSSearch(const options::Options &opts);
-	virtual ~SSSearch();
-        void printQueue(); 
-        void generateExpandedReport();
-        void generateGeneratedReport();
-	void generateSSCCReport();
-        double getProbingResult();
-        void probe();
-        void predict(int probes);
-	int getMinHeur(vector<int> v);
-	void select_best_heuristics_greedy();
-	void BFS(SSNode root, Type type);
-};

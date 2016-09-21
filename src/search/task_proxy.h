@@ -526,6 +526,9 @@ public:
         assert(task == other.task);
         return values == other.values;
     }
+    bool operator<(const State &other) const {
+      return this->hash()<other.hash();
+    }
 
     bool operator!=(const State &other) const {
         return !(*this == other);

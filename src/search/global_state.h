@@ -42,6 +42,9 @@ public:
     StateID get_id() const {
         return id;
     }
+    bool operator< (const GlobalState &rhs) const{
+       return id < rhs.get_id();
+    }
 
     int operator[](int var) const;
 
