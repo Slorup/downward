@@ -333,7 +333,7 @@ void PatternCollectionGeneratorGeneticSS::evaluate(vector<double> &fitness_value
                 new ZeroOnePDBs(task_proxy, *pattern_collection, *pdb_factory_selected );
 	      best_heuristic.add_heuristic(selected_pattern);
 	      best_patterns = pattern_collection;
-	      cout<<"initial best_patter_collection:"<<endl;
+	      cout<<"initial best_pattern_collection:"<<endl;
 	      best_patterns->erase(std::remove_if (best_patterns->begin(),best_patterns->end(), delete_empty_vector()),best_patterns->end());
 	      for (auto pattern : *best_patterns) {
 		cout<<"best_patterns:"<<pattern<<endl;
