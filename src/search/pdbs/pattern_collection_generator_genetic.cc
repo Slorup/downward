@@ -202,6 +202,7 @@ void PatternCollectionGeneratorGenetic::evaluate(vector<double> &fitness_values)
                 best_fitness = fitness;
                 cout << "best_fitness = " << best_fitness << endl;
                 best_patterns = pattern_collection;
+		best_pdbs = make_shared<PDBCollection> (zero_one_pdbs.get_pattern_databases());
             }
         }
         fitness_values.push_back(fitness);
@@ -260,6 +261,7 @@ void PatternCollectionGeneratorGenetic::genetic_algorithm(
     task = task_;
     best_fitness = -1;
     best_patterns = nullptr;
+    best_pdbs = nullptr;
     bin_packing();
     vector<double> initial_fitness_values;
     evaluate(initial_fitness_values);
@@ -277,10 +279,14 @@ void PatternCollectionGeneratorGenetic::genetic_algorithm(
 PatternCollectionInformation PatternCollectionGeneratorGenetic::generate(
     shared_ptr<AbstractTask> task) {
     utils::Timer timer;
+
+    PatternCollectionInformation result (task, make_shared<PatternCollection>());
     genetic_algorithm(task);
+    result.add_pdbs(best_pdbs);
+
     cout << "Pattern generation (Edelkamp) time: " << timer << endl;
     assert(best_patterns);
-    return PatternCollectionInformation(task, best_patterns);
+    return result;
 }
 
 static shared_ptr<PatternCollectionGenerator> _parse(OptionParser &parser) {

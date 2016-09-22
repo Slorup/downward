@@ -39,6 +39,8 @@ class PatternCollectionGeneratorGenetic : public PatternCollectionGenerator {
 
     // Store best pattern collection over all episodes and its fitness value.
     std::shared_ptr<PatternCollection> best_patterns;
+    std::shared_ptr<PDBCollection> best_pdbs; //Store the PDBs as well
+
     double best_fitness;
 
     /*
