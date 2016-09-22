@@ -95,6 +95,7 @@ PatternDatabase::PatternDatabase(
             utils::exit_with(utils::ExitCode::CRITICAL_ERROR);
         }
     }
+    //cout<<"calling create_pdb with num_states="<<num_states<<endl;fflush(stdout);dump=true;
     create_pdb();
     if (dump)
         cout << "PDB construction time: " << timer << endl;

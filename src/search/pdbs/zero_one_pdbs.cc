@@ -44,11 +44,15 @@ int ZeroOnePDBs::get_value(const State &state) const {
       heuristic values of all patterns in the pattern collection.
     */
     int h_val = 0;
+    //int counter=0;
     for (const shared_ptr<PatternDatabaseInterface> &pdb : pattern_databases) {
+      //cout<<"\t pdb:"<<counter;fflush(stdout);
         int pdb_value = pdb->get_value(state);
+	//cout<<",value:"<<pdb_value<<endl;fflush(stdout);
         if (pdb_value == numeric_limits<int>::max())
             return numeric_limits<int>::max();
         h_val += pdb_value;
+	//counter++;
     }
     return h_val;
 }

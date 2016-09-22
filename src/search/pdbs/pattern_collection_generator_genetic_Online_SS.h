@@ -40,6 +40,7 @@ struct SS_state
 class PatternCollectionGeneratorGeneticSS : public PatternCollectionGenerator {
     std::shared_ptr<PDBFactory> pdb_factory_candidate;
     std::shared_ptr<PDBFactory> pdb_factory_selected;
+    const bool recompute_max_additive_subsets; //Whether to recompute the max_additive_subsets
     utils::CountdownTimer *genetic_SS_timer;
     vector<SS_state> SS_states_vector;
     map<size_t,pair<int,double> > SS_states;
@@ -86,6 +87,7 @@ class PatternCollectionGeneratorGeneticSS : public PatternCollectionGenerator {
 
     // Store best pattern collection over all episodes and its fitness value.
     std::shared_ptr<PatternCollection> best_patterns;
+    vector<std::shared_ptr<PDBCollection> >best_pdb_collections; //Store the PDBs as well
     std::vector<std::vector<std::vector<bool>>> best_pattern_collection;
     double best_fitness;
     // pointer to the heuristic in evaluate from the episode before, used to free memory.

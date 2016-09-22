@@ -33,6 +33,7 @@ PatternCollectionGeneratorGeneticSS::PatternCollectionGeneratorGeneticSS(
     const Options &opts)
     : pdb_factory_candidate (opts.get<shared_ptr<PDBFactory>>("pdb_type_candidates")),
       pdb_factory_selected (opts.get<shared_ptr<PDBFactory>>("pdb_type_selected")),
+      recompute_max_additive_subsets(opts.get<bool>("recompute_max_additive_subsets")), 
       pdb_max_size(opts.get<int>("pdb_max_size")),
       num_collections(opts.get<int>("num_collections")),
       num_episodes(opts.get<int>("num_episodes")),
@@ -215,8 +216,7 @@ void PatternCollectionGeneratorGeneticSS::evaluate(vector<double> &fitness_value
   //static bool print_timer=false;
       
   //double states_to_raise=100;
-    //if(utils::g_timer()<75.0{
-    if(utils::g_timer()<5.0){
+    if(utils::g_timer()<75.0){
       min_size=1;
       pdb_max_size=50000; 
     }
@@ -228,7 +228,7 @@ void PatternCollectionGeneratorGeneticSS::evaluate(vector<double> &fitness_value
       min_size=400000;
       pdb_max_size=1000000;
     }
-    else if(utils::g_timer()<350){
+    else if(utils::g_timer()<350.0){
       min_size=1000000;
       pdb_max_size=5000000;
     }
@@ -241,6 +241,7 @@ void PatternCollectionGeneratorGeneticSS::evaluate(vector<double> &fitness_value
       pdb_max_size=last_pdb_max_size;
       min_size=last_pdb_min_size;
     }
+    //cout<<"setting pdb_max_size to:"<<pdb_max_size<<endl;
     TaskProxy task_proxy(*task);
     int collection_counter=0;
     for (const auto &collection : pattern_collections) {
@@ -334,8 +335,9 @@ void PatternCollectionGeneratorGeneticSS::evaluate(vector<double> &fitness_value
                 new ZeroOnePDBs(task_proxy, *pattern_collection, *pdb_factory_selected );
 	      best_heuristic.add_heuristic(selected_pattern);
 	      best_patterns = pattern_collection;
+	      best_pdb_collections.push_back(make_shared<PDBCollection> (selected_pattern->get_pattern_databases()));
 	      cout<<"initial best_patter==_collection:"<<endl;
-	      best_patterns->erase(std::remove_if (best_patterns->begin(),best_patterns->end(), delete_empty_vector()),best_patterns->end());
+	      //best_patterns->erase(std::remove_if (best_patterns->begin(),best_patterns->end(), delete_empty_vector()),best_patterns->end());
 	      for (auto pattern : *best_patterns) {
 		cout<<"best_patterns:"<<pattern<<endl;
 	      }
@@ -568,6 +570,7 @@ void PatternCollectionGeneratorGeneticSS::evaluate(vector<double> &fitness_value
 		      best_patterns->push_back(pattern_collection->at(i));
 		    }
 		  }
+		  best_pdb_collections.push_back(make_shared<PDBCollection> (candidate_pdb_type2->get_pattern_databases()));
 		  //best_patterns = best_pattern_collections;
 		      //best_heuristic->add_heuristic(current_heuristic);
 		  pdb_generation_time=utils::g_timer()-start_adding_best_time;
@@ -1260,18 +1263,38 @@ int PatternCollectionGeneratorGeneticSS::get_pattern_size(Pattern pattern){
     }   
     return mem;
 }
+//PatternCollectionInformation PatternCollectionGeneratorGeneticSS::generate(
+//    shared_ptr<AbstractTask> task) {
+//    utils::Timer timer;
+//    genetic_algorithm(task);
+//    cout << "Pattern generation (Edelkamp) time: " << timer << endl;
+//    cout<<"best_patterns.size:"<<best_patterns->size()<<endl;
+//    for (auto pattern : *best_patterns) {
+//      cout<<"best_patterns:"<<pattern<<endl;
+//    }
+//    assert(best_patterns);
+//    delete genetic_SS_timer;
+//    return PatternCollectionInformation(task, best_patterns);
+//}
 PatternCollectionInformation PatternCollectionGeneratorGeneticSS::generate(
     shared_ptr<AbstractTask> task) {
     utils::Timer timer;
+
     genetic_algorithm(task);
-    cout << "Pattern generation (Edelkamp) time: " << timer << endl;
-    cout<<"best_patterns.size:"<<best_patterns->size()<<endl;
-    for (auto pattern : *best_patterns) {
-      cout<<"best_patterns:"<<pattern<<endl;
+    
+    PatternCollectionInformation result (task, make_shared<PatternCollection>());
+
+    for (auto pdb_collection : best_pdb_collections){
+      result.include_additive_pdbs(pdb_collection);
     }
+
+    if (recompute_max_additive_subsets) {
+	result.recompute_max_additive_subsets();
+    }
+
+    cout << "Pattern generation (Edelkamp) time: " << timer << endl;
     assert(best_patterns);
-    delete genetic_SS_timer;
-    return PatternCollectionInformation(task, best_patterns);
+    return result;
 }
 
 
@@ -1366,6 +1389,10 @@ static shared_ptr<PatternCollectionGenerator> _parse(OptionParser &parser) {
         "pdb_type_selected",
         "See detailed documentation for pdb factories. ",
 	"explicit");
+    parser.add_option<bool>(
+        "recompute_max_additive_subsets",
+        "attempts to recompute max additive subsets after generating all patterns",
+        "false");
 
     Options opts = parser.parse();
     if (parser.dry_run())
