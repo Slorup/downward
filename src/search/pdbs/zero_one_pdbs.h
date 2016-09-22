@@ -26,6 +26,10 @@ public:
     */
     double compute_approx_mean_finite_h() const;
     void dump() const;
+
+    const PDBCollection & get_pattern_databases () const {
+	return pattern_databases;
+    } 
 };
 }
 

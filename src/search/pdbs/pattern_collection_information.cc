@@ -94,6 +94,28 @@ void PatternCollectionInformation::set_pdbs(shared_ptr<PDBCollection> pdbs_) {
     assert(information_is_valid());
 }
 
+void PatternCollectionInformation::include_additive_pdbs(const shared_ptr<PDBCollection> & pdbs_) {
+    if(!pdbs) {
+	pdbs = make_shared<PDBCollection> (*pdbs_);
+	max_additive_subsets = make_shared<vector<PDBCollection>>();
+    } else{
+	for (const auto & new_pdb : *pdbs_) {
+	    pdbs->push_back(new_pdb);
+	}
+    }
+
+    for (const auto & new_pdb : *pdbs_) {
+	patterns->push_back(new_pdb->get_pattern());
+    }
+
+    max_additive_subsets->push_back(*pdbs_);
+    assert(information_is_valid());
+}
+
+void PatternCollectionInformation::recompute_max_additive_subsets() {
+    max_additive_subsets = compute_max_additive_subsets(*pdbs);
+}
+
 void PatternCollectionInformation::set_max_additive_subsets(
     shared_ptr<MaxAdditivePDBSubsets> max_additive_subsets_) {
     max_additive_subsets = max_additive_subsets_;

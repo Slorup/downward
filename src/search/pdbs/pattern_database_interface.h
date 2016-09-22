@@ -44,6 +44,10 @@ public:
     // Returns true iff op has an effect on a variable in the pattern.
     bool is_operator_relevant(const OperatorProxy &op) const;
 
+    const std::vector<int> & get_operator_costs() const {
+	return operator_costs;
+    }
+
     virtual int get_value(const State &state) const = 0;
 
     virtual int get_value(const std::vector<int> & state) const = 0;

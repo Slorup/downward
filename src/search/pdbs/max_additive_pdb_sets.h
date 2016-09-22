@@ -13,17 +13,30 @@ using VariableAdditivity = std::vector<std::vector<bool>>;
 
 extern VariableAdditivity compute_additive_vars(TaskProxy task_proxy);
 
+
+
 /* Returns true iff the two patterns are additive i.e. there is no operator
    which affects variables in pattern one as well as in pattern two. */
 extern bool are_patterns_additive(const Pattern &pattern1,
                                   const Pattern &pattern2,
                                   const VariableAdditivity &are_additive);
 
+/* Returns true if the cost of each operator only affects one PDB.    
+ */ 
+extern bool are_pdbs_additive(const PatternDatabaseInterface &pdb1,
+			      const PatternDatabaseInterface &pdb2);
+
 /*
-  Computes maximal additive subsets of patterns.
+  Computes maximal additive subsets of patterns based on variable additivity.
 */
 extern std::shared_ptr<MaxAdditivePDBSubsets> compute_max_additive_subsets(
     const PDBCollection &pdbs, const VariableAdditivity &are_additive);
+
+/*
+  Computes maximal additive subsets of patterns based on operator costs
+*/
+extern std::shared_ptr<MaxAdditivePDBSubsets> compute_max_additive_subsets(
+    const PDBCollection &pdbs);
 
 /*
   We compute additive pattern sets S with the property that we could
