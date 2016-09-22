@@ -36,7 +36,7 @@ int GroupZeroOnePDBs::get_value(const State &state) const {
         int zero_one_pdb_value = zero_one_pdb->get_value(state);
         if (zero_one_pdb_value == numeric_limits<int>::max())
             return numeric_limits<int>::max();
-        h_val += zero_one_pdb_value;
+        h_val =max(h_val, zero_one_pdb_value);
     }
     //cout<<"heurs:"<<Zero_One_PDBs.size()<<endl;
     return h_val;

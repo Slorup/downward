@@ -215,7 +215,8 @@ void PatternCollectionGeneratorGeneticSS::evaluate(vector<double> &fitness_value
   //static bool print_timer=false;
       
   //double states_to_raise=100;
-    if(utils::g_timer()<75.0){
+    //if(utils::g_timer()<75.0{
+    if(utils::g_timer()<5.0){
       min_size=1;
       pdb_max_size=50000; 
     }
@@ -333,13 +334,14 @@ void PatternCollectionGeneratorGeneticSS::evaluate(vector<double> &fitness_value
                 new ZeroOnePDBs(task_proxy, *pattern_collection, *pdb_factory_selected );
 	      best_heuristic.add_heuristic(selected_pattern);
 	      best_patterns = pattern_collection;
-	      cout<<"initial best_pattern_collection:"<<endl;
+	      cout<<"initial best_patter==_collection:"<<endl;
 	      best_patterns->erase(std::remove_if (best_patterns->begin(),best_patterns->end(), delete_empty_vector()),best_patterns->end());
 	      for (auto pattern : *best_patterns) {
 		cout<<"best_patterns:"<<pattern<<endl;
 	      }
 	      cout<<"\tbest_heuristic initial h:"<<best_heuristic.get_value(initial_state)<<endl;fflush(stdout);
 	      threshold=candidate->get_value(initial_state);
+	      continue;
 	      //best_patterns = best_pattern_collection;
 	    }
 	    else{
@@ -362,6 +364,7 @@ void PatternCollectionGeneratorGeneticSS::evaluate(vector<double> &fitness_value
 	      }
 		if(run_again){
 		  SS_states.clear();
+		  SS_states_vector.clear();
 		  double start_probe_time=utils::g_timer();
 		  int threshold=best_initial_value;
 		    for (int repetition=0;repetition<10;repetition++){
@@ -431,9 +434,8 @@ void PatternCollectionGeneratorGeneticSS::evaluate(vector<double> &fitness_value
 		    SS_states_vector.push_back(temp);
 		    SS_iter_map++;
 		  }
+		  sort(SS_states_vector.begin(),SS_states_vector.end(),compare_SS_states);
 		}
-		  
-		sort(SS_states_vector.begin(),SS_states_vector.end(),compare_SS_states);
 		cout<<"time:,"<<utils::g_timer()<<",finished sorting SS states,size:"<<SS_states.size()<<",best_heur_dead_ends"<<best_heur_dead_ends<<endl;
 	    }
 	    pruned_states=0;
@@ -513,7 +515,7 @@ void PatternCollectionGeneratorGeneticSS::evaluate(vector<double> &fitness_value
 	      }
 	      SS_iter++;
 	    }
-	    cout<<"finished sampling"<<endl;fflush(stdout);
+	    cout<<"episode:"<<current_episode<<",finished sampling,sampled_states:"<<sampled_states<<",raised_states:"<<raised_states<<",pruned_states:"<<pruned_states<<endl;fflush(stdout);
 	    sampler_time=utils::g_timer()-start_sampler_time;
 	    if(sampler_time<2.0&&(!last_sampler_too_big)){
 	      last_pdb_max_size=pdb_max_size;
@@ -531,8 +533,8 @@ void PatternCollectionGeneratorGeneticSS::evaluate(vector<double> &fitness_value
 	  cout<<"raised_states="<<raised_states<<"out of"<<sampled_states<<",avg_h:"<<fitness<<endl;
 	  cout<<"fitness:"<<fitness<<endl;
 	  //fitness_values.push_back(fitness);
-            if(float(raised_states)/float(sampled_states)>min_improvement_ratio||(best_heuristic.count_zero_one_pdbs()>0)) {
-	      cout<<"time:,"<<utils::g_timer()<<",bin_packed:,"<<bin_packed_episode<<",adding1 best_heuristic,episode:,"<<current_episode<<",collection:,"<<collection_counter<<",new raised_ratio:,"<<total_SS_gen_nodes/pruned_states<<",actual_states_ratio:,"<<float(raised_states)/float(sampled_states)<<",total_nodes:"<<total_SS_gen_nodes<<",pruned_states:"<<pruned_states<<",fitness:,"<<fitness<<",sampled_states:,"<<sampled_states<<",initial_value:,"<<current_heur_initial_value<<",skip_sampling:,"<<skip_sampling<<",best_heur_dead_ends:,"<<best_heur_dead_ends<<",best_heuristics count:"<<best_heuristic.count_zero_one_pdbs()<<endl;
+            if(float(raised_states)/float(sampled_states)>min_improvement_ratio||(best_heuristic.count_zero_one_pdbs()==0)) {
+	      cout<<"time:,"<<utils::g_timer()<<",bin_packed:,"<<bin_packed_episode<<",adding1 best_heuristic,episode:,"<<current_episode<<",collection:,"<<collection_counter<<",new raised_ratio:,"<<float(raised_states)/float(sampled_states)<<",actual_states_ratio:,"<<float(raised_states)/float(sampled_states)<<",total_nodes:"<<total_SS_gen_nodes<<",pruned_states:"<<pruned_states<<",fitness:,"<<fitness<<",sampled_states:,"<<sampled_states<<",initial_value:,"<<current_heur_initial_value<<",skip_sampling:,"<<skip_sampling<<",best_heur_dead_ends:,"<<best_heur_dead_ends<<",best_heuristics count:"<<best_heuristic.count_zero_one_pdbs()<<endl;
 
 	      //std::pair<std::set<vector<vector<int> > >::iterator,bool> ret;
 	      /*std::pair<set<std::shared_ptr<PatternCollection> >::iterator, bool> ret;
@@ -658,7 +660,6 @@ void PatternCollectionGeneratorGeneticSS::bin_packing() {
 void PatternCollectionGeneratorGeneticSS::genetic_algorithm(
     shared_ptr<AbstractTask> task_) {
     bin_packed_episode=true;
-  int current_episode=0;
     task = task_;
     best_fitness = -1;
     best_patterns = nullptr;

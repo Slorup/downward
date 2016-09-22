@@ -350,7 +350,7 @@ int PatternDatabaseOnline::OnlineDistanceCalculator2(const State current_state,v
     if(initial_h==0){//heuristic has to be admissible!
       if (is_goal_state(state_index)) {//no need to search, this state is abstract goal already!
 	//cout<<"absolute_call:"<<call_counter<<",relative call:"<<call_counter%1000<<",expansion_counter:"<<expansion_counter<<endl;
-	cout<<"initial_state is goal"<<endl;fflush(stdout);
+	//cout<<"initial_state is goal"<<endl;fflush(stdout);
 	return 0;
       }
     }
