@@ -34,7 +34,11 @@ public:
         std::shared_ptr<PatternCollection> patterns);
     ~PatternCollectionInformation() = default;
 
-    void add_pdbs(const std::shared_ptr<PDBCollection> & pdbs);
+    //Includes a set of PDBs that are known to be additive 
+    void include_additive_pdbs(const std::shared_ptr<PDBCollection> & pdbs);
+
+    // Recomputes max additive subsets based on operator cost
+    void recompute_max_additive_subsets();
 
     void set_pdbs(std::shared_ptr<PDBCollection> pdbs);
     void set_max_additive_subsets(

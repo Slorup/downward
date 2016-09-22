@@ -30,16 +30,24 @@ class PatternCollectionGeneratorGenetic : public PatternCollectionGenerator {
     const int num_episodes;
     const double mutation_probability;
 
-    std::shared_ptr<AbstractTask> task;
     /* Specifies whether patterns in each pattern collection need to be disjoint
        or not. */
     const bool disjoint_patterns;
+
+    const bool recompute_max_additive_subsets; //Whether to recompute the max_additive_subsets
+    const int num_runs; //If greater than 1, runs the algorithm several times
+
+
+    std::shared_ptr<AbstractTask> task;
+
     // All current pattern collections.
     std::vector<std::vector<std::vector<bool>>> pattern_collections;
 
     // Store best pattern collection over all episodes and its fitness value.
     std::shared_ptr<PatternCollection> best_patterns;
     std::shared_ptr<PDBCollection> best_pdbs; //Store the PDBs as well
+
+
 
     double best_fitness;
 

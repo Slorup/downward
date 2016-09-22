@@ -17,6 +17,11 @@ PatternDatabaseInterface::PatternDatabaseInterface(
     : task_proxy(task_proxy),
       pattern(pattern), 
       operator_costs(operator_costs_) {
+    for (const OperatorProxy &op : task_proxy.get_operators()) {
+	if (!is_operator_relevant(op)) {
+	    operator_costs [op.get_id()] = 0;
+	}
+    }
     verify_no_axioms(task_proxy);
     assert(operator_costs.empty() ||
            operator_costs.size() == task_proxy.get_operators().size());

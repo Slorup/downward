@@ -30,7 +30,9 @@ PatternCollectionGeneratorGenetic::PatternCollectionGeneratorGenetic(
       num_collections(opts.get<int>("num_collections")),
       num_episodes(opts.get<int>("num_episodes")),
       mutation_probability(opts.get<double>("mutation_probability")),
-      disjoint_patterns(opts.get<bool>("disjoint")) {
+      disjoint_patterns(opts.get<bool>("disjoint")), 
+      recompute_max_additive_subsets(opts.get<bool>("recompute_max_additive_subsets")), 
+      num_runs(opts.get<int>("num_runs")) {
 }
 
 void PatternCollectionGeneratorGenetic::select(
@@ -281,8 +283,15 @@ PatternCollectionInformation PatternCollectionGeneratorGenetic::generate(
     utils::Timer timer;
 
     PatternCollectionInformation result (task, make_shared<PatternCollection>());
-    genetic_algorithm(task);
-    result.add_pdbs(best_pdbs);
+
+    for (int i = 0; i < num_runs; ++i) {
+	    genetic_algorithm(task);
+ 	    result.include_additive_pdbs(best_pdbs);
+    }
+
+    if (recompute_max_additive_subsets) {
+	result.recompute_max_additive_subsets();
+    }
 
     cout << "Pattern generation (Edelkamp) time: " << timer << endl;
     assert(best_patterns);
@@ -361,6 +370,13 @@ static shared_ptr<PatternCollectionGenerator> _parse(OptionParser &parser) {
         "number of episodes for the genetic algorithm",
         "30",
         Bounds("0", "infinity"));
+
+    parser.add_option<int>(
+        "num_runs",
+        "number of times the genetic algorithm is executed",
+        "1",
+        Bounds("1", "infinity"));
+
     parser.add_option<double>(
         "mutation_probability",
         "probability for flipping a bit in the genetic algorithm",
@@ -370,6 +386,11 @@ static shared_ptr<PatternCollectionGenerator> _parse(OptionParser &parser) {
         "disjoint",
         "consider a pattern collection invalid (giving it very low "
         "fitness) if its patterns are not disjoint",
+        "false");
+
+    parser.add_option<bool>(
+        "recompute_max_additive_subsets",
+        "attempts to recompute max additive subsets after generating all patterns",
         "false");
 
     parser.add_option<shared_ptr<PDBFactory>>(

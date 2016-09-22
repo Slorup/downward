@@ -8,6 +8,22 @@
 using namespace std;
 
 namespace pdbs {
+
+bool are_pdbs_additive(const PatternDatabaseInterface &pdb1,
+		       const PatternDatabaseInterface &pdb2) {
+    const auto & costs1 = pdb1.get_operator_costs();
+    const auto & costs2 = pdb2.get_operator_costs();
+    assert(costs1.size() == costs2.size());
+    assert(!costs1.empty());
+ 
+    for (size_t i = 0; i < costs1.size(); ++i) {
+	if (costs1[i] > 0 || costs2[i] > 0) {
+	    return false;
+	}   
+    }
+    return true;
+}
+
 bool are_patterns_additive(const Pattern &pattern1,
                            const Pattern &pattern2,
                            const VariableAdditivity &are_additive) {
@@ -37,6 +53,45 @@ VariableAdditivity compute_additive_vars(TaskProxy task_proxy) {
     return are_additive;
 }
 
+
+shared_ptr<MaxAdditivePDBSubsets> compute_max_additive_subsets(const PDBCollection &pdbs,
+							       const vector<vector<int>> & cgraph) {
+    vector<vector<int>> max_cliques;
+    compute_max_cliques(cgraph, max_cliques);
+
+    shared_ptr<MaxAdditivePDBSubsets> max_additive_sets =
+        make_shared<MaxAdditivePDBSubsets>();
+    max_additive_sets->reserve(max_cliques.size());
+    for (const vector<int> &max_clique : max_cliques) {
+        PDBCollection max_additive_subset;
+        max_additive_subset.reserve(max_clique.size());
+        for (int pdb_id : max_clique) {
+            max_additive_subset.push_back(pdbs[pdb_id]);
+        }
+        max_additive_sets->push_back(max_additive_subset);
+    }
+    return max_additive_sets;
+}
+
+shared_ptr<MaxAdditivePDBSubsets> compute_max_additive_subsets(const PDBCollection &pdbs) {
+    // Initialize compatibility graph.
+    vector<vector<int>> cgraph;
+    cgraph.resize(pdbs.size());
+
+    for (size_t i = 0; i < pdbs.size(); ++i) {
+        for (size_t j = i + 1; j < pdbs.size(); ++j) {
+            if (are_pdbs_additive(*(pdbs[i]), *(pdbs[j]))) {
+                /* If the two patterns are additive, there is an edge in the
+                   compatibility graph. */
+                cgraph[i].push_back(j);
+                cgraph[j].push_back(i);
+            }
+        }
+    }
+
+    return compute_max_additive_subsets(pdbs, cgraph);
+}
+
 shared_ptr<MaxAdditivePDBSubsets> compute_max_additive_subsets(
     const PDBCollection &pdbs, const VariableAdditivity &are_additive) {
     // Initialize compatibility graph.
@@ -56,21 +111,8 @@ shared_ptr<MaxAdditivePDBSubsets> compute_max_additive_subsets(
         }
     }
 
-    vector<vector<int>> max_cliques;
-    compute_max_cliques(cgraph, max_cliques);
+    return compute_max_additive_subsets(pdbs, cgraph);
 
-    shared_ptr<MaxAdditivePDBSubsets> max_additive_sets =
-        make_shared<MaxAdditivePDBSubsets>();
-    max_additive_sets->reserve(max_cliques.size());
-    for (const vector<int> &max_clique : max_cliques) {
-        PDBCollection max_additive_subset;
-        max_additive_subset.reserve(max_clique.size());
-        for (int pdb_id : max_clique) {
-            max_additive_subset.push_back(pdbs[pdb_id]);
-        }
-        max_additive_sets->push_back(max_additive_subset);
-    }
-    return max_additive_sets;
 }
 
 MaxAdditivePDBSubsets compute_max_additive_subsets_with_pattern(
