@@ -67,7 +67,7 @@ void Variable::generate_cpp_input(ofstream &outfile) const {
             << reachable_values << endl;
     for (size_t i = 0; i < values.size(); ++i)
         if (reachable[i])
-        outfile << values[i] << endl;
+            outfile << values[i] << endl;
     outfile << "end_variable" << endl;
 }
 

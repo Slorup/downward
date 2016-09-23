@@ -54,9 +54,9 @@ void MutexGroup::dump() const {
 }
 
 void MutexGroup::generate_cpp_input(ofstream &outfile) const {
-  string groupname = "mutex" ;
-  string dirname = dir == FW ? "fw" : "bw";  
-  outfile << "begin_mutex_group" << endl <<  groupname << endl << dirname << endl
+    string groupname = "mutex";
+    string dirname = dir == FW ? "fw" : "bw";
+    outfile << "begin_mutex_group" << endl << groupname << endl << dirname << endl
             << facts.size() << endl;
     for (const auto &fact : facts) {
         outfile << fact.first->get_level()

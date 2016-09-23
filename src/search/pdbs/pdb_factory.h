@@ -52,7 +52,6 @@ public:
 	return true;
     }
 };
-
 class PDBFactory {
     //std::map <PDBKey, std::weak_ptr<PatternDatabaseInterface>> stored_pdbs;
     std::map <PDBKey, std::shared_ptr<PatternDatabaseInterface>> stored_pdbs;
@@ -74,15 +73,14 @@ public:
 PDBFactory() : num_patterns_created(0), num_patterns_requested(0), num_patterns_regenerated(0) {}
     virtual ~PDBFactory() = default;
     void dump_options() const;
-
+    
     std::shared_ptr<PatternDatabaseInterface> 
 	compute_pdb(const TaskProxy & task, 
 		    const Pattern &pattern, 
 		    const std::vector<int> &operator_costs = std::vector<int>()
 	    );
-    
-    virtual std::string name() const = 0;
 
+    virtual std::string name() const = 0;
     void statistics() const;
 };
 }

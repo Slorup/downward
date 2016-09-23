@@ -132,7 +132,7 @@ void CausalGraph::update() {
 
     // 2) Reconstruct causal graph with new variables and operators
 
-  predecessor_graph.clear();
+    predecessor_graph.clear();
     weighted_graph.clear();
     for (Variable *variable : ordering) {
         weighted_graph[variable] = WeightedSuccessors();
@@ -161,9 +161,9 @@ void CausalGraph::update() {
     */
 
 
-  vector<Variable *>().swap(ordering);
-  calculate_topological_pseudo_sort(sccs);
-  calculate_important_vars(); 
+    vector<Variable *>().swap(ordering);
+    calculate_topological_pseudo_sort(sccs);
+    calculate_important_vars();
     //Put -1 to every variable to remove variables that are not in ordering
     for (Variable *var : variables) {
         var->set_level(-1);
@@ -291,9 +291,9 @@ void CausalGraph::get_strongly_connected_components(const vector <Variable *> &v
     }
 }
 void CausalGraph::calculate_important_vars() {
-    for (auto var : ordering){
+    for (auto var : ordering) {
         var->reset_necessary();
-}
+    }
     for (const auto &goal : goals) {
         if (!goal.first->is_necessary()) {
             goal.first->set_necessary();
@@ -353,7 +353,7 @@ const {
     //TODO: use const iterator!
     vector<WeightedSuccessors *> succs; // will be ordered like ordered_vars
     vector<int> number_of_succ; // will be ordered like ordered_vars
-	//cout << "Number of vars: " << ordered_vars.size() << endl;
+    //cout << "Number of vars: " << ordered_vars.size() << endl;
     //cout << "weighted " << weighted_graph.size() << endl;
     succs.resize(ordered_vars.size());
     number_of_succ.resize(ordered_vars.size());

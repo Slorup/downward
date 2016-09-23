@@ -25,6 +25,7 @@ set(CORE_SOURCES
         int_packer.cc
 	    mutex_group.cc
         operator_cost.cc
+	operator_cost_function.cc
         option_parser.h
         option_parser_util.h
         per_state_information.cc
@@ -493,6 +494,16 @@ fast_downward_plugin(
         pdbs/group_zero_one_pdbs.cc
 )
 
+
+fast_downward_plugin(
+    NAME SYMBOLIC_PDBS
+    HELP "Plugin containing the code for symbolic PDBs"
+    SOURCES
+	pdbs/pattern_database_symbolic.cc
+	pdbs/pdb_factory_symbolic.cc
+    DEPENDS PDBS SYMBOLIC
+)
+
 fast_downward_plugin(
     NAME POTENTIALS
     HELP "Plugin containing the code for potential heuristics"
@@ -517,6 +528,35 @@ fast_downward_plugin(
 	ss/type.cc 
 	ss/type_system.cc 
 	ss/node.cc 
+)
+
+fast_downward_plugin(
+    NAME SYMBOLIC
+    HELP "Plugin containing the base for symbolic search"
+    SOURCES
+        symbolic/sym_variables.cc
+        symbolic/opt_order.cc
+        symbolic/sym_util.cc
+        symbolic/sym_enums.cc
+        symbolic/transition_relation.cc
+        symbolic/sym_bucket.cc
+        symbolic/sym_controller.cc
+        symbolic/sym_solution.cc
+        symbolic/sym_state_space_manager.cc
+        symbolic/original_state_space.cc
+        symbolic/sym_pdb.cc
+	symbolic/closed_list.cc
+	symbolic/open_list.cc
+	symbolic/frontier.cc
+        symbolic/sym_heuristic.cc
+        symbolic/sym_estimate.cc
+        symbolic/sym_params_search.cc
+        symbolic/sym_state_space_manager.cc
+	symbolic/sym_search.cc
+	symbolic/unidirectional_search.cc
+	symbolic/uniform_cost_search.cc
+
+    DEPENDENCY_ONLY 
 )
 
 

@@ -1,7 +1,7 @@
 #ifndef STRATIFIED_SAMPLING_H_
 #define STRATIFIED_SAMPLING_H_
 
-#define INT_MAX   2147483647
+#define INT_MAX  2147483647
 
 #include "../global_state.h"
 #include "../heuristic.h"
