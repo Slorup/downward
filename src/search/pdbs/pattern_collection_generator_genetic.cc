@@ -2,6 +2,7 @@
 
 #include "validation.h"
 #include "zero_one_pdbs.h"
+#include "pdb_factory.h"
 
 #include "../causal_graph.h"
 #include "../globals.h"
@@ -13,6 +14,7 @@
 #include "../utils/math.h"
 #include "../utils/rng.h"
 #include "../utils/timer.h"
+
 
 #include <algorithm>
 #include <cassert>
@@ -173,7 +175,7 @@ void PatternCollectionGeneratorGenetic::evaluate(vector<double> &fitness_values)
             Pattern pattern = transform_to_pattern_normal_form(bitvector);
 
             if (is_pattern_too_large(pattern)) {
-                cout << "pattern exceeds the memory limit!" << endl;
+                // cout << "pattern exceeds the memory limit!" << endl;
                 pattern_valid = false;
                 break;
             }
@@ -294,6 +296,8 @@ PatternCollectionInformation PatternCollectionGeneratorGenetic::generate(
     }
 
     cout << "Pattern generation (Edelkamp) time: " << timer << endl;
+    pdb_factory->statistics();
+
     assert(best_patterns);
     return result;
 }

@@ -16,10 +16,14 @@ PatternDatabaseInterface::PatternDatabaseInterface(
     const vector<int> &operator_costs_)
     : task_proxy(task_proxy),
       pattern(pattern), 
+      original_costs (true),
       operator_costs(operator_costs_) {
+
     for (const OperatorProxy &op : task_proxy.get_operators()) {
 	if (!is_operator_relevant(op)) {
 	    operator_costs [op.get_id()] = 0;
+	} else if (!operator_costs.empty() && operator_costs[op.get_id()] != op.get_cost()) {
+	    original_costs = false;
 	}
     }
     verify_no_axioms(task_proxy);

@@ -17,6 +17,7 @@ protected:
 
     Pattern pattern;
 
+    bool original_costs; //Whether it is using some cost partitioning or not.
     std::vector<int> operator_costs;
 
 public:
@@ -43,6 +44,11 @@ public:
 
     // Returns true iff op has an effect on a variable in the pattern.
     bool is_operator_relevant(const OperatorProxy &op) const;
+
+
+    bool is_original_costs() const {
+	return original_costs;
+    }
 
     const std::vector<int> & get_operator_costs() const {
 	return operator_costs;

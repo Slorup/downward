@@ -11,6 +11,7 @@ namespace pdbs {
 
 bool are_pdbs_additive(const PatternDatabaseInterface &pdb1,
 		       const PatternDatabaseInterface &pdb2) {
+    
     const auto & costs1 = pdb1.get_operator_costs();
     const auto & costs2 = pdb2.get_operator_costs();
     assert(costs1.size() == costs2.size());

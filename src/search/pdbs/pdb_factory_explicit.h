@@ -20,18 +20,20 @@ namespace pdbs {
 	const bool dump;
     protected:
 	virtual void dump_strategy_specific_options() const override;
+
+    // Type is shared because, in certain configurations, the factories
+    // might want to store a copy of the result. 
+	virtual std::shared_ptr<pdbs::PatternDatabaseInterface> 
+	create_pdb(const TaskProxy & task, 
+		    const Pattern &pattern, 
+		    const std::vector<int> &operator_costs = std::vector<int>()
+	    );
+
     public:
         PDBFactoryExplicit();
 	explicit PDBFactoryExplicit(const options::Options &options);
 	virtual ~PDBFactoryExplicit() override = default;
 
-    // Type is shared because, in certain configurations, the factories
-    // might want to store a copy of the result. 
-	virtual std::shared_ptr<pdbs::PatternDatabaseInterface> 
-	compute_pdb(const TaskProxy & task, 
-		    const Pattern &pattern, 
-		    const std::vector<int> &operator_costs = std::vector<int>()
-	    );
 
     virtual std::string name() const override;
 };

@@ -25,7 +25,6 @@ class AbstractOperatorOnline {
       change (as number) the abstract operator implies on a given
       abstract state.
     */
-
     int cost;
 
     /*

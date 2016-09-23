@@ -95,6 +95,13 @@ void PatternCollectionInformation::set_pdbs(shared_ptr<PDBCollection> pdbs_) {
 }
 
 void PatternCollectionInformation::include_additive_pdbs(const shared_ptr<PDBCollection> & pdbs_) {
+
+    pdbs_->erase(std::remove_if(pdbs_->begin(), 
+				pdbs_->end(),
+				[](const shared_ptr<PatternDatabaseInterface> & x){return x->get_pattern().empty();}),
+		 pdbs_->end());
+
+    if(pdbs_->empty()) return;
     if(!pdbs) {
 	pdbs = make_shared<PDBCollection> (*pdbs_);
 	max_additive_subsets = make_shared<vector<PDBCollection>>();
@@ -105,6 +112,7 @@ void PatternCollectionInformation::include_additive_pdbs(const shared_ptr<PDBCol
     }
 
     for (const auto & new_pdb : *pdbs_) {
+	assert(!new_pdb->get_pattern().empty());
 	patterns->push_back(new_pdb->get_pattern());
     }
 

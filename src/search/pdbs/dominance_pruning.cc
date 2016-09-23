@@ -16,6 +16,23 @@ using namespace std;
 namespace pdbs {
 using PDBRelation = unordered_set<pair<PatternDatabaseInterface *, PatternDatabaseInterface *>>;
 
+
+bool dominates_cost (const PatternDatabaseInterface & pdb1, const PatternDatabaseInterface & pdb2) {
+    if (pdb1.is_original_costs()) {
+	return true;
+    } else if (pdb2.is_original_costs()) {
+	return false;
+    }
+
+    const vector<int> & cost1 = pdb1.get_operator_costs();  
+    const vector<int> & cost2 = pdb2.get_operator_costs();
+    
+    for(size_t i = 0; i < cost1.size(); ++i) {
+	if (cost1[i] < cost2[i]) return false; 
+    }
+    return true;
+}
+
 PDBRelation compute_superset_relation(const PDBCollection &pattern_databases) {
     PDBRelation superset_relation;
     for (const shared_ptr<PatternDatabaseInterface> &pdb1 : pattern_databases) {
@@ -25,7 +42,11 @@ PDBRelation compute_superset_relation(const PDBCollection &pattern_databases) {
             // Note that std::includes assumes that patterns are sorted.
             if (std::includes(pattern1.begin(), pattern1.end(),
                               pattern2.begin(), pattern2.end())) {
-                superset_relation.insert(make_pair(pdb1.get(), pdb2.get()));
+		
+		if(dominates_cost(*pdb1, *pdb2)) {
+		    superset_relation.insert(make_pair(pdb1.get(), pdb2.get()));
+		}
+
                 /*
                   If we already added the inverse tuple to the relation, the
                   PDBs use the same pattern, which violates the invariant that
