@@ -533,10 +533,10 @@ void SymStateSpaceManager::init_transitions() {
             break;
         case AbsTRsStrategy::IND_TR_SHRINK:
             for (const auto &indTRsCost : parent->indTRs) {
-		
-                for (const auto &trParent : indTRsCost.second) {
+		for (const auto &trParent : indTRsCost.second) {
                     TransitionRelation absTransition = TransitionRelation(trParent);
 		    assert (absTransition.getOps().size() == 1);
+		    if(!is_relevant_op(**(absTransition.getOps().begin()), fullVars)) continue;
 		    int cost = cost_type->get_adjusted_cost(*(absTransition.getOps().begin()));
 		    if(cost != absTransition.getCost()) absTransition.set_cost(cost);
                     try{
