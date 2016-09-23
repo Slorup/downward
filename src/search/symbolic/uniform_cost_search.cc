@@ -148,9 +148,9 @@ namespace symbolic {
     }
 
     bool UniformCostSearch::stepImage(int maxTime, int maxNodes){
-	cout << ">> Step: " << *mgr << (fw ? " fw " : " bw ") << ", g=" << frontier.g();
+	DEBUG_MSG(cout << ">> Step: " << *mgr << (fw ? " fw " : " bw ") << ", g=" << frontier.g();
 	cout << " frontierNodes: " << frontier.nodes() << " [" << frontier.buckets() << "]"  << " total time: " << g_timer 
-	     << " total nodes: " << mgr->totalNodes() << " total memory: " << mgr->totalMemory() << endl;
+		  << " total nodes: " << mgr->totalNodes() << " total memory: " << mgr->totalMemory() << endl;);
 
 #ifdef DEBUG_GST
 	gst_plan.checkUcs(this );

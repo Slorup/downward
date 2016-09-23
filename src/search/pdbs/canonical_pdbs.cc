@@ -35,10 +35,13 @@ int CanonicalPDBs::get_value(const State &state) const {
             int h = pdb->get_value(state);
             if (h == numeric_limits<int>::max())
                 return numeric_limits<int>::max();
+	    //cout << *pdb << ": " << h << endl;
             subset_h += h;
         }
         max_h = max(max_h, subset_h);
     }
+    //cout << "max_h: " << max_h << endl;
+    //exit(0);
     return max_h;
 }
 }

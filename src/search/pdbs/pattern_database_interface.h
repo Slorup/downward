@@ -75,6 +75,8 @@ public:
       this method!
     */
     virtual double compute_mean_finite_h() const = 0;
+
+    friend std::ostream & operator<<(std::ostream& os, const PatternDatabaseInterface & v);
 };
 }
 

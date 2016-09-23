@@ -44,7 +44,9 @@ namespace pdbs {
 	} 
 	
 	average = search.getClosed()->average_hvalue();
-	//cout << "Average: " << average << endl;
+	for (int v : pattern) cout << v << " "; 
+	
+	cout << " Finished: " << search.finished() <<  ", Average: " << average << endl;
 	heuristic = make_unique<ADD>(search.getHeuristic());
     }
 
@@ -67,8 +69,8 @@ int PatternDatabaseSymbolic::get_value(int * inputs) const {
 
     ADD evalNode = heuristic->Eval(inputs);
     int abs_cost = Cudd_V(evalNode.getRegularNode());
-    
-    return (abs_cost == -1 ? -1 : abs_cost);    
+
+    return (abs_cost == -1 ? numeric_limits<int>::max() : abs_cost);    
 }
 
 double PatternDatabaseSymbolic::compute_mean_finite_h() const {
