@@ -23,8 +23,10 @@
 #include <math.h>
 //Hack to use SS get_type, it needs heuristic object in constructor
 #include "../heuristics/blind_search_heuristic.h"
+#include "../heuristics/lm_cut_heuristic.h"
 #include "../successor_generator.h"
 #include "../utils/countdown_timer.h"
+#include "pdb_factory.h"
 
 using namespace std;
 
@@ -33,6 +35,9 @@ PatternCollectionGeneratorGeneticSS::PatternCollectionGeneratorGeneticSS(
     const Options &opts)
     : pdb_factory_candidate (opts.get<shared_ptr<PDBFactory>>("pdb_type_candidates")),
       pdb_factory_selected (opts.get<shared_ptr<PDBFactory>>("pdb_type_selected")),
+      pdb_type_explicit (opts.get<shared_ptr<PDBFactory>>("pdb_type_explicit")),
+      pdb_type_online (opts.get<shared_ptr<PDBFactory>>("pdb_type_online")),
+      pdb_type_symbolic (opts.get<shared_ptr<PDBFactory>>("pdb_type_symbolic")),
       recompute_max_additive_subsets(opts.get<bool>("recompute_max_additive_subsets")), 
       pdb_max_size(opts.get<int>("pdb_max_size")),
       num_collections(opts.get<int>("num_collections")),
@@ -236,7 +241,7 @@ void PatternCollectionGeneratorGeneticSS::evaluate(vector<double> &fitness_value
       min_size=2000000;
       pdb_max_size=20000000;
     }
-		
+
     if(last_sampler_too_big){
       pdb_max_size=last_pdb_max_size;
       min_size=last_pdb_min_size;
@@ -308,6 +313,16 @@ void PatternCollectionGeneratorGeneticSS::evaluate(vector<double> &fitness_value
 	    double temp=utils::g_timer();
 	    ZeroOnePDBs *candidate =
                 new ZeroOnePDBs(task_proxy, *pattern_collection, *pdb_factory_candidate );
+	    cout<<"candidate and candidate_explicit were built with pattern_collection:"<<endl;
+	    for (auto pattern : *pattern_collection) {
+	      cout<<pattern<<",";
+	    }
+	    cout<<endl;
+	    cout<<"ZeroOnePDBs candidate has type:"<<pdb_factory_candidate->name()<<endl;
+	    //ZeroOnePDBs candidate_online(task_proxy, *pattern_collection, *pdb_type_online );
+	    //ZeroOnePDBs candidate_symbolic(task_proxy, *pattern_collection, *pdb_type_symbolic );
+	    ZeroOnePDBs candidate_explicit(task_proxy, *pattern_collection, *pdb_type_explicit );
+	    cout<<"ZeroOnePDBs candidate_explicit has type:"<<pdb_type_explicit->name()<<endl;
 	    overall_pdb_gen_time+=utils::g_timer()-temp;
 
 	    fitness=0.001;
@@ -326,7 +341,7 @@ void PatternCollectionGeneratorGeneticSS::evaluate(vector<double> &fitness_value
 	    //double avg_probe_result=0;
 
 	    const State &initial_state = task_proxy.get_initial_state();
-	    cout<<"\tcandidate initial h:"<<candidate->get_value(initial_state)<<endl;fflush(stdout);
+	    cout<<"\tpdb_max_size:"<<pdb_max_size<<",candidate initial h:"<<candidate->get_value(initial_state)<<endl;fflush(stdout);
 	    bool run_again=false;
 	    if(best_heuristic.count_zero_one_pdbs()==0){
 	      cout<<"no initial heuristic yet"<<endl;fflush(stdout);
@@ -369,6 +384,7 @@ void PatternCollectionGeneratorGeneticSS::evaluate(vector<double> &fitness_value
 		  SS_states_vector.clear();
 		  double start_probe_time=utils::g_timer();
 		  int threshold=best_initial_value;
+		  //threshold=44;
 		    for (int repetition=0;repetition<10;repetition++){
 		      vector<double> probe_data;
 		      for (int prob_index=0;prob_index<50;prob_index++){
@@ -491,6 +507,10 @@ void PatternCollectionGeneratorGeneticSS::evaluate(vector<double> &fitness_value
 	      total_SS_gen_nodes+=SS_iter->weight;
 	      //cout<<"sampled_state:"<<sampled_states<<",new_f="<<current_heuristic->get_heuristic()+SS_iter->g<<",old f:"<<best_heuristic->get_heuristic()+SS_iter->g<<",g:"<<SS_iter->g<<",weight:"<<SS_iter->weight<<",sampling_threshold:"<<sampling_threshold<<endl;
 	      int candidate_h=candidate->get_value(unique_samples.at(SS_iter->id));
+	      if(candidate_h!=candidate_explicit.get_value(unique_samples.at(SS_iter->id))){
+		cout<<"candidate_h:"<<candidate_h<<",candidate_symbolic:"<<candidate_explicit.get_value(unique_samples.at(SS_iter->id))<<endl;
+		exit(0);
+	      }
 	      if(candidate_h==numeric_limits<int>::max()){
 		raised_states++;
 		pruned_states+=SS_iter->weight;
@@ -719,19 +739,29 @@ void PatternCollectionGeneratorGeneticSS::genetic_algorithm(
 
 double PatternCollectionGeneratorGeneticSS::probe_best_only(int threshold){
   //cout<<"calling probe_best_only,threshold:"<<threshold<<endl;
+  //Options temp_options;
+    //temp_opts.set<shared_ptr<AbstractTask>>(
+    //    "transform", task);
+ //   temp_options.set<int>(
+ //       "cost_type", NORMAL);
+ //   temp_options.set<bool>(
+ //       "cache_estimates", false);
+  //lm_cut_heuristic::LandmarkCutHeuristic temp_lmcut_heuristic(temp_options);
+ // sampler = new TypeSystem(&temp_lmcut_heuristic);
+  //temp_lmcut_heuristic.initialize();
   set<int> visited_states;//for cutting off zero-cost operator loops
   TaskProxy task_proxy(*task);
   SuccessorGenerator successor_generator(task);
   const State &initial_state = task_proxy.get_initial_state();
 
-  Options temp_options;
+  Options temp_options2;
     //temp_opts.set<shared_ptr<AbstractTask>>(
     //    "transform", task);
-    temp_options.set<int>(
+    temp_options2.set<int>(
         "cost_type", NORMAL);
-    temp_options.set<bool>(
+    temp_options2.set<bool>(
         "cache_estimates", false);
-  blind_search_heuristic::BlindSearchHeuristic temp_blind_heuristic(temp_options);
+  blind_search_heuristic::BlindSearchHeuristic temp_blind_heuristic(temp_options2);
   sampler = new TypeSystem(&temp_blind_heuristic);
   //cout<<"after sampler"<<endl;fflush(stdout);
   map<Type, SSNode> queue;
@@ -761,6 +791,7 @@ double PatternCollectionGeneratorGeneticSS::probe_best_only(int threshold){
 	  initial_h=best_heuristic.get_value(initial_state);
 	  //initial_h needs to be at least 1
 	  initial_h=max(1,initial_h);
+	  //initial_h=temp_lmcut_heuristic.compute_heuristic(initial_state);
 	  //cout<<"prev_heur_initial_value:"<<initial_value<<endl;
 	}
 	else{
@@ -793,6 +824,7 @@ double PatternCollectionGeneratorGeneticSS::probe_best_only(int threshold){
 	unique_samples.insert(make_pair(initial_state.hash(),initial_state));
 	visited_states.insert(initial_state.hash());
 	map<size_t,int> cycle_check;
+	cycle_check[initial_state.hash()]=0;
 	//cout<<"initial_state.hash:"<<initial_state_id<<endl;
 
 	
@@ -941,7 +973,9 @@ double PatternCollectionGeneratorGeneticSS::probe_best_only(int threshold){
 			 //   continue;
 			 // }
 
+			
 			size_t child_hash=child.hash();
+			//check if we already have state
              		std::map<size_t, int>::iterator cycle_check_iterator=cycle_check.find(child_hash);
 			
 			//Cycle check
@@ -953,12 +987,18 @@ double PatternCollectionGeneratorGeneticSS::probe_best_only(int threshold){
 			   continue;
 			  }
 			}
+			else if(SS_states.find(child_hash)!=SS_states.end()){
+			  if(g_real+op.get_cost()>SS_states[child_hash].first){
+			    continue;
+			  }
+			}
 			//vector<int> h_child_v;
                   	//boost::dynamic_bitset<> b_child_v(heuristics.size()+lmcut_heuristic.size()+ipdb_heuristics.size());b_child_v.set();
 
 //                  	vector<int> F_culprit;
 			    
 			  h=best_heuristic.get_value(child);
+			  //h=temp_lmcut_heuristic.compute_heuristic(child);
 			  if(h==numeric_limits<int>::max()){
 			    continue;
 			    //cout<<"prev_h_deade_end_found"<<endl;
@@ -1005,20 +1045,26 @@ double PatternCollectionGeneratorGeneticSS::probe_best_only(int threshold){
 			unique_samples.insert(make_pair(child_hash,child));
 			//visited_states.insert(child.hash());
 			if ( h + g_real + op.get_cost()  <= threshold) {
-			    max_collector+=amount*w;
 			    //Keep a record of all sampled states and their maximum weights and minimum depths
-			    if(SS_states.find(s.get_id())!=SS_states.end()){
-			      if(g_real+op.get_cost()<SS_states[s.get_id()].first){
+			    if(SS_states.find(child_hash)!=SS_states.end()){
+			      if(g_real+op.get_cost()<SS_states[child_hash].first){
+				max_collector+=amount*w-SS_states[child_hash].second;
 				//cout<<"Reviewed Stored id:,"<<child_hash<<",new_g:"<<g_real + op.get_cost()<<",new F:"<<h + g_real + op.get_cost()<<endl;
-				SS_states[child_hash].first=g_real+op.get_cost();
-				SS_states[child_hash].second=amount*w;
+				SS_states[child_hash].first=g_real + op.get_cost();
+				//If state is found in different probes with same depth, we want to keep record of maximum impact
+				SS_states[child_hash].second=max(SS_states[child_hash].second,amount*w);
+			      }
+			      else if(g_real+op.get_cost()<SS_states[child_hash].first){
+				max_collector+=SS_states[child_hash].second;
 			      }
 			    }
 			    else{
+			      max_collector+=amount*w;
 			      SS_states[child_hash].first=g_real + op.get_cost();
 			      SS_states[child_hash].second=amount*w;
 			      //cout<<"New Stored id:,"<<child_hash<<",new_g:"<<g_real + op.get_cost()<<",new F:"<<h + g_real + op.get_cost()<<endl;
 			    }
+
 			  //cout<<"hola3"<<endl;fflush(stdout);
  	     			/*  ret2 = collector.insert(std::pair<boost::dynamic_bitset<>, double>(b_child_v, amount*w));
              			it2 = ret2.first;
@@ -1389,6 +1435,18 @@ static shared_ptr<PatternCollectionGenerator> _parse(OptionParser &parser) {
         "pdb_type_selected",
         "See detailed documentation for pdb factories. ",
 	"explicit");
+    parser.add_option<shared_ptr<PDBFactory>>(
+        "pdb_type_explicit",
+        "See detailed documentation for pdb factories. ",
+	"explicit");
+    parser.add_option<shared_ptr<PDBFactory>>(
+        "pdb_type_online",
+        "See detailed documentation for pdb factories. ",
+	"online");
+    parser.add_option<shared_ptr<PDBFactory>>(
+        "pdb_type_symbolic",
+        "See detailed documentation for pdb factories. ",
+	"online");
     parser.add_option<bool>(
         "recompute_max_additive_subsets",
         "attempts to recompute max additive subsets after generating all patterns",
