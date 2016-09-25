@@ -508,7 +508,7 @@ void PatternCollectionGeneratorGeneticSS::evaluate(vector<double> &fitness_value
 	      //cout<<"sampled_state:"<<sampled_states<<",new_f="<<current_heuristic->get_heuristic()+SS_iter->g<<",old f:"<<best_heuristic->get_heuristic()+SS_iter->g<<",g:"<<SS_iter->g<<",weight:"<<SS_iter->weight<<",sampling_threshold:"<<sampling_threshold<<endl;
 	      int candidate_h=candidate->get_value(unique_samples.at(SS_iter->id));
 	      if(candidate_h!=candidate_explicit.get_value(unique_samples.at(SS_iter->id))){
-		cout<<"candidate_h:"<<candidate_h<<",candidate_symbolic:"<<candidate_explicit.get_value(unique_samples.at(SS_iter->id))<<endl;
+		cout<<"candidate_h:"<<candidate_h<<",candidate_explicit:"<<candidate_explicit.get_value(unique_samples.at(SS_iter->id))<<endl;
 		exit(0);
 	      }
 	      if(candidate_h==numeric_limits<int>::max()){
