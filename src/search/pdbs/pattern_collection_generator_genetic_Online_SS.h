@@ -195,6 +195,8 @@ public:
     }
     static bool compare_SS_states(SS_state i, SS_state j) { return (i.weight>j.weight); }
     static bool compare_pattern_sizes_sort (pair<int ,int > i,pair<int ,int > j) { return (i.second<j.second); }
+    //Dominated in terms of all sampled unique states having a h value lower or better than the max of all other heuristics
+    void clear_dominated_heuristics();
 };
 ostream& operator<<(ostream& os, const vector<bool>& v);
 template<class T>
