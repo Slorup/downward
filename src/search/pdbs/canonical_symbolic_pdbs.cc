@@ -71,6 +71,7 @@ CanonicalSymbolicPDBs::CanonicalSymbolicPDBs(
     cout << endl << "Shared PDBs: ";
     for (const auto & pdb : pdbs) cout << pdb.nodeCount() << " ";
     cout << endl;
+    cout << "Max additive subsets: " << max_additive_subsets.size() << endl;
    
 }
 
@@ -81,6 +82,13 @@ int CanonicalSymbolicPDBs::get_value(const State &state) const {
     int * inputs = symbolic_vars->getBinaryDescription(state.get_values());
 
     int max_h = 0;
+    for (const auto & pdb : singlePDBs) {
+	int val = Cudd_V(pdb.Eval(inputs).getRegularNode());
+	if (val == -1) return numeric_limits<int>::max();
+
+        max_h = max(max_h, val);
+    }
+
     for (const auto &subset : max_additive_subsets) {
         int subset_h = 0;
         for (int pdb : subset) {
