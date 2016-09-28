@@ -1,4 +1,4 @@
-#include "canonical_pdbs_heuristic.h"
+#include "canonical_symbolic_pdbs_heuristic.h"
 
 #include "pattern_generator.h"
 
@@ -14,7 +14,7 @@
 using namespace std;
 
 namespace pdbs {
-CanonicalPDBs get_canonical_pdbs_from_options(
+CanonicalSymbolicPDBs get_symbolic_canonical_pdbs_from_options(
     const shared_ptr<AbstractTask> task, const Options &opts) {
     shared_ptr<PatternCollectionGenerator> pattern_generator =
         opts.get<shared_ptr<PatternCollectionGenerator>>("patterns");
@@ -27,20 +27,20 @@ CanonicalPDBs get_canonical_pdbs_from_options(
     cout << "PDB collection construction time: " << timer << endl;
 
     bool dominance_pruning = opts.get<bool>("dominance_pruning");
-    return CanonicalPDBs(pdbs, max_additive_subsets, dominance_pruning);
+return CanonicalSymbolicPDBs(pdbs, max_additive_subsets, dominance_pruning, opts.get<int> ("compress_nodes"), opts.get<int> ("compress_time"));
 }
 
-CanonicalPDBsHeuristic::CanonicalPDBsHeuristic(const Options &opts)
+CanonicalSymbolicPDBsHeuristic::CanonicalSymbolicPDBsHeuristic(const Options &opts)
     : Heuristic(opts),
-      canonical_pdbs(get_canonical_pdbs_from_options(task, opts)) {
+      canonical_pdbs(get_symbolic_canonical_pdbs_from_options(task, opts)) {
 }
 
-int CanonicalPDBsHeuristic::compute_heuristic(const GlobalState &global_state) {  
+int CanonicalSymbolicPDBsHeuristic::compute_heuristic(const GlobalState &global_state) {  
     State state = convert_global_state(global_state);
     return compute_heuristic(state);
 }
 
-int CanonicalPDBsHeuristic::compute_heuristic(const State &state) const {
+int CanonicalSymbolicPDBsHeuristic::compute_heuristic(const State &state) const {
     int h = canonical_pdbs.get_value(state);
     if (h == numeric_limits<int>::max()) {
         return DEAD_END;
@@ -77,14 +77,24 @@ static Heuristic *_parse(OptionParser &parser) {
         "collection.",
         "true");
 
+    parser.add_option<int>(
+        "compress_nodes",
+        "",
+        "0");
+
+    parser.add_option<int>(
+        "compress_time",
+        "",
+        "10000");
+
     Heuristic::add_options_to_parser(parser);
 
     Options opts = parser.parse();
     if (parser.dry_run())
         return nullptr;
 
-    return new CanonicalPDBsHeuristic(opts);
+    return new CanonicalSymbolicPDBsHeuristic(opts);
 }
 
-static Plugin<Heuristic> _plugin("cpdbs", _parse);
+static Plugin<Heuristic> _plugin("cpdbs_symbolic", _parse);
 }

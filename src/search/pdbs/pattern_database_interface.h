@@ -4,9 +4,13 @@
 #include "types.h"
 
 #include "../task_proxy.h"
+#include "cuddObj.hh"
 
 #include <utility>
 #include <vector>
+namespace symbolic {
+    class SymVariables;
+}
 
 namespace pdbs {
 
@@ -19,6 +23,9 @@ protected:
 
     bool original_costs; //Whether it is using some cost partitioning or not.
     std::vector<int> operator_costs;
+
+    mutable int evaluation_cache_value;
+    mutable int evaluation_cache_id;
 
 public:
     /*
@@ -37,7 +44,7 @@ public:
 
     virtual ~PatternDatabaseInterface() = default;
 
-    // Returns the pattern (i.e. all variables used) of the PDB
+    // Returns the pattern (i.e. all variables used) of the PBB
     const Pattern &get_pattern() const {
         return pattern;
     }
@@ -52,6 +59,26 @@ public:
 
     const std::vector<int> & get_operator_costs() const {
 	return operator_costs;
+    }
+
+    virtual std::shared_ptr<symbolic::SymVariables> get_symbolic_variables() {
+	return nullptr;
+    }
+
+
+    virtual ADD get_ADD() {
+	std::cerr << "Error: get_ADD not implemented for this type of " << std::endl;
+	utils::exit_with(utils::ExitCode::CRITICAL_ERROR);
+	
+    }
+
+
+    virtual int get_value(const State &state, int cache_id) const {
+	if (cache_id != evaluation_cache_id) {
+	    evaluation_cache_id  = cache_id;
+	    evaluation_cache_value = get_value (state);
+	}
+	return evaluation_cache_value;	
     }
 
     virtual int get_value(const State &state) const = 0;

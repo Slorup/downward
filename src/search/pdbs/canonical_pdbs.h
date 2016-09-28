@@ -7,9 +7,17 @@
 
 class State;
 
+namespace symbolic {
+    class SymVariables;
+}
+
 namespace pdbs {
 class CanonicalPDBs {
     std::shared_ptr<MaxAdditivePDBSubsets> max_additive_subsets;
+
+    mutable int cache_id; 
+    
+    std::shared_ptr <symbolic::SymVariables> symbolic_vars;
 
 public:
     CanonicalPDBs(std::shared_ptr<PDBCollection> pattern_databases,
@@ -18,6 +26,7 @@ public:
     ~CanonicalPDBs() = default;
 
     int get_value(const State &state) const;
+
 };
 }
 

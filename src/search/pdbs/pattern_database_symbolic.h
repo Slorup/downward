@@ -59,6 +59,16 @@ public:
 
     virtual int get_value(const std::vector<int> &state) const override;
 
+
+    virtual std::shared_ptr<symbolic::SymVariables> get_symbolic_variables() {
+	return vars;
+    }
+
+    virtual ADD get_ADD() {
+	return *heuristic;
+    }
+
+
     /*
       Returns the average h-value over all states, where dead-ends are
       ignored (they neither increase the sum of all h-values nor the

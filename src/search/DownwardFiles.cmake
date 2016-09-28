@@ -501,6 +501,9 @@ fast_downward_plugin(
     SOURCES
 	pdbs/pattern_database_symbolic.cc
 	pdbs/pdb_factory_symbolic.cc
+        pdbs/canonical_symbolic_pdbs.cc
+        pdbs/canonical_symbolic_pdbs_heuristic.cc
+
     DEPENDS PDBS SYMBOLIC
 )
 

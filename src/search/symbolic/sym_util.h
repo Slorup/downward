@@ -128,6 +128,9 @@ TransitionRelation mergeTR(TransitionRelation tr, const TransitionRelation &tr2,
 BDD mergeAndBDD(const BDD &bdd, const BDD &bdd2, int maxSize);
 BDD mergeOrBDD(const BDD &bdd, const BDD &bdd2, int maxSize);
 
+ADD mergeSumADD(const ADD &add, const ADD &add2, int );
+ADD mergeMaxADD(const ADD &add, const ADD &add2, int );
+
 
 
 inline std::string dirname(bool fw) {

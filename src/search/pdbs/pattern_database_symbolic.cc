@@ -50,13 +50,13 @@ namespace pdbs {
 	heuristic = make_unique<ADD>(search.getHeuristic());
     }
 
-int PatternDatabaseSymbolic::get_value(const State & state) const {
-    return get_value (vars->getBinaryDescription(state.get_values()));
-}
+    int PatternDatabaseSymbolic::get_value(const State & state) const {
+	return get_value (vars->getBinaryDescription(state.get_values()));
+    }
 
-int PatternDatabaseSymbolic::get_value(const vector<int> &state) const {
-    return get_value (vars->getBinaryDescription(state));
-}
+    int PatternDatabaseSymbolic::get_value(const vector<int> &state) const {
+	return get_value (vars->getBinaryDescription(state));
+    }
 
 int PatternDatabaseSymbolic::get_value(int * inputs) const {
     // for(const BDD & bdd : notMutexBDDs){

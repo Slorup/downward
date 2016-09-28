@@ -17,7 +17,9 @@ PatternDatabaseInterface::PatternDatabaseInterface(
     : task_proxy(task_proxy),
       pattern(pattern), 
       original_costs (true),
-      operator_costs(operator_costs_) {
+      operator_costs(operator_costs_), 
+      evaluation_cache_value(-1), 
+      evaluation_cache_id(-1) {
 
     if(operator_costs.empty()) {
 	original_costs = true;

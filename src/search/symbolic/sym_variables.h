@@ -59,6 +59,7 @@ class SymVariables {
     //Vector to store the binary description of an state
     //Avoid allocating memory during heuristic evaluation
     std::vector <int> binState;
+    //bool state_cached;
 
     void init(const std::vector <int> &v_order);
 
@@ -197,26 +198,38 @@ public:
     
     template <class T> 
     int *getBinaryDescription(const T &state) {
-        int pos = 0;
-        //  cout << "State " << endl;
-        for (int v : var_order) {
-            //cout << v << "=" << state[v] << " " << g_variable_domain[v] << " assignments and  " << binary_len[v] << " variables   " ;
-            //preconditionBDDs[v] [state[v]].PrintMinterm();
+	//if (!state_cached) { 
+	    int pos = 0;
+	    //  cout << "State " << endl;
+	    for (int v : var_order) {
+		//cout << v << "=" << state[v] << " " << g_variable_domain[v] << " assignments and  " << binary_len[v] << " variables   " ;
+		//preconditionBDDs[v] [state[v]].PrintMinterm();
 
-            for (size_t j = 0; j < bdd_index_pre[v].size(); j++) {
-                binState[pos++] = ((state[v] >> j) % 2);
-                binState[pos++] = 0; //Skip interleaving variable
-            }
-        }
-        /* cout << "Binary description: ";
-           for(int i = 0; i < pos; i++){
-           cout << binState[i];
-           }
-           cout << endl;*/
+		for (size_t j = 0; j < bdd_index_pre[v].size(); j++) {
+		    binState[pos++] = ((state[v] >> j) % 2);
+		    binState[pos++] = 0; //Skip interleaving variable
+		}
+	    }
+	    /* cout << "Binary description: ";
+	       for(int i = 0; i < pos; i++){
+	       cout << binState[i];
+	       }
+	       cout << endl;*/
+	    // }
 
         return &(binState[0]);
     }
 
+    /* template <class T>  */
+    /* void cache_state(const T &state) { */
+    /* 	assert(!state_cached); */
+    /* 	getBinaryDescription(state); */
+    /* 	state_cached = true; */
+    /* } */
+
+    /* void uncache_state() { */
+    /* 	state_cached = false; */
+    /* } */
 
     inline ADD getADD(int value) {
         return _manager->constant(value);
