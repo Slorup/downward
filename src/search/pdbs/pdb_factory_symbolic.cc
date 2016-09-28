@@ -32,10 +32,10 @@ PDBFactorySymbolic::create_pdb(const TaskProxy & task,
 		    const Pattern &pattern, 
 		    const std::vector<int> &operator_costs){
 	
-
+	assert(!pattern.empty());
 	DEBUG_MSG(cout << "COMPUTE SYMBOLIC PDB" << endl;);
 	std::set<int> pattern_set (pattern.begin(), pattern.end()); 
-	DEBUG_MSG(cout << "Make copy" << endl;);
+	DEBUG_MSG(cout << "Pattern: "; for (int v : pattern_set) { cout << " " << v; }cout << endl;);
 	
 	assert(manager);
 	auto state_space_mgr = make_shared<SymPDB> (manager, absTRsStrategy, pattern_set, 

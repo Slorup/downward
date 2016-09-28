@@ -33,6 +33,7 @@ namespace symbolic {
 		return true;
 	    }
 	} 
+	
 	return false;
     }
 
@@ -44,11 +45,11 @@ namespace symbolic {
       parent_mgr(parent), abs_trs_strategy(abs_trs_strategy_),
       fullVars(relevantVars),
       initialState(vars->zeroBDD()), goal(vars->zeroBDD()),
-      min_transition_cost(parent->min_transition_cost),
-      hasTR0(parent->hasTR0), mutexInitialized(false),
+      min_transition_cost(0),
+      hasTR0(false), mutexInitialized(false),
 	mutexByFluentInitialized(false) {
 
-
+	assert(!fullVars.empty());
 	for (size_t i = 0; i < g_operators.size(); ++i) {
 	    if (!is_relevant_op(g_operators[i], relevantVars)) continue;     
 	    if (min_transition_cost == 0 || min_transition_cost > cost_type->get_adjusted_cost(i)) {
@@ -58,15 +59,13 @@ namespace symbolic {
 		hasTR0 = true;
 	    }
 	}
-    
-
-        
 
 	for (size_t i = 0; i < g_variable_name.size(); i++) {
 	    if (!fullVars.count(i)) {
 		nonRelVars.insert(i);
 	    }
 	}
+
     }
 
 
@@ -289,7 +288,6 @@ void SymStateSpaceManager::addDeadEndStates(bool fw, BDD bdd) {
     }
 }
 
-
 void SymStateSpaceManager::addDeadEndStates(const std::vector<BDD> &fw_dead_ends,
                                             const std::vector<BDD> &bw_dead_ends) {
     for (BDD bdd : fw_dead_ends) {
@@ -477,6 +475,7 @@ void SymStateSpaceManager::init_transitions() {
     if (!transitions.empty())
         return;                          //Already initialized!
     if (parent_mgr.expired() || abs_trs_strategy == AbsTRsStrategy::REBUILD_TRS) {
+	DEBUG_MSG(cout << "AbsTRsStrategy::REBUILD_TRS" << endl;);
         init_individual_trs();
         init_transitions_from_individual_trs();
     } else {
@@ -532,12 +531,14 @@ void SymStateSpaceManager::init_transitions() {
             }
             break;
         case AbsTRsStrategy::IND_TR_SHRINK:
+	    DEBUG_MSG(cout << "AbsTRsStrategy::IND_TR_SHRINK" << endl;);
             for (const auto &indTRsCost : parent->indTRs) {
 		for (const auto &trParent : indTRsCost.second) {
                     TransitionRelation absTransition = TransitionRelation(trParent);
 		    assert (absTransition.getOps().size() == 1);
 		    if(!is_relevant_op(**(absTransition.getOps().begin()), fullVars)) continue;
 		    int cost = cost_type->get_adjusted_cost(*(absTransition.getOps().begin()));
+
 		    if(cost != absTransition.getCost()) absTransition.set_cost(cost);
                     try{
                         vars->setTimeLimit(p.max_aux_time);
@@ -557,6 +558,8 @@ void SymStateSpaceManager::init_transitions() {
 
             break;
         case AbsTRsStrategy::SHRINK_AFTER_IMG:
+	    DEBUG_MSG(cout << "AbsTRsStrategy::SHRINK_AFTER_IMG" << endl;);
+
             //SetAbsAfterImage
             for (const auto &t : parent->transitions) {
                 int cost = t.first;
@@ -586,6 +589,7 @@ void SymStateSpaceManager::init_transitions() {
     }
 
     DEBUG_MSG(cout << "Finished init trs: " << transitions.size() << endl;);
+    assert(!hasTR0 || transitions.count(0));
 }
 
 

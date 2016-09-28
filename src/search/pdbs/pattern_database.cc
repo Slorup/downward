@@ -79,6 +79,7 @@ PatternDatabase::PatternDatabase(
     assert(operator_costs.empty() ||
            operator_costs.size() == task_proxy.get_operators().size());
     assert(utils::is_sorted_unique(pattern));
+    assert(!pattern.empty());
 
     utils::Timer timer;
     hash_multipliers.reserve(pattern.size());

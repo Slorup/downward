@@ -25,6 +25,7 @@ static options::PluginTypePlugin<PDBFactory> _type_plugin(
     PDBFactory::compute_pdb(const TaskProxy & task, 
 			   const Pattern &pattern, 
 			   const std::vector<int> &operator_costs) {
+	assert(!pattern.empty ());
 	num_patterns_requested ++;
 	auto item = stored_pdbs.find(PDBKey(pattern, operator_costs));
 	if (item != stored_pdbs.end()) {

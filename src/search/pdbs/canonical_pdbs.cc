@@ -40,8 +40,6 @@ int CanonicalPDBs::get_value(const State &state) const {
         }
         max_h = max(max_h, subset_h);
     }
-    //cout << "max_h: " << max_h << endl;
-    //exit(0);
     return max_h;
 }
 }

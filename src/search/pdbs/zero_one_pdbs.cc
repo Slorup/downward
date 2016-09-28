@@ -24,6 +24,7 @@ ZeroOnePDBs::ZeroOnePDBs(TaskProxy task_proxy, const PatternCollection &patterns
 
     pattern_databases.reserve(patterns.size());
     for (const Pattern &pattern : patterns) {
+	if(pattern.empty()) continue;
 	shared_ptr<PatternDatabaseInterface> pdb = pdb_factory.compute_pdb(task_proxy, pattern, operator_costs);
          
         /* Set cost of relevant operators to 0 for further iterations
