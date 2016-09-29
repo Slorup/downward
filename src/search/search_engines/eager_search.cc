@@ -9,6 +9,7 @@
 #include "../plugin.h"
 #include "../pruning_method.h"
 #include "../successor_generator.h"
+#include "../utils/timer.h"
 
 #include "../open_lists/open_list_factory.h"
 
@@ -59,6 +60,9 @@ void EagerSearch::initialize() {
     assert(!heuristics.empty());
 
     const GlobalState &initial_state = state_registry.get_initial_state();
+    vector<const GlobalOperator *> applicable_ops;
+    g_successor_generator->generate_applicable_ops(initial_state, applicable_ops);
+    cout<<"initial state children:"<<applicable_ops.size()<<endl;
     for (Heuristic *heuristic : heuristics) {
         heuristic->notify_initial_state(initial_state);
     }
@@ -82,6 +86,7 @@ void EagerSearch::initialize() {
     }
 
     print_initial_h_values(eval_context);
+    start_running_time=utils::g_timer();
 }
 
 void EagerSearch::print_checkpoint_line(int g) const {
@@ -318,8 +323,12 @@ void EagerSearch::update_f_value_statistics(const SearchNode &node) {
         */
         EvaluationContext eval_context(node.get_state(), node.get_g(), false, &statistics);
         int f_value = eval_context.get_heuristic_value(f_evaluator);
-        statistics.report_f_value_progress(f_value);
-    }
+	if(f_value>statistics.get_lastjump_f_value()){
+	  statistics.report_f_value_progress(f_value);
+	  for (Heuristic *heuristic : heuristics)
+	    cout<<"f=,"<<f_value<<",avg_eval_time_per_pdb(per heuristic if no pdbs):,"<<double(utils::g_timer()-start_running_time)/double(statistics.get_evaluated_states()*heuristic->count_pdbs())<<",pdbs:,"<<heuristic->count_pdbs()<<endl;
+	}
+      }
 }
 
 /* TODO: merge this into SearchEngine::add_options_to_parser when all search

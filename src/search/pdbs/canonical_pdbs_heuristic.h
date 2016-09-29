@@ -21,6 +21,7 @@ protected:
 public:
     explicit CanonicalPDBsHeuristic(const options::Options &opts);
     virtual ~CanonicalPDBsHeuristic() = default;
+    virtual int count_pdbs(){return canonical_pdbs.count_pdbs();} 
 };
 }
 

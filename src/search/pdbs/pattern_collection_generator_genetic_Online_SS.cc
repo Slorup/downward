@@ -733,6 +733,7 @@ void PatternCollectionGeneratorGeneticSS::genetic_algorithm(
 	//cout<<"after select"<<endl;fflush(stdout);
 	current_episode++;
     }
+    //cout<<"SKIPPING clear_dominated, heurs"<<best_heuristic.count_zero_one_pdbs()<<endl;fflush(stdout);
     cout<<"starting clear_dominated,starting heurs"<<best_heuristic.count_zero_one_pdbs()<<endl;fflush(stdout);
     best_heuristic.clear_dominated_heuristics(&unique_samples);
     cout<<"finished clear_dominated,remaining heurs"<<best_heuristic.count_zero_one_pdbs()<<endl;fflush(stdout);

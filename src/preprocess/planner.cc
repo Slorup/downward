@@ -104,7 +104,7 @@ int main(int argc, const char **argv) {
             // TODO: don't duplicate the code to return an unsolvable task, log and exit here
             cout << "Unsolvable task in preprocessor" << endl;
             generate_unsolvable_cpp_input();
-            cout << "Preprocessor time: " << utils::g_timer << endl;
+            //cout << "Preprocessor time: " << utils::g_timer << endl;
             cout << "Preprocessor peak memory: " << get_peak_memory_in_kb() << " KB" << endl;
             cout << "done" << endl;
             return 0;
@@ -143,7 +143,7 @@ int main(int argc, const char **argv) {
             // TODO: don't duplicate the code to return an unsolvable task, log and exit here
             cout << "Unsolvable task in preprocessor" << endl;
             generate_unsolvable_cpp_input();
-            cout << "Preprocessor time: " << utils::g_timer << endl;
+            //cout << "Preprocessor time: " << utils::g_timer << endl;
             cout << "Preprocessor peak memory: " << get_peak_memory_in_kb() << " KB" << endl;
             cout << "done" << endl;
             return 0;
@@ -280,7 +280,7 @@ int main(int argc, const char **argv) {
             operators, axioms, successor_generator,
             transition_graphs, causal_graph);
     }
-    cout << "Preprocessor time: " << utils::g_timer << endl;
+    //cout << "Preprocessor time: " << utils::g_timer << endl;
     cout << "Preprocessor peak memory: " << get_peak_memory_in_kb() << " KB" << endl;
     cout << "done" << endl;
 }

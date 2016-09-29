@@ -19,6 +19,7 @@ class Options;
 
 namespace eager_search {
 class EagerSearch : public SearchEngine {
+  double start_running_time;
     const bool reopen_closed_nodes;
     const bool use_multi_path_dependence;
 

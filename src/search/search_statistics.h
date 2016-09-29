@@ -48,6 +48,7 @@ public:
     int get_generated() const {return generated_states; }
     int get_reopened() const {return reopened_states; }
     int get_generated_ops() const {return generated_ops; }
+    int get_lastjump_f_value() const {return lastjump_f_value;}  //f value obtained in the last jump
 
     /*
       Call the following method with the f value of every expanded

@@ -99,6 +99,7 @@ public:
     bool is_h_dirty(GlobalState &state) {
         return heuristic_cache[state].dirty;
     }
+    virtual int count_pdbs() {return 1;}//1 in case no pdb, this is used to calculate avg_eval_time per heuristic 
 };
 
 #endif

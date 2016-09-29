@@ -26,7 +26,15 @@ public:
     ~CanonicalPDBs() = default;
 
     int get_value(const State &state) const;
+    int get_additive_subsets_number(){return (*max_additive_subsets).size();}
 
+    int count_pdbs(){
+      int count=0;
+      for(auto pattern_collection : *max_additive_subsets){
+	count+=pattern_collection.size();
+      }
+      return count;
+    }
 };
 }
 
