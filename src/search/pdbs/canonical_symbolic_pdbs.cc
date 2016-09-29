@@ -19,7 +19,7 @@ CanonicalSymbolicPDBs::CanonicalSymbolicPDBs(
     shared_ptr<MaxAdditivePDBSubsets> max_additive_subsets_,
     bool dominance_pruning, int compress_nodes, int compress_time) : valid_cache(pattern_databases->size()), 
 								     cache(pattern_databases->size())  {
-    assert(max_additive_subsets);
+    assert(max_additive_subsets_);
 
     for (const auto &pdb : *pattern_databases) {
 	if (pdb->get_symbolic_variables()) {
@@ -77,9 +77,15 @@ CanonicalSymbolicPDBs::CanonicalSymbolicPDBs(
 
 int CanonicalSymbolicPDBs::get_value(const State &state) const {
     // If we have an empty collection, then max_additive_subsets = { \emptyset }.
-    assert(!max_additive_subsets->empty());
+    assert(!max_additive_subsets.empty());
     valid_cache.reset();
     int * inputs = symbolic_vars->getBinaryDescription(state.get_values());
+
+     for(const BDD & bdd : dead_end_detection){
+     	if(bdd.Eval(inputs).IsZero()){
+     	    return numeric_limits<int>::max();
+     	}
+     }
 
     int max_h = 0;
     for (const auto & pdb : singlePDBs) {

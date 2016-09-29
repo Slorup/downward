@@ -4,6 +4,8 @@
 
 #include "../symbolic/sym_params_search.h"
 #include "../symbolic/sym_pdb.h"
+#include "../symbolic/sym_solution.h"
+
 
 #include "../options/option_parser.h"
 #include "../options/plugin.h"
@@ -38,14 +40,21 @@ PDBFactorySymbolic::create_pdb(const TaskProxy & task,
 	DEBUG_MSG(cout << "Pattern: "; for (int v : pattern_set) { cout << " " << v; }cout << endl;);
 	
 	assert(manager);
-	auto state_space_mgr = make_shared<SymPDB> (manager, absTRsStrategy, pattern_set, 
-						    OperatorCostFunction::get_cost_function(operator_costs));
+
+	shared_ptr<SymStateSpaceManager> state_space_mgr;
+	if (pattern.size() == g_variable_domain.size()) {
+	    state_space_mgr = manager;
+	} else  {
+	    state_space_mgr = make_shared<SymPDB> (manager, absTRsStrategy, pattern_set, 
+						   OperatorCostFunction::get_cost_function(operator_costs));
+	}
 	DEBUG_MSG(cout << "INIT PatternDatabaseSymbolic" << endl;);
 
 	return make_shared<PatternDatabaseSymbolic> (task, pattern, operator_costs,
 						     this, vars, state_space_mgr, 
 						     searchParams, generationTime, generationMemoryGB);
     }
+
 
 
 void PDBFactorySymbolic::dump_strategy_specific_options() const {
@@ -55,6 +64,17 @@ void PDBFactorySymbolic::dump_strategy_specific_options() const {
 string PDBFactorySymbolic::name() const {
     return "symbolic";
 }
+
+    void PDBFactorySymbolic::new_solution(const SymSolution & sol) {
+	if(upper_bound > sol.getCost()) {
+	    upper_bound = sol.getCost(); 
+		
+	    sol.getPlan(plan);
+	}
+    }
+    void PDBFactorySymbolic::setLowerBound(int lower) {
+	lower_bound = max(lower, lower_bound);
+    }
 
 
 static shared_ptr<PDBFactory>_parse(options::OptionParser &parser) {

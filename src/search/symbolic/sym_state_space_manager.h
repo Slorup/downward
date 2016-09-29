@@ -206,6 +206,9 @@ public:
         return absVars.size() + nonRelVars.size();
     }
 
+    inline std::shared_ptr<OperatorCostFunction> get_cost_type() const {
+	return cost_type;
+    }
 
 
     double stateCount(const Bucket &bucket) const {
@@ -247,6 +250,16 @@ public:
         return indTRs;
     }
 
+    const std::map<int, std::vector <TransitionRelation>> & getIndividualTRsFromParent() {
+        if (indTRs.empty()) {
+	    if(! parent_mgr.expired()) {
+		return parent_mgr.lock()->getIndividualTRsFromParent();
+	    }
+	     
+	    init_individual_trs();
+	}    
+        return indTRs;
+    }
     inline const BDD &getInitialState() {
         if (initialState.IsZero()) {
             init_initial_state();

@@ -1548,7 +1548,7 @@ static shared_ptr<PatternCollectionGenerator> _parse(OptionParser &parser) {
     parser.add_option<shared_ptr<PDBFactory>>(
         "pdb_type_symbolic",
         "See detailed documentation for pdb factories. ",
-	"online");
+	"symbolic");
     parser.add_option<bool>(
         "recompute_max_additive_subsets",
         "attempts to recompute max additive subsets after generating all patterns",

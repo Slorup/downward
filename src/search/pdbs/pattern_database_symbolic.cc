@@ -1,6 +1,8 @@
 #include "pattern_database_symbolic.h"
 
 #include "../symbolic/uniform_cost_search.h"
+#include "../symbolic/sym_controller.h"
+
 #include "../utils/timer.h"
 #include "../utils/debug_macros.h"
 
@@ -32,7 +34,7 @@ namespace pdbs {
 
     void PatternDatabaseSymbolic::create_pdb(SymController * engine, const SymParamsSearch & params, 
 					     int generationTime, double generationMemoryGB) {
-	manager->init();
+  	manager->init();
 	symbolic::UniformCostSearch search (engine, params);
 	search.init(manager, false);
 
@@ -40,8 +42,8 @@ namespace pdbs {
 	while (!search.finished() && 
 	       time() < generationTime &&
 	       vars->totalMemoryGB() < generationMemoryGB &&
-	       search.isSearchable() 
-	       /*&& (!solution.solved() || originalsearch.getF() < solution.getCost())*/) {
+	       search.isSearchable()  && 
+	       !engine->solved()) {
 	    search.step();
 	} 
 	

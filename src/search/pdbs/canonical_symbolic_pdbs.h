@@ -15,9 +15,13 @@ namespace symbolic {
 
 namespace pdbs {
 class CanonicalSymbolicPDBs {
+
     std::vector<ADD> pdbs;
-    std::vector<ADD> singlePDBs;
     std::vector<std::vector<int> > max_additive_subsets;
+    std::vector<ADD> singlePDBs;
+
+    std::vector<BDD> dead_end_detection;    
+
 
     mutable utils::DynamicBitset<> valid_cache;
     mutable std::vector<int> cache;

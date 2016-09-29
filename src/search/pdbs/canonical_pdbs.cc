@@ -4,6 +4,7 @@
 #include "pattern_database.h"
 
 #include "../symbolic/sym_variables.h"
+#include "../utils/debug_macros.h"
 
 #include <algorithm>
 #include <cassert>
@@ -37,10 +38,11 @@ int CanonicalPDBs::get_value(const State &state) const {
             /* Experiments showed that it is faster to recompute the
                h values than to cache them in an unordered_map. */
             int h = pdb->get_value(state, cache_id);
+	    DEBUG_MSG(cout << *pdb << ": " << h << endl;);
             if (h == numeric_limits<int>::max()) {
                 return numeric_limits<int>::max();
 	    }
-	    //cout << *pdb << ": " << h << endl;
+
             subset_h += h;
         }
         max_h = max(max_h, subset_h);

@@ -531,8 +531,7 @@ void SymStateSpaceManager::init_transitions() {
             }
             break;
         case AbsTRsStrategy::IND_TR_SHRINK:
-	    DEBUG_MSG(cout << "AbsTRsStrategy::IND_TR_SHRINK" << endl;);
-            for (const auto &indTRsCost : parent->indTRs) {
+            for (const auto &indTRsCost : parent->getIndividualTRsFromParent()) {
 		for (const auto &trParent : indTRsCost.second) {
                     TransitionRelation absTransition = TransitionRelation(trParent);
 		    assert (absTransition.getOps().size() == 1);
