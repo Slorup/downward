@@ -32,6 +32,7 @@ public:
     ~CanonicalSymbolicPDBs() = default;
 
     int get_value(const State &state) const;
+    virtual int count_pdbs(){return singlePDBs.size();}
 
 };
 }

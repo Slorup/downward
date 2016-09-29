@@ -2,6 +2,8 @@
 
 #include "../symbolic/uniform_cost_search.h"
 #include "../utils/timer.h"
+#include "../utils/debug_macros.h"
+
 
 using namespace std;
 
@@ -44,9 +46,9 @@ namespace pdbs {
 	} 
 	
 	average = search.getClosed()->average_hvalue();
-	for (int v : pattern) cout << v << " "; 
+	DEBUG_MSG(for (int v : pattern) cout << v << " ";);
 	
-	cout << " Finished: " << search.finished() <<  ", Average: " << average << endl;
+	DEBUG_MSG(cout << " Finished: " << search.finished() <<  ", Average: " << average << endl;);
 	heuristic = make_unique<ADD>(search.getHeuristic());
     }
 

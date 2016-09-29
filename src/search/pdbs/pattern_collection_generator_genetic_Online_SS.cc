@@ -28,6 +28,7 @@
 #include "../utils/countdown_timer.h"
 #include "pdb_factory.h"
 #include "pattern_database_interface.h"
+#include "../utils/debug_macros.h"
 
 using namespace std;
 
@@ -251,8 +252,7 @@ void PatternCollectionGeneratorGeneticSS::evaluate(vector<double> &fitness_value
     TaskProxy task_proxy(*task);
     int collection_counter=0;
     for (const auto &collection : pattern_collections) {
-        //cout << "evaluate pattern collection " << (collection_counter + 1) << " of "
-        //     << pattern_collections.size() << endl;fflush(stdout);
+        DEBUG_MSG(cout << "evaluate pattern collection " << (collection_counter + 1) << " of " << pattern_collections.size() << endl;fflush(stdout););
 	int overall_pdb_size=0;
         double fitness = 0;
         bool pattern_valid = true;
@@ -263,6 +263,7 @@ void PatternCollectionGeneratorGeneticSS::evaluate(vector<double> &fitness_value
 	int best_heur_dead_ends=0;
 
 
+	DEBUG_MSG(cout<<"making pattern_collection"<<endl;);
         shared_ptr<PatternCollection> pattern_collection = make_shared<PatternCollection>();
         pattern_collection->reserve(collection.size());
         for (const vector<bool> &bitvector : collection) {
@@ -288,6 +289,7 @@ void PatternCollectionGeneratorGeneticSS::evaluate(vector<double> &fitness_value
 	  pattern_collection->push_back(pattern);
 	  overall_pdb_size+=get_pattern_size(pattern);
         }
+	DEBUG_MSG(cout<<"finished making pattern_collection"<<endl;);
         if (!pattern_valid) {
             /* Set fitness to a very small value to cover cases in which all
                patterns are invalid. */
@@ -297,7 +299,7 @@ void PatternCollectionGeneratorGeneticSS::evaluate(vector<double> &fitness_value
 	      //cout<<"pattern collection size:"<<overall_pdb_size<<" too small, skipping"<<endl;
 	      fitness = 0.001;
         } else {
-	  //cout<<"pattern valid!,SS evaluating:"<<endl;
+	  DEBUG_MSG(cout<<"pattern valid!,SS evaluating:"<<endl;);
 	    if(genetic_SS_timer->is_expired()||(double(utils::get_peak_memory_in_kb())/1024>2000)){
 	      if(double(utils::get_peak_memory_in_kb())/1024>2000){
 		cout<<"no more PDB generation, Peak memory above 2 GB max:"<<utils::get_peak_memory_in_kb()<<endl;
@@ -312,8 +314,10 @@ void PatternCollectionGeneratorGeneticSS::evaluate(vector<double> &fitness_value
                value. */
 	  //ZeroOnePDBs zero_one_pdbs(task_proxy, *pattern_collection, *pdb_factory );
 	    double temp=utils::g_timer();
+	    DEBUG_MSG(cout<<"generating candidate"<<endl;);
 	    ZeroOnePDBs *candidate =
                 new ZeroOnePDBs(task_proxy, *pattern_collection, *pdb_factory_candidate );
+	    DEBUG_MSG(cout<<"finshed generating candidate"<<endl;);
 	    //cout<<"candidate and candidate_explicit were built with pattern_collection:"<<endl;
 	    //for (auto pattern : *pattern_collection) {
 	    //  cout<<pattern<<",";
@@ -342,7 +346,7 @@ void PatternCollectionGeneratorGeneticSS::evaluate(vector<double> &fitness_value
 	    //double avg_probe_result=0;
 
 	    const State &initial_state = task_proxy.get_initial_state();
-	    cout<<"\tcurrent_episode:"<<current_episode<<",pdb_max_size:"<<pdb_max_size<<",candidate initial h:"<<candidate->get_value(initial_state)<<endl;//fflush(stdout);
+	    DEBUG_MSG(cout<<"\tcurrent_episode:"<<current_episode<<",pdb_max_size:"<<pdb_max_size<<",candidate initial h:"<<candidate->get_value(initial_state)<<endl;fflush(stdout););
 	    bool run_again=false;
 	    if(best_heuristic.count_zero_one_pdbs()==0){
 	      cout<<"no initial heuristic yet"<<endl;fflush(stdout);
@@ -400,8 +404,8 @@ void PatternCollectionGeneratorGeneticSS::evaluate(vector<double> &fitness_value
 			}
 		      }
 		      pair<double,double> avg_and_dev=utils::avg_and_standard_deviation(probe_data);
-		      cout<<scientific<<"repetition:"<<repetition<<",probe data average:"<<avg_and_dev.first<<endl;
-		      cout<<scientific<<"repetition:"<<repetition<<",probe data standard deviation:"<<avg_and_dev.second<<endl;
+		      //cout<<scientific<<"repetition:"<<repetition<<",probe data average:"<<avg_and_dev.first<<endl;
+		      //cout<<scientific<<"repetition:"<<repetition<<",probe data standard deviation:"<<avg_and_dev.second<<endl;
 		      probe_avgs.push_back(avg_and_dev.first);
 		      
 		      if(utils::g_timer()-start_probe_time>10.0){
@@ -455,7 +459,7 @@ void PatternCollectionGeneratorGeneticSS::evaluate(vector<double> &fitness_value
 		  }
 		  sort(SS_states_vector.begin(),SS_states_vector.end(),compare_SS_states);
 		}
-		cout<<"time:,"<<utils::g_timer()<<",finished sorting SS states,size:"<<SS_states.size()<<",best_heur_dead_ends"<<best_heur_dead_ends<<endl;
+		DEBUG_MSG(cout<<"time:,"<<utils::g_timer()<<",finished sorting SS states,size:"<<SS_states.size()<<",best_heur_dead_ends"<<best_heur_dead_ends<<endl;);
 	    }
 	    pruned_states=0;
 	    fitness=0;
@@ -464,7 +468,7 @@ void PatternCollectionGeneratorGeneticSS::evaluate(vector<double> &fitness_value
 	    double start_sampler_time=utils::g_timer();
 	    vector<SS_state>::iterator SS_iter;
 
-	    cout<<"SS_states_vector.size:"<<SS_states_vector.size()<<endl;fflush(stdout);
+	    DEBUG_MSG(cout<<"SS_states_vector.size:"<<SS_states_vector.size()<<endl;fflush(stdout););
 		    
 	    current_heur_initial_value=candidate->get_value(initial_state);
 	    for(SS_iter=SS_states_vector.begin();SS_iter!=SS_states_vector.end();){
@@ -475,13 +479,13 @@ void PatternCollectionGeneratorGeneticSS::evaluate(vector<double> &fitness_value
 	      if(sampled_states%100==0){
 		if(pruned_states==0){
 		  if(utils::g_timer()-start_sampler_time>0.1){
-		    cout<<"\t exiting candidate vs best_heuristic SS_states comparison, 0.1 secs iterating without a single better h value"<<endl;
+		    DEBUG_MSG(cout<<"\tcurrent_episode:"<<current_episode<<",exiting candidate vs best_heuristic SS_states comparison, 0.1 secs iterating without a single better h value"<<endl;);
 		    break;
 		  }
 		}
 		else if(pruned_states>0){
 		  if(utils::g_timer()-start_sampler_time>0.5){
-		    cout<<"\t exiting candidate vs best_heuristic SS_states comparison, spent max 0.5 secs"<<endl;
+		    DEBUG_MSG(cout<<"\t exiting candidate vs best_heuristic SS_states comparison, spent max 0.5 secs"<<endl;);
 		    break;
 		  }
 		}
@@ -538,7 +542,7 @@ void PatternCollectionGeneratorGeneticSS::evaluate(vector<double> &fitness_value
 	      }
 	      SS_iter++;
 	    }
-	    cout<<"episode:"<<current_episode<<",finished sampling,sampled_states:"<<sampled_states<<",raised_states:"<<raised_states<<",pruned_states:"<<pruned_states<<endl;fflush(stdout);
+	    DEBUG_MSG(cout<<"episode:"<<current_episode<<",finished sampling,sampled_states:"<<sampled_states<<",raised_states:"<<raised_states<<",pruned_states:"<<pruned_states<<endl;fflush(stdout););
 	    sampler_time=utils::g_timer()-start_sampler_time;
 	    if(sampler_time<2.0&&(!last_sampler_too_big)){
 	      last_pdb_max_size=pdb_max_size;
@@ -548,13 +552,16 @@ void PatternCollectionGeneratorGeneticSS::evaluate(vector<double> &fitness_value
 	      cout<<"setting pdb size to :"<<last_pdb_max_size<<",last sampling time with current pdb size took:"<<sampler_time<<endl;
 	      last_sampler_too_big=true;
 	    }
-	    cout<<"collection size:"<<overall_pdb_size<<",sampler_time:,"<<sampler_time<<endl;
+	    DEBUG_MSG(cout<<"collection size:"<<overall_pdb_size<<",sampler_time:,"<<sampler_time<<endl;);
 	  if(sampled_states>0){
 	    fitness/=sampled_states;
 	  }
-	  cout<<"pruned_states="<<pruned_states<<"out of"<<total_SS_gen_nodes<<",avg_h:"<<fitness<<endl;
-	  cout<<"raised_states="<<raised_states<<"out of"<<sampled_states<<",avg_h:"<<fitness<<endl;
-	  cout<<"fitness:"<<fitness<<endl;
+	  DEBUG_MSG(cout<<"pruned_states="<<pruned_states<<"out of"<<total_SS_gen_nodes<<",avg_h:"<<fitness<<endl;);
+	  DEBUG_MSG(cout<<"raised_states="<<raised_states<<"out of"<<sampled_states<<",avg_h:"<<fitness<<endl;);
+	  DEBUG_MSG(cout<<"fitness:"<<fitness<<endl;);
+	  if(sampled_states>0)
+	    if(float(raised_states)/float(sampled_states)>0)
+	      cout<<"current_episode:,"<<current_episode<<",raised_states:,"<<raised_states<<",sampled_states:,"<<sampled_states<<",ratio:"<<float(raised_states)/float(sampled_states)<<endl;
 	  //fitness_values.push_back(fitness);
             if(float(raised_states)/float(sampled_states)>min_improvement_ratio||(best_heuristic.count_zero_one_pdbs()==0)) {
 	      cout<<"time:,"<<utils::g_timer()<<",bin_packed:,"<<bin_packed_episode<<",adding1 best_heuristic,episode:,"<<current_episode<<",collection:,"<<collection_counter<<",new raised_ratio:,"<<float(raised_states)/float(sampled_states)<<",actual_states_ratio:,"<<float(raised_states)/float(sampled_states)<<",total_nodes:"<<total_SS_gen_nodes<<",pruned_states:"<<pruned_states<<",fitness:,"<<fitness<<",sampled_states:,"<<sampled_states<<",initial_value:,"<<current_heur_initial_value<<",skip_sampling:,"<<skip_sampling<<",best_heur_dead_ends:,"<<best_heur_dead_ends<<",best_heuristics count:"<<best_heuristic.count_zero_one_pdbs()<<endl;
@@ -597,7 +604,7 @@ void PatternCollectionGeneratorGeneticSS::evaluate(vector<double> &fitness_value
 		  pdb_generation_time=utils::g_timer()-start_adding_best_time;
 		  cout<<"time:,"<<utils::g_timer()<<",current_episode:,"<<current_episode<<",best_heuristics count:,"<<best_heuristic.count_zero_one_pdbs()<<",online_sampling_time:,"<<sampler_time<<",pdb_generation_time:,"<<pdb_generation_time<<",pdb_size:,"<<overall_pdb_size<<",disjoint:,"<<disjoint_patterns<<",raised:,"<<raised_states<<",disjoint_patterns:,"<<disjoint_patterns<<",sampled_states:,"<<sampled_states<<endl;
 		  overall_pdb_gen_time+=pdb_generation_time;
-		  cout<<"overall_pdb_gen_time:"<<overall_pdb_gen_time<<endl;
+		  DEBUG_MSG(cout<<"overall_pdb_gen_time:"<<overall_pdb_gen_time<<endl;);
 		  //cout<<"finished="<<finnish_adding_best_time<<endl;fflush(stdout);
 		  //cout<<"after add to best_heuristic"<<endl;fflush(stdout);
 		    best_fitness_was_duplicate=false;
@@ -617,7 +624,7 @@ void PatternCollectionGeneratorGeneticSS::evaluate(vector<double> &fitness_value
 	collection_counter++;
         fitness_values.push_back(fitness);
     }
-    //cout<<"finished evaluate"<<endl;fflush(stdout);
+    DEBUG_MSG(cout<<"finished evaluate"<<endl;fflush(stdout););
 }
 
 void PatternCollectionGeneratorGeneticSS::bin_packing() {
@@ -714,8 +721,7 @@ void PatternCollectionGeneratorGeneticSS::genetic_algorithm(
 	  }
 	  bin_packed_episode=false;
 	}
-        cout << endl;
-        //cout << "--------- episode no " << (i + 1) << " ---------" << endl;
+        //cout << endl; //cout << "--------- episode no " << (i + 1) << " ---------" << endl;
         //mutate();
         vector<double> fitness_values;
         evaluate(fitness_values);

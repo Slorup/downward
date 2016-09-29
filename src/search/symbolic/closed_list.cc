@@ -333,9 +333,9 @@ namespace symbolic {
 	    }*/
 	BDD statesWithHNotClosed = !closedTotal;
 	ADD h = mgr->mgr()->constant(-1);
-	cout << "New heuristic with h [";
+	//cout << "New heuristic with h [";
 	for (auto &it : closed) {
-	    cout << it.first << " ";
+	    //cout << it.first << " ";
 	    int h_val = it.first;
 
 	    /*If h_val < previousMaxH we can put it to that value
@@ -350,7 +350,7 @@ namespace symbolic {
 		statesWithHNotClosed += it.second;
 	    }
 	}
-	cout << hNotClosed << "]" << endl;
+	//cout << hNotClosed << "]" << endl;
 
 	if (hNotClosed != numeric_limits<int>::max() && hNotClosed >= 0 && !statesWithHNotClosed.IsZero()) {
 	    h += statesWithHNotClosed.Add() * mgr->mgr()->constant(hNotClosed + 1);

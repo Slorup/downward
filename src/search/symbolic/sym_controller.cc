@@ -19,8 +19,8 @@ namespace symbolic {
 SymController::SymController(const Options &opts)
     : vars(make_shared<SymVariables>(opts)), 
       mgrParams(opts), searchParams(opts) {
-    mgrParams.print_options();
-    searchParams.print_options();
+    //mgrParams.print_options();
+    //searchParams.print_options();
 
     //TODO: This should be done before computing the var order and
     //initializing vars. Done here to avoid memory errors

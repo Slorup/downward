@@ -5,6 +5,8 @@
 #include "../causal_graph.h"
 
 #include "../task_proxy.h"
+#include "../utils/debug_macros.h"
+
 
 using namespace std;
 
@@ -43,7 +45,7 @@ void InfluenceGraph::compute_gamer_ordering(std::vector <int> &var_order) {
 
 void InfluenceGraph::get_ordering(vector <int> &ordering) const {
     long value_optimization_function = optimize_variable_ordering_gamer(ordering, 50000);
-    cout << "Value: " << value_optimization_function << endl;
+    DEBUG_MSG(cout << "Value: " << value_optimization_function << endl;);
 
     for (int counter = 0; counter < 20; counter++) {
         vector <int> new_order;
@@ -53,7 +55,7 @@ void InfluenceGraph::get_ordering(vector <int> &ordering) const {
         if (new_value < value_optimization_function) {
             value_optimization_function = new_value;
             ordering.swap(new_order);
-            cout << "New value: " << value_optimization_function << endl;
+            DEBUG_MSG(cout << "New value: " << value_optimization_function << endl;);
         }
     }
 }
