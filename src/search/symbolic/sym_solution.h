@@ -20,7 +20,7 @@ public:
 
     ADD getADD() const;
 
-    inline bool solved() {
+    inline bool solved() const {
         return g + h >= 0;
     }
 

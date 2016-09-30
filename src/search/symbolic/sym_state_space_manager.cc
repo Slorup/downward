@@ -110,7 +110,7 @@ void SymStateSpaceManager::init_transitions_from_individual_trs() {
             min_transition_cost = it->first;
         }
 
-        cout << "TRs cost=" << it->first << " (" << it->second.size() << ")" << endl;
+        DEBUG_MSG(cout << "TRs cost=" << it->first << " (" << it->second.size() << ")" << endl;);
     }
 }
 

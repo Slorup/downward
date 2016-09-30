@@ -47,6 +47,12 @@ class BreadthFirstSearch : public UnidirectionalSearch  {
 	    std::shared_ptr<SymStateSpaceManager> manager, int maxRelaxTime, int maxRelaxNodes);
 
 
+  virtual int getF() const override {
+      return 0;
+  }
+
+  virtual void getPlan(const BDD &, int , int , std::vector <const GlobalOperator *> &) const {
+  }
   BDD pop();
 
   virtual bool finished() const {

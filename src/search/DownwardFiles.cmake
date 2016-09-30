@@ -507,6 +507,16 @@ fast_downward_plugin(
     DEPENDS PDBS SYMBOLIC
 )
 
+
+fast_downward_plugin(
+    NAME GAMER_PDBS
+    HELP "Plugin containing the code for Gamer's symbolic PDBs"
+    SOURCES
+	symbolic/gamer_pdbs_heuristic.cc
+
+    DEPENDS SYMBOLIC
+)
+
 fast_downward_plugin(
     NAME POTENTIALS
     HELP "Plugin containing the code for potential heuristics"

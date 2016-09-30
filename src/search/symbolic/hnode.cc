@@ -15,8 +15,9 @@ using namespace std;
 namespace symbolic {
 HNode::HNode(HTree *tree_, const SymParamsMgr &params) :
     tree(tree_), ph(nullptr),
-    state_space(new OriginalStateSpace(tree->get_engine()->getVars(),
-                                       params, OperatorCost::NORMAL)) {
+    state_space(make_shared<OriginalStateSpace>(tree->get_engine()->getVars(),
+						params, 
+						OperatorCostFunction::get_cost_function())) {
 }
 
 HNode::HNode(HNode *o, SymPH *ph_,
@@ -115,7 +116,7 @@ BidirectionalSearch *HNode::getPerimeter() const {
 BidirectionalSearch *HNode::initSearch(const SymParamsSearch &searchParams, Dir dir) {
     assert(!exp);
     if (!exp) {
-        exp.reset(new BidirectionalSearch(tree->get_engine(), searchParams, dir));
+        exp = make_unique<BidirectionalSearch>(tree->get_engine(), searchParams, dir);
 
         if (exp->initFrontier(state_space, numeric_limits<int>::max(), numeric_limits<int>::max()) &&
             exp->initAll(numeric_limits<int>::max(), numeric_limits<int>::max())) {

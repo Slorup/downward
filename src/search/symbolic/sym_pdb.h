@@ -25,6 +25,10 @@ public:
 
     SymPDB(std::shared_ptr<SymStateSpaceManager> parent, 
            AbsTRsStrategy absTRsStrategy, 
+	   const std::set<int> &relVars);
+
+    SymPDB(std::shared_ptr<SymStateSpaceManager> parent, 
+           AbsTRsStrategy absTRsStrategy, 
 	   const std::set<int> &relVars, 
 	   std::shared_ptr<OperatorCostFunction> cost_type_);
 

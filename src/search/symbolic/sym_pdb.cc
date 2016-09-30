@@ -48,6 +48,11 @@ SymPDB::SymPDB(SymVariables *bdd_vars, const SymParamsMgr &params,
 
     SymPDB::SymPDB(shared_ptr<SymStateSpaceManager> parent, 
 		   AbsTRsStrategy absTRsStrategy,
+		   const std::set<int> &relevantVars) :
+	SymPDB(parent, absTRsStrategy, relevantVars, parent->get_cost_type()) {}
+
+    SymPDB::SymPDB(shared_ptr<SymStateSpaceManager> parent, 
+		   AbsTRsStrategy absTRsStrategy,
 		   const std::set<int> &relevantVars, 
 		   std::shared_ptr<OperatorCostFunction> cost_type_) :
 	SymStateSpaceManager(parent, absTRsStrategy, relevantVars, cost_type_) {

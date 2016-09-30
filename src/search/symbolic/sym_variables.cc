@@ -6,6 +6,7 @@
 #include <string>
 #include "sym_util.h"
 
+#include "../utils/debug_macros.h"
 #include "../options/options.h"
 #include "../options/option_parser.h"
 #include "../globals.h"
@@ -110,8 +111,7 @@ void SymVariables::init(const vector <int> &v_order) {
     BDD TEST = getCubePre(testsetaaa);
     TEST.print(2, 2);
     */
-    cout << "Generating predicate BDDs: " << num_fd_vars << endl;
-    cout << var_order.size() << endl;
+    DEBUG_MSG(cout << "Generating predicate BDDs: " << num_fd_vars << endl;);
     preconditionBDDs.resize(num_fd_vars);
     effectBDDs.resize(num_fd_vars);
     biimpBDDs.resize(num_fd_vars);
