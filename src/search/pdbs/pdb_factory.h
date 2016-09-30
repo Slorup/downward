@@ -6,6 +6,9 @@
 #include <vector>
 #include <map>
 
+#include "../symbolic/sym_bucket.h"
+#include "../utils/system.h"
+
 #include "types.h"
 
 class TaskProxy;
@@ -79,6 +82,15 @@ PDBFactory() : num_patterns_created(0), num_patterns_requested(0), num_patterns_
 		    const Pattern &pattern, 
 		    const std::vector<int> &operator_costs = std::vector<int>()
 	    );
+
+    virtual bool solved() const;
+    std::shared_ptr<PatternDatabaseInterface> get_solved_heuristic() {
+	return nullptr;
+    }
+
+    virtual symbolic::Bucket get_mutexes() {
+	utils::exit_with(utils::ExitCode::CRITICAL_ERROR);	
+    }
 
     virtual std::string name() const = 0;
     void statistics() const;

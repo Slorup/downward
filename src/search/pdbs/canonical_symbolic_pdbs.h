@@ -27,7 +27,6 @@ class CanonicalSymbolicPDBs {
     mutable utils::DynamicBitset<> valid_cache;
     mutable std::vector<int> cache;
 
-
     std::shared_ptr <symbolic::SymVariables> symbolic_vars;
 
 public:

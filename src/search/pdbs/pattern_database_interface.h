@@ -5,6 +5,7 @@
 
 #include "../task_proxy.h"
 #include "cuddObj.hh"
+#include "../symbolic/sym_bucket.h"
 
 #include <utility>
 #include <vector>
@@ -52,7 +53,6 @@ public:
     // Returns true iff op has an effect on a variable in the pattern.
     bool is_operator_relevant(const OperatorProxy &op) const;
 
-
     bool is_original_costs() const {
 	return original_costs;
     }
@@ -65,13 +65,15 @@ public:
 	return nullptr;
     }
 
-
     virtual ADD get_ADD() {
 	std::cerr << "Error: get_ADD not implemented for this type of " << std::endl;
-	utils::exit_with(utils::ExitCode::CRITICAL_ERROR);
-	
+	utils::exit_with(utils::ExitCode::CRITICAL_ERROR);	
     }
 
+    virtual symbolic::Bucket get_dead_ends() {
+	std::cerr << "Error: get_dead_ends not implemented for this type of " << std::endl;
+	utils::exit_with(utils::ExitCode::CRITICAL_ERROR);	
+    }
 
     virtual int get_value(const State &state, int cache_id) const {
 	if (cache_id != evaluation_cache_id) {

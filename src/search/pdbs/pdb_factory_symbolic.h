@@ -44,8 +44,6 @@ class PDBFactorySymbolic : public PDBFactory, public symbolic::SymController {
 	virtual int getLowerBound() const {return lower_bound; }
 	virtual bool solved() const {return lower_bound >= upper_bound; }
 
-
-
     protected:
 	virtual void dump_strategy_specific_options() const override;
     public:

@@ -62,24 +62,24 @@ namespace pdbs {
 	return get_value (vars->getBinaryDescription(state));
     }
 
-int PatternDatabaseSymbolic::get_value(int * inputs) const {
-    // for(const BDD & bdd : notMutexBDDs){
-    // 	if(bdd.Eval(inputs).IsZero()){
-    // 	    return DEAD_END;
-    // 	}
-    // }
+    int PatternDatabaseSymbolic::get_value(int * inputs) const {
+	// for(const BDD & bdd : notMutexBDDs){
+	// 	if(bdd.Eval(inputs).IsZero()){
+	// 	    return DEAD_END;
+	// 	}
+	// }
 
-    if(!heuristic) return 0;
+	if(!heuristic) return 0;
 
-    ADD evalNode = heuristic->Eval(inputs);
-    int abs_cost = Cudd_V(evalNode.getRegularNode());
+	ADD evalNode = heuristic->Eval(inputs);
+	int abs_cost = Cudd_V(evalNode.getRegularNode());
 
-    return (abs_cost == -1 ? numeric_limits<int>::max() : abs_cost);    
-}
+	return (abs_cost == -1 ? numeric_limits<int>::max() : abs_cost);    
+    }
 
-double PatternDatabaseSymbolic::compute_mean_finite_h() const {
+    double PatternDatabaseSymbolic::compute_mean_finite_h() const {
     
-    return average;
-}
+	return average;
+    }
 
 }

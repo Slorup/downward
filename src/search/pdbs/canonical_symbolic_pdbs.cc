@@ -47,14 +47,13 @@ CanonicalSymbolicPDBs::CanonicalSymbolicPDBs(
 	if(subsetADDs.size() == 1) {
 	    singlePDBs.push_back(subsetADDs[0]);
 	} else {
-	    vector<int> indexes (subsetADDs.size());
-	    int i = 0;
+	    vector<int> indexes;
 	    for (const auto & pdb : subsetADDs) {
 		int pos = find(pdbs.begin(), pdbs.end(), pdb) - pdbs.begin();
 		if (pos < (int) pdbs.size()) { 
-		    indexes [i++] = pos;
+		    indexes.push_back(pos);
 		}else {
-		    indexes [i++] = pdbs.size();
+		    indexes.push_back(pdbs.size());
 		    pdbs.push_back(pdb);
 		}
 	    }
@@ -101,9 +100,8 @@ int CanonicalSymbolicPDBs::get_value(const State &state) const {
 	    if (!valid_cache[pdb]) {
 		valid_cache.set(pdb);
 		cache[pdb] = Cudd_V(pdbs[pdb].Eval(inputs).getRegularNode());
-	    }
-	    
-	    if (cache[pdb] == -1) return numeric_limits<int>::max();
+		if (cache[pdb] == -1) return numeric_limits<int>::max();
+	    }	   
 
             subset_h += cache[pdb];
         }
