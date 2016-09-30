@@ -6,6 +6,7 @@
 
 #include <memory>
 #include "../utils/dynamic_bitset.h"
+#include <iostream>
 
 class State;
 
@@ -36,7 +37,13 @@ public:
     ~CanonicalSymbolicPDBs() = default;
 
     int get_value(const State &state) const;
-    virtual int count_pdbs(){return singlePDBs.size();}
+    virtual int count_pdbs(){
+      int count=0;
+      for(auto pattern_collection : max_additive_subsets){
+	count+=pattern_collection.size();
+      }
+      return count;
+    }
 
 };
 }
