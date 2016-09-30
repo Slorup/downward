@@ -34,6 +34,7 @@ CanonicalSymbolicPDBs::CanonicalSymbolicPDBs(
     }
    
     for (const auto & subset : *max_additive_subsets_) {
+	if(subset.empty()) continue;
 	vector <ADD> subsetADDs;
 	for (const auto & pdb : subset) {
 	    subsetADDs.push_back(pdb->get_ADD());
@@ -43,7 +44,6 @@ CanonicalSymbolicPDBs::CanonicalSymbolicPDBs(
 	    merge(symbolic_vars.get(), subsetADDs, symbolic::mergeSumADD, compress_time, compress_nodes);
 	}
 
-	assert(!subsetADDs.empty());
 	if(subsetADDs.size() == 1) {
 	    singlePDBs.push_back(subsetADDs[0]);
 	} else {
@@ -76,7 +76,6 @@ CanonicalSymbolicPDBs::CanonicalSymbolicPDBs(
 
 int CanonicalSymbolicPDBs::get_value(const State &state) const {
     // If we have an empty collection, then max_additive_subsets = { \emptyset }.
-    assert(!max_additive_subsets.empty());
     valid_cache.reset();
     int * inputs = symbolic_vars->getBinaryDescription(state.get_values());
 

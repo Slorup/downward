@@ -125,7 +125,9 @@ namespace symbolic {
 
 	    closed->setHNotClosed(open_list.minNextG(frontier.g(), mgr->getAbsoluteMinTransitionCost()));
 	    closed->setFNotClosed(getF());
-   
+
+	    if(!isAbstracted()) engine->setLowerBound(getF());
+       
 	    computeEstimation(true);
 	}
 

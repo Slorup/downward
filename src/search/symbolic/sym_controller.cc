@@ -18,7 +18,7 @@ using namespace std;
 namespace symbolic {
 SymController::SymController(const Options &opts)
     : vars(make_shared<SymVariables>(opts)), 
-      mgrParams(opts), searchParams(opts) {
+      mgrParams(opts), searchParams(opts), lower_bound(0){
     //mgrParams.print_options();
     //searchParams.print_options();
 
@@ -44,4 +44,16 @@ void SymController::add_options_to_parser(OptionParser &parser, int maxStepTime,
     SymParamsMgr::add_options_to_parser(parser);
     SymParamsSearch::add_options_to_parser(parser, maxStepTime, maxStepNodes);
 }
+
+    void SymController::new_solution(const SymSolution & sol) { 
+	if(!solution.solved() || 
+	   sol.getCost() < solution.getCost()){
+	    solution = sol;
+	}
+    }   
+
+    void SymController::setLowerBound(int lower) {
+	lower_bound = max(lower, lower_bound);
+    }
+
 }

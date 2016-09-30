@@ -16,6 +16,9 @@ namespace symbolic {
 	if (exp_fw) {
 	    exp_fw->getPlan(cut, g, h, path);   
 	}
+
+	DEBUG_MSG(cout << "Extract path backward: " << h << endl; );
+
 	if (exp_bw) {
 	    BDD newCut;
 	    if (!path.empty()) {
@@ -36,23 +39,24 @@ namespace symbolic {
     
 	    exp_bw->getPlan(newCut, g, h, path);
 	}
-	/*DEBUG_MSG(cout << "Path extracted" << endl;
-	  State s2 (*g_initial_state);
-	  //Get state
-	  for(auto op : path){
-	  cout << op->get_name() << endl;
-	  if(!op->is_applicable(s2)){
-	  cout << "ERROR: bad plan reconstruction" << endl;
-	  cout << op->get_name() << " is not applicable" << endl;
-	  exit(-1);
-	  }
-	  s2 = State(s2, *op);
-	  }
-	  if(!test_goal(s2)){
-	  cout << "ERROR: bad plan reconstruction" << endl;
-	  cout << "The plan ends on a non-goal state" << endl;
-	  exit(-1);
-	  });*/
+	DEBUG_MSG(cout << "Path extracted" << endl;
+	  // State s2 (*g_initial_state);
+	  // //Get state
+	  // for(auto op : path){
+	  // cout << op->get_name() << endl;
+	  // if(!op->is_applicable(s2)){
+	  // cout << "ERROR: bad plan reconstruction" << endl;
+	  // cout << op->get_name() << " is not applicable" << endl;
+	  // exit(-1);
+	  // }
+	  // s2 = State(s2, *op);
+	  // }
+	  // if(!test_goal(s2)){
+	  // cout << "ERROR: bad plan reconstruction" << endl;
+	  // cout << "The plan ends on a non-goal state" << endl;
+	  // exit(-1);
+	  //}
+	    );
         
     
     }

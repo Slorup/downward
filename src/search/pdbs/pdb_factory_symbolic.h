@@ -25,6 +25,7 @@ class RandomNumberGenerator;
 
 namespace pdbs {
 
+
 class PDBFactorySymbolic : public PDBFactory, public symbolic::SymController {
 	const int generationTime;
 	const double generationMemoryGB; 
@@ -32,17 +33,6 @@ class PDBFactorySymbolic : public PDBFactory, public symbolic::SymController {
         const bool dump;
 
         std::shared_ptr<symbolic::OriginalStateSpace> manager;
-
-	int upper_bound;
-	int lower_bound;
-	std::vector <const GlobalOperator *> plan;
-	
-	virtual void new_solution(const symbolic::SymSolution & sol);
-	 
-	virtual void setLowerBound(int lower);
-	virtual int getUpperBound() const {return upper_bound; }
-	virtual int getLowerBound() const {return lower_bound; }
-	virtual bool solved() const {return lower_bound >= upper_bound; }
 
     protected:
 	virtual void dump_strategy_specific_options() const override;

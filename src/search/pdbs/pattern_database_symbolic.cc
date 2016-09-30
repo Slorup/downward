@@ -6,6 +6,9 @@
 #include "../utils/timer.h"
 #include "../utils/debug_macros.h"
 
+#include "../symbolic/sym_solution.h"
+
+
 
 using namespace std;
 
@@ -51,7 +54,11 @@ namespace pdbs {
 	DEBUG_MSG(for (int v : pattern) cout << v << " ";);
 	
 	DEBUG_MSG(cout << " Finished: " << search.finished() <<  ", Average: " << average << endl;);
-	heuristic = make_unique<ADD>(search.getHeuristic());
+	if(engine->solved()) {
+	    heuristic = make_unique<ADD>(engine->get_solution()->getADD());	    
+	} else {
+	    heuristic = make_unique<ADD>(search.getHeuristic());
+	}
     }
 
     int PatternDatabaseSymbolic::get_value(const State & state) const {

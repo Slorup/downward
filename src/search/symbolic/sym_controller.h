@@ -6,6 +6,7 @@
 #include "sym_state_space_manager.h"
 #include "sym_enums.h"
 #include "sym_params_search.h"
+#include "sym_solution.h"
 
 #include <vector>
 #include <memory>
@@ -29,15 +30,34 @@ protected:
     SymParamsMgr mgrParams; //Parameters for SymStateSpaceManager configuration.
     SymParamsSearch searchParams; //Parameters to search the original state space
 
+    int lower_bound;
+    SymSolution solution; 
+
+
 public:
     SymController(const options::Options &opts);
     virtual ~SymController() {}
 
-    virtual void new_solution(const SymSolution & /*sol*/) {}
-    virtual void setLowerBound(int /*lower*/) {}
-    virtual int getUpperBound() const {return std::numeric_limits<int>::max(); }
-    virtual int getLowerBound() const {return 0; }
-    virtual bool solved() const {return false; }
+
+    void new_solution(const SymSolution & sol);
+    void setLowerBound(int lower);
+
+    int getUpperBound() const {
+	if(solution.solved()) return solution.getCost();
+	else return std::numeric_limits<int>::max();
+    }
+    int getLowerBound() const {
+	return lower_bound; 
+    }
+    
+    bool solved() const {
+	return getLowerBound() >= getUpperBound(); 
+    }
+    
+    const SymSolution * get_solution () const {
+	return &solution;
+    }
+
 
     inline SymVariables *getVars() {
         return vars.get();

@@ -113,7 +113,7 @@ GamerPDBsHeuristic::GamerPDBsHeuristic(const Options &opts)
     generationMemory (opts.get<double> ("generation_memory")), 
     useSuperPDB (opts.get<bool> ("super_pdb")), 
     perimeter (opts.get<bool> ("perimeter")) {
-    initialize();
+
 }
 
 
@@ -140,23 +140,17 @@ void GamerPDBsHeuristic::initialize() {
 	pdb_search.search(searchParams, generationTime, generationMemory);
 	cout << "Finished super PDB: " << endl; 
 
-	UniformCostSearch * search = pdb_search.get_search();
-
 	if(solved()) {
-	    cout << "Problem solved during heuristic generation" << endl;
-	    heuristic = make_unique<ADD>(solution.getADD());
-	    return;
+     	cout << "Problem solved during heuristic generation" << endl;
 	}
 
 	if(perimeter) {
+	    UniformCostSearch * search = pdb_search.get_search();
 	    perimeter_heuristic = make_unique<ADD>(search->getClosed()->getHeuristic());
 	    max_perimeter_heuristic = search->getClosed()->getHNotClosed();
 	}
-
     }
     
-
-
     //1) Get initial abstraction
     set<int> pattern;
     for (auto goal : g_goal) pattern.insert(goal.first);
@@ -175,7 +169,7 @@ void GamerPDBsHeuristic::initialize() {
 
     while((generationTime == 0 || utils::g_timer() < generationTime) && 
 	  (generationMemory == 0 || vars->totalMemory() < generationMemory) && 
-	  !solution.solved()) {
+	  !solved()) {
         
 	vector<unique_ptr<PDBSearch>> new_bests;
 	double new_best_value = -1; 
@@ -199,12 +193,15 @@ void GamerPDBsHeuristic::initialize() {
 	
 	    new_pdb->search(searchParams, generationTime, generationMemory);
     	    
-	    //cout << "Search ended. Solution found: " << solution.solved() << endl;
-	    if (solution.solved()) {
+	    DEBUG_MSG(cout << "Search ended. Solution found: " << solution.solved() << endl;);
+
+	    assert(child_pattern.size () < g_variable_domain.size() || 
+		   lower_bound >= new_pdb->get_search()->getF());
+
+	    if (solved()) {
 		best_pdb = std::move(new_pdb);
 		//cout << "Best PDB after solution found: " << *best_pdb << endl;
 		new_bests.clear();
-		
 		break;
 	    }
 
@@ -223,7 +220,7 @@ void GamerPDBsHeuristic::initialize() {
 				return x->average_value() < 0.999*new_best_value;
 			    }), new_bests.end());
 
-	if (new_bests.size() > 1) {
+	if (!solved() && new_bests.size() > 1) {
 	    set<int> new_pattern; 
 	    for (auto & pdb : new_bests) {
 		new_pattern.insert(pdb->get_pattern().begin(), pdb->get_pattern().end());
@@ -237,7 +234,10 @@ void GamerPDBsHeuristic::initialize() {
 	    
 	    best_pdb->search(searchParams, generationTime, generationMemory);
 
-	    if(!solution.solved() && best_pdb->average_value() < new_best_value) {
+	    assert(new_pattern.size () < g_variable_domain.size() || 
+		   lower_bound >= best_pdb->get_search()->getF());
+
+	    if(!solved() && best_pdb->average_value() < new_best_value) {
 		for (auto & pdb : new_bests) {
 		    if (pdb->average_value() == new_best_value) {
 			best_pdb = std::move(pdb);
@@ -262,8 +262,7 @@ void GamerPDBsHeuristic::initialize() {
 	//else
 	heuristic = make_unique<ADD>(best_pdb->getHeuristic());
     }
-    cout << "Done initializing Gamer PDB heuristic [" << timer << "] total memory: " << vars->totalMemory() 
-	 << endl << endl;    
+    cout << "Done initializing Gamer PDB heuristic [" << timer << "] total memory: " << vars->totalMemory() << endl << endl;    
 
     if(!heuristic) cout << "Warning: heuristic could not be computed" << endl;
 }
@@ -300,7 +299,6 @@ int GamerPDBsHeuristic::compute_heuristic(const GlobalState &state) {
     return res;
 }
 
-
 void GamerPDBsHeuristic::dump_options() const {
   cout << "Generation time: " << generationTime << endl;
   cout << "Generation memory: " << generationMemory << endl;
@@ -317,8 +315,6 @@ static ScalarEvaluator *_parse(OptionParser &parser) {
     parser.add_option<bool>("super_pdb", "construct super pdb", "false");
 
     parser.add_option<bool>("perimeter", "construct perimeter pdbs", "false");
-
-
 
     Options opts = parser.parse();
     if (parser.help_mode())

@@ -35,6 +35,7 @@ PDBFactorySymbolic::create_pdb(const TaskProxy & task,
 		    const std::vector<int> &operator_costs){
 	
 	assert(!pattern.empty());
+	assert(!solved());
 	DEBUG_MSG(cout << "COMPUTE SYMBOLIC PDB" << endl;);
 	std::set<int> pattern_set (pattern.begin(), pattern.end()); 
 	DEBUG_MSG(cout << "Pattern: "; for (int v : pattern_set) { cout << " " << v; }cout << endl;);
@@ -50,9 +51,11 @@ PDBFactorySymbolic::create_pdb(const TaskProxy & task,
 	}
 	DEBUG_MSG(cout << "INIT PatternDatabaseSymbolic" << endl;);
 
-	return make_shared<PatternDatabaseSymbolic> (task, pattern, operator_costs,
-						     this, vars, state_space_mgr, 
-						     searchParams, generationTime, generationMemoryGB);
+	auto new_pdb = make_shared<PatternDatabaseSymbolic> (task, pattern, operator_costs,
+							     this, vars, state_space_mgr, 
+							     searchParams, generationTime, generationMemoryGB);
+	
+	return new_pdb;
     }
 
 
@@ -64,17 +67,6 @@ void PDBFactorySymbolic::dump_strategy_specific_options() const {
 string PDBFactorySymbolic::name() const {
     return "symbolic";
 }
-
-    void PDBFactorySymbolic::new_solution(const SymSolution & sol) {
-	if(upper_bound > sol.getCost()) {
-	    upper_bound = sol.getCost(); 
-		
-	    sol.getPlan(plan);
-	}
-    }
-    void PDBFactorySymbolic::setLowerBound(int lower) {
-	lower_bound = max(lower, lower_bound);
-    }
 
 
 static shared_ptr<PDBFactory>_parse(options::OptionParser &parser) {

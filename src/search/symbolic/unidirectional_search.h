@@ -85,6 +85,7 @@ namespace symbolic {
 	}
 
 	void statistics() const;
+
     };
 }
 #endif // SYMBOLIC_EXPLORATION

@@ -97,7 +97,8 @@ namespace symbolic {
 	bool init(std::shared_ptr<SymStateSpaceManager> manager, bool fw, 
 		  std::shared_ptr<ClosedList> closed_opposite = nullptr); // Init forward or backward search
 
-	virtual void getPlan(const BDD &cut, int g, int h, std::vector <const GlobalOperator *> &path) const override;
+	virtual void getPlan(const BDD &cut, int g, int h,
+			     std::vector <const GlobalOperator *> &path) const override;
 
 	virtual ADD getHeuristic() const;
 

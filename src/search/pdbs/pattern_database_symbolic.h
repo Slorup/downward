@@ -25,49 +25,51 @@ class PatternDatabaseSymbolic : public PatternDatabaseInterface {
 
     std::shared_ptr <symbolic::SymStateSpaceManager> manager;
     
+     std::unique_ptr <ADD> heuristic;
+     double average;
 
-    std::unique_ptr <ADD> heuristic;
-    double average;
+     void create_pdb(symbolic::SymController * engine, 
+		     const symbolic::SymParamsSearch & params, int generationTime, double generationMemoryGB);
 
-    void create_pdb(symbolic::SymController * engine, 
-		    const symbolic::SymParamsSearch & params, int generationTime, double generationMemoryGB);
-
-    int get_value(int * inputs) const;
-
-    
-public:
-    /*
-      Important: It is assumed that the pattern (passed via Options) is
-      sorted, contains no duplicates and is small enough so that the
-      number of abstract states is below numeric_limits<int>::max()
-      Parameters:
-       operator_costs: Can specify individual operator costs for each
-       operator. This is useful for action cost partitioning. If left
-       empty, default operator costs are used.
-    */
-    PatternDatabaseSymbolic(const TaskProxy &task_proxy,
-			    const Pattern &pattern, 
-			    const std::vector<int> &operator_costs, 
-			    symbolic::SymController * engine, 
-			    std::shared_ptr<symbolic::SymVariables> vars, 
-			    std::shared_ptr<symbolic::SymStateSpaceManager> manager, 
-			    const symbolic::SymParamsSearch & params, int generationTime, double generationMemoryGB);
-
-    virtual ~PatternDatabaseSymbolic() = default;
-
-    virtual int get_value(const State &state) const override;
-
-    virtual int get_value(const std::vector<int> &state) const override;
+     int get_value(int * inputs) const;
 
 
-    virtual std::shared_ptr<symbolic::SymVariables> get_symbolic_variables() {
-	return vars;
+ public:
+     /*
+       Important: It is assumed that the pattern (passed via Options) is
+       sorted, contains no duplicates and is small enough so that the
+       number of abstract states is below numeric_limits<int>::max()
+       Parameters:
+	operator_costs: Can specify individual operator costs for each
+	operator. This is useful for action cost partitioning. If left
+	empty, default operator costs are used.
+     */
+     PatternDatabaseSymbolic(const TaskProxy &task_proxy,
+			     const Pattern &pattern, 
+			     const std::vector<int> &operator_costs, 
+			     symbolic::SymController * engine, 
+			     std::shared_ptr<symbolic::SymVariables> vars, 
+			     std::shared_ptr<symbolic::SymStateSpaceManager> manager, 
+			     const symbolic::SymParamsSearch & params, int generationTime, double generationMemoryGB);
+
+     virtual ~PatternDatabaseSymbolic() = default;
+
+     virtual int get_value(const State &state) const override;
+
+     virtual int get_value(const std::vector<int> &state) const override;
+
+
+     virtual std::shared_ptr<symbolic::SymVariables> get_symbolic_variables() {
+	 return vars;
+     }
+
+     virtual ADD get_ADD() {
+	 return *heuristic;
+     }
+
+     void set_heuristic(const ADD & add) {
+	 	heuristic = std::make_unique<ADD> (add);
     }
-
-    virtual ADD get_ADD() {
-	return *heuristic;
-    }
-
 
     /*
       Returns the average h-value over all states, where dead-ends are

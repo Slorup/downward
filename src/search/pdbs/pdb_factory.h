@@ -83,14 +83,6 @@ PDBFactory() : num_patterns_created(0), num_patterns_requested(0), num_patterns_
 		    const std::vector<int> &operator_costs = std::vector<int>()
 	    );
 
-    virtual bool solved() const {
-	return false;
-    }
-
-    std::shared_ptr<PatternDatabaseInterface> get_solved_heuristic() {
-	return nullptr;
-    }
-
     /* virtual symbolic::Bucket get_mutexes() { */
     /* 	utils::exit_with(utils::ExitCode::CRITICAL_ERROR);	 */
     /* } */

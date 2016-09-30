@@ -59,14 +59,6 @@ class GamerPDBsHeuristic : public Heuristic, public SymController {
     std::unique_ptr<ADD> heuristic;
     std::vector<BDD> notMutexBDDs;
 
-    SymSolution solution; 
-    virtual void new_solution(const SymSolution & sol){
-	if(!solution.solved() || 
-	   sol.getCost() < solution.getCost()){
-	    solution = sol;
-	}
-    }   
-
     void dump_options() const;
 
     bool influences(int var, const std::set<int> & pattern);
@@ -78,13 +70,7 @@ protected:
 public:
     GamerPDBsHeuristic(const options::Options &opts);
     virtual ~GamerPDBsHeuristic() = default;
-    const SymSolution & get_solution () const {
-	return solution;
-    }
 
-    void discard_solution() {
-	solution = SymSolution();
-    }
 };
 
 }
