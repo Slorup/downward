@@ -17,6 +17,7 @@ namespace symbolic {
     void Frontier::init(SymStateSpaceManager * mgr_, const BDD & bdd) {
 	mgr = mgr_;
 	Sfilter.push_back(bdd);
+	g_value = 0;
     }
 
     void Frontier::set(int g, Bucket & bdd) {

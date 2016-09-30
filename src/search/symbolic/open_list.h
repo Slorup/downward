@@ -52,7 +52,7 @@ public:
                         Bucket &res, bool open);
     int minG() const;
 
-    int minNextG(int g, int min_action_cost) const;
+    int minNextG(const Frontier & frontier, int min_action_cost) const;
 
     void pop (Frontier & frontier);
 

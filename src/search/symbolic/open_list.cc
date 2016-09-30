@@ -17,12 +17,12 @@ void OpenList::insert(const BDD &bdd, int g) {
     assert(!bdd.IsZero());
     open[g].push_back(bdd);
 }
-
-int OpenList::minNextG(int g, int min_action_cost) const {
+int OpenList::minNextG(const  Frontier & frontier, int min_action_cost) const {
+    int next_g = (frontier.empty() ? std::numeric_limits<int>::max()  : frontier.g() + min_action_cost);
     if (!open.empty()) {
-        return min(g + min_action_cost, open.begin()->first);
+        return min(next_g, open.begin()->first);
     } 
-    return g + min_action_cost;
+    return next_g;
 }
 
     void OpenList::pop(Frontier & frontier) {

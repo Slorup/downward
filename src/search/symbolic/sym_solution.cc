@@ -68,7 +68,7 @@ namespace symbolic {
 
 	SymVariables *vars = nullptr;
 	if(exp_fw) vars = exp_fw->getStateSpace()->getVars();
-	if(exp_bw) vars = exp_bw->getStateSpace()->getVars();
+	else if(exp_bw) vars = exp_bw->getStateSpace()->getVars();
 	
 	ADD hADD = vars->getADD(-1);
 	int h_val = g + h;

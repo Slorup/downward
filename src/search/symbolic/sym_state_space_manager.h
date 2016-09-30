@@ -155,10 +155,12 @@ public:
     void init_transitions();
 
     inline bool isAbstracted() const {
-        return !(absVars.empty() && nonRelVars.empty());
+        assert (fullVars.size() +absVars.size() + nonRelVars.size() == g_variable_domain.size());
+	return !(absVars.empty() && nonRelVars.empty());
     }
 
     inline bool isOriginal() const {
+	assert (fullVars.size() +absVars.size() + nonRelVars.size() == g_variable_domain.size()); 
         return !isAbstracted();
     }
 

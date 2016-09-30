@@ -114,7 +114,7 @@ namespace symbolic {
 	}
 
 	virtual int getF() const override {
-	    return open_list.minNextG(frontier.g(), mgr->getAbsoluteMinTransitionCost());
+	    return open_list.minNextG(frontier, mgr->getAbsoluteMinTransitionCost());
 	}
 
 	BDD getClosedTotal();

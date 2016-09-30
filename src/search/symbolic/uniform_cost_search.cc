@@ -49,7 +49,7 @@ namespace symbolic {
 
 	closed->init(mgr.get(), this);
 	closed->insert(0, init_bdd);
-	closed->setHNotClosed(open_list.minNextG(frontier.g(), mgr->getAbsoluteMinTransitionCost()));
+	closed->setHNotClosed(open_list.minNextG(frontier, mgr->getAbsoluteMinTransitionCost()));
 	closed->setFNotClosed(getF());
 
 	DEBUG_MSG(cout << "Init perfect heuristic: " << endl;);
@@ -65,12 +65,13 @@ namespace symbolic {
 
 	prepareBucket();
 
-	if(!isAbstracted()) engine->setLowerBound(getF());
+	if(isOriginal()) engine->setLowerBound(getF());
 
 	return true;
     }
 
-    void UniformCostSearch::checkCutOriginal(Bucket & bucket, int g_val){
+    void UniformCostSearch::checkCutOriginal(Bucket & bucket, int g_val) {
+	assert(isOriginal());
 	//If it is the original space, maybe we have found a solution, set upper bound  
 	if(!perfectHeuristic || p.get_non_stop()){
 	    return;
@@ -99,7 +100,7 @@ namespace symbolic {
 	    }
 
 	    open_list.pop(frontier);
-	    assert(!frontier.empty() || frontier.g() == numeric_limits<int>::max() );
+	    
 	    if (mgr->isOriginal()) {
 		checkCutOriginal(frontier.bucket(), frontier.g());
 	    }
@@ -111,7 +112,6 @@ namespace symbolic {
 	    removeZero(frontier.bucket());
 	
 	    // Close and move to reopen
-
 	    if(isAbstracted() || !lastStepCost || frontier.g() != 0){
 		//Avoid closing init twice
 		DEBUG_MSG (cout <<"Insert g="<< frontier.g() << " states into closed: " << 
@@ -123,10 +123,10 @@ namespace symbolic {
 		}
 	    } 
 
-	    closed->setHNotClosed(open_list.minNextG(frontier.g(), mgr->getAbsoluteMinTransitionCost()));
+	    closed->setHNotClosed(open_list.minNextG(frontier, mgr->getAbsoluteMinTransitionCost()));
 	    closed->setFNotClosed(getF());
 
-	    if(!isAbstracted()) engine->setLowerBound(getF());
+	    if(isOriginal()) engine->setLowerBound(getF());
        
 	    computeEstimation(true);
 	}
@@ -243,6 +243,7 @@ namespace symbolic {
 	}
 
 	stats.step_time += sTime();
+
 	return res_expansion.ok;
     }
 
