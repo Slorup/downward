@@ -94,7 +94,7 @@ class PatternCollectionGeneratorGeneticSS : public PatternCollectionGenerator {
     std::vector<std::vector<std::vector<bool>>> best_pattern_collection;
     double best_fitness;
     // pointer to the heuristic in evaluate from the episode before, used to free memory.
-    GroupZeroOnePDBs best_heuristic;
+    //GroupZeroOnePDBs best_heuristic;
     ZeroOnePDBs *current_heuristic;
     //ZeroOnePDBsHeuristic *current_heuristic;
     double average_operator_cost;
@@ -197,6 +197,7 @@ public:
     static bool compare_pattern_sizes_sort (pair<int ,int > i,pair<int ,int > j) { return (i.second<j.second); }
     //Dominated in terms of all sampled unique states having a h value lower or better than the max of all other heuristics
     void clear_dominated_heuristics();
+    int get_best_value(State current_state);
 };
 ostream& operator<<(ostream& os, const vector<bool>& v);
 template<class T>
