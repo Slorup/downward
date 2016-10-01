@@ -66,8 +66,7 @@ void PDBSearch::search(const SymParamsSearch & params,
     }
     
     average_hval = uc_search->getClosed()->average_hvalue();
-    cout << "Finished PDB: " << *this << flush << "   Average value: "  << average_hval << " g_time: " << utils::g_timer() << endl; 
-    
+    //cout << "Finished PDB: " << *this << flush << "   Average value: "  << average_hval << " g_time: " << utils::g_timer() << endl; 
 }
 
 
@@ -212,6 +211,7 @@ void GamerPDBsHeuristic::initialize() {
 		new_bests.push_back(std::move(new_pdb));
 	    }  
 	}
+
 	if (new_bests.empty()) break;
 	new_bests.erase(std::remove_if(
 			    new_bests.begin(), 
