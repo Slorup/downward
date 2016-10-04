@@ -87,12 +87,17 @@ class PatternCollectionGeneratorGeneticSS : public PatternCollectionGenerator {
     /* Specifies whether patterns in each pattern collection need to be disjoint
        or not. */
     bool disjoint_patterns;
+    bool hybrid_pdb_size;
     
 
     // Store best pattern collection over all episodes and its fitness value.
     std::shared_ptr<PatternCollection> best_patterns;
     vector<std::shared_ptr<PDBCollection> >best_pdb_collections; //Store the PDBs as well
     std::vector<std::vector<std::vector<bool>>> best_pattern_collection;
+        
+    set< vector<Pattern> > chosen_pattern_collections;
+   
+
     double best_fitness;
     // pointer to the heuristic in evaluate from the episode before, used to free memory.
     //GroupZeroOnePDBs best_heuristic;
@@ -107,8 +112,8 @@ class PatternCollectionGeneratorGeneticSS : public PatternCollectionGenerator {
     vector<int> best_heuristic_values;
     std::vector<std::vector<std::vector<bool> > > pattern_collections; // all current pattern collections
     bool best_fitness_was_duplicate;
-    std::shared_ptr<std::vector<std::vector<int> > > chosen_pattern_collections;
     set<vector<int> > chosen_patterns;
+    bool problem_solved_while_pdb_gen=false;
     //PDBHeuristicOnline *current_heuristic,
 
     /*
