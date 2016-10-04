@@ -5,7 +5,6 @@
 
 #include "../task_proxy.h"
 #include "cuddObj.hh"
-#include "../symbolic/sym_bucket.h"
 
 #include <utility>
 #include <vector>
@@ -65,13 +64,13 @@ public:
 	return nullptr;
     }
 
-    virtual ADD get_ADD() {
+    virtual const ADD & get_ADD() const {
 	std::cerr << "Error: get_ADD not implemented for this type of " << std::endl;
 	utils::exit_with(utils::ExitCode::CRITICAL_ERROR);	
     }
 
-    virtual symbolic::Bucket get_dead_ends() {
-	std::cerr << "Error: get_dead_ends not implemented for this type of " << std::endl;
+    virtual const BDD & get_dead_ends() const {
+	std::cerr << "Error: get_dead_ends not implemented for this type of PDB" << std::endl;
 	utils::exit_with(utils::ExitCode::CRITICAL_ERROR);	
     }
 

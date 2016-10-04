@@ -73,7 +73,7 @@ public:
         return fNotClosed;
     }
 
-    ADD getHeuristic(int previousMaxH = -1) const;
+    ADD getHeuristic(bool includeDeadEnds, int previousMaxH = -1) const;
 
     void getHeuristic(std::vector<ADD> &heuristics,
                       std::vector <int> &maxHeuristicValues) const;

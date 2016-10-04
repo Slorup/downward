@@ -101,7 +101,7 @@ namespace symbolic {
 	virtual void getPlan(const BDD &cut, int g, int h,
 			     std::vector <const GlobalOperator *> &path) const override;
 
-	virtual ADD getHeuristic() const;
+	virtual ADD getHeuristic(bool includeDeadEnds) const;
 
 	virtual bool isSearchableWithNodes(int maxNodes) const;
 

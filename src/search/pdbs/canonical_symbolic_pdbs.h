@@ -21,7 +21,7 @@ class CanonicalSymbolicPDBs {
     std::vector<std::vector<int> > max_additive_subsets;
     std::vector<ADD> singlePDBs;
 
-    std::vector<BDD> dead_end_detection;    
+    std::vector<BDD> dead_ends;    
 
 
     mutable utils::DynamicBitset<> valid_cache;

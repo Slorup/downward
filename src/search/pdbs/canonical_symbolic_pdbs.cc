@@ -26,11 +26,18 @@ CanonicalSymbolicPDBs::CanonicalSymbolicPDBs(
 	    symbolic_vars = pdb->get_symbolic_variables();
 	    break;
 	}
+	if(pdb->get_dead_ends().IsZero()) {
+	    dead_ends.push_back(pdb->get_dead_ends());
+	}
     }
 
     if (dominance_pruning) {
         max_additive_subsets_ = prune_dominated_subsets(*pattern_databases, 
 							*max_additive_subsets_);
+    }
+
+    if(compress_nodes) {
+	merge(symbolic_vars.get(), dead_ends, symbolic::mergeOrBDD, compress_time, compress_nodes);	    
     }
    
     for (const auto & subset : *max_additive_subsets_) {
@@ -69,6 +76,9 @@ CanonicalSymbolicPDBs::CanonicalSymbolicPDBs(
     for (const auto & pdb : singlePDBs) cout << pdb.nodeCount() << " ";
     cout << endl << "Shared PDBs: ";
     for (const auto & pdb : pdbs) cout << pdb.nodeCount() << " ";
+    cout << "Dead-end PDBs: ";
+    for (const auto & pdb : dead_ends) cout << pdb.nodeCount() << " ";
+
     cout << endl;
     cout << "Max additive subsets: " << max_additive_subsets.size() << endl;
    
@@ -79,7 +89,7 @@ int CanonicalSymbolicPDBs::get_value(const State &state) const {
     valid_cache.reset();
     int * inputs = symbolic_vars->getBinaryDescription(state.get_values());
 
-     for(const BDD & bdd : dead_end_detection){
+     for(const BDD & bdd : dead_ends){
      	if(bdd.Eval(inputs).IsZero()){
      	    return numeric_limits<int>::max();
      	}

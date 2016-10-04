@@ -105,7 +105,6 @@ def build(config_name, cmake_parameters, make_parameters):
     subprocess.check_call([MAKE] + make_parameters, cwd=build_path)
     print("Built configuration " + config_name + " successfully")
 
-
 def main():
     config_names = set()
     make_parameters = []

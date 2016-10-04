@@ -307,8 +307,8 @@ namespace symbolic {
 	return estimation;
     }
 
-    ADD UniformCostSearch::getHeuristic() const{
-	return closed->getHeuristic();
+    ADD UniformCostSearch::getHeuristic(bool includeDeadEnds) const{
+	return closed->getHeuristic(includeDeadEnds);
     }
 
 

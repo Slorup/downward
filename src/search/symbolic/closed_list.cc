@@ -317,7 +317,7 @@ namespace symbolic {
     }
 
 
-    ADD ClosedList::getHeuristic(int previousMaxH /*= -1*/) const {
+    ADD ClosedList::getHeuristic(bool includeDeadEnds, int previousMaxH /*= -1*/) const {
 	/* When zero cost operators have been expanded, all the states in non reached
 	   have a h-value strictly greater than frontierCost.
 	   They can be frontierCost + min_action_cost or the least bucket in open. */
@@ -332,7 +332,8 @@ namespace symbolic {
 	    }
 	    }*/
 	BDD statesWithHNotClosed = !closedTotal;
-	ADD h = mgr->mgr()->constant(-1);
+	int dead_ends_value = (includeDeadEnds? -1 : 0);
+	ADD h =  mgr->mgr()->constant(dead_ends_value) ;
 	//cout << "New heuristic with h [";
 	for (auto &it : closed) {
 	    //cout << it.first << " ";
@@ -345,7 +346,7 @@ namespace symbolic {
 		h_val = previousMaxH;
 	    }
 	    if (h_val != hNotClosed) {
-		h += it.second.Add() * mgr->mgr()->constant(h_val + 1);
+		h += it.second.Add() * mgr->mgr()->constant(h_val - dead_ends_value);
 	    } else {
 		statesWithHNotClosed += it.second;
 	    }
@@ -353,7 +354,7 @@ namespace symbolic {
 	//cout << hNotClosed << "]" << endl;
 
 	if (hNotClosed != numeric_limits<int>::max() && hNotClosed >= 0 && !statesWithHNotClosed.IsZero()) {
-	    h += statesWithHNotClosed.Add() * mgr->mgr()->constant(hNotClosed + 1);
+	    h += statesWithHNotClosed.Add() * mgr->mgr()->constant(hNotClosed - dead_ends_value);
 	}
 
 	return h;

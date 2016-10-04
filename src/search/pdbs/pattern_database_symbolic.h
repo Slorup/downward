@@ -11,6 +11,7 @@
 #include <vector>
 
 #include "../symbolic/sym_state_space_manager.h"
+#include "../symbolic/sym_bucket.h"
 
 namespace symbolic {
     class SymController;
@@ -25,8 +26,10 @@ class PatternDatabaseSymbolic : public PatternDatabaseInterface {
 
     std::shared_ptr <symbolic::SymStateSpaceManager> manager;
     
-     std::unique_ptr <ADD> heuristic;
-     double average;
+    ADD heuristic;
+    BDD dead_ends;
+
+    double average;
 
      void create_pdb(symbolic::SymController * engine, 
 		     const symbolic::SymParamsSearch & params, int generationTime, double generationMemoryGB);
@@ -63,12 +66,12 @@ class PatternDatabaseSymbolic : public PatternDatabaseInterface {
 	 return vars;
      }
 
-     virtual ADD get_ADD() {
-	 return *heuristic;
+     virtual const ADD & get_ADD() const override {
+	 return heuristic;
      }
 
-     void set_heuristic(const ADD & add) {
-	 	heuristic = std::make_unique<ADD> (add);
+    virtual const BDD & get_dead_ends() const override {
+	return dead_ends;
     }
 
     /*

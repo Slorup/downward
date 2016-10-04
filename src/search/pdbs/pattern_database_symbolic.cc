@@ -28,8 +28,8 @@ namespace pdbs {
 						     int generationTime, 
 						     double generationMemoryGB) : 
 	PatternDatabaseInterface(task_proxy, pattern, operator_costs), 
-	vars (vars_), 
-	manager (manager_), average(0) {
+	vars (vars_), manager (manager_), heuristic(vars->getADD(0)), dead_ends(vars->zeroBDD()), 
+	average(0) {
 	
 	create_pdb(engine,params, generationTime, generationMemoryGB);
     }
@@ -55,9 +55,10 @@ namespace pdbs {
 	
 	DEBUG_MSG(cout << " Finished: " << search.finished() <<  ", Average: " << average << endl;);
 	if(engine->solved()) {
-	    heuristic = make_unique<ADD>(engine->get_solution()->getADD());	    
+	    heuristic = engine->get_solution()->getADD();	    
 	} else {
-	    heuristic = make_unique<ADD>(search.getHeuristic());
+	    heuristic = search.getHeuristic(false);
+	    if(search.finished()) dead_ends = search.notClosed(); 
 	}
     }
 
@@ -70,15 +71,11 @@ namespace pdbs {
     }
 
     int PatternDatabaseSymbolic::get_value(int * inputs) const {
-	// for(const BDD & bdd : notMutexBDDs){
-	// 	if(bdd.Eval(inputs).IsZero()){
-	// 	    return DEAD_END;
-	// 	}
-	// }
+	if(!dead_ends.Eval(inputs).IsZero()){
+	    return numeric_limits<int>::max();
+	}
 
-	if(!heuristic) return 0;
-
-	ADD evalNode = heuristic->Eval(inputs);
+	ADD evalNode = heuristic.Eval(inputs);
 	int abs_cost = Cudd_V(evalNode.getRegularNode());
 
 	return (abs_cost == -1 ? numeric_limits<int>::max() : abs_cost);    

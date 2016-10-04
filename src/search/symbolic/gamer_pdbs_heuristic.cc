@@ -108,7 +108,7 @@ double PDBSearch::average_value() {
 
 ADD PDBSearch::getHeuristic() const {
     assert(uc_search);
-    return uc_search->getClosed()->getHeuristic();
+    return uc_search->getClosed()->getHeuristic(true);
  }
 
 
@@ -151,7 +151,7 @@ void GamerPDBsHeuristic::initialize() {
 
 	if(perimeter) {
 	    UniformCostSearch * search = pdb_search.get_search();
-	    perimeter_heuristic = make_unique<ADD>(search->getClosed()->getHeuristic());
+	    perimeter_heuristic = make_unique<ADD>(search->getClosed()->getHeuristic(true));
 	    max_perimeter_heuristic = search->getClosed()->getHNotClosed();
 	}
     }
