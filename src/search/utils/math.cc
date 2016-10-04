@@ -2,10 +2,17 @@
 
 #include <cassert>
 #include <math.h>       /* sqrt */
+#include <iostream>
 
 namespace utils {
 
 bool is_product_within_limit(int factor1, int factor2, int limit) {
+    assert(factor1 >= 0);
+    assert(factor2 >= 0);
+    assert(limit >= 0);
+    return factor2 == 0 || factor1 <= limit / factor2;
+}
+bool is_product_within_limit(double factor1, double factor2, double limit) {
     assert(factor1 >= 0);
     assert(factor2 >= 0);
     assert(limit >= 0);

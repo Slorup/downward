@@ -49,7 +49,7 @@ class PatternCollectionGeneratorGeneticSS : public PatternCollectionGenerator {
     map<size_t,pair<int,double> > SS_states;
     // Maximum number of states for each pdb
     int modifier=1;
-    int pdb_max_size;
+    double pdb_max_size;
     int num_collections;
     int num_episodes;
     double mutation_probability;
@@ -63,7 +63,7 @@ class PatternCollectionGeneratorGeneticSS : public PatternCollectionGenerator {
     double overall_pdb_gen_time=0;
     double pdb_gen_time_limit=600;
     double overall_sample_generation_timer=0;
-    double overall_online_samp_time=0;
+    double overall_sampling_time=0;
     double overall_probe_time=0;
     int total_online_samples=0;
     int overall_sampled_states=0;
@@ -80,7 +80,8 @@ class PatternCollectionGeneratorGeneticSS : public PatternCollectionGenerator {
     double last_pdb_max_size=0;
     double last_pdb_min_size=0;
     bool last_sampler_too_big=false;
-    float min_improvement_ratio=0.1;
+    float min_improvement_ratio=0.10;
+    long candidate_count=0;
 
     std::shared_ptr<AbstractTask> task;
     /* Specifies whether patterns in each pattern collection need to be disjoint
@@ -183,7 +184,7 @@ class PatternCollectionGeneratorGeneticSS : public PatternCollectionGenerator {
     */
     void genetic_algorithm(std::shared_ptr<AbstractTask> task);
     double probe_best_only(int threshold);
-    int get_pattern_size(Pattern pattern);
+    double get_pattern_size(Pattern pattern);
 public:
     PatternCollectionGeneratorGeneticSS(const options::Options &opts);
     virtual ~PatternCollectionGeneratorGeneticSS() = default;
