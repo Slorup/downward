@@ -49,6 +49,11 @@ class PDBFactorySymbolic : public PDBFactory, public symbolic::SymController {
 	    );
 
     virtual std::string name() const override;
+
+    virtual bool is_solved () const override {
+	return solved();
+    }
+
 };
 }
 

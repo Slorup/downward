@@ -89,6 +89,10 @@ PDBFactory() : num_patterns_created(0), num_patterns_requested(0), num_patterns_
 
     virtual std::string name() const = 0;
     void statistics() const;
+
+    virtual bool is_solved () const {
+	return false;
+    }
 };
 }
 
