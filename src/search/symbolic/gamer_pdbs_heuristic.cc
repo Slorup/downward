@@ -63,9 +63,14 @@ void PDBSearch::search(const SymParamsSearch & params,
 	   !spdbheuristic->solved()) {
 	
 	if(!uc_search->step()) break;
-    }
-    
+    } 
+
+    assert(!uc_search->finished() || 
+	   spdbheuristic->solved() || 
+	   uc_search->isAbstracted());
+	        
     average_hval = uc_search->getClosed()->average_hvalue();
+
     //cout << "Finished PDB: " << *this << flush << "   Average value: "  << average_hval << " g_time: " << utils::g_timer() << endl; 
 }
 
@@ -195,15 +200,15 @@ void GamerPDBsHeuristic::initialize() {
     	    
 	    DEBUG_MSG(cout << "Search ended. Solution found: " << solution.solved() << endl;);
 
-	    assert(child_pattern.size () < g_variable_domain.size() || 
-		   lower_bound >= new_pdb->get_search()->getF());
-
 	    if (solved()) {
 		best_pdb = std::move(new_pdb);
 		//cout << "Best PDB after solution found: " << *best_pdb << endl;
 		new_bests.clear();
 		break;
 	    }
+
+	    assert(child_pattern.size () < g_variable_domain.size() || 
+		   lower_bound >= new_pdb->get_search()->getF());
 
 	    if (new_pdb->average_value() > best_pdb->average_value()) {
 		DEBUG_MSG(cout << "Adding to best" << endl;);
@@ -308,7 +313,7 @@ static ScalarEvaluator *_parse(OptionParser &parser) {
     Heuristic::add_options_to_parser(parser);
     SymController::add_options_to_parser(parser, 30e3, 1e7);
   
-    parser.add_option<int>("generation_time", "maximum time used in heuristic generation", "1200");
+    parser.add_option<int>("generation_time", "maximum time used in heuristic generation", "900");
 
     parser.add_option<double>("generation_memory", 
 			      "maximum memory used in heuristic generation", to_string(3e9));

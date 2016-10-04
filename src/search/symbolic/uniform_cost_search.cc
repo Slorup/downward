@@ -96,6 +96,7 @@ namespace symbolic {
 	    if(open_list.empty()){
 		closed->setHNotClosed(numeric_limits<int>::max());
 		closed->setFNotClosed(numeric_limits<int>::max());
+		if(isOriginal()) engine->setLowerBound(getF());
 		return; //Search finished
 	    }
 
