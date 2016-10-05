@@ -61,7 +61,7 @@ class PatternCollectionGeneratorGeneticSS : public PatternCollectionGenerator {
     double prev_current_collector=0;
     double max_collector=0;
     double overall_pdb_gen_time=0;
-    double pdb_gen_time_limit=600;
+    double pdb_gen_time_limit=900;
     double overall_sample_generation_timer=0;
     double overall_sampling_time=0;
     double overall_probe_time=0;

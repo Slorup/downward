@@ -235,34 +235,44 @@ void PatternCollectionGeneratorGeneticSS::evaluate(vector<double> &fitness_value
       //min_size=200000;
       pdb_max_size=500000;
     }
-    else if(utils::g_timer()<300){
+    else if(utils::g_timer()<350){
       //min_size=400000;
       pdb_max_size=1000000;
     }
-    else if(utils::g_timer()<400.0){
-      pdb_max_size=3*pow(10,7);
-    }
     else if(utils::g_timer()<500.0){
-      pdb_max_size=3*pow(10,8);
+      pdb_max_size=9*pow(10,7);
     }
     else{
-      //min_size=1000000;
-      pdb_max_size=3*pow(10,9);
+      pdb_max_size=9*pow(10,8);
     }
-  }
+
+    if(pdb_factory_candidate->name()=="symbolic"){
+      if(utils::g_timer()<600.0){
+	pdb_max_size=9*pow(10,9);
+      }
+      else if(utils::g_timer()<700.0)
+	pdb_max_size=9*pow(10,10);
+      else if(utils::g_timer()<700.0)
+	pdb_max_size=9*pow(10,11);
+      else if(utils::g_timer()<800.0)
+	pdb_max_size=9*pow(10,11);
+      else
+	pdb_max_size=9*pow(10,12);
+    }
 
     if(last_sampler_too_big){
       pdb_max_size=last_pdb_max_size;
       min_size=last_pdb_min_size;
     }
+  }
     
-    //pdb_max_size=double(INT_MAX)*double(100);
-    if(valid_pattern_counter>0){
-      min_size=pdb_max_size/100;
-    }
-    else{
-      min_size=0;
-    }
+  //pdb_max_size=double(INT_MAX)*double(100);
+  if(valid_pattern_counter>5){
+    min_size=pdb_max_size/1000;
+  }
+  else{
+    min_size=0;
+  }
 
 
     //DEBUG_MSG(cout<<"setting pdb_max_size to:"<<pdb_max_size<<endl;);
@@ -1558,7 +1568,7 @@ PatternCollectionInformation PatternCollectionGeneratorGeneticSS::generate(
 	result.recompute_max_additive_subsets();
     }
 
-    cout <<"Finished,episodes:"<<current_episode<<",Pattern generation (Edelkamp) time: " << timer << endl;fflush(stdout);
+    cout <<"Finished,episodes:"<<current_episode<<",Pattern generation (Edelkamp) time: " << timer <<",Peak Memory:"<<utils::get_peak_memory_in_kb()<<endl;fflush(stdout);
     assert(best_patterns);
     return result;
 }
