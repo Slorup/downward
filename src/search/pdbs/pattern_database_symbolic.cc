@@ -58,7 +58,7 @@ namespace pdbs {
 	    heuristic = engine->get_solution()->getADD();	    
 	} else {
 	    heuristic = search.getHeuristic(false);
-	    if(search.finished()) dead_ends = search.notClosed(); 
+	    if(search.finished()) dead_ends += search.notClosed(); 
 	}
     }
 

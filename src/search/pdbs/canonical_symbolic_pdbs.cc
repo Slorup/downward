@@ -76,7 +76,7 @@ CanonicalSymbolicPDBs::CanonicalSymbolicPDBs(
     for (const auto & pdb : singlePDBs) cout << pdb.nodeCount() << " ";
     cout << endl << "Shared PDBs: ";
     for (const auto & pdb : pdbs) cout << pdb.nodeCount() << " ";
-    cout << "Dead-end PDBs: ";
+    cout << endl << "Dead-end PDBs: ";
     for (const auto & pdb : dead_ends) cout << pdb.nodeCount() << " ";
 
     cout << endl;
@@ -90,7 +90,7 @@ int CanonicalSymbolicPDBs::get_value(const State &state) const {
     int * inputs = symbolic_vars->getBinaryDescription(state.get_values());
 
      for(const BDD & bdd : dead_ends){
-     	if(bdd.Eval(inputs).IsZero()){
+     	if(!bdd.Eval(inputs).IsZero()){
      	    return numeric_limits<int>::max();
      	}
      }

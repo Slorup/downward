@@ -369,16 +369,15 @@ void PatternCollectionGeneratorGeneticSS::evaluate(vector<double> &fitness_value
 	    if(pdb_factory_candidate->is_solved()){
 	      problem_solved_while_pdb_gen=true;
 	      cout<<"Solution found while generating PDB candidate of type:"<<pdb_factory_candidate->name()<<", adding PDB and exiting generation at time"<<utils::g_timer()<<endl;
-	      if(pdb_factory_candidate->name()!=pdb_factory_selected->name()){
-		candidate_pdb_type2 =make_shared<ZeroOnePDBs> (task_proxy, *pattern_collection, *pdb_factory_selected );
-	      }
-	      else{
-		candidate_pdb_type2=candidate;
-	      }
+	      //if(pdb_factory_candidate->name()!=pdb_factory_selected->name()){
+	      candidate_pdb_type2 = make_shared<ZeroOnePDBs> (task_proxy, *pattern_collection, *pdb_factory_selected );
+	      // }
+	      // else{
+	      // candidate_pdb_type2=candidate;
+	      // }
 	      if(!best_patterns){
 		best_patterns = pattern_collection;
-	      }
-	      else{
+	      } else {
 		for(size_t i=0;i<pattern_collection->size();i++){
 		  if(pattern_collection->at(i).size()>0){
 		    best_patterns->push_back(pattern_collection->at(i));
@@ -647,12 +646,12 @@ void PatternCollectionGeneratorGeneticSS::evaluate(vector<double> &fitness_value
 	    
 	    //DO NOT CREATE SECOND PDB IF HTEY ARE THE SAME TYPE!
 	    std::shared_ptr<ZeroOnePDBs> candidate_pdb_type2;
-	    if(pdb_factory_candidate->name()!=pdb_factory_selected->name()){
-	      candidate_pdb_type2 =make_shared<ZeroOnePDBs> (task_proxy, *pattern_collection, *pdb_factory_selected );
-	    }
-	    else{
-	      candidate_pdb_type2=candidate;
-	    }
+	    // if(pdb_factory_candidate->name()!=pdb_factory_selected->name()){
+	       candidate_pdb_type2 =make_shared<ZeroOnePDBs> (task_proxy, *pattern_collection, *pdb_factory_selected );
+	    // }
+	    // else{
+	    // candidate_pdb_type2=candidate;
+	    // }
 
 	    for(size_t i=0;i<pattern_collection->size();i++){
 	      if(pattern_collection->at(i).size()>0){
