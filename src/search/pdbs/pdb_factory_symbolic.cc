@@ -56,6 +56,10 @@ PDBFactorySymbolic::create_pdb(const TaskProxy & task,
 							     this, vars, state_space_mgr, 
 							     searchParams, std::min(generationTime, time_limit),
 							     generationMemoryGB);
+
+	if(new_pdb->is_finished()) {
+	    manager->addDeadEndStates(false, new_pdb->get_dead_ends());
+	}
 	
 	return new_pdb;
     }

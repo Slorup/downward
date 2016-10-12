@@ -271,6 +271,7 @@ void SymStateSpaceManager::init_mutex(const std::vector<MutexGroup> &mutex_group
 }
 
 void SymStateSpaceManager::addDeadEndStates(bool fw, BDD bdd) {
+    cout << "Adding dead ends: " << bdd.nodeCount() << endl;
     //There are several options here, we could follow with edeletion
     //and modify the TRs, so that the new spurious states are never
     //generated. However, the TRs are already merged and the may get

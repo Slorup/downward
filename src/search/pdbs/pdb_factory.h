@@ -7,12 +7,12 @@
 #include <map>
 #include <limits>
 
-/* #include "../symbolic/sym_bucket.h" */
 #include "../utils/system.h"
 
 #include "types.h"
 
 class TaskProxy;
+
 
 namespace pdbs {
 
@@ -85,10 +85,6 @@ PDBFactory() : num_patterns_created(0), num_patterns_requested(0), num_patterns_
 		    const std::vector<int> &operator_costs = std::vector<int>(), 
 		    int time_limit = std::numeric_limits<int>::max()
 	    );
-
-    /* virtual symbolic::Bucket get_mutexes() { */
-    /* 	utils::exit_with(utils::ExitCode::CRITICAL_ERROR);	 */
-    /* } */
 
     virtual std::string name() const = 0;
     void statistics() const;

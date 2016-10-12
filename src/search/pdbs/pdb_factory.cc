@@ -51,4 +51,5 @@ static options::PluginTypePlugin<PDBFactory> _type_plugin(
 	cout << num_patterns_created << " patterns were generated from which " << num_patterns_regenerated << " were regenerated. " << num_patterns_requested << " patterns provided" << endl;   
     }
 
+
 }
