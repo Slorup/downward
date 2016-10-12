@@ -26,7 +26,9 @@ namespace pdbs {
 	virtual std::shared_ptr<pdbs::PatternDatabaseInterface> 
 	create_pdb(const TaskProxy & task, 
 		    const Pattern &pattern, 
-		    const std::vector<int> &operator_costs = std::vector<int>()
+		   const std::vector<int> &operator_costs = std::vector<int>(),
+		   int time_limit = std::numeric_limits<int>::max()
+
 	    ) override;
 
     public:

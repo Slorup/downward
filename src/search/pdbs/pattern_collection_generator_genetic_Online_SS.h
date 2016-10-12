@@ -38,8 +38,7 @@ struct SS_state
   Artificial Intelligence (MoChArt 2006), pp. 35-50, 2007.
 */
 class PatternCollectionGeneratorGeneticSS : public PatternCollectionGenerator {
-    std::shared_ptr<PDBFactory> pdb_factory_candidate;
-    std::shared_ptr<PDBFactory> pdb_factory_selected;
+    std::shared_ptr<PDBFactory> pdb_factory;
     std::shared_ptr<PDBFactory> pdb_type_explicit;
     std::shared_ptr<PDBFactory> pdb_type_online;
     std::shared_ptr<PDBFactory> pdb_type_symbolic;
@@ -49,7 +48,7 @@ class PatternCollectionGeneratorGeneticSS : public PatternCollectionGenerator {
     map<size_t,pair<int,double> > SS_states;
     // Maximum number of states for each pdb
     int modifier=1;
-    int pdb_max_size;
+    double pdb_max_size;
     int num_collections;
     int num_episodes;
     double mutation_probability;
@@ -61,9 +60,9 @@ class PatternCollectionGeneratorGeneticSS : public PatternCollectionGenerator {
     double prev_current_collector=0;
     double max_collector=0;
     double overall_pdb_gen_time=0;
-    double pdb_gen_time_limit=600;
+    double pdb_gen_time_limit=900;
     double overall_sample_generation_timer=0;
-    double overall_online_samp_time=0;
+    double overall_sampling_time=0;
     double overall_probe_time=0;
     int total_online_samples=0;
     int overall_sampled_states=0;
@@ -80,18 +79,25 @@ class PatternCollectionGeneratorGeneticSS : public PatternCollectionGenerator {
     double last_pdb_max_size=0;
     double last_pdb_min_size=0;
     bool last_sampler_too_big=false;
-    float min_improvement_ratio=0.1;
+    float min_improvement_ratio=0.10;
+    long candidate_count=0;
 
     std::shared_ptr<AbstractTask> task;
     /* Specifies whether patterns in each pattern collection need to be disjoint
        or not. */
     bool disjoint_patterns;
+    bool hybrid_pdb_size;
     
 
     // Store best pattern collection over all episodes and its fitness value.
-    std::shared_ptr<PatternCollection> best_patterns;
+    std::shared_ptr<PatternCollection> best_patterns; //Alvaro: Eliminate best_patterns?
+    std::vector<std::vector<std::vector<bool>>> best_pattern_collection; //Alvaro: Eliminate best_pattern_collection?    
     vector<std::shared_ptr<PDBCollection> >best_pdb_collections; //Store the PDBs as well
-    std::vector<std::vector<std::vector<bool>>> best_pattern_collection;
+
+        
+    set< vector<Pattern> > chosen_pattern_collections;
+   
+
     double best_fitness;
     // pointer to the heuristic in evaluate from the episode before, used to free memory.
     //GroupZeroOnePDBs best_heuristic;
@@ -106,8 +112,8 @@ class PatternCollectionGeneratorGeneticSS : public PatternCollectionGenerator {
     vector<int> best_heuristic_values;
     std::vector<std::vector<std::vector<bool> > > pattern_collections; // all current pattern collections
     bool best_fitness_was_duplicate;
-    std::shared_ptr<std::vector<std::vector<int> > > chosen_pattern_collections;
     set<vector<int> > chosen_patterns;
+    bool problem_solved_while_pdb_gen=false;
     //PDBHeuristicOnline *current_heuristic,
 
     /*
@@ -183,15 +189,16 @@ class PatternCollectionGeneratorGeneticSS : public PatternCollectionGenerator {
     */
     void genetic_algorithm(std::shared_ptr<AbstractTask> task);
     double probe_best_only(int threshold);
-    int get_pattern_size(Pattern pattern);
+    double get_pattern_size(Pattern pattern);
 public:
     PatternCollectionGeneratorGeneticSS(const options::Options &opts);
     virtual ~PatternCollectionGeneratorGeneticSS() = default;
 
     virtual PatternCollectionInformation generate(
         std::shared_ptr<AbstractTask> task) override;
+
     virtual std::shared_ptr<PDBFactory> get_factory () override {
-	return pdb_factory_selected;
+	return pdb_factory;
     }
     static bool compare_SS_states(SS_state i, SS_state j) { return (i.weight>j.weight); }
     static bool compare_pattern_sizes_sort (pair<int ,int > i,pair<int ,int > j) { return (i.second<j.second); }

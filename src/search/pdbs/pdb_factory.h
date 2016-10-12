@@ -5,8 +5,9 @@
 #include <string>
 #include <vector>
 #include <map>
+#include <limits>
 
-#include "../symbolic/sym_bucket.h"
+/* #include "../symbolic/sym_bucket.h" */
 #include "../utils/system.h"
 
 #include "types.h"
@@ -70,7 +71,8 @@ protected:
     virtual std::shared_ptr<PatternDatabaseInterface> 
 	create_pdb(const TaskProxy & task, 
 		    const Pattern &pattern, 
-		    const std::vector<int> &operator_costs = std::vector<int>()
+		   const std::vector<int> &operator_costs = std::vector<int>(),
+		   int time_limit = std::numeric_limits<int>::max()
 	    ) = 0;    
 public:
 PDBFactory() : num_patterns_created(0), num_patterns_requested(0), num_patterns_regenerated(0) {}
@@ -80,20 +82,25 @@ PDBFactory() : num_patterns_created(0), num_patterns_requested(0), num_patterns_
     std::shared_ptr<PatternDatabaseInterface> 
 	compute_pdb(const TaskProxy & task, 
 		    const Pattern &pattern, 
-		    const std::vector<int> &operator_costs = std::vector<int>()
+		    const std::vector<int> &operator_costs = std::vector<int>(), 
+		    int time_limit = std::numeric_limits<int>::max()
 	    );
 
-    virtual bool solved() const;
-    std::shared_ptr<PatternDatabaseInterface> get_solved_heuristic() {
-	return nullptr;
-    }
-
-    virtual symbolic::Bucket get_mutexes() {
-	utils::exit_with(utils::ExitCode::CRITICAL_ERROR);	
-    }
+    /* virtual symbolic::Bucket get_mutexes() { */
+    /* 	utils::exit_with(utils::ExitCode::CRITICAL_ERROR);	 */
+    /* } */
 
     virtual std::string name() const = 0;
     void statistics() const;
+
+    virtual bool is_solved () const {
+	return false;
+    }
+
+    std::shared_ptr<PDBCollection> terminate_creation (const PDBCollection & pdb_collection) {
+	//By default we just make a copy
+	return std::make_shared<PDBCollection>(pdb_collection);
+    }
 };
 }
 

@@ -24,7 +24,8 @@ static options::PluginTypePlugin<PDBFactory> _type_plugin(
     std::shared_ptr<PatternDatabaseInterface> 
     PDBFactory::compute_pdb(const TaskProxy & task, 
 			   const Pattern &pattern, 
-			   const std::vector<int> &operator_costs) {
+			    const std::vector<int> &operator_costs, 
+			    int time_limit) {
 	assert(!pattern.empty ());
 	num_patterns_requested ++;
 	auto item = stored_pdbs.find(PDBKey(pattern, operator_costs));
@@ -38,7 +39,7 @@ static options::PluginTypePlugin<PDBFactory> _type_plugin(
 	}
 
 	num_patterns_created ++;
-	shared_ptr<PatternDatabaseInterface> result = create_pdb(task, pattern, operator_costs); 
+	shared_ptr<PatternDatabaseInterface> result = create_pdb(task, pattern, operator_costs, time_limit); 
 	stored_pdbs[PDBKey(pattern, operator_costs)] = result;    
 	
 	return result;

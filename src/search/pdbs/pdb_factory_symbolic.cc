@@ -31,8 +31,9 @@ namespace pdbs {
 
     std::shared_ptr<PatternDatabaseInterface> 
 PDBFactorySymbolic::create_pdb(const TaskProxy & task, 
-		    const Pattern &pattern, 
-		    const std::vector<int> &operator_costs){
+			       const Pattern &pattern, 
+			       const std::vector<int> &operator_costs, 
+			       int time_limit) {
 	
 	assert(!pattern.empty());
 	assert(!solved());
@@ -53,7 +54,8 @@ PDBFactorySymbolic::create_pdb(const TaskProxy & task,
 
 	auto new_pdb = make_shared<PatternDatabaseSymbolic> (task, pattern, operator_costs,
 							     this, vars, state_space_mgr, 
-							     searchParams, generationTime, generationMemoryGB);
+							     searchParams, std::min(generationTime, time_limit),
+							     generationMemoryGB);
 	
 	return new_pdb;
     }
