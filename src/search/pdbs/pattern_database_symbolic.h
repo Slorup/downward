@@ -75,7 +75,7 @@ class PatternDatabaseSymbolic : public PatternDatabaseInterface {
 	return dead_ends;
     }
 
-    virtual bool finished() const override { 
+    virtual bool is_finished() const override { 
 	return finished;
     }
 

@@ -86,7 +86,7 @@ public:
 
     virtual int get_value(const std::vector<int> & state) const = 0;
 
-    virtual bool finished() const { 
+    virtual bool is_finished() const { 
 	return true;
     }
 
