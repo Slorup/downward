@@ -557,7 +557,7 @@ int H2Mutexes::compute(const vector <Variable *> &variables,
     int numSpuriousOps = 0;
     for (unsigned op_i = 0; op_i < m_ops.size(); op_i++) {
         if (m_ops[op_i].triggered == NOT_REACHED) {
-            cout << operators[op_i].get_name() << " is spurious because was not triggered" << endl;
+            //cout << operators[op_i].get_name() << " is spurious because was not triggered" << endl;
             numSpuriousOps++;
             operators[op_i].set_spurious();
         }
