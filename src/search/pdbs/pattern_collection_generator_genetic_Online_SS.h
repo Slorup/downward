@@ -76,7 +76,7 @@ class PatternCollectionGeneratorGeneticSS : public PatternCollectionGenerator {
     int threshold;
 
     double sampler_time=0;
-    double last_pdb_max_size=0;
+    double last_pdb_max_size=50000;
     double last_pdb_min_size=0;
     bool last_sampler_too_big=false;
     float min_improvement_ratio=0.10;

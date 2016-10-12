@@ -246,22 +246,22 @@ namespace pdbs {
 		pdb_max_size=9*pow(10,7);
 	    }
 	    else{
+    //else if(pdb_factory_candidate->name()!="symbolic")
 		pdb_max_size=9*pow(10,8);
-	    }
-
-	    if(pdb_factory->name()=="symbolic"){
+    }/*
+    else {//symbolic can go bigger
 		if(utils::g_timer()<600.0){
-		    pdb_max_size=9*pow(10,9);
+	pdb_max_size=9*pow(10,8);
 		}
 		else if(utils::g_timer()<700.0)
+	pdb_max_size=9*pow(10,9);
+      else if(utils::g_timer()<800.0)
 		    pdb_max_size=9*pow(10,10);
-		else if(utils::g_timer()<700.0)
-		    pdb_max_size=9*pow(10,11);
-		else if(utils::g_timer()<800.0)
+      else if(utils::g_timer()<900.0)
 		    pdb_max_size=9*pow(10,11);
 		else
 		    pdb_max_size=9*pow(10,12);
-	    }
+    }*/
 
 	    if(last_sampler_too_big){
 		pdb_max_size=last_pdb_max_size;
@@ -269,13 +269,14 @@ namespace pdbs {
 	    }
 	}
     
-	//pdb_max_size=double(INT_MAX)*double(100);
-	if(valid_pattern_counter>5){
-	    min_size=pdb_max_size/1000;
-	}
-	else{
-	    min_size=0;
-	}
+   DEBUG_MSG(cout<<"evaluate, pdb_max_size:"<<pdb_max_size<<",min_size:"<<min_size<<endl<<flush;);
+  //pdb_max_size=double(INT_MAX)*double(100);
+  if(valid_pattern_counter>5){
+    min_size=pdb_max_size/1000;
+    }
+    else{
+      min_size=0;
+    }
 
 
 	//DEBUG_MSG(cout<<"setting pdb_max_size to:"<<pdb_max_size<<endl;);
@@ -347,7 +348,7 @@ namespace pdbs {
 
 		valid_pattern_counter++;
 		if(valid_pattern_counter%200==0){
-		    cout<<"valid_pattern_counter:"<<valid_pattern_counter<<endl;
+	    cout<<"time:"<<utils::g_timer()<<",valid_pattern_counter:"<<valid_pattern_counter<<endl;
 		}
 		DEBUG_MSG(cout<<"pattern valid!,SS evaluating:"<<endl;);
 		if(genetic_SS_timer->is_expired()||(double(utils::get_peak_memory_in_kb())/1024>2000)){
@@ -380,6 +381,7 @@ namespace pdbs {
 		//ZeroOnePDBs candidate_explicit(task_proxy, *pattern_collection, *pdb_type_explicit );
 		//cout<<"ZeroOnePDBs candidate_explicit has type:"<<pdb_type_explicit->name()<<endl;
 		overall_pdb_gen_time+=utils::g_timer()-temp;
+		double pdb_gen_time=utils::g_timer()-temp;
 
 		fitness=0.001;
 		best_fitness=0.001;
@@ -514,6 +516,7 @@ namespace pdbs {
 		DEBUG_MSG(cout<<"SS_states_vector.size:"<<SS_states_vector.size()<<endl;fflush(stdout););
 		    
 		current_heur_initial_value=candidate.get_value(initial_state);
+		total_online_samples++;
 		for(SS_iter=SS_states_vector.begin();SS_iter!=SS_states_vector.end();){
 		    //cout<<"working on state:"<<SS_iter->id<<endl;
 		    if(unique_samples.find(SS_iter->id)==unique_samples.end()){
@@ -552,6 +555,7 @@ namespace pdbs {
 			continue;
 		    }
 		    sampled_states++;
+		    overall_sampled_states++;
 		    total_SS_gen_nodes+=SS_iter->weight;
 		    //cout<<"sampled_state:"<<sampled_states<<",new_f="<<current_heuristic->get_heuristic()+SS_iter->g<<",old f:"<<best_heuristic->get_heuristic()+SS_iter->g<<",g:"<<SS_iter->g<<",weight:"<<SS_iter->weight<<",sampling_threshold:"<<sampling_threshold<<endl;
 		    int candidate_h=candidate.get_value(unique_samples.at(SS_iter->id));
@@ -589,13 +593,16 @@ namespace pdbs {
 		DEBUG_MSG(cout<<"episode:"<<current_episode<<",finished sampling,sampled_states:"<<sampled_states<<",raised_states:"<<raised_states<<",pruned_states:"<<pruned_states<<endl;fflush(stdout););
 		sampler_time=utils::g_timer()-start_sampler_time;
 		overall_sampling_time+=sampler_time;
-		total_online_samples+=sampled_states;
-		if(sampler_time<2.0&&(!last_sampler_too_big)){
+	    DEBUG_MSG(cout<<"sampler_time:"<<sampler_time<<",last_sampler_too_big:"<<last_sampler_too_big<<endl;);
+	    if(!last_sampler_too_big){
+	      if(sampler_time<2.0&&pdb_gen_time<2.0){
 		    last_pdb_max_size=pdb_max_size;
 		    last_pdb_min_size=min_size;
-		} else if(!last_sampler_too_big){
-		    cout<<"setting pdb size to :"<<last_pdb_max_size<<",last sampling time with current pdb size took:"<<sampler_time<<endl;
+	      }
+	      else if(sampler_time>2.0||pdb_gen_time>2.0){
+		cout<<"setting pdb size to :"<<last_pdb_max_size<<",last sampling time with current pdb size took:"<<sampler_time<<",pdb_gen_time:"<<pdb_gen_time<<endl;
 		    last_sampler_too_big=true;
+	      }
 		}
 		DEBUG_MSG(cout<<"collection size:"<<overall_pdb_size<<",sampler_time:,"<<sampler_time<<",candidate_count:,"<<candidate_count<<endl;);
 		if(sampled_states>0){
@@ -604,9 +611,8 @@ namespace pdbs {
 		DEBUG_MSG(cout<<"pruned_states="<<pruned_states<<"out of"<<total_SS_gen_nodes<<",avg_h:"<<fitness<<endl;);
 		DEBUG_MSG(cout<<"raised_states="<<raised_states<<"out of"<<sampled_states<<",avg_h:"<<fitness<<endl;);
 		DEBUG_MSG(cout<<"fitness:"<<fitness<<endl;);
-		if(sampled_states>0)
-		    if(float(raised_states)/float(sampled_states)>0)
-			cout<<"g_timer:,"<<utils::g_timer()<<",current_episode:,"<<current_episode<<",pdb_max_size:,"<<pdb_max_size<<",candidate initial h:,"<<candidate.get_value(initial_state)<<",sampled_states:,"<<sampled_states<<",raised_states:,"<<raised_states<<",ratio:,"<<float(raised_states)/float(sampled_states)<<",overall_pdb_size:,"<<overall_pdb_size<<endl;
+	    //if(sampled_states>0&&float(raised_states)/float(sampled_states)>0)
+	      //cout<<"g_timer:,"<<utils::g_timer()<<",current_episode:,"<<current_episode<<",pdb_max_size:,"<<pdb_max_size<<",candidate initial h:,"<<candidate->get_value(initial_state)<<",sampled_states:,"<<sampled_states<<",raised_states:,"<<raised_states<<",ratio:,"<<float(raised_states)/float(sampled_states)<<",overall_pdb_size:,"<<overall_pdb_size<<endl;
 		//fitness_values.push_back(fitness);
 		if(float(raised_states)/float(sampled_states)>min_improvement_ratio||(best_pdb_collections.size()==0)) {
 
@@ -765,6 +771,7 @@ namespace pdbs {
 	    else{
 		int mutations=mutate2();
 		if(mutations==0){
+	    DEBUG_MSG(cout<<"mutations=0, next episode"<<endl<<flush;);
 		    //cout<<"no mutations, next episode"<<endl;
 		    continue;//no mutations!
 		}
@@ -1397,7 +1404,7 @@ namespace pdbs {
 
 	TaskProxy task_proxy(*task);
 	const State &initial_state = task_proxy.get_initial_state();
-	size_t initial_state_id = initial_state.hash();
+	//size_t initial_state_id = initial_state.hash();
 
 	vector<int> current_best_h_values;
 	int h=0;
@@ -1430,77 +1437,60 @@ namespace pdbs {
 	    }
 	}
     
-	cleaned_best_pdb_collections.push_back(best_pdb_collections.back());
-	//cout<<"current_best_h_values.size:"<<current_best_h_values.size()<<endl;fflush(stdout);
-	for(int i=best_pdb_collections.size()-2;i>=0;i--){
-	    bool dominated_heur=true;
-	    //cout<<"i:"<<i<<endl;
-	    int j=0;
-	    int h=0;
-	    int h_temp=0;
-	    for(map<size_t,State>::iterator it=unique_samples.begin(); it!=unique_samples.end();it++){
-		if(it->first==initial_state_id){
-		    cout<<"current_best_h_value:"<<current_best_h_values[j]<<",h:";
-		}
-		if(current_best_h_values[j]==INT_MAX){
-		    j++;
-		    continue;
-		}
-		h=0;
-		h_temp=0;
-		for (auto pdb : *best_pdb_collections.at(i)){
-		    h_temp=pdb->get_value(it->second);
-		    if (h_temp == numeric_limits<int>::max()){
-			h=numeric_limits<int>::max();
-			break;
-		    }
-		    else{
-			h+=h_temp;
-		    }
-		}
-		if(it->first==initial_state_id){
-		    cout<<h<<endl;
-		}
-		//NO BREAKS BECAUSE WE WANT TO CALCULATE ALL THE NEW HIGHER H VALUES
-		//IF HEUR IS NOT DOMINATED
-		if (h == numeric_limits<int>::max()){
-		    dominated_heur=false;
-		    current_best_h_values[j]=INT_MAX;
-		}
-		else if(h>current_best_h_values[j]){
-		    dominated_heur=false;
-		    current_best_h_values[j]=h;
-		}
-		j++;
-	    }
-	    h=0;
-	    h_temp=0;
-	    for (auto pdb : *best_pdb_collections.at(i)){
-		h_temp=pdb->get_value(initial_state);
-		if (h_temp == numeric_limits<int>::max()){
-		    h=numeric_limits<int>::max();
-		    break;
-		}
-		else{
-		    h+=h_temp;
-		}
-	    }
-	    if(!dominated_heur){
-		cout<<"adding heur["<<i<<"] to list of heurs,initial_h:"<<h<<endl;
-		cleaned_best_pdb_collections.push_back(best_pdb_collections.at(i));
-	    }
-	    else{
-		cout<<"collection["<<i<<"] is dominated,eliminating, initial_h:,"<<h<<endl;
-
-		//NO BREAKS BECAUSE WE WANT TO CALCULATE ALL THE NEW HIGHER H VALUES
-
-		best_pdb_collections.at(i).reset();
-	    }
+  cleaned_best_pdb_collections.push_back(best_pdb_collections.back());
+  //cout<<"current_best_h_values.size:"<<current_best_h_values.size()<<endl;fflush(stdout);
+  for(int i=best_pdb_collections.size()-2;i>=0;i--){
+    bool dominated_heur=true;
+    //cout<<"i:"<<i<<endl;
+    int j=0;
+    int h=0;
+    int h_temp=0;
+    for(map<size_t,State>::iterator it=unique_samples.begin(); it!=unique_samples.end();it++){
+      if(current_best_h_values[j]==INT_MAX){
+	j++;
+	continue;
+      }
+      h=0;
+      h_temp=0;
+      for (auto pdb : *best_pdb_collections.at(i)){
+	h_temp=pdb->get_value(it->second);
+	if (h_temp == numeric_limits<int>::max()){
+	  h=numeric_limits<int>::max();
+	  break;
 	}
-	cout<<"best_pdb_collections size:"<<best_pdb_collections.size();
-	best_pdb_collections=cleaned_best_pdb_collections;
-	cout<<",cleaned_best_pdb_collections:"<<cleaned_best_pdb_collections.size()<<","<<best_pdb_collections.size()<<",time:"<<utils::g_timer()-start_time<<endl;
+	else{
+	  h+=h_temp;
+	}
+      }
+      //NO BREAKS BECAUSE WE WANT TO CALCULATE ALL THE NEW HIGHER H VALUES
+      //IF HEUR IS NOT DOMINATED
+      if (h == numeric_limits<int>::max()){
+	dominated_heur=false;
+	current_best_h_values[j]=INT_MAX;
+      }
+      else if(h>current_best_h_values[j]){
+	dominated_heur=false;
+	current_best_h_values[j]=h;
+      }
+      j++;
     }
+    if(!dominated_heur){
+      cout<<"adding heur["<<i<<"] to list of heurs"<<endl;
+      cleaned_best_pdb_collections.push_back(best_pdb_collections.at(i));
+      if(cleaned_best_pdb_collections.size()>15){
+	cout<<"max of 15 pdb_collections, otherwise timewise takes too long"<<endl;
+       break;
+      } 
+    }
+    else{
+      cout<<"collection["<<i<<"] is dominated,eliminating "<<endl;
+      best_pdb_collections.at(i).reset();
+    }
+  }
+  cout<<"best_pdb_collections size:"<<best_pdb_collections.size();
+  best_pdb_collections=cleaned_best_pdb_collections;
+  cout<<",cleaned_best_pdb_collections:"<<cleaned_best_pdb_collections.size()<<","<<best_pdb_collections.size()<<",time:"<<utils::g_timer()-start_time<<endl;
+}
 //PatternCollectionInformation PatternCollectionGeneratorGeneticSS::generate(
 //    shared_ptr<AbstractTask> task) {
 //    utils::Timer timer;
@@ -1542,7 +1532,6 @@ namespace pdbs {
 	assert(best_patterns);
 	return result;
     }
-
 
     static shared_ptr<PatternCollectionGenerator> _parse(OptionParser &parser) {
 	parser.document_synopsis(
@@ -1631,26 +1620,32 @@ namespace pdbs {
 	    "mix pdb_sizes according to generation time",
 	    "true");
 
-	parser.add_option<shared_ptr<PDBFactory>>(
-	    "pdb_type",
-	    "See detailed documentation for pdb factories. ",
-	    "explicit");
-	parser.add_option<shared_ptr<PDBFactory>>(
-	    "pdb_type_explicit",
-	    "See detailed documentation for pdb factories. ",
-	    "explicit");
-	parser.add_option<shared_ptr<PDBFactory>>(
-	    "pdb_type_online",
-	    "See detailed documentation for pdb factories. ",
-	    "online");
-	parser.add_option<shared_ptr<PDBFactory>>(
-	    "pdb_type_symbolic",
-	    "See detailed documentation for pdb factories. ",
-	    "symbolic");
-	parser.add_option<bool>(
-	    "recompute_max_additive_subsets",
-	    "attempts to recompute max additive subsets after generating all patterns",
-	    "false");
+    parser.add_option<int>(
+        "pdb_max_size",
+        "maximal number of states per pattern database ",
+        "50000",
+        Bounds("1", "infinity"));
+    parser.add_option<int>(
+        "num_collections",
+        "number of pattern collections to maintain in the genetic "
+        "algorithm (population size)",
+        "5",
+        Bounds("1", "infinity"));
+    parser.add_option<int>(
+        "num_episodes",
+        "number of episodes for the genetic algorithm",
+        "30",
+        Bounds("0", "infinity"));
+    parser.add_option<double>(
+        "mutation_probability",
+        "probability for flipping a bit in the genetic algorithm",
+        "0.01",
+        Bounds("0.0", "1.0"));
+    parser.add_option<bool>(
+        "disjoint",
+        "consider a pattern collection invalid (giving it very low "
+        "fitness) if its patterns are not disjoint",
+        "false");
 
 	Options opts = parser.parse();
 	if (parser.dry_run())

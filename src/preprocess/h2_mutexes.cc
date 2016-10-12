@@ -557,7 +557,7 @@ int H2Mutexes::compute(const vector <Variable *> &variables,
     int numSpuriousOps = 0;
     for (unsigned op_i = 0; op_i < m_ops.size(); op_i++) {
         if (m_ops[op_i].triggered == NOT_REACHED) {
-            //cout << operators[op_i].get_name() << " is spurious because was not triggered" << endl;
+            cout << operators[op_i].get_name() << " is spurious because was not triggered" << endl;
             numSpuriousOps++;
             operators[op_i].set_spurious();
         }
@@ -576,6 +576,8 @@ int H2Mutexes::compute(const vector <Variable *> &variables,
                 if (!is_unreachable(a.first, a.second)) {
                     countUnreachable++;
                     if (!set_unreachable(a.first, a.second, variables, initial_state, goal)) {
+                     cout << "goal proposition:"<< variables[b.first]->get_fact_name(b.second) << "is unreachable, making problem unreachable" << endl;
+                    //Only increase the mutex count when both fluents are reachable
                         return UNSOLVABLE;
                     }
                 }

@@ -54,7 +54,7 @@ namespace pdbs {
 	average = search.getClosed()->average_hvalue();
 	DEBUG_MSG(for (int v : pattern) cout << v << " ";);
 	
-	DEBUG_MSG(cout << " Finished: " << search.finished() <<  ", Average: " << average << endl;);
+	cout << " Finished: " << search.finished() <<  ", Average: " << average << endl;
 	if(engine->solved()) {
 	    heuristic = engine->get_solution()->getADD();	    
 	} else {

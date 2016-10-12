@@ -50,7 +50,7 @@ void SearchStatistics::print_basic_statistics() const {
         cout << reopened_states << " reopened, ";
     }
     cout << "t=" << utils::g_timer;
-    cout << ", " << utils::get_peak_memory_in_kb() << " KB";
+    cout << ", " << utils::get_current_memory_in_kb() << " KB";
 }
 
 void SearchStatistics::print_detailed_statistics() const {
