@@ -35,10 +35,7 @@ using namespace std;
 namespace pdbs {
     PatternCollectionGeneratorGeneticSS::PatternCollectionGeneratorGeneticSS(
 	const Options &opts)
-	: pdb_factory (opts.get<shared_ptr<PDBFactory>>("pdb_type")),
-	  pdb_type_explicit (opts.get<shared_ptr<PDBFactory>>("pdb_type_explicit")),
-	  pdb_type_online (opts.get<shared_ptr<PDBFactory>>("pdb_type_online")),
-	  pdb_type_symbolic (opts.get<shared_ptr<PDBFactory>>("pdb_type_symbolic")),
+	: pdb_factory (opts.get<shared_ptr<PDBFactory>>("pdb_factory")),
 	  recompute_max_additive_subsets(opts.get<bool>("recompute_max_additive_subsets")), 
 	  pdb_max_size(opts.get<double>("pdb_max_size")),
 	  num_collections(opts.get<int>("num_collections")),
@@ -653,11 +650,11 @@ namespace pdbs {
 		    DEBUG_MSG(cout<<"overall_pdb_gen_time:"<<overall_pdb_gen_time<<endl;);
 		    best_fitness_was_duplicate=false;
 		} else {
-		    if(current_heuristic!=NULL){
+		    DEBUG_MSG(if(current_heuristic!=NULL){
 			cout<<"time:,"<<utils::g_timer()<<",bin_packed:,"<<bin_packed_episode<<",current_heuristic rejected,online_sampling time:,"<<sampler_time
 			    <<",raised_ratio:,"<<float(raised_states)/float(sampled_states)<<",fitness:,"<<fitness<<",sampled_states:,"<<sampled_states
 			    <<",initial_value:,"<<current_heur_initial_value<<",skip_sampling:,"<<skip_sampling<<",best_heur_dead_ends:,"<<best_heur_dead_ends<<endl;
-		    }
+		    });
 		}
 	    }
 	    collection_counter++;
@@ -1620,7 +1617,7 @@ namespace pdbs {
 	    "mix pdb_sizes according to generation time",
 	    "true");
 
-    parser.add_option<int>(
+    parser.add_option<double>(
         "pdb_max_size",
         "maximal number of states per pattern database ",
         "50000",
@@ -1645,6 +1642,14 @@ namespace pdbs {
         "disjoint",
         "consider a pattern collection invalid (giving it very low "
         "fitness) if its patterns are not disjoint",
+        "false");
+    parser.add_option<shared_ptr<PDBFactory>>(
+        "pdb_factory",
+        "See detailed documentation for pdb factories. ",
+	"symbolic");
+    parser.add_option<bool>(
+        "recompute_max_additive_subsets",
+        "attempts to recompute max additive subsets after generating all patterns",
         "false");
 
 	Options opts = parser.parse();

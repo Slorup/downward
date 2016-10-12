@@ -39,9 +39,9 @@ struct SS_state
 */
 class PatternCollectionGeneratorGeneticSS : public PatternCollectionGenerator {
     std::shared_ptr<PDBFactory> pdb_factory;
-    std::shared_ptr<PDBFactory> pdb_type_explicit;
-    std::shared_ptr<PDBFactory> pdb_type_online;
-    std::shared_ptr<PDBFactory> pdb_type_symbolic;
+    //std::shared_ptr<PDBFactory> pdb_type_explicit;
+    //std::shared_ptr<PDBFactory> pdb_type_online;
+    //std::shared_ptr<PDBFactory> pdb_type_symbolic;
     const bool recompute_max_additive_subsets; //Whether to recompute the max_additive_subsets
     utils::CountdownTimer *genetic_SS_timer;
     vector<SS_state> SS_states_vector;
