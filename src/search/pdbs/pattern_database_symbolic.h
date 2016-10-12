@@ -28,7 +28,8 @@ class PatternDatabaseSymbolic : public PatternDatabaseInterface {
     
     ADD heuristic;
     BDD dead_ends;
-
+    
+    bool finished;
     double average;
 
      void create_pdb(symbolic::SymController * engine, 
@@ -73,6 +74,11 @@ class PatternDatabaseSymbolic : public PatternDatabaseInterface {
     virtual const BDD & get_dead_ends() const override {
 	return dead_ends;
     }
+
+    virtual bool finished() const override { 
+	return finished;
+    }
+
 
     /*
       Returns the average h-value over all states, where dead-ends are

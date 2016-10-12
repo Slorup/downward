@@ -29,7 +29,7 @@ namespace pdbs {
 						     double generationMemoryGB) : 
 	PatternDatabaseInterface(task_proxy, pattern, operator_costs), 
 	vars (vars_), manager (manager_), heuristic(vars->getADD(0)), dead_ends(vars->zeroBDD()), 
-	average(0) {
+	finished(false), average(0) {
 	
 	create_pdb(engine,params, generationTime, generationMemoryGB);
     }
@@ -50,6 +50,7 @@ namespace pdbs {
 	    search.step();
 	} 
 	
+	finished = search.finished();
 	average = search.getClosed()->average_hvalue();
 	DEBUG_MSG(for (int v : pattern) cout << v << " ";);
 	
@@ -58,7 +59,7 @@ namespace pdbs {
 	    heuristic = engine->get_solution()->getADD();	    
 	} else {
 	    heuristic = search.getHeuristic(false);
-	    if(search.finished()) dead_ends += search.notClosed(); 
+	    if(finished) dead_ends += search.notClosed(); 
 	}
     }
 
@@ -82,7 +83,6 @@ namespace pdbs {
     }
 
     double PatternDatabaseSymbolic::compute_mean_finite_h() const {
-    
 	return average;
     }
 

@@ -86,6 +86,9 @@ public:
 
     virtual int get_value(const std::vector<int> & state) const = 0;
 
+    virtual bool finished() const { 
+	return true;
+    }
 
     // Returns the size (number of abstract states) of the PDB
     virtual std::size_t get_size() const {
