@@ -10,8 +10,7 @@ using namespace std;
 namespace pdbs {
 
 bool are_pdbs_additive(const PatternDatabaseInterface &pdb1,
-		       const PatternDatabaseInterface &pdb2) {
-    
+			const PatternDatabaseInterface &pdb2) {
     const auto & costs1 = pdb1.get_operator_costs();
     const auto & costs2 = pdb2.get_operator_costs();
     assert(costs1.size() == costs2.size());
@@ -57,6 +56,7 @@ VariableAdditivity compute_additive_vars(TaskProxy task_proxy) {
 
 shared_ptr<MaxAdditivePDBSubsets> compute_max_additive_subsets(const PDBCollection &pdbs,
 							       const vector<vector<int>> & cgraph) {
+
     vector<vector<int>> max_cliques;
     compute_max_cliques(cgraph, max_cliques);
 

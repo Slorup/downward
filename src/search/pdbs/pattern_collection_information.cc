@@ -120,7 +120,7 @@ void PatternCollectionInformation::include_additive_pdbs(const shared_ptr<PDBCol
     assert(information_is_valid());
 }
 
-void PatternCollectionInformation::recompute_max_additive_subsets() {
+void PatternCollectionInformation::recompute_max_additive_subsets() {   
     max_additive_subsets = compute_max_additive_subsets(*pdbs);
 }
 

@@ -8,6 +8,8 @@
 
 #include <utility>
 #include <vector>
+#include <limits>
+
 namespace symbolic {
     class SymVariables;
 }
@@ -85,6 +87,13 @@ public:
     virtual int get_value(const State &state) const = 0;
 
     virtual int get_value(const std::vector<int> & state) const = 0;
+
+
+    //Returns the heuristic value of unseen states (int::max except
+    //for partial PDBs)
+    virtual int get_hvalue_unseen_states() const { 
+	return std::numeric_limits<int>::max();
+    }
 
     virtual bool is_finished() const { 
 	return true;

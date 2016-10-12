@@ -30,6 +30,7 @@ CanonicalSymbolicPDBs::CanonicalSymbolicPDBs(
 	    dead_ends.push_back(pdb->get_dead_ends());
 	}
     }
+   
 
     if (dominance_pruning) {
         max_additive_subsets_ = prune_dominated_subsets(*pattern_databases, 

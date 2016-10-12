@@ -23,7 +23,6 @@ class CanonicalSymbolicPDBs {
 
     std::vector<BDD> dead_ends;    
 
-
     mutable utils::DynamicBitset<> valid_cache;
     mutable std::vector<int> cache;
 

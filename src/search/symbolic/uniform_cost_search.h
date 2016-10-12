@@ -118,6 +118,10 @@ namespace symbolic {
 	    return open_list.minNextG(frontier, mgr->getAbsoluteMinTransitionCost());
 	}
 
+	int getHNotClosed() const {
+	    return open_list.minNextG(frontier, mgr->getAbsoluteMinTransitionCost());
+	}
+
 	BDD getClosedTotal();
 
 	BDD notClosed();

@@ -21,7 +21,9 @@ CanonicalSymbolicPDBs get_symbolic_canonical_pdbs_from_options(
     utils::Timer timer;
     PatternCollectionInformation pattern_collection_info =
         pattern_generator->generate(task);
+
     shared_ptr<PDBCollection> pdbs = pattern_collection_info.get_pdbs();
+
     shared_ptr<MaxAdditivePDBSubsets> max_additive_subsets =
         pattern_collection_info.get_max_additive_subsets();
     cout << "PDB collection construction time: " << timer << endl;

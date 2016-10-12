@@ -30,10 +30,13 @@ class PatternDatabaseSymbolic : public PatternDatabaseInterface {
     BDD dead_ends;
     
     bool finished;
+    int hvalue_unseen_states;
+
     double average;
 
-     void create_pdb(symbolic::SymController * engine, 
-		     const symbolic::SymParamsSearch & params, int generationTime, double generationMemoryGB);
+    void create_pdb(symbolic::SymController * engine, 
+		    const symbolic::SymParamsSearch & params, 
+		    int generationTime, double generationMemoryGB);
 
      int get_value(int * inputs) const;
 
@@ -77,6 +80,10 @@ class PatternDatabaseSymbolic : public PatternDatabaseInterface {
 
     virtual bool is_finished() const override { 
 	return finished;
+    }
+
+    virtual int get_hvalue_unseen_states() const override { 
+	return hvalue_unseen_states;
     }
 
 

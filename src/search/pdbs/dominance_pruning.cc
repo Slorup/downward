@@ -33,6 +33,11 @@ bool dominates_cost (const PatternDatabaseInterface & pdb1, const PatternDatabas
     return true;
 }
 
+bool dominates_partial_search (const PatternDatabaseInterface & pdb1, 
+			       const PatternDatabaseInterface & pdb2) {
+    return pdb1.get_hvalue_unseen_states() >= pdb2.get_hvalue_unseen_states();
+}
+
 PDBRelation compute_superset_relation(const PDBCollection &pattern_databases) {
     PDBRelation superset_relation;
     for (const shared_ptr<PatternDatabaseInterface> &pdb1 : pattern_databases) {
@@ -43,18 +48,18 @@ PDBRelation compute_superset_relation(const PDBCollection &pattern_databases) {
             if (std::includes(pattern1.begin(), pattern1.end(),
                               pattern2.begin(), pattern2.end())) {
 		
-		if(dominates_cost(*pdb1, *pdb2)) {
+		if(dominates_cost(*pdb1, *pdb2) && dominates_partial_search(*pdb1, *pdb2)) {
 		    superset_relation.insert(make_pair(pdb1.get(), pdb2.get()));
-		}
 
-                /*
-                  If we already added the inverse tuple to the relation, the
-                  PDBs use the same pattern, which violates the invariant that
-                  lists of patterns are sorted and unique.
-                */
-                assert(pdb1 == pdb2 ||
-                       superset_relation.count(make_pair(pdb2.get(),
-                                                         pdb1.get())) == 0);
+		    /*
+		      If we already added the inverse tuple to the relation, the
+		      PDBs use the same pattern, which violates the invariant that
+		      lists of patterns are sorted and unique.
+		    */
+		    assert(pdb1 == pdb2 ||
+			   superset_relation.count(make_pair(pdb2.get(),
+							     pdb1.get())) == 0);
+		}
             }
         }
     }

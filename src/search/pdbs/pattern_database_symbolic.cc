@@ -29,7 +29,7 @@ namespace pdbs {
 						     double generationMemoryGB) : 
 	PatternDatabaseInterface(task_proxy, pattern, operator_costs), 
 	vars (vars_), manager (manager_), heuristic(vars->getADD(0)), dead_ends(vars->zeroBDD()), 
-	finished(false), average(0) {
+	finished(false), hvalue_unseen_states(0), average(0) {
 	
 	create_pdb(engine,params, generationTime, generationMemoryGB);
     }
@@ -51,6 +51,7 @@ namespace pdbs {
 	} 
 	
 	finished = search.finished();
+	hvalue_unseen_states = search.getHNotClosed();
 	average = search.getClosed()->average_hvalue();
 	DEBUG_MSG(for (int v : pattern) cout << v << " ";);
 	

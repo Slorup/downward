@@ -1650,7 +1650,7 @@ namespace pdbs {
     parser.add_option<bool>(
         "recompute_max_additive_subsets",
         "attempts to recompute max additive subsets after generating all patterns",
-        "false");
+        "true");
 
 	Options opts = parser.parse();
 	if (parser.dry_run())
