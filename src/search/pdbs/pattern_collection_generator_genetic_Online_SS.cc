@@ -1479,10 +1479,10 @@ namespace pdbs {
     if(!dominated_heur){
       cout<<"adding heur["<<i<<"] to list of heurs"<<endl;
       cleaned_best_pdb_collections.push_back(best_pdb_collections.at(i));
-      //if(cleaned_best_pdb_collections.size()>15){
-	//cout<<"max of 15 pdb_collections, otherwise timewise takes too long"<<endl;
-       //break;
-      //} 
+      if(cleaned_best_pdb_collections.size()>15){
+	cout<<"max of 15 pdb_collections, otherwise timewise takes too long"<<endl;
+       break;
+      } 
     }
     else{
       cout<<"collection["<<i<<"] is dominated,eliminating "<<endl;
