@@ -45,6 +45,11 @@ namespace pdbs {
 
 	cout<<"Setting num_collections to 1 no matter the input!"<<endl; // ???????
 	num_collections=1;
+	if(recompute_max_additive_subsets)
+	  cout<<"recompute_max_additive_subsets is on"<<endl;
+	else
+	  cout<<"recompute_max_additive_subsets is off"<<endl;
+
 	genetic_SS_timer = new utils::CountdownTimer(pdb_gen_time_limit);
     }
 
@@ -1474,10 +1479,10 @@ namespace pdbs {
     if(!dominated_heur){
       cout<<"adding heur["<<i<<"] to list of heurs"<<endl;
       cleaned_best_pdb_collections.push_back(best_pdb_collections.at(i));
-      if(cleaned_best_pdb_collections.size()>15){
-	cout<<"max of 15 pdb_collections, otherwise timewise takes too long"<<endl;
-       break;
-      } 
+      //if(cleaned_best_pdb_collections.size()>15){
+	//cout<<"max of 15 pdb_collections, otherwise timewise takes too long"<<endl;
+       //break;
+      //} 
     }
     else{
       cout<<"collection["<<i<<"] is dominated,eliminating "<<endl;
