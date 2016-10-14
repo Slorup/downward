@@ -36,6 +36,7 @@ class PatternCollectionGeneratorGenetic : public PatternCollectionGenerator {
 
     const bool recompute_max_additive_subsets; //Whether to recompute the max_additive_subsets
     const int num_runs; //If greater than 1, runs the algorithm several times
+    const int time_limit; //If greater than 1, runs the algorithm several times
 
 
     std::shared_ptr<AbstractTask> task;

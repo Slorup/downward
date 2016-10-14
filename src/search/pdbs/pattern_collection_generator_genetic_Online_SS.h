@@ -87,6 +87,7 @@ class PatternCollectionGeneratorGeneticSS : public PatternCollectionGenerator {
        or not. */
     bool disjoint_patterns;
     bool hybrid_pdb_size;
+    int time_limit=1;
     
 
     // Store best pattern collection over all episodes and its fitness value.

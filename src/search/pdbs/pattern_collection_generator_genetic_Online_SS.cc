@@ -50,6 +50,8 @@ namespace pdbs {
 	else
 	  cout<<"recompute_max_additive_subsets is off"<<endl;
 
+	cout<<"time limit for symbolic pdbs:"<<time_limit;
+
 	genetic_SS_timer = new utils::CountdownTimer(pdb_gen_time_limit);
     }
 
@@ -231,55 +233,47 @@ namespace pdbs {
 	static int valid_pattern_counter=0;
 	//static bool print_timer=false;
       
-	if(hybrid_pdb_size){
-	    if(utils::g_timer()<100.0){
-		//min_size=1;
-		pdb_max_size=50000; 
-	    }
-	    else if(utils::g_timer()<200){
-		//min_size=200000;
-		pdb_max_size=500000;
-	    }
-	    else if(utils::g_timer()<350){
-		//min_size=400000;
-		pdb_max_size=1000000;
-	    }
-	    else if(utils::g_timer()<500.0){
-		pdb_max_size=9*pow(10,7);
-	    }
-	    else{
-    //else if(pdb_factory_candidate->name()!="symbolic")
-		pdb_max_size=9*pow(10,8);
-    }/*
-    else {//symbolic can go bigger
-		if(utils::g_timer()<600.0){
-	pdb_max_size=9*pow(10,8);
-		}
-		else if(utils::g_timer()<700.0)
-	pdb_max_size=9*pow(10,9);
-      else if(utils::g_timer()<800.0)
-		    pdb_max_size=9*pow(10,10);
-      else if(utils::g_timer()<900.0)
-		    pdb_max_size=9*pow(10,11);
-		else
-		    pdb_max_size=9*pow(10,12);
-    }*/
+	if(pdb_factory->name()!="symbolic"){
+	  if(hybrid_pdb_size){
+	      if(utils::g_timer()<100.0){
+		  //min_size=1;
+		  pdb_max_size=50000; 
+	      }
+	      else if(utils::g_timer()<200){
+		  //min_size=200000;
+		  pdb_max_size=500000;
+	      }
+	      else if(utils::g_timer()<350){
+		  //min_size=400000;
+		  pdb_max_size=1000000;
+	      }
+	      else if(utils::g_timer()<500.0){
+		  pdb_max_size=9*pow(10,7);
+	      }
+	      else{
+		  pdb_max_size=9*pow(10,8);
+	      } 
+	  }
 
-	    if(last_sampler_too_big){
-		pdb_max_size=last_pdb_max_size;
-		min_size=last_pdb_min_size;
-	    }
-	}
+	  if(last_sampler_too_big){
+	      pdb_max_size=last_pdb_max_size;
+	      min_size=last_pdb_min_size;
+	  }
+
+	  if(valid_pattern_counter>5){
+	    min_size=pdb_max_size/1000;
+	  }
+	  else{
+	    min_size=0;
+	  }
+    }
+    else{
+      pdb_max_size=numeric_limits<double>::max();;
+      min_size=1;//avoid empty patterns
+    }
     
    DEBUG_MSG(cout<<"evaluate, pdb_max_size:"<<pdb_max_size<<",min_size:"<<min_size<<endl<<flush;);
   //pdb_max_size=double(INT_MAX)*double(100);
-  if(valid_pattern_counter>5){
-    min_size=pdb_max_size/1000;
-    }
-    else{
-      min_size=0;
-    }
-
 
 	//DEBUG_MSG(cout<<"setting pdb_max_size to:"<<pdb_max_size<<endl;);
 	TaskProxy task_proxy(*task);
@@ -305,11 +299,15 @@ namespace pdbs {
 		Pattern pattern = transform_to_pattern_normal_form(bitvector);
 		//cout<<"transformed Pattern:"<<pattern<<endl;
 
-		if (is_pattern_too_large(pattern)) {
-		    DEBUG_MSG(cout << "pattern exceeds the memory limit!,pdb_max_size:" << pdb_max_size<<endl;);
-		    pattern_valid = false;
-		    break;
+		if(pdb_factory->name()!="symbolic"){
+		  if (is_pattern_too_large(pattern)) {
+		      DEBUG_MSG(cout << "pattern exceeds the memory limit!,pdb_max_size:" << pdb_max_size<<endl;);
+		      pattern_valid = false;
+		      break;
+		  }
 		}
+		
+		remove_irrelevant_variables(pattern);
 
 		if (disjoint_patterns) {
 		    if (mark_used_variables(pattern, variables_used)) {
@@ -319,7 +317,6 @@ namespace pdbs {
 		    }
 		}
 
-		remove_irrelevant_variables(pattern);
 		pattern_collection->push_back(pattern);
 		overall_pdb_size+=get_pattern_size(pattern);
 	    }
@@ -370,7 +367,7 @@ namespace pdbs {
 		DEBUG_MSG(cout<<"generating candidate"<<endl;);
 		//cout<<"pattern_collection:"<<*pattern_collection<<endl;fflush(stdout);
 
-		ZeroOnePDBs candidate (task_proxy, *pattern_collection, *pdb_factory);
+		ZeroOnePDBs candidate (task_proxy, *pattern_collection, *pdb_factory, time_limit);
 		if(pdb_factory->is_solved()){
 		    problem_solved_while_pdb_gen=true;
 		    cout<<"Solution found while generating PDB candidate of type:"<<pdb_factory->name()<<", adding PDB and exiting generation at time"<<utils::g_timer()<<endl;
@@ -384,6 +381,7 @@ namespace pdbs {
 		//cout<<"ZeroOnePDBs candidate_explicit has type:"<<pdb_type_explicit->name()<<endl;
 		overall_pdb_gen_time+=utils::g_timer()-temp;
 		double pdb_gen_time=utils::g_timer()-temp;
+		cout<<"generated candidate,pdb_size:,"<<overall_pdb_size<<",pdb_gen_time:,"<<pdb_gen_time<<endl;
 
 		fitness=0.001;
 		best_fitness=0.001;
@@ -475,6 +473,7 @@ namespace pdbs {
 			cout<<"avg probe:"<<avg_and_dev.first<<endl;
 			cout<<"avg probe deviation:"<<avg_and_dev.second<<endl;
 			cout<<"SS_states.size:"<<SS_states.size()<<endl;
+			cout<<"Finished probing with threshold:"<<threshold<<endl;
 			//last_sampled_best_heurs_count=best_heuristic.count_zero_one_pdbs();
 			cout<<"current_episode:"<<current_episode<<",best_heuristics_count:"<<best_pdb_collections.size()<<",new sampled_states batch"<<endl;fflush(stdout);
 			best_heuristic_values.clear();
@@ -596,16 +595,19 @@ namespace pdbs {
 		sampler_time=utils::g_timer()-start_sampler_time;
 		overall_sampling_time+=sampler_time;
 	    DEBUG_MSG(cout<<"sampler_time:"<<sampler_time<<",last_sampler_too_big:"<<last_sampler_too_big<<endl;);
-	    if(!last_sampler_too_big){
-	      if(sampler_time<2.0&&pdb_gen_time<2.0){
-		    last_pdb_max_size=pdb_max_size;
-		    last_pdb_min_size=min_size;
-	      }
-	      else if(sampler_time>2.0||pdb_gen_time>2.0){
-		cout<<"setting pdb size to :"<<last_pdb_max_size<<",last sampling time with current pdb size took:"<<sampler_time<<",pdb_gen_time:"<<pdb_gen_time<<endl;
-		    last_sampler_too_big=true;
-	      }
+	      
+	    if(pdb_factory->name()!="symbolic"){
+	      if(!last_sampler_too_big){
+		if(sampler_time<2.0&&pdb_gen_time<2.0){
+		      last_pdb_max_size=pdb_max_size;
+		      last_pdb_min_size=min_size;
 		}
+		else if(sampler_time>2.0||pdb_gen_time>2.0){
+		  cout<<"setting pdb size to :"<<last_pdb_max_size<<",last sampling time with current pdb size took:"<<sampler_time<<",pdb_gen_time:"<<pdb_gen_time<<endl;
+		      last_sampler_too_big=true;
+		}
+	      }
+	    }
 		DEBUG_MSG(cout<<"collection size:"<<overall_pdb_size<<",sampler_time:,"<<sampler_time<<",candidate_count:,"<<candidate_count<<endl;);
 		if(sampled_states>0){
 		    fitness/=sampled_states;
@@ -686,29 +688,56 @@ namespace pdbs {
 	    vector<vector<bool>> pattern_collection;
 	    vector<bool> pattern(variables.size(), false);
 	    double current_size = 1;
+	    size_t vars_to_combine=variable_ids.size();
+	      if(pdb_factory->name()=="symbolic"){
+		vars_to_combine = (*g_rng())(variable_ids.size())+1;
+	    }
+	    cout<<"1st pattern,vars to combine="<<vars_to_combine<<" out of "<<variable_ids.size()<<endl;
+
+	    size_t var_counter=0;
 	    for (size_t j = 0; j < variable_ids.size(); ++j) {
+	      var_counter++;
 		int var_id = variable_ids[j];
 		double next_var_size = variables[var_id].get_domain_size();
-		if (next_var_size > pdb_max_size){
-		    //cout<<"\t\tvar:"<<var_id<<" never fits into bin for pdb_max_size:"<<pdb_max_size<<endl;
-		    DEBUG_MSG(cout<<"\t\tvar:"<<var_id<<" never fits into bin for pdb_max_size:"<<pdb_max_size<<endl;);
-		    // var never fits into a bin.
-		    continue;
+
+		if(pdb_factory->name()!="symbolic"){
+		  if (next_var_size > pdb_max_size){
+		      //cout<<"\t\tvar:"<<var_id<<" never fits into bin for pdb_max_size:"<<pdb_max_size<<endl;
+		      DEBUG_MSG(cout<<"\t\tvar:"<<var_id<<" never fits into bin for pdb_max_size:"<<pdb_max_size<<endl;);
+		      // var never fits into a bin.
+		      continue;
+		  }
+		  if(!utils::is_product_within_limit(current_size, next_var_size,
+							pdb_max_size)) {
+			// Open a new bin for var.
+			pattern_collection.push_back(pattern);
+			//cout<<"\tpattern added to collection, pattern_collection_size:"<<pattern_collection.size()<<endl;
+			DEBUG_MSG(cout<<"\tpattern added to collection, pattern_collection_size:"<<pattern_collection.size()<<endl;);
+			pattern.clear();
+			pattern.resize(variables.size(), false);
+			current_size = 1;
+		  }
 		}
-		if (!utils::is_product_within_limit(current_size, next_var_size,
-						    pdb_max_size)) {
-		    // Open a new bin for var.
-		    pattern_collection.push_back(pattern);
-		    //cout<<"\tpattern added to collection, pattern_collection_size:"<<pattern_collection.size()<<endl;
-		    DEBUG_MSG(cout<<"\tpattern added to collection, pattern_collection_size:"<<pattern_collection.size()<<endl;);
-		    pattern.clear();
-		    pattern.resize(variables.size(), false);
-		    current_size = 1;
+		else if(vars_to_combine<var_counter){//symbolic pattern, using number of vars instead of pdb_size
+		      pattern_collection.push_back(pattern);
+		      cout<<"\t adding pattern";
+		      for(size_t i=0; i<pattern.size(); ++i){
+			if(pattern.at(i)){
+			      std::cout << i << ',';
+			   }
+			 }
+		      cout<<endl;
+		      pattern.clear();
+		      pattern.resize(variables.size(), false);
+		      var_counter=0;
+		      vars_to_combine = (*g_rng())(variable_ids.size()-j)+1;
+		      cout<<pattern_collection.size()<<"th pattern,vars to combine="<<vars_to_combine<<" out of remaining "<<variable_ids.size()-j<<endl;
 		}
-		current_size *= next_var_size;
-		pattern[var_id] = true;
-		//cout<<"\t\tcurrent_size:"<<current_size<<",added var:"<<var_id<<",domain_size of var:"<<next_var_size<<endl;
-	    }
+
+		  current_size *= next_var_size;
+		  pattern[var_id] = true;
+		  //cout<<"\t\tcurrent_size:"<<current_size<<",added var:"<<var_id<<",domain_size of var:"<<next_var_size<<endl;
+		}
 	    /*
 	      The last bin has not bin inserted into pattern_collection, do so now.
 	      We test current_size against 1 because this is cheaper than
@@ -716,19 +745,19 @@ namespace pdbs {
 	      can only be 1 if *all* variables have a domain larger than
 	      pdb_max_size.
 	    */
-	    if (current_size > 1) {
+	    if (current_size > 1 || var_counter>0) {
 		pattern_collection.push_back(pattern);
-		//cout<<"\t adding pattern";
-		//for(size_t i=0; i<pattern.size(); ++i){
-		//  if(pattern.at(i)){
-		//	std::cout << i << ',';
-		//     }
-		//   }
-		//cout<<endl;
+		DEBUG_MSG(cout<<"\t adding pattern";
+		for(size_t i=0; i<pattern.size(); ++i){
+		  if(pattern.at(i)){
+			std::cout << i << ',';
+		     }
+		   }
+		cout<<endl;);
 	    }
-	    else{
-		cout<<"\t skipping pattern"<<endl;
-	    }
+	    //else{
+		//cout<<"\t skipping pattern"<<endl;
+	    //}
 	    pattern_collections.push_back(pattern_collection);
 	}
     }
@@ -1655,7 +1684,11 @@ namespace pdbs {
     parser.add_option<bool>(
         "recompute_max_additive_subsets",
         "attempts to recompute max additive subsets after generating all patterns",
-        "true");
+        "false");
+    parser.add_option<int>(
+        "time_limit",
+        "time limit in seconds for symbolic pdb_generation cut off",
+        "1");
 
 	Options opts = parser.parse();
 	if (parser.dry_run())

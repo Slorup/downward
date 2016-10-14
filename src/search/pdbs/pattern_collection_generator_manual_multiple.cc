@@ -16,7 +16,8 @@ using namespace std;
 namespace pdbs {
 PatternCollectionGeneratorManualMultiple::PatternCollectionGeneratorManualMultiple(const Options &opts)
     : patterns(make_shared<PatternCollection>(opts.get_list<Pattern>("patterns"))),
-    pdb_type (opts.get<shared_ptr<PDBFactory>>("pdb_type")) {
+    pdb_type (opts.get<shared_ptr<PDBFactory>>("pdb_type")),
+    time_limit(opts.get<int>("time_limit")) {
 }
 
 PatternCollectionInformation PatternCollectionGeneratorManualMultiple::generate(
@@ -39,7 +40,7 @@ PatternCollectionInformation PatternCollectionGeneratorManualMultiple::generate(
       cout<<"\tadded pattern to pattern_collection:"<<input_pdb_collections.size()<<endl;
       cout<<"collection "<<input_pdb_collections.size()<<" finished:"<<endl;
       pattern_collections.push_back(pattern_collection);
-      std::shared_ptr<ZeroOnePDBs> candidate =make_shared<ZeroOnePDBs> (task_proxy, pattern_collection, *pdb_type );
+      std::shared_ptr<ZeroOnePDBs> candidate =make_shared<ZeroOnePDBs> (task_proxy, pattern_collection, *pdb_type, time_limit );
       input_pdb_collections.push_back(make_shared<PDBCollection> (candidate->get_pattern_databases()));
       result.include_additive_pdbs(input_pdb_collections.back());
       pattern_collection.clear();
@@ -51,7 +52,7 @@ PatternCollectionInformation PatternCollectionGeneratorManualMultiple::generate(
   }
       
   cout<<"collection "<<input_pdb_collections.size()<<" finished:"<<endl;
-  std::shared_ptr<ZeroOnePDBs> candidate =make_shared<ZeroOnePDBs> (task_proxy, pattern_collection, *pdb_type );
+  std::shared_ptr<ZeroOnePDBs> candidate =make_shared<ZeroOnePDBs> (task_proxy, pattern_collection, *pdb_type, time_limit );
   input_pdb_collections.push_back(make_shared<PDBCollection> (candidate->get_pattern_databases()));
   result.include_additive_pdbs(input_pdb_collections.back());
   cout<<"total collections:"<<input_pdb_collections.size()<<endl;
@@ -74,6 +75,12 @@ static shared_ptr<PatternCollectionGenerator> _parse(OptionParser &parser) {
       "pdb_type",
       "See detailed documentation for pdb factories. ",
       "symbolic");
+  
+  parser.add_option<int>(
+      "time_limit",
+      "Cut off in seconds for symbolic pdb generation. ",
+      "1");
+
 
     Options opts = parser.parse();
     

@@ -12,7 +12,7 @@ class PDBFactory;
 class ZeroOnePDBs {
     PDBCollection pattern_databases;
 public:
-    ZeroOnePDBs(TaskProxy task_proxy, const PatternCollection &patterns, PDBFactory & factory);
+    ZeroOnePDBs(TaskProxy task_proxy, const PatternCollection &patterns, PDBFactory & factory, int time_limit);
     ~ZeroOnePDBs() = default;
 
     int get_value(const State &state) const;

@@ -34,7 +34,8 @@ PatternCollectionGeneratorGenetic::PatternCollectionGeneratorGenetic(
       mutation_probability(opts.get<double>("mutation_probability")),
       disjoint_patterns(opts.get<bool>("disjoint")), 
       recompute_max_additive_subsets(opts.get<bool>("recompute_max_additive_subsets")), 
-      num_runs(opts.get<int>("num_runs")) {
+      num_runs(opts.get<int>("num_runs")),
+      time_limit(opts.get<int>("time_limit")) {
 }
 
 void PatternCollectionGeneratorGenetic::select(
@@ -199,7 +200,7 @@ void PatternCollectionGeneratorGenetic::evaluate(vector<double> &fitness_values)
             /* Generate the pattern collection heuristic and get its fitness
                value. */
 
-            ZeroOnePDBs zero_one_pdbs(task_proxy, *pattern_collection, *pdb_factory );
+            ZeroOnePDBs zero_one_pdbs(task_proxy, *pattern_collection, *pdb_factory, 1 );
             fitness = zero_one_pdbs.compute_approx_mean_finite_h();
             // Update the best heuristic found so far.
             if (fitness > best_fitness) {
@@ -401,6 +402,12 @@ static shared_ptr<PatternCollectionGenerator> _parse(OptionParser &parser) {
         "pdb_type",
         "See detailed documentation for pdb factories. ",
 	"explicit");
+    parser.add_option<int>(
+        "time_limit",
+        "symbolic generation time cut-off in seconds",
+        "1",
+        Bounds("0", "infinity"));
+
 
     Options opts = parser.parse();
     if (parser.dry_run())
