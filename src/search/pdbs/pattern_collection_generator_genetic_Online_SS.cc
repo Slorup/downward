@@ -41,7 +41,8 @@ namespace pdbs {
 	  num_collections(opts.get<int>("num_collections")),
 	  num_episodes(opts.get<int>("num_episodes")),
 	  mutation_probability(opts.get<double>("mutation_probability")),
-	  disjoint_patterns(opts.get<bool>("disjoint")) {
+	  disjoint_patterns(opts.get<bool>("disjoint")), 
+	  time_limit(opts.get<int>("time_limit")) {
 
 	cout<<"Setting num_collections to 1 no matter the input!"<<endl; // ???????
 	num_collections=1;
@@ -50,7 +51,7 @@ namespace pdbs {
 	else
 	  cout<<"recompute_max_additive_subsets is off"<<endl;
 
-	cout<<"time limit for symbolic pdbs:"<<time_limit;
+	cout<<"time limit for symbolic pdbs:"<<time_limit<<endl;
 
 	genetic_SS_timer = new utils::CountdownTimer(pdb_gen_time_limit);
     }
