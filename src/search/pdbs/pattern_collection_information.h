@@ -5,6 +5,8 @@
 
 #include "../task_proxy.h"
 
+#include "../symbolic/sym_bucket.h"
+
 #include <memory>
 
 namespace pdbs {
@@ -24,6 +26,8 @@ class PatternCollectionInformation {
     std::shared_ptr<PDBCollection> pdbs;
     std::shared_ptr<MaxAdditivePDBSubsets> max_additive_subsets;
 
+    symbolic::Bucket dead_ends;
+
     void create_pdbs_if_missing();
     void create_max_additive_subsets_if_missing();
 
@@ -37,6 +41,11 @@ public:
     //Includes a set of PDBs that are known to be additive 
     void include_additive_pdbs(const std::shared_ptr<PDBCollection> & pdbs);
 
+    //Includes a set of dead ends 
+    void set_dead_ends(const symbolic::Bucket & dead_ends_) {
+	dead_ends = dead_ends_;
+    }
+
     // Recomputes max additive subsets based on operator cost
     void recompute_max_additive_subsets();
 
@@ -44,9 +53,13 @@ public:
     void set_max_additive_subsets(
         std::shared_ptr<MaxAdditivePDBSubsets> max_additive_subsets);
 
-    std::shared_ptr<PatternCollection> get_patterns();
+    std::shared_ptr<PatternCollection> get_patterns() const;
     std::shared_ptr<PDBCollection> get_pdbs();
     std::shared_ptr<MaxAdditivePDBSubsets> get_max_additive_subsets();
+    const symbolic::Bucket & get_dead_ends() const{
+	return dead_ends;
+    }
+
 };
 }
 

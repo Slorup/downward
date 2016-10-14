@@ -1,5 +1,6 @@
 #include "canonical_symbolic_pdbs.h"
 
+#include "pattern_collection_information.h"
 #include "dominance_pruning.h"
 #include "pattern_database.h"
 
@@ -15,21 +16,32 @@ using namespace std;
 
 namespace pdbs {
 CanonicalSymbolicPDBs::CanonicalSymbolicPDBs(
-    shared_ptr<PDBCollection> pattern_databases,
-    shared_ptr<MaxAdditivePDBSubsets> max_additive_subsets_,
-    bool dominance_pruning, int compress_nodes, int compress_time) : valid_cache(pattern_databases->size()), 
-								     cache(pattern_databases->size())  {
+    PatternCollectionInformation & info,
+    bool dominance_pruning, 
+    int compress_nodes, int compress_time) : dead_ends(info.get_dead_ends()), 
+					     valid_cache(info.get_pdbs()->size()), 
+					     cache(info.get_pdbs()->size()) {
+
     assert(max_additive_subsets_);
 
+
+    auto pattern_databases = info.get_pdbs();
+    auto max_additive_subsets_ = info.get_max_additive_subsets();
+        
     for (const auto &pdb : *pattern_databases) {
 	if (pdb->get_symbolic_variables()) {
 	    symbolic_vars = pdb->get_symbolic_variables();
 	    break;
 	}
-	if(pdb->get_dead_ends().IsZero()) {
-	    dead_ends.push_back(pdb->get_dead_ends());
-	}
     }
+
+    assert(!dead_ends.empty() ||
+	   std::all_of(pattern_databases->begin(), 
+		       pattern_databases->end(),
+		       [&] (const PatternDatabaseInterface & pdb) {
+			   pdb.get_dead_ends().IsZero(); 
+		       }
+	       ));
    
 
     if (dominance_pruning) {
@@ -38,7 +50,7 @@ CanonicalSymbolicPDBs::CanonicalSymbolicPDBs(
     }
 
     if(compress_nodes) {
-	merge(symbolic_vars.get(), dead_ends, symbolic::mergeOrBDD, compress_time, compress_nodes);	    
+	merge(symbolic_vars.get(), dead_ends, symbolic::mergeOrBDD, compress_time, compress_nodes);
     }
    
     for (const auto & subset : *max_additive_subsets_) {

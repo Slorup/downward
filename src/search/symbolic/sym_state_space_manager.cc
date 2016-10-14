@@ -278,6 +278,7 @@ void SymStateSpaceManager::addDeadEndStates(bool fw, BDD bdd) {
     //too large. Therefore we just keep this states in another vectors
     //and spurious states are always removed. TODO: this could be
     //improved.
+
     if (fw || isAbstracted()) {
         if (isAbstracted())
             bdd = shrinkForall(bdd);

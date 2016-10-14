@@ -58,7 +58,8 @@ PDBFactorySymbolic::create_pdb(const TaskProxy & task,
 							     generationMemoryGB);
 
 	if(new_pdb->is_finished()) {
-	    manager->addDeadEndStates(false, new_pdb->get_dead_ends());
+	    DEBUG_MSG(cout << "Dead end states discovered: " << new_pdb->get_dead_ends().nodeCount() << endl;);
+	    manager->addDeadEndStates(true, new_pdb->get_dead_ends());
 	}
 	
 	return new_pdb;
@@ -95,6 +96,26 @@ static shared_ptr<PDBFactory>_parse(options::OptionParser &parser) {
         return nullptr;
     else
         return make_shared<PDBFactorySymbolic>(options);
+}
+
+symbolic::Bucket PDBFactorySymbolic::get_dead_ends() const {
+    const auto & non_mutex = manager->getNotMutexBDDs(true);
+    const auto & non_dead_ends = manager->getNotDeadEnds(true);
+
+
+    //cout << "Obtaining dead ends from factory: " << non_dead_ends.size() << endl;
+    symbolic::Bucket dead_ends;
+    dead_ends.reserve(non_dead_ends.size() + non_mutex.size());
+
+    for (const auto & bdd  : non_dead_ends) {
+	dead_ends.push_back(!bdd);
+    }
+
+    for (const auto & bdd  : non_mutex) {
+	dead_ends.push_back(!bdd);
+    }
+    
+    return dead_ends;
 }
 
 static options::PluginShared<PDBFactory> _plugin("symbolic", _parse);

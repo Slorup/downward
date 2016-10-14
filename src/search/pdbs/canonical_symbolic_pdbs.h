@@ -15,8 +15,9 @@ namespace symbolic {
 }
 
 namespace pdbs {
+    class PatternCollectionInformation;
 class CanonicalSymbolicPDBs {
-
+    
     std::vector<ADD> pdbs;
     std::vector<std::vector<int> > max_additive_subsets;
     std::vector<ADD> singlePDBs;
@@ -29,8 +30,7 @@ class CanonicalSymbolicPDBs {
     std::shared_ptr <symbolic::SymVariables> symbolic_vars;
 
 public:
-    CanonicalSymbolicPDBs(std::shared_ptr<PDBCollection> pattern_databases,
-			  std::shared_ptr<MaxAdditivePDBSubsets> max_additive_subsets,
+    CanonicalSymbolicPDBs(PatternCollectionInformation & info,
 			  bool dominance_pruning, int compress_nodes, int compress_time);
     ~CanonicalSymbolicPDBs() = default;
 

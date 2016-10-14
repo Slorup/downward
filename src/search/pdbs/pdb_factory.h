@@ -8,6 +8,7 @@
 #include <limits>
 
 #include "../utils/system.h"
+#include "../symbolic/sym_bucket.h"
 
 #include "types.h"
 
@@ -92,6 +93,10 @@ PDBFactory() : num_patterns_created(0), num_patterns_requested(0), num_patterns_
     virtual bool is_solved () const {
 	return false;
     }
+
+    virtual symbolic::Bucket get_dead_ends() const {
+	return symbolic::Bucket();
+    } 
 
     std::shared_ptr<PDBCollection> terminate_creation (const PDBCollection & pdb_collection) {
 	//By default we just make a copy

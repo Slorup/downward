@@ -1560,6 +1560,8 @@ namespace pdbs {
 	    result.recompute_max_additive_subsets();
 	}
 
+	result.set_dead_ends(pdb_factory->get_dead_ends());
+
 	cout <<"Finished,episodes:"<<current_episode<<",Pattern generation (Edelkamp) time: " << timer <<",Peak Memory:"<<utils::get_peak_memory_in_kb()<<endl;fflush(stdout);
 	assert(best_patterns);
 	return result;

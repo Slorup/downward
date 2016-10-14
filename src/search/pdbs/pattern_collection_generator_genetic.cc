@@ -296,6 +296,9 @@ PatternCollectionInformation PatternCollectionGeneratorGenetic::generate(
 	result.recompute_max_additive_subsets();
     }
 
+    result.set_dead_ends(pdb_factory->get_dead_ends());
+
+
     cout << "Pattern generation (Edelkamp) time: " << timer << endl;
     pdb_factory->statistics();
 

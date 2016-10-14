@@ -55,6 +55,9 @@ class PDBFactorySymbolic : public PDBFactory, public symbolic::SymController {
 	return solved();
     }
 
+    virtual symbolic::Bucket get_dead_ends() const override;
+
+
 };
 }
 
