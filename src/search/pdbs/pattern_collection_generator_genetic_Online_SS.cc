@@ -440,12 +440,12 @@ namespace pdbs {
 			SS_states.clear();
 			SS_states_vector.clear();
 			double start_probe_time=utils::g_timer();
-			int threshold=max(best_initial_value,1);
+			threshold=max(best_initial_value,max(1,threshold));
 			//threshold=44;
 			for (int repetition=0;repetition<10;repetition++){
 			    vector<double> probe_data;
 			    for (int prob_index=0;prob_index<50;prob_index++){
-				probe_data.push_back(probe_best_only(threshold));
+				probe_data.push_back(probe_best_only());
 				if(utils::g_timer()-start_probe_time>10.0){
 				    cout<<"exceeded 10 seconds limit for probes, number of repetitions completed:"<<repetition<<endl;
 				    break;
@@ -469,7 +469,15 @@ namespace pdbs {
 				cout<<"avg probe:"<<avg_and_dev.first<<" past 10^100 nodes, not going further, gets very unprecise"<<endl;
 				break;
 			    }
-			    threshold=threshold*2;
+			    //do not want to go too far, rule of thumb do not increase threshold pass 4 times the initial perimeter distance if it is being used
+			    if(initial_perimeter_threshold>0){
+			      if(threshold<4*initial_perimeter_threshold)
+				threshold=threshold*2;
+			    }
+			    else{
+			      threshold=threshold*2;
+			    }
+
 			}
 			overall_probe_time+=utils::g_timer()-start_probe_time;
 		    
@@ -724,7 +732,7 @@ namespace pdbs {
 		}
 		else if(vars_to_combine<var_counter){//symbolic pattern, using number of vars instead of pdb_size
 		      pattern_collection.push_back(pattern);
-		      cout<<"\t adding pattern";
+		      cout<<"\t adding pattern["<<pattern_collection.size()-1<<"];";
 		      for(size_t i=0; i<pattern.size(); ++i){
 			if(pattern.at(i)){
 			      std::cout << i << ',';
@@ -751,17 +759,19 @@ namespace pdbs {
 	    */
 	    if (current_size > 1 || var_counter>0) {
 		pattern_collection.push_back(pattern);
-		DEBUG_MSG(cout<<"\t adding pattern";
-		for(size_t i=0; i<pattern.size(); ++i){
-		  if(pattern.at(i)){
-			std::cout << i << ',';
-		     }
-		   }
-		cout<<endl;);
 	    }
 	    //else{
 		//cout<<"\t skipping pattern"<<endl;
 	    //}
+	    //Sort patterns by size, so zero_one cost partition benefits larger patterns over shorter ones
+	    sort(pattern_collection.begin(),pattern_collection.end(),compare_pattern_length);
+	    
+	    cout<<"\t sorted pattern lengths:";
+	    for(size_t i=0;i<pattern_collection.size();i++){
+	      cout<<std::count(pattern_collection.at(i).begin(),pattern_collection.at(i).end(),true)<<",";
+	    }
+	    cout<<endl;
+	    
 	    pattern_collections.push_back(pattern_collection);
 	}
     }
@@ -785,11 +795,14 @@ namespace pdbs {
 	  vector<Pattern> pattern_collection;
 	  pattern_collection.push_back(pattern);
 	  cout<<"g_timer before calling ZeroOnePDB to generate initial perimeter:"<<utils::g_timer()<<endl;
-	  ZeroOnePDBs candidate (task_proxy, pattern_collection, *pdb_factory, 600);
+	  //ZeroOnePDBs *candidate= new ZeroOnePDBs(task_proxy, pattern_collection, *pdb_factory, 10);
+	  ZeroOnePDBs candidate(task_proxy, pattern_collection, *pdb_factory, 20);
 	  cout<<"g_timer after calling ZeroOnePDB to generate initial perimeter:"<<utils::g_timer()<<endl;
 	  cout<<"g_timer before calling terminate_creation to push perimeter into best_pdb_collections"<<utils::g_timer()<<endl;
 	  best_pdb_collections.push_back(pdb_factory->terminate_creation(candidate.get_pattern_databases()));
 	  cout<<"g_timer after calling terminate_creation to push perimeter into best_pdb_collections"<<utils::g_timer()<<endl;
+	  const State &initial_state = task_proxy.get_initial_state();
+	  initial_perimeter_threshold=candidate.get_value(initial_state)*2;
 	}
 	else{
 	  bin_packing();
@@ -858,7 +871,7 @@ namespace pdbs {
 	cout<<"finished clear_dominated,remaining heurs"<<best_pdb_collections.size()<<endl;fflush(stdout);
     }
 
-    double PatternCollectionGeneratorGeneticSS::probe_best_only(int threshold){
+    double PatternCollectionGeneratorGeneticSS::probe_best_only(){
 	DEBUG_MSG(cout<<"calling probe_best_only,threshold:"<<threshold<<endl;fflush(stdout););
   
 	//set<int> visited_states;//for cutting off zero-cost operator loops

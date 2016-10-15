@@ -68,12 +68,13 @@ class PatternCollectionGeneratorGeneticSS : public PatternCollectionGenerator {
     int overall_sampled_states=0;
     int current_episode=0;
     double avg_sampled_states=0;
+    int initial_perimeter_threshold=-1;
+    int threshold=1;
     
     //SS data
     std::set<SSQueue, classcomp> L;
     std::set<SSNode, classcomp2> check;
     TypeSystem * sampler;
-    int threshold;
 
     double sampler_time=0;
     double last_pdb_max_size=50000;
@@ -115,7 +116,7 @@ class PatternCollectionGeneratorGeneticSS : public PatternCollectionGenerator {
     bool best_fitness_was_duplicate;
     set<vector<int> > chosen_patterns;
     bool problem_solved_while_pdb_gen=false;
-    bool create_perimeter=true;
+    bool create_perimeter=false;
     //PDBHeuristicOnline *current_heuristic,
 
     /*
@@ -190,7 +191,7 @@ class PatternCollectionGeneratorGeneticSS : public PatternCollectionGenerator {
       of recombination.
     */
     void genetic_algorithm(std::shared_ptr<AbstractTask> task);
-    double probe_best_only(int threshold);
+    double probe_best_only();
     double get_pattern_size(Pattern pattern);
 public:
     PatternCollectionGeneratorGeneticSS(const options::Options &opts);
@@ -204,6 +205,7 @@ public:
     }
     static bool compare_SS_states(SS_state i, SS_state j) { return (i.weight>j.weight); }
     static bool compare_pattern_sizes_sort (pair<int ,int > i,pair<int ,int > j) { return (i.second<j.second); }
+    static bool compare_pattern_length(vector<bool> one,vector<bool> two) { return (std::count(two.begin(), two.end(), true)<std::count(one.begin(), one.end(), true)); }
     //Dominated in terms of all sampled unique states having a h value lower or better than the max of all other heuristics
     void clear_dominated_heuristics();
     int get_best_value(State current_state);

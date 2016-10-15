@@ -62,9 +62,12 @@ namespace pdbs {
 	if(engine->solved()) {
 	    heuristic = engine->get_solution()->getADD();	    
 	} else {
+	  //cout<<"time before serch.getHeuristic(false):"<<time()<<endl;
 	    heuristic = search.getHeuristic(false);
+	  //cout<<"time after serch.getHeuristic(false)":<<time()<<endl;
 	    if(finished) dead_ends += search.notClosed(); 
 	}
+	  //cout<<"Overall generationTime:"<<time()<<",create_pdb finished"<<endl;
     }
 
     int PatternDatabaseSymbolic::get_value(const State & state) const {
