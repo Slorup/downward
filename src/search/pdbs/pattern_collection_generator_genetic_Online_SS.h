@@ -115,6 +115,7 @@ class PatternCollectionGeneratorGeneticSS : public PatternCollectionGenerator {
     bool best_fitness_was_duplicate;
     set<vector<int> > chosen_patterns;
     bool problem_solved_while_pdb_gen=false;
+    bool create_perimeter=true;
     //PDBHeuristicOnline *current_heuristic,
 
     /*

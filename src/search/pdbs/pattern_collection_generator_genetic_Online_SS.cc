@@ -401,12 +401,15 @@ namespace pdbs {
 		const State &initial_state = task_proxy.get_initial_state();
 		//DEBUG_MSG(cout<<"\tcurrent_episode:"<<current_episode<<",pdb_max_size:"<<pdb_max_size<<",candidate initial h:"<<candidate.get_value(initial_state)<<endl;fflush(stdout););
 		bool run_again=false;
-		if(best_pdb_collections.size()==0){
+		if(best_pdb_collections.size()==0||create_perimeter){
 		    cout<<"no initial heuristic yet"<<endl;fflush(stdout);
 		    fitness = 1.0;//best_heuristic not populated yet
 		    best_patterns = pattern_collection;
-		    best_pdb_collections.push_back(pdb_factory->terminate_creation(candidate.get_pattern_databases()));
-		    cout<<"initial best_patter==_collection:"<<endl;
+		    if(!create_perimeter){
+		      best_pdb_collections.push_back(pdb_factory->terminate_creation(candidate.get_pattern_databases()));
+		    }
+		    create_perimeter=false;
+		    cout<<"initial best_pattern==_collection:"<<endl;
 		    //best_patterns->erase(std::remove_if (best_patterns->begin(),best_patterns->end(), delete_empty_vector()),best_patterns->end());
 		    for (auto pattern : *best_patterns) {
 			cout<<"best_patterns:"<<pattern<<endl;
@@ -770,10 +773,31 @@ namespace pdbs {
 	task = task_;
 	best_fitness = -1;
 	best_patterns = nullptr;
-	bin_packing();
+	    
+       	if(create_perimeter){
+	  pattern_collections.clear();
+	  TaskProxy task_proxy(*task);
+	  VariablesProxy variables = task_proxy.get_variables();
+	  Pattern pattern;
+	  for(size_t i=0;i<variables.size();i++){
+	    pattern.push_back(i);
+	  }
+	  vector<Pattern> pattern_collection;
+	  pattern_collection.push_back(pattern);
+	  cout<<"g_timer before calling ZeroOnePDB to generate initial perimeter:"<<utils::g_timer()<<endl;
+	  ZeroOnePDBs candidate (task_proxy, pattern_collection, *pdb_factory, 600);
+	  cout<<"g_timer after calling ZeroOnePDB to generate initial perimeter:"<<utils::g_timer()<<endl;
+	  cout<<"g_timer before calling terminate_creation to push perimeter into best_pdb_collections"<<utils::g_timer()<<endl;
+	  best_pdb_collections.push_back(pdb_factory->terminate_creation(candidate.get_pattern_databases()));
+	  cout<<"g_timer after calling terminate_creation to push perimeter into best_pdb_collections"<<utils::g_timer()<<endl;
+	}
+	else{
+	  bin_packing();
+	}
 	vector<double> initial_fitness_values;
 	evaluate(initial_fitness_values);
 	for (int i = 0; i < num_episodes; ++i) {
+
 	    if(problem_solved_while_pdb_gen){
 		cout<<"problem solved, exiting episode loop"<<endl;
 		break;
