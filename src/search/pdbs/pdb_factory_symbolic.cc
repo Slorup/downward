@@ -10,6 +10,7 @@
 #include "../options/option_parser.h"
 #include "../options/plugin.h"
 #include "../utils/debug_macros.h"
+#include "../utils/system.h"
 #include "../operator_cost_function.h"
 
 
@@ -59,7 +60,14 @@ PDBFactorySymbolic::create_pdb(const TaskProxy & task,
 
 	if(new_pdb->is_finished()) {
 	    DEBUG_MSG(cout << "Dead end states discovered: " << new_pdb->get_dead_ends().nodeCount() << endl;);
+
+
+	    if(!(new_pdb->get_dead_ends()*manager->getInitialState()).IsZero()) {
+			cout << "Problem proved unsolvable by: " << *new_pdb << endl;
+			utils::exit_with(utils::ExitCode::UNSOLVABLE);
+	    }
 	    manager->addDeadEndStates(true, new_pdb->get_dead_ends());
+
 	}
 	
 	return new_pdb;

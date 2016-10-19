@@ -55,7 +55,7 @@ namespace pdbs {
 	average = search.getClosed()->average_hvalue();
 	DEBUG_MSG(for (int v : pattern) cout << v << " ";);
 	
-	//cout << " Finished: " << search.finished() <<  ", Average: " << average << endl;
+	DEBUG_MSG(cout << "Solved: " << engine->solved() << " Finished: " << search.finished() <<  ", Average: " << average << endl;);
 	if(time()>generationTime){
 	  cout<<"generationTimeLimit:"<<generationTime<<">GenTime:"<<time()<<",symbolic pdb interrupted"<<endl;
 	}

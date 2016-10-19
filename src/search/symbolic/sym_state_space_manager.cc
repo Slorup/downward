@@ -278,15 +278,22 @@ void SymStateSpaceManager::addDeadEndStates(bool fw, BDD bdd) {
     //too large. Therefore we just keep this states in another vectors
     //and spurious states are always removed. TODO: this could be
     //improved.
-
+    assert(!((!bdd).IsZero()));
     if (fw || isAbstracted()) {
-        if (isAbstracted())
+        if (isAbstracted()) {
             bdd = shrinkForall(bdd);
-        notDeadEndFw.push_back(!bdd);
-        mergeBucketAnd(notDeadEndFw);
+	}
+	BDD notDeadEndBDD = !bdd;
+	if(!notDeadEndBDD.IsZero()) {	
+	    notDeadEndFw.push_back(notDeadEndBDD);
+	    mergeBucketAnd(notDeadEndFw);
+	}
     } else {
-        notDeadEndBw.push_back(!bdd);
-        mergeBucketAnd(notDeadEndBw);
+	BDD notDeadEndBDD = !bdd;
+	if(!notDeadEndBDD.IsZero()) {	
+	    notDeadEndBw.push_back(notDeadEndBDD);
+	    mergeBucketAnd(notDeadEndBw);
+	}
     }
 }
 
@@ -294,14 +301,14 @@ void SymStateSpaceManager::addDeadEndStates(const std::vector<BDD> &fw_dead_ends
                                             const std::vector<BDD> &bw_dead_ends) {
     for (BDD bdd : fw_dead_ends) {
         bdd = shrinkForall(bdd);
-        if (!bdd.IsZero()) {
+        if (!(!bdd).IsZero()) {
             notDeadEndFw.push_back(!bdd);
         }
     }
 
     for (BDD bdd : bw_dead_ends) {
         bdd = shrinkForall(bdd);
-        if (!bdd.IsZero()) {
+        if (!(!bdd).IsZero()) {
             notDeadEndFw.push_back(!bdd);
         }
     }
@@ -372,6 +379,7 @@ BDD SymStateSpaceManager::filter_mutex(const BDD &bdd, bool fw,
     const vector<BDD> &notDeadEndBDDs = ((fw || isAbstracted()) ? notDeadEndFw : notDeadEndBw);
     for (const BDD &notDeadEnd : notDeadEndBDDs) {
         DEBUG_MSG(cout << "Filter: " << res.nodeCount() << " and dead end " << notDeadEnd.nodeCount() << flush;);
+	assert(!(notDeadEnd.IsZero()));
         res = res.And(notDeadEnd, nodeLimit);
         DEBUG_MSG(cout << ": " << res.nodeCount() << endl;);
     }
@@ -532,14 +540,13 @@ void SymStateSpaceManager::init_transitions() {
                 merge(vars, transitions[cost], mergeTR, p.max_aux_time / parent->transitions.size(), p.max_tr_size);
             }
             break;
-        case AbsTRsStrategy::IND_TR_SHRINK:
+        case AbsTRsStrategy::IND_TR_SHRINK: 
             for (const auto &indTRsCost : parent->getIndividualTRsFromParent()) {
 		for (const auto &trParent : indTRsCost.second) {
                     TransitionRelation absTransition = TransitionRelation(trParent);
 		    assert (absTransition.getOps().size() == 1);
 		    if(!is_relevant_op(**(absTransition.getOps().begin()), fullVars)) continue;
 		    int cost = cost_type->get_adjusted_cost(*(absTransition.getOps().begin()));
-
 		    if(cost != absTransition.getCost()) absTransition.set_cost(cost);
                     try{
                         vars->setTimeLimit(p.max_aux_time);
@@ -549,6 +556,8 @@ void SymStateSpaceManager::init_transitions() {
                     }catch (BDDError e) {
                         vars->unsetTimeLimit();
                         failedToShrink[cost].push_back(absTransition);
+						cout << "Failed to shrink!" << endl;
+						utils::exit_with(utils::ExitCode::CRITICAL_ERROR);
                     }
                 }
             }

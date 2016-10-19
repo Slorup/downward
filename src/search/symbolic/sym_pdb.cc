@@ -49,7 +49,29 @@ SymPDB::SymPDB(SymVariables *bdd_vars, const SymParamsMgr &params,
     SymPDB::SymPDB(shared_ptr<SymStateSpaceManager> parent, 
 		   AbsTRsStrategy absTRsStrategy,
 		   const std::set<int> &relevantVars) :
-	SymPDB(parent, absTRsStrategy, relevantVars, parent->get_cost_type()) {}
+	SymPDB(parent, absTRsStrategy, relevantVars, parent->get_cost_type()) {
+
+
+	assert(isAbstracted());
+
+	//Both are put into notDeadEndFw for the case of abstract
+	//searches
+	for (const auto & bdd : parent->getNotDeadEnds(false)) {
+	    notDeadEndFw.push_back(bdd);
+	}
+
+	for (const auto & bdd : parent->getNotDeadEnds(true)) {
+	    notDeadEndFw.push_back(bdd);
+	}
+	if(!notDeadEndFw.empty()) {
+	    mergeBucketAnd(notDeadEndFw);
+
+	    for (auto & bdd : notDeadEndFw) {
+		bdd = shrinkForall(bdd, p.max_mutex_size);
+	    }
+	    removeZero(notDeadEndFw);
+	}
+    }
 
     SymPDB::SymPDB(shared_ptr<SymStateSpaceManager> parent, 
 		   AbsTRsStrategy absTRsStrategy,
@@ -58,11 +80,26 @@ SymPDB::SymPDB(SymVariables *bdd_vars, const SymParamsMgr &params,
 	SymStateSpaceManager(parent, absTRsStrategy, relevantVars, cost_type_) {
 	nonRelVarsCube = vars->getCubePre(nonRelVars);    // * vars->getCubep(nonRelVars);
 	nonRelVarsCubeWithPrimes = nonRelVarsCube * vars->getCubeEff(nonRelVars);
-	if (!nonRelVarsCube.IsCube()) {
-	    cout << "Error in sym_pdb: nonRelVars should be a cube";
-	    nonRelVarsCube.print(0, 1);
-	    cout << endl;
-	    utils::exit_with(utils::ExitCode::CRITICAL_ERROR);
+	assert(nonRelVarsCube.IsCube()) ;
+	assert(isAbstracted());
+	
+	//Both are put into notDeadEndFw for the case of abstract
+	//searches
+	for (const auto & bdd : parent->getNotDeadEnds(false)) {
+	    notDeadEndFw.push_back(bdd);
+	}
+
+	for (const auto & bdd : parent->getNotDeadEnds(true)) {
+	    notDeadEndFw.push_back(bdd);
+	}
+
+	if(!notDeadEndFw.empty()) {
+	    mergeBucketAnd(notDeadEndFw);
+
+	    for (auto & bdd : notDeadEndFw) {
+		bdd = shrinkForall(bdd, p.max_mutex_size);
+	    }
+	    removeZero(notDeadEndFw);
 	}
     }
 
@@ -139,7 +176,7 @@ void SymPDB::init_initial_state() {
 
 void SymPDB::init_goal() {
     vector<pair<int, int>> abstract_goal;
-    for (auto goal_var : g_goal) {
+    for (auto goal_var : g_goal) {	
         if (isRelevantVar(goal_var.first)) {
             abstract_goal.push_back(goal_var);
         }

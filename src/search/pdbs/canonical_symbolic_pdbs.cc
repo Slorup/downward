@@ -22,11 +22,10 @@ CanonicalSymbolicPDBs::CanonicalSymbolicPDBs(
 					     valid_cache(info.get_pdbs()->size()), 
 					     cache(info.get_pdbs()->size()) {
 
-    assert(max_additive_subsets_);
-
-
     auto pattern_databases = info.get_pdbs();
     auto max_additive_subsets_ = info.get_max_additive_subsets();
+
+    assert(max_additive_subsets_);
         
     for (const auto &pdb : *pattern_databases) {
 	if (pdb->get_symbolic_variables()) {
@@ -35,13 +34,22 @@ CanonicalSymbolicPDBs::CanonicalSymbolicPDBs(
 	}
     }
 
-    assert(!dead_ends.empty() ||
-	   std::all_of(pattern_databases->begin(), 
-		       pattern_databases->end(),
-		       [&] (const PatternDatabaseInterface & pdb) {
-			   pdb.get_dead_ends().IsZero(); 
-		       }
-	       ));
+    if (dead_ends.empty()) { //If dead ends were not introduced in 
+	for (const auto &pdb : *pattern_databases) {
+	    const auto & new_dead_ends = pdb->get_dead_ends();
+	    if(!new_dead_ends.IsZero()) {
+		dead_ends.push_back(new_dead_ends);
+	    }
+	}	
+    }
+
+    // assert(!dead_ends.empty() ||
+    // 	   std::all_of(pattern_databases->begin(), 
+    // 		       pattern_databases->end(),
+    // 		       [&] (const shared_ptr<PatternDatabaseInterface> & pdb) {
+    // 			   return pdb->get_dead_ends().IsZero(); 
+    // 		       }
+    // 	       ));
    
 
     if (dominance_pruning) {
