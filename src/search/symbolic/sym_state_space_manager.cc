@@ -283,17 +283,11 @@ void SymStateSpaceManager::addDeadEndStates(bool fw, BDD bdd) {
         if (isAbstracted()) {
             bdd = shrinkForall(bdd);
 	}
-	BDD notDeadEndBDD = !bdd;
-	if(!notDeadEndBDD.IsZero()) {	
-	    notDeadEndFw.push_back(notDeadEndBDD);
-	    mergeBucketAnd(notDeadEndFw);
-	}
+	notDeadEndFw.push_back(!bdd);
+	mergeBucketAnd(notDeadEndFw);
     } else {
-	BDD notDeadEndBDD = !bdd;
-	if(!notDeadEndBDD.IsZero()) {	
-	    notDeadEndBw.push_back(notDeadEndBDD);
-	    mergeBucketAnd(notDeadEndBw);
-	}
+	notDeadEndBw.push_back(!bdd);
+	mergeBucketAnd(notDeadEndBw);
     }
 }
 

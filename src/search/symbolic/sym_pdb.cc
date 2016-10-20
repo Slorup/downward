@@ -63,13 +63,10 @@ SymPDB::SymPDB(SymVariables *bdd_vars, const SymParamsMgr &params,
 	for (const auto & bdd : parent->getNotDeadEnds(true)) {
 	    notDeadEndFw.push_back(bdd);
 	}
-	if(!notDeadEndFw.empty()) {
-	    mergeBucketAnd(notDeadEndFw);
+	mergeBucketAnd(notDeadEndFw);
 
-	    for (auto & bdd : notDeadEndFw) {
-		bdd = shrinkForall(bdd, p.max_mutex_size);
-	    }
-	    removeZero(notDeadEndFw);
+	for (auto & bdd : notDeadEndFw) {
+	    bdd = shrinkExists(bdd, p.max_mutex_size);
 	}
     }
 
@@ -93,13 +90,10 @@ SymPDB::SymPDB(SymVariables *bdd_vars, const SymParamsMgr &params,
 	    notDeadEndFw.push_back(bdd);
 	}
 
-	if(!notDeadEndFw.empty()) {
-	    mergeBucketAnd(notDeadEndFw);
+	mergeBucketAnd(notDeadEndFw);
 
-	    for (auto & bdd : notDeadEndFw) {
-		bdd = shrinkForall(bdd, p.max_mutex_size);
-	    }
-	    removeZero(notDeadEndFw);
+	for (auto & bdd : notDeadEndFw) {
+	    bdd = shrinkExists(bdd, p.max_mutex_size);
 	}
     }
 
