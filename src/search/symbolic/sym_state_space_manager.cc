@@ -19,266 +19,43 @@
 using namespace std;
 
 namespace symbolic {
-    SymStateSpaceManager::SymStateSpaceManager(shared_ptr<SymStateSpaceManager> parent,
-					       AbsTRsStrategy abs_trs_strategy_,
-					       const std::set<int> &relevantVars) : SymStateSpaceManager(parent,
-													 abs_trs_strategy_, 
-													 relevantVars, 
-													 parent->cost_type) {
-}
-
-    bool is_relevant_op(const GlobalOperator & op, const std::set<int> &relevantVars) {
-	for(auto eff: op.get_effects ()) {
-	    if(relevantVars.count(eff.var)) {
-		return true;
-	    }
-	} 
-	
-	return false;
-    }
-
-    SymStateSpaceManager::SymStateSpaceManager(shared_ptr<SymStateSpaceManager> parent,
-					       AbsTRsStrategy abs_trs_strategy_,
-					       const std::set<int> &relevantVars, 
-					       shared_ptr<OperatorCostFunction> cost_type_):
-      vars(parent->vars), p(parent->p), cost_type(cost_type_),
-      parent_mgr(parent), abs_trs_strategy(abs_trs_strategy_),
-      fullVars(relevantVars),
-      initialState(vars->zeroBDD()), goal(vars->zeroBDD()),
-      min_transition_cost(0),
-      hasTR0(false), mutexInitialized(false),
-	mutexByFluentInitialized(false) {
-
-	assert(!fullVars.empty());
-	for (size_t i = 0; i < g_operators.size(); ++i) {
-	    if (!is_relevant_op(g_operators[i], relevantVars)) continue;     
-	    if (min_transition_cost == 0 || min_transition_cost > cost_type->get_adjusted_cost(i)) {
-		min_transition_cost = cost_type->get_adjusted_cost(i);
-	    }
-	    if (cost_type->get_adjusted_cost(i) == 0) {
-		hasTR0 = true;
-	    }
-	}
-
-	for (size_t i = 0; i < g_variable_name.size(); i++) {
-	    if (!fullVars.count(i)) {
-		nonRelVars.insert(i);
-	    }
-	}
-
-    }
 
 
 
 SymStateSpaceManager::SymStateSpaceManager(SymVariables *v,
 					   const SymParamsMgr &params,
-					   shared_ptr<OperatorCostFunction> cost_type_) :
-	vars(v), p(params), cost_type(cost_type_),
-	abs_trs_strategy(AbsTRsStrategy::REBUILD_TRS),
+					       const set<int> & relevant_vars_) :
+	vars(v), p(params), relevant_vars(relevant_vars_), 
 	initialState(v->zeroBDD()), goal(v->zeroBDD()),
-	min_transition_cost(0), hasTR0(false),
-	mutexInitialized(false),
-	mutexByFluentInitialized(false) {
-    for (size_t i = 0; i < g_operators.size(); ++i) {
-	if (min_transition_cost == 0 || min_transition_cost > cost_type->get_adjusted_cost(i)) {
-	    min_transition_cost = cost_type->get_adjusted_cost(i);
-	}
-	if (cost_type->get_adjusted_cost(i) == 0) {
-	    hasTR0 = true;
-	}
-    }
-}
+	min_transition_cost(0), hasTR0(false) {
 
 
 
-void SymStateSpaceManager::init_transitions_from_individual_trs() {
-    if (!transitions.empty())
-        return;                          //Already initialized!
-    DEBUG_MSG(cout << "Init transitions" << endl;);
-
-    DEBUG_MSG(cout << "Generate individual TRs" << endl;);
-    transitions = map<int, vector <TransitionRelation>> (indTRs);     //Copy
-    DEBUG_MSG(cout << "Individual TRs generated" << endl;);
-    min_transition_cost = 0;
-    hasTR0 = transitions.count(0) > 0;
-
-    for (map<int, vector<TransitionRelation>>::iterator it = transitions.begin();
-         it != transitions.end(); ++it) {
-        merge(vars, it->second, mergeTR, p.max_tr_time, p.max_tr_size);
-
-        if (min_transition_cost == 0 || min_transition_cost > it->first) {
-            min_transition_cost = it->first;
-        }
-
-        DEBUG_MSG(cout << "TRs cost=" << it->first << " (" << it->second.size() << ")" << endl;);
-    }
-}
-
-
-void SymStateSpaceManager::init_mutex(const std::vector<MutexGroup> &mutex_groups,
-                                      bool genMutexBDD, bool genMutexBDDByFluent) {
-    //Check if I should initialize something and return
-    if (mutexInitialized)
-        genMutexBDD = false;
-    if (mutexByFluentInitialized)
-        genMutexBDDByFluent = false;
-    if (!genMutexBDD && !genMutexBDDByFluent)
-        return;
-    if (genMutexBDD)
-        mutexInitialized = true;
-    if (genMutexBDDByFluent)
-        mutexByFluentInitialized = true;
-
-    if (genMutexBDDByFluent) {
-        //Initialize structure for exactlyOneBDDsByFluent (common to both init_mutex calls)
-        exactlyOneBDDsByFluent.resize(g_variable_domain.size());
+	if(relevant_vars.empty()) {
         for (size_t i = 0; i < g_variable_domain.size(); ++i) {
-            exactlyOneBDDsByFluent[i].resize(g_variable_domain[i]);
-            for (int j = 0; j < g_variable_domain[i]; ++j) {
-                exactlyOneBDDsByFluent[i][j] = oneBDD();
+		relevant_vars.insert(i);
             }
         }
     }
 
-    init_mutex(mutex_groups, genMutexBDD, genMutexBDDByFluent, false);
-    init_mutex(mutex_groups, genMutexBDD, genMutexBDDByFluent, true);
-}
 
-void SymStateSpaceManager::init_mutex(const std::vector<MutexGroup> &mutex_groups,
-                                      bool genMutexBDD, bool genMutexBDDByFluent, bool fw) {
-    DEBUG_MSG(cout << "Init mutex BDDs " << (fw ? "fw" : "bw") << ": "
-                   << genMutexBDD << " " << genMutexBDDByFluent << endl;);
-
-    vector<vector<BDD>> &notMutexBDDsByFluent =
-        (fw ? notMutexBDDsByFluentFw : notMutexBDDsByFluentBw);
-
-    vector<BDD> &notMutexBDDs =
-        (fw ? notMutexBDDsFw : notMutexBDDsBw);
-
-    //BDD validStates = vars->oneBDD();
-    int num_mutex = 0;
-    int num_invariants = 0;
-
-    if (genMutexBDDByFluent) {
-        //Initialize structure for notMutexBDDsByFluent
-        notMutexBDDsByFluent.resize(g_variable_domain.size());
-        for (size_t i = 0; i < g_variable_domain.size(); ++i) {
-            notMutexBDDsByFluent[i].resize(g_variable_domain[i]);
-            for (int j = 0; j < g_variable_domain[i]; ++j) {
-                notMutexBDDsByFluent[i][j] = oneBDD();
-            }
+    bool SymStateSpaceManager::is_relevant_op(const GlobalOperator & op) const {
+	for(auto eff: op.get_effects ()) {
+	    if(relevant_vars.count(eff.var)) {
+		return true;
         }
     }
 
-    //Initialize mBDDByVar and invariant_bdds_by_fluent
-    vector<BDD>  mBDDByVar;
-    mBDDByVar.reserve(g_variable_domain.size());
-    vector<vector<BDD>> invariant_bdds_by_fluent(g_variable_domain.size());
-    for (size_t i = 0; i < invariant_bdds_by_fluent.size(); i++) {
-        mBDDByVar.push_back(oneBDD());
-        invariant_bdds_by_fluent[i].resize(g_variable_domain[i]);
-        for (size_t j = 0; j < invariant_bdds_by_fluent[i].size(); j++) {
-            invariant_bdds_by_fluent[i][j] = oneBDD();
-        }
+	return false;
     }
-
-    for (auto &mg : mutex_groups) {
-        if (mg.pruneFW() != fw)
-            continue;
-        const vector<Fact> &invariant_group = mg.getFacts();
-        DEBUG_MSG(cout << mg << endl;);
-        if (mg.isExactlyOne()) {
-            BDD bddInvariant = zeroBDD();
-            int var = numeric_limits<int>::max();
-            int val = 0;
-            bool exactlyOneRelevant = true;
-
-            for (auto &fluent : invariant_group) {
-                if (!isRelevantVar(fluent.var)) {
-                    exactlyOneRelevant = true;
-                    break;
-                }
-                bddInvariant += vars->preBDD(fluent.var, fluent.value);
-                if (fluent.var < var) {
-                    var = fluent.var;
-                    val = fluent.value;
-                }
-            }
-
-            if (exactlyOneRelevant) {
-                num_invariants++;
-                if (genMutexBDD) {
-                    invariant_bdds_by_fluent[var][val] *= bddInvariant;
-                }
-                if (genMutexBDDByFluent) {
-                    for (auto &fluent : invariant_group) {
-                        exactlyOneBDDsByFluent[fluent.var][fluent.value] *= bddInvariant;
-                    }
-                }
-            }
-        }
-
-
-        for (size_t i = 0; i < invariant_group.size(); ++i) {
-            int var1 = invariant_group[i].var;
-            if (!isRelevantVar(var1))
-                continue;
-            int val1 = invariant_group[i].value;
-            BDD f1 = vars->preBDD(var1, val1);
-
-            for (size_t j = i + 1; j < invariant_group.size(); ++j) {
-                int var2 = invariant_group[j].var;
-                if (!isRelevantVar(var2))
-                    continue;
-                int val2 = invariant_group[j].value;
-                BDD f2 = vars->preBDD(var2, val2);
-                BDD mBDD = !(f1 * f2);
-                if (genMutexBDD) {
-                    num_mutex++;
-                    mBDDByVar[min(var1, var2)] *= mBDD;
-                    if (mBDDByVar[min(var1, var2)].nodeCount() > p.max_mutex_size) {
-                        notMutexBDDs.push_back(mBDDByVar[min(var1, var2)]);
-                        mBDDByVar[min(var1, var2)] = vars->oneBDD();
-                    }
-                }
-                if (genMutexBDDByFluent) {
-                    notMutexBDDsByFluent[var1][val1] *= mBDD;
-                    notMutexBDDsByFluent[var2][val2] *= mBDD;
-                }
-            }
-        }
-    }
-
-    if (genMutexBDD) {
-        for (size_t var = 0; var < g_variable_domain.size(); ++var) {
-            if (!mBDDByVar[var].IsOne()) {
-                notMutexBDDs.push_back(mBDDByVar[var]);
-            }
-            for (const BDD &bdd_inv : invariant_bdds_by_fluent[var]) {
-                if (!bdd_inv.IsOne()) {
-                    notMutexBDDs.push_back(bdd_inv);
-                }
-            }
-        }
-
-        DEBUG_MSG(dumpMutexBDDs(fw););
-        merge(vars, notMutexBDDs, mergeAndBDD,
-              p.max_mutex_time, p.max_mutex_size);
-        std::reverse(notMutexBDDs.begin(), notMutexBDDs.end());
-        DEBUG_MSG(cout << "Mutex initialized " << (fw ? "fw" : "bw") << ". Total mutex added: " << num_mutex << " Invariant groups: " << num_invariants << endl;);
-        DEBUG_MSG(dumpMutexBDDs(fw););
-    }
-}
 
 void SymStateSpaceManager::addDeadEndStates(bool fw, BDD bdd) {
-    //cout << "Adding dead ends: " << bdd.nodeCount() << endl;
     //There are several options here, we could follow with edeletion
     //and modify the TRs, so that the new spurious states are never
     //generated. However, the TRs are already merged and the may get
     //too large. Therefore we just keep this states in another vectors
     //and spurious states are always removed. TODO: this could be
     //improved.
-    assert(!((!bdd).IsZero()));
     if (fw || isAbstracted()) {
         if (isAbstracted()) {
             bdd = shrinkForall(bdd);
@@ -295,14 +72,14 @@ void SymStateSpaceManager::addDeadEndStates(const std::vector<BDD> &fw_dead_ends
                                             const std::vector<BDD> &bw_dead_ends) {
     for (BDD bdd : fw_dead_ends) {
         bdd = shrinkForall(bdd);
-        if (!(!bdd).IsZero()) {
+        if (!(bdd.IsZero())) {
             notDeadEndFw.push_back(!bdd);
         }
     }
 
     for (BDD bdd : bw_dead_ends) {
         bdd = shrinkForall(bdd);
-        if (!(!bdd).IsZero()) {
+        if (!(bdd.IsZero())) {
             notDeadEndFw.push_back(!bdd);
         }
     }
@@ -461,141 +238,24 @@ void SymStateSpaceManager::shrinkBucket(Bucket &bucket, int maxNodes) {
     }
 }
 
+void SymStateSpaceManager::init_transitions(const map<int, vector <TransitionRelation>> & (indTRs)) {
+    transitions = indTRs; //Copy
 
-void SymStateSpaceManager::init_mutex(const std::vector<MutexGroup> &mutex_groups) {
-    //If (a) is initialized OR not using mutex OR edeletion does not need mutex
-    if (mutexInitialized || p.mutex_type == MutexType::MUTEX_NOT)
-        return;     //Skip mutex initialization
-
-    if (p.mutex_type == MutexType::MUTEX_EDELETION) {
-        SymStateSpaceManager::init_mutex(mutex_groups, true, true);
-    } else {
-        SymStateSpaceManager::init_mutex(mutex_groups, true, false);
-    }
+    for (map<int, vector<TransitionRelation>>::iterator it = transitions.begin();
+         it != transitions.end(); ++it) {
+        merge(vars, it->second, mergeTR, p.max_tr_time, p.max_tr_size);
 }
 
 
-void SymStateSpaceManager::init_transitions() {
-    if (!transitions.empty())
-        return;                          //Already initialized!
-    if (parent_mgr.expired() || abs_trs_strategy == AbsTRsStrategy::REBUILD_TRS) {
-	DEBUG_MSG(cout << "AbsTRsStrategy::REBUILD_TRS" << endl;);
-        init_individual_trs();
-        init_transitions_from_individual_trs();
-    } else {
-        auto parent = parent_mgr.lock();
-
-        map<int, vector <TransitionRelation>> failedToShrink;
-        switch (abs_trs_strategy) {
-        case AbsTRsStrategy::TR_SHRINK:
-	    assert(!parent->transitions.empty());
-            for (const auto &trsParent : parent->transitions) {
-                int cost = trsParent.first;     //For all the TRs of cost cost
-                DEBUG_MSG(cout << "Init trs: " << cost << endl;);
-                set <const GlobalOperator *> failed_ops;
-
-                double num_trs = parent->transitions.size() * trsParent.second.size();
-                for (const auto &trParent : trsParent.second) {
-                    TransitionRelation absTransition = TransitionRelation(trParent);
-                    DEBUG_MSG(cout << "SHRINK: " << absTransition << " time_out: "
-                                   << 1 + p.max_aux_time / num_trs << " max nodes: "
-                                   << 1 + p.max_aux_nodes << endl;);
-                    try{
-                        vars->setTimeLimit(1 + p.max_aux_time / num_trs);
-                        absTransition.shrink(*this, 1 + p.max_aux_nodes);
-                        transitions[cost].push_back(move(absTransition));
-                        vars->unsetTimeLimit();
-                    }catch (BDDError e) {
-                        vars->unsetTimeLimit();
-                        DEBUG_MSG(cout << "Failed shrinking TR" << endl;);
-                        //Failed some
-                        const set <const GlobalOperator *> &tr_ops = trParent.getOps();
-                        failed_ops.insert(begin(tr_ops), end(tr_ops));
+    min_transition_cost = transitions.begin()->first;
+    if (min_transition_cost == 0) {
+	hasTR0 = true;
+	if(transitions.size() > 1) {
+	    min_transition_cost = (transitions.begin() ++)->first;
                     }
                 }
 
-                if (!failed_ops.empty()) {   //Add all the TRs related with it.
-                    cout << "Failed ops" << endl;
-                    for (const auto &trParent : indTRs.at(cost)) {
-                        if (trParent.hasOp(failed_ops)) {
-                            TransitionRelation absTransition = TransitionRelation(trParent);
-                            vars->setTimeLimit(p.max_aux_time);
-                            try{
-                                absTransition.shrink(*this, p.max_aux_nodes);
-                                transitions[cost].push_back(absTransition);
-                                vars->unsetTimeLimit();
-                            }catch (BDDError e) {
-                                failedToShrink[cost].push_back(absTransition);
-                                vars->unsetTimeLimit();
-                            }
-                        }
-                    }
-                }
-                merge(vars, transitions[cost], mergeTR, p.max_aux_time / parent->transitions.size(), p.max_tr_size);
-            }
-            break;
-        case AbsTRsStrategy::IND_TR_SHRINK: 
-            for (const auto &indTRsCost : parent->getIndividualTRsFromParent()) {
-		for (const auto &trParent : indTRsCost.second) {
-                    TransitionRelation absTransition = TransitionRelation(trParent);
-		    assert (absTransition.getOps().size() == 1);
-		    if(!is_relevant_op(**(absTransition.getOps().begin()), fullVars)) continue;
-		    int cost = cost_type->get_adjusted_cost(*(absTransition.getOps().begin()));
-		    if(cost != absTransition.getCost()) absTransition.set_cost(cost);
-                    try{
-                        vars->setTimeLimit(p.max_aux_time);
-                        absTransition.shrink(*this, p.max_aux_nodes);
-                        vars->unsetTimeLimit();
-                        transitions[cost].push_back(absTransition);
-                    }catch (BDDError e) {
-                        vars->unsetTimeLimit();
-                        failedToShrink[cost].push_back(absTransition);
-						cout << "Failed to shrink!" << endl;
-						utils::exit_with(utils::ExitCode::CRITICAL_ERROR);
-                    }
-                }
-            }
-
-	    for (auto & trs : transitions) {
-                merge(vars, trs.second, mergeTR, p.max_aux_time, p.max_tr_size);
-	    }
-
-            break;
-        case AbsTRsStrategy::SHRINK_AFTER_IMG:
-	    DEBUG_MSG(cout << "AbsTRsStrategy::SHRINK_AFTER_IMG" << endl;);
-
-            //SetAbsAfterImage
-            for (const auto &t : parent->transitions) {
-                int cost = t.first;
-
-                for (const auto &tr : t.second) {
-                    TransitionRelation newTR = tr;
-                    newTR.setAbsAfterImage(this);
-                    transitions[cost].push_back(newTR);
-                }
-            }
-            break;
-
-        case AbsTRsStrategy::REBUILD_TRS:
-            assert(false);
-            break;
-        }
-
-        //Use Shrink after img in all the transitions that failedToShrink
-        DEBUG_MSG(cout << "Failed to shrink: " << (failedToShrink.empty() ? "no" : "yes") << endl;);
-        for (auto &failedTRs : failedToShrink) {
-            merge(vars, failedTRs.second, mergeTR, p.max_aux_time, p.max_tr_size);
-            for (auto &tr : failedTRs.second) {
-                tr.setAbsAfterImage(this);
-                transitions[failedTRs.first].push_back(tr);
-            }
-        }
-    }
-
-    DEBUG_MSG(cout << "Finished init trs: " << transitions.size() << endl;);
-    assert(!hasTR0 || transitions.count(0));
 }
-
 
 SymParamsMgr::SymParamsMgr(const options::Options &opts) :
     max_tr_size(opts.get<int>("max_tr_size")),

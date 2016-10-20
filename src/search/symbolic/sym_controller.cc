@@ -54,8 +54,9 @@ void SymController::add_options_to_parser(OptionParser &parser, int maxStepTime,
 
     void SymController::setLowerBound(int lower) {
        //Never set a lower bound greater than the current upper bound
-	if(solution.solved()) 
+	if(solution.solved()) {
 	    lower = min(lower,  solution.getCost()); 
+    }
 	lower_bound = max(lower, lower_bound);
     }
 

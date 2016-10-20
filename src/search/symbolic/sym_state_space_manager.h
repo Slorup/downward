@@ -6,6 +6,7 @@
 #include "sym_bucket.h"
 #include "sym_variables.h"
 #include "sym_util.h"
+#include "../utils/system.h"
 
 #include <vector>
 #include <set>
@@ -45,20 +46,16 @@ public:
 };
 
 class SymStateSpaceManager {
+    void zero_preimage(const BDD &bdd, std::vector <BDD> &res, int maxNodes) const;
+    void cost_preimage(const BDD &bdd, std::map <int, std::vector<BDD>> &res, int maxNodes) const;
+    void zero_image(const BDD &bdd, std::vector <BDD> &res, int maxNodes) const;
+    void cost_image(const BDD &bdd, std::map <int, std::vector<BDD>> &res, int maxNodes) const;
 protected:
     SymVariables *vars;
     const SymParamsMgr p;
-    const std::shared_ptr<OperatorCostFunction> cost_type;
-
-    // Hold a reference to the parent manager that can be used during
-    // initialization. Uses weak_ptr in order to allow releasing the
-    // resources used by the parent manager if necessary.
-    std::weak_ptr<SymStateSpaceManager> parent_mgr;
-
-    const AbsTRsStrategy abs_trs_strategy;
 
     //If the variable is fully/partially/not considered in the abstraction
-    std::set <int> fullVars, absVars, nonRelVars;
+    std::set <int> relevant_vars;
 
     BDD initialState; // initial state
     BDD goal; // bdd representing the true (i.e. not simplified) goal-state
@@ -67,11 +64,6 @@ protected:
     int min_transition_cost; //minimum cost of non-zero cost transitions
     bool hasTR0; //If there is transitions with cost 0
 
-    //Individual TRs: Useful for shrink and plan construction
-    std::map<int, std::vector <TransitionRelation>> indTRs;
-    //std::vector<TransitionRelation> indTRs;
-
-    bool mutexInitialized, mutexByFluentInitialized;
 
     //BDD representation of valid states (wrt mutex) for fw and bw search
     std::vector<BDD> notMutexBDDsFw, notMutexBDDsBw;
@@ -80,88 +72,30 @@ protected:
     //filter_mutex (it does not matter which mutex_type we are using).
     std::vector<BDD> notDeadEndFw, notDeadEndBw;
 
-    //notMutex relative for each fluent
-    std::vector<std::vector<BDD>> notMutexBDDsByFluentFw, notMutexBDDsByFluentBw;
-    std::vector<std::vector<BDD>> exactlyOneBDDsByFluent;
-
-    void zero_preimage(const BDD &bdd, std::vector <BDD> &res, int maxNodes) const;
-    void cost_preimage(const BDD &bdd, std::map <int, std::vector<BDD>> &res, int maxNodes) const;
-    void zero_image(const BDD &bdd, std::vector <BDD> &res, int maxNodes) const;
-    void cost_image(const BDD &bdd, std::map <int, std::vector<BDD>> &res, int maxNodes) const;
-
-    virtual void init_initial_state() = 0;
-    virtual void init_goal() = 0;
-
-    virtual ADD getExplicitHeuristicADD(bool fw) = 0;
-    virtual void getExplicitHeuristicBDD(bool fw, std::map<int, BDD> &res) = 0;
-
-    virtual void getTransitions(const std::map<int, std::vector <TransitionRelation>> & /*individualTRs*/,
-                                std::map<int, std::vector <TransitionRelation>> & /*res*/) const {
-        std::cerr << "REBUILD TRs not supported by " << *this << std::endl;
-        utils::exit_with(utils::ExitCode::UNSUPPORTED);
-    }
-
-    void shrinkTransitions(const std::map<int, std::vector <TransitionRelation>> &trs,
-                           const std::map<int, std::vector <TransitionRelation>> &indTRs,
-                           std::map<int, std::vector <TransitionRelation>> &res,
-                           int maxTime, int maxNodes) const;
-
     BDD getRelVarsCubePre() const {
-        return vars->getCubePre(fullVars) + vars->getCubePre(absVars);
+        return vars->getCubePre(relevant_vars);
     }
 
     BDD getRelVarsCubeEff() const {
-        return vars->getCubeEff(fullVars) + vars->getCubeEff(absVars);
+        return vars->getCubeEff(relevant_vars);
     }
-
-    friend std::ostream &operator<<(std::ostream &os, const SymStateSpaceManager &state_space);
-
 
     virtual std::string tag() const = 0;
 
-    void init_transitions_from_individual_trs();
-
-    virtual void init_individual_trs() = 0;
-
-
-    //Be careful of calling init_mutex and init_transitions before actually calling filter_mutex or image
-    void init_mutex(const std::vector<MutexGroup> &mutex_groups,
-                    bool genMutexBDDs, bool genMutexBDDsByFluent);
-    void init_mutex(const std::vector<MutexGroup> &mutex_groups,
-                    bool genMutexBDD, bool genMutexBDDByFluent, bool fw);
+    void init_transitions(const std::map<int, std::vector <TransitionRelation>> & (indTRs));
+    bool is_relevant_op(const GlobalOperator & op) const;
 
 
 public:
-    SymStateSpaceManager(SymVariables *v,
-                         const SymParamsMgr &params,
-                         std::shared_ptr<OperatorCostFunction> cost_type_); //Original state space: All vars are relevant
-
-    SymStateSpaceManager(std::shared_ptr<SymStateSpaceManager> parent,
-                         AbsTRsStrategy abs_trs_strategy_,
-                         const std::set<int> &relevantVars); //Abstract state space (PDBs)
-    
-    SymStateSpaceManager(std::shared_ptr<SymStateSpaceManager> parent,
-                         AbsTRsStrategy abs_trs_strategy_,
-                         const std::set<int> &relevantVars, 
-			 std::shared_ptr<OperatorCostFunction> cost_type); //Abstract state space (PDBs)
-
-    virtual void init_mutex(const std::vector<MutexGroup> &mutex_groups);
-
-    void init() {
-        init_mutex(g_mutex_groups);
-        init_transitions();
-    }
-
-    void init_transitions();
+    SymStateSpaceManager(SymVariables *v, const SymParamsMgr &params, 
+			 const std::set<int> & relevant_vars_ = std::set<int> ());
 
     inline bool isAbstracted() const {
-        assert (fullVars.size() +absVars.size() + nonRelVars.size() == g_variable_domain.size());
-	return !(absVars.empty() && nonRelVars.empty());
+        return !isOriginal();
     }
 
     inline bool isOriginal() const {
-	assert (fullVars.size() +absVars.size() + nonRelVars.size() == g_variable_domain.size()); 
-        return !isAbstracted();
+        return relevant_vars.size() == g_variable_domain.size();
     }
 
     virtual BDD shrinkExists(const BDD &bdd, int maxNodes) const = 0;
@@ -184,34 +118,25 @@ public:
         return vars;
     }
 
-    inline const std::set <int> &getFullVars() const {
-        return fullVars;
+    inline const SymParamsMgr getParams() const {
+        return p;
     }
 
-    inline const std::set <int> &getAbsVars() const {
-        return absVars;
-    }
-
-    inline const std::set <int> &getNonRelVars() const {
-        return nonRelVars;
+    inline const std::set <int> &get_relevant_variables() const {
+        return relevant_vars;
     }
 
     inline bool isRelevantVar(int var) const {
-        return fullVars.count(var) > 0 || absVars.count(var);
+        return relevant_vars.count(var) > 0;
     }
 
     int numVariablesToAbstract() const {
-        return fullVars.size();
+        return relevant_vars.size();
     }
 
     int numVariablesAbstracted() const {
-        return absVars.size() + nonRelVars.size();
+        return g_variable_domain.size() - relevant_vars.size();
     }
-
-    inline std::shared_ptr<OperatorCostFunction> get_cost_type() const {
-	return cost_type;
-    }
-
 
     double stateCount(const Bucket &bucket) const {
         return vars->numStates(bucket);
@@ -239,34 +164,10 @@ public:
     }
 
     inline const BDD &getGoal() {
-        if (goal.IsZero()) {
-            init_goal();
-            assert(!goal.IsZero());
-        }
         return goal;
     }
 
-    const std::map<int, std::vector <TransitionRelation>> &getIndividualTRs() {
-        if (indTRs.empty())
-            init_individual_trs();
-        return indTRs;
-    }
-
-    const std::map<int, std::vector <TransitionRelation>> & getIndividualTRsFromParent() {
-        if (indTRs.empty()) {
-	    if(! parent_mgr.expired()) {
-		return parent_mgr.lock()->getIndividualTRsFromParent();
-	    }
-	     
-	    init_individual_trs();
-	}    
-        return indTRs;
-    }
     inline const BDD &getInitialState() {
-        if (initialState.IsZero()) {
-            init_initial_state();
-            assert(!initialState.IsZero());
-        }
         return initialState;
     }
 
@@ -291,26 +192,12 @@ public:
         return vars->oneBDD();
     }
 
-    inline const std::vector<BDD> &getNotMutexBDDs(bool fw) {
-        init_mutex(g_mutex_groups);
+    inline const std::vector<BDD> &getNotMutexBDDs(bool fw) const {
         return fw ? notMutexBDDsFw : notMutexBDDsBw;
     }
 
-
-    inline const std::vector<BDD> &getNotDeadEnds(bool fw) {
+    inline const std::vector<BDD> &getNotDeadEnds(bool fw) const {
         return fw ? notDeadEndFw : notDeadEndBw;
-    }
-
-    inline const std::vector<int> &vars_index_pre(int variable) const {
-        return vars->vars_index_pre(variable);
-    }
-
-    inline const std::vector<int> &vars_index_eff(int variable) const {
-        return vars->vars_index_eff(variable);
-    }
-
-    inline const std::vector<int> &vars_index_abs(int variable) const {
-        return vars->vars_index_abs(variable);
     }
 
     bool mergeBucket(Bucket &bucket, int maxTime, int maxNodes) const {
@@ -356,7 +243,6 @@ public:
     inline void zero_image(bool fw,
                            const BDD &bdd, std::vector<BDD> &res,
                            int maxNodes) {
-        init_transitions();
         if (fw)
             zero_image(bdd, res, maxNodes);
         else
@@ -366,30 +252,11 @@ public:
     inline void cost_image(bool fw,
                            const BDD &bdd, std::map <int, std::vector<BDD>> &res,
                            int maxNodes) {
-        init_transitions();
         if (fw) {
             cost_image(bdd, res, maxNodes);
         } else {
             cost_preimage(bdd, res, maxNodes);
         }
-    }
-
-    //Methods that require of mutex initialized
-    inline const BDD &getNotMutexBDDFw(int var, int val) {
-        init_mutex(g_mutex_groups, false, true);
-        return notMutexBDDsByFluentFw[var][val];
-    }
-
-    //Methods that require of mutex initialized
-    inline const BDD &getNotMutexBDDBw(int var, int val) {
-        init_mutex(g_mutex_groups, false, true);
-        return notMutexBDDsByFluentBw[var][val];
-    }
-
-    //Methods that require of mutex initialized
-    inline const BDD &getExactlyOneBDD(int var, int val) {
-        init_mutex(g_mutex_groups, false, true);
-        return exactlyOneBDDsByFluent[var][val];
     }
 
     BDD filter_mutex(const BDD &bdd,
@@ -407,20 +274,20 @@ public:
     inline void unsetTimeLimit() {
         vars->unsetTimeLimit();
     }
+    friend std::ostream &operator<<(std::ostream &os, const SymStateSpaceManager &state_space);
 
     virtual void print(std::ostream &os, bool /*fullInfo*/) const {
-        os << tag() << " (" << fullVars.size() << ")";
+        os << tag() << " (" << relevant_vars.size() << ")";
     }
+
+    //For plan solution reconstruction. Only avaialble in original state space
+    virtual const std::map<int, std::vector <TransitionRelation>> &getIndividualTRs() const {
+	std::cerr << "Error: trying to get individual TRs from an invalid state space type" 
+		  << std::endl;
+	utils::exit_with(utils::ExitCode::CRITICAL_ERROR);
+    }
+
 };
 
-
-
-/* class AbstractStateSpace : public SymStateSpaceManager { */
-
-/*     AbsTRsStrategy absTRsStrategy; */
-
-/*  public: */
-/*     virtual std::string tag() const = 0; */
-/* }; */
 }
 #endif

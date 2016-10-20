@@ -29,7 +29,6 @@ namespace pdbs {
 class PDBFactorySymbolic : public PDBFactory, public symbolic::SymController {
 	const int generationTime;
 	const double generationMemoryGB; 
-	const symbolic::AbsTRsStrategy absTRsStrategy;
         const bool dump;
 
         std::shared_ptr<symbolic::OriginalStateSpace> manager;

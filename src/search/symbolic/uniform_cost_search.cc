@@ -36,9 +36,7 @@ namespace symbolic {
 	fw = forward;
 	lastStepCost = true;
 	assert(mgr);
-	//Ensure that the mgr of the original state space is initialized (only to get the planner output cleaner) 
-	mgr->init();
-  
+
 	DEBUG_MSG(cout << "Init exploration: " << dirname(forward) << *this/* << " with mgr: " << manager */<< endl;);
 
 	BDD init_bdd = fw ? mgr->getInitialState() : mgr->getGoal();
@@ -102,6 +100,7 @@ namespace symbolic {
 
 	    open_list.pop(frontier);
 	    
+	    assert(!frontier.empty() || frontier.g() == numeric_limits<int>::max() );
 	    if (mgr->isOriginal()) {
 		checkCutOriginal(frontier.bucket(), frontier.g());
 	    }
@@ -137,9 +136,7 @@ namespace symbolic {
 	    return; //If it has been solved, return 
 	}
 
-	if(initialization()){
-	    mgr->init_mutex(g_mutex_groups);
-	}
+	initialization();
 
 	int maxTime = p.getAllotedTime(nextStepTime());
 	int maxNodes = p.getAllotedNodes(nextStepNodesResult());
@@ -151,9 +148,13 @@ namespace symbolic {
     }
 
     bool UniformCostSearch::stepImage(int maxTime, int maxNodes){
-	DEBUG_MSG(cout << ">> Step: " << *mgr << (fw ? " fw " : " bw ") << ", g=" << frontier.g();
-	cout << " frontierNodes: " << frontier.nodes() << " [" << frontier.buckets() << "]"  << " total time: " << g_timer 
-		  << " total nodes: " << mgr->totalNodes() << " total memory: " << mgr->totalMemory() << endl;);
+	if(p.debug) {
+	    cout << ">> Step: " << *mgr << (fw ? " fw " : " bw ") << ", g=" << frontier.g()
+		 << " frontierNodes: " << frontier.nodes() << " [" << frontier.buckets() << "]" 
+		 << " total time: " << g_timer 
+		 << " total nodes: " << mgr->totalNodes() 
+		 << " total memory: " << mgr->totalMemory() << endl;
+    }
 
 #ifdef DEBUG_GST
 	gst_plan.checkUcs(this );
@@ -178,8 +179,6 @@ namespace symbolic {
 	DEBUG_MSG(cout << "... bucket prepared. " << endl;);
 	if(engine->solved()) return true; //Skip image if we are done
 
-
-	mgr->init_transitions(); // Ensure that transitions have been initialized
 	int stepNodes = frontier.nodes();
 	ResultExpansion res_expansion = frontier.expand(maxTime, maxNodes, fw);
 

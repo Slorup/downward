@@ -37,7 +37,6 @@ namespace pdbs {
 
     void PatternDatabaseSymbolic::create_pdb(SymController * engine, const SymParamsSearch & params, 
 					     int generationTime, double generationMemoryGB) {
-  	manager->init();
 	symbolic::UniformCostSearch search (engine, params);
 	search.init(manager, false);
 

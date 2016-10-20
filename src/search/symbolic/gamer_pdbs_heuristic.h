@@ -9,6 +9,7 @@
 namespace symbolic {
 
 class SymStateSpaceManager;
+class OriginalStateSpace;
 class UniformCostSearch;
 
 class GamerPDBsHeuristic;
@@ -27,7 +28,7 @@ public:
 
     PDBSearch (const std::set<int> & pattern, 
 	       GamerPDBsHeuristic * spdbheuristic, 
-	       std::shared_ptr<SymStateSpaceManager> originalStateSpace);
+	       const std::shared_ptr<OriginalStateSpace> & originalStateSpace);
     
 
     void search(const SymParamsSearch & searchParams, int generationTime = 0, double generationMemory = 0);

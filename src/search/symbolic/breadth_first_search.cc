@@ -21,9 +21,6 @@ BreadthFirstSearch::BreadthFirstSearch(const SymParamsSearch & params):
 bool BreadthFirstSearch::init(std::shared_ptr<SymStateSpaceManager> manager, bool forward){
     mgr = manager;
     fw = forward;
-    //Ensure that the mgr of the original state space is initialized
-    //(only to get the planner output cleaner)
-    mgr->init();
   
     if(fw){
 	open.push_back(mgr->getInitialState());
@@ -121,16 +118,16 @@ BDD BreadthFirstSearch::pop (){
 }
 
 bool BreadthFirstSearch::stepImage(int maxTime, int maxNodes){
-    mgr->init_transitions(); // Ensure that transitions have been initialized
-
     Timer step_time;
 
     BDD S = pop();
 
-     DEBUG_MSG(cout << ">> Step: " << *mgr << (fw ? " fw " : " bw ")
+    if (p.debug) {
+	cout << ">> Step: " << *mgr << (fw ? " fw " : " bw ")
      << " frontierNodes: " << S.nodeCount() << " [" << nodeCount(open) << "]"  << " total time: " << g_timer 
      << " total nodes: " << mgr->totalNodes() << " total memory: " << mgr->totalMemory()/1000000 << "M " 
-     << utils::get_peak_memory_in_kb() << "k" << endl;);
+	     << utils::get_peak_memory_in_kb() << "k" << endl;
+    }
 
 
     int nodesStep = S.nodeCount();

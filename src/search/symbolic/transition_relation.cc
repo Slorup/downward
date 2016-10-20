@@ -4,82 +4,17 @@
 #include <cassert>
 #include "../utils/debug_macros.h"
 #include "sym_state_space_manager.h"
-//#include "sym_pdb.h"
-// #include "sym_smas.h"
+#include "original_state_space.h"
 
 #include "../utils/timer.h"
-// #include "../merge_and_shrink/simulation_relation.h"
-// #include "../merge_and_shrink/dominance_relation.h"
 
 using namespace std;
 
 namespace symbolic {
-// TransitionRelation::TransitionRelation(SymStateSpaceManager * mgr,
-//                           const DominanceRelation & dominance_relation) :
-//   sV(mgr->getVars()), cost(0), tBDD (mgr->getVars()->oneBDD()),
-//   existsVars(mgr->getVars()->oneBDD()), existsBwVars(mgr->getVars()->oneBDD()),
-//   absAfterImage(nullptr){
-
-//     const std::vector<std::unique_ptr<SimulationRelation> > & simulations = dominance_relation.get_simulations ();
-
-//   // a) Collect effect variables
-//   for(auto & sim : simulations){
-//     const vector<int> & vset = sim->get_varset();
-//     effVars.insert(effVars.end(), vset.begin(), vset.end());
-//   }
-
-
-//   // b) Initialize swapVars
-//   sort(effVars.begin(), effVars.end());
-//   for(int var : effVars){
-//     for(int bdd_var : sV->vars_index_pre(var)){
-//       swapVarsS.push_back(sV->bddVar(bdd_var));
-//     }
-//     for(int bdd_var : sV->vars_index_eff(var)){
-//       swapVarsSp.push_back(sV->bddVar(bdd_var));
-//     }
-//   }
-
-//   // c) existsVars/existsBwVars is just the conjunction of swapVarsS and swapVarsSp
-//   for(int i = 0; i < swapVarsS.size(); ++i){
-//     existsVars *= swapVarsS[i];
-//     existsBwVars *= swapVarsSp[i];
-//   }
-//   // d) Compute tBDD
-//   for(auto  it = simulations.rbegin(); it != simulations.rend(); ++it){
-//     const std::vector<BDD> & dominated_bdds = (*it)->get_dominated_bdds ();
-//     const std::vector<BDD> & abs_bdds = (*it)->get_abs_bdds();
-
-//     BDD simBDD = sV->zeroBDD();
-//     //    BDD totalAbsBDDs = sV->zeroBDD();
-//     for (int i = 0; i < abs_bdds.size(); i++){
-//       BDD dom = dominated_bdds[i];
-//       try{
-//      dom = mgr->filter_mutex(dom, true, 1000000, true);
-//      dom = mgr->filter_mutex(dom, false, 1000000, true);
-//       }catch(BDDError e){
-//      cout << "Simulation TR error: " << endl;
-//       }
-//       simBDD += (abs_bdds[i]*dom.SwapVariables(swapVarsS, swapVarsSp));
-//       //totalAbsBDDs += abs_bdds[i];
-//     }
-//     tBDD *= simBDD;
-//   }
-//    try{
-//     cout << "Simulation TR size before filtering mutex: " << tBDD.nodeCount() << endl;
-//     tBDD = mgr->filter_mutex(tBDD, true, 1000000, true);
-//     cout << "Simulation TR size in the middle of filtering mutex: " << tBDD.nodeCount() << endl;
-//     tBDD = mgr->filter_mutex(tBDD, false, 1000000, true);
-//     cout << "Simulation TR size after filtering mutex: " << tBDD.nodeCount() << endl;
-//   }catch(BDDError e){
-//     cout << "Simulation TR mutex could not be filtered: " << tBDD.nodeCount() << endl;
-//   }
-// }
 
 TransitionRelation::TransitionRelation(SymVariables *sVars,
                              const GlobalOperator *op, int cost_) :
-    sV(sVars),
-    cost(cost_), tBDD(sVars->oneBDD()),
+    sV(sVars), cost(cost_), tBDD(sVars->oneBDD()),
     existsVars(sVars->oneBDD()), existsBwVars(sVars->oneBDD()),
     absAfterImage(nullptr) {
     ops.insert(op);
@@ -162,27 +97,6 @@ void TransitionRelation::shrink(const SymStateSpaceManager &abs, int maxNodes) {
     }
     newEffVars.swap(effVars);
 }
-
-// bool TransitionRelation::setMaSAbstraction(SymAbstraction */* abs*/,
-//                                    const BDD & bddSrc,
-//                                    const BDD & bddTarget){
-//   // existsVars += abs.getRelVarsCubePre();
-//   // existsBwVars += abs.getRelVarsCubePre();
-//   // swapVarsS = getSwapPre(fullVars);
-//   // swapVarsSp = getSwapEff(fullVars);
-//   // swapVarsA = getSwapAbs(absVars);
-//   // swapVarsAp = getSwapPre(absVars);
-
-//   tBDD *= bddSrc;
-//   tBDD *= bddTarget;
-//   return true;
-// }
-
-// TransitionRelation::TransitionRelation(const TransitionRelation & ot) : cost(ot.cost), tBDD(ot.tBDD),
-//                                                       existsVars (ot.existsVars), existsBwVars (ot.existsBwVars),
-//                                                       swapVarsS(ot.swapVarsS), swapVarsSp (ot.swapVarsSp),
-//                                                       id(ot.id), effVars(ot.effVars), ops(ot.ops){
-//   }
 
 BDD TransitionRelation::image(const BDD &from) const {
     BDD aux = from;
@@ -283,30 +197,13 @@ void TransitionRelation::merge(const TransitionRelation &t2,
     for (vector<int>::const_iterator var = newEffVars.begin();
          var != newEffVars.end(); ++var) {
         if (var1 == effVars.end() || *var1 != *var) {
-            //cout << "a" << newTBDD.getNode() << endl;
-            BDD tmp = sV->biimp(*var);
-            //cout << "a " << newTBDD.getNode() << " and " << tmp.getNode() << endl;
-            newTBDD = newTBDD * tmp;
-            //      cout << "done." << endl;
-
-            //newTBDD *= sV->biimp(*var);
-            //cout << "b" << tmp.getNode() << endl;
-            //cout << "c" <<  newTBDD.getNode()  << endl;
-            // cout << "Biimp 1: "; sV->biimp(*var).print(1, 2);
+            newTBDD *= sV->biimp(*var);
         } else {
             ++var1;
         }
 
         if (var2 == t2.effVars.end() || *var2 != *var) {
-            //cout << "a2" << newTBDD.getNode() << endl;
-            BDD tmp = sV->biimp(*var);
-            //      cout << "a2 " << newTBDD.getNode() << " and " << tmp.getNode() << endl;
-            newTBDD2 = newTBDD2 * tmp;
-            //      cout << "done." << endl;
-            //newTBDD2 *= sV->biimp(*var);
-            //      cout << "b2" << tmp.getNode() << endl;
-            //cout << "c2" <<  newTBDD.getNode()  << endl;
-            //cout << "Biimp 2: "; sV-> biimp(*var).print(1, 2);
+            newTBDD2 *= sV->biimp(*var);
         } else {
             ++var2;
         }
@@ -317,44 +214,15 @@ void TransitionRelation::merge(const TransitionRelation &t2,
         DEBUG_MSG(cout << "TR size exceeded: " << newTBDD.nodeCount() <<
                   ">" << maxNodes << endl;
                   );
-        throw BDDError();
-        //return false; //We could not sucessfully merge
+        throw BDDError(); //We could not sucessfully merge
     }
 
     tBDD = newTBDD;
 
-
-    /*cout << "Eff vars: ";
-    for(int i = 0; i < effVars.size(); i++) cout << effVars[i] << " ";
-    cout << endl;*/
-
     effVars.swap(newEffVars);
 
-    /*  cout << "New eff vars: ";
-    for(int i = 0; i < effVars.size(); i++) cout << effVars[i] << " ";
-    cout << endl;*/
-
-    /*cout << "EXIST BW VARS: " << endl;
-    existsBwVars.print(1, 2);
-    t2.existsBwVars.print(1, 2);*/
     existsVars *= t2.existsVars;
     existsBwVars *= t2.existsBwVars;
-
-    /*  existsBwVars.print(1, 2);
-
-    cout << "Swap vars" << endl;
-    for(int i = 0; i < swapVarsS.size(); i++){
-      cout << "Swap "; swapVarsS[i].PrintMinterm();
-      cout << "with "; swapVarsSp[i].PrintMinterm();
-    }
-
-    cout << "Swap vars 2" << endl;
-    for(int i = 0; i < swapVarsS.size(); i++){
-      cout << "Swap "; swapVarsS[i].PrintMinterm();
-      cout << "with "; swapVarsSp[i].PrintMinterm();
-    }*/
-
-
 
     for (size_t i = 0; i < t2.swapVarsS.size(); i++) {
         if (find(swapVarsS.begin(), swapVarsS.end(), t2.swapVarsS[i]) ==
@@ -365,124 +233,22 @@ void TransitionRelation::merge(const TransitionRelation &t2,
     }
 
     ops.insert(t2.ops.begin(), t2.ops.end());
-
-
-    /*  cout << "New Swap vars" << endl;
-    for(int i = 0; i < swapVarsS.size(); i++){
-      cout << "Swap "; swapVarsS[i].PrintMinterm();
-      cout << "with "; swapVarsSp[i].PrintMinterm();
-    }*/
-
-    //  return true;
 }
 
 
 
 
 
-
-// TransitionRelation::TransitionRelation(const SymAbstraction & abs,
-//                           const SymVariables * sV,
-//                           const GlobalOperator * op, int cost_) :
-//   cost (cost_),
-//   existsVars(sV->oneBDD()), existsBwVars(sV->oneBDD()), id (op->get_name()) {
-//   //  Timer tr_timer;
-
-//   //  cout << "Creating transition for: " <<  id << endl;
-//   /* In order to generate tBDD we compute two parts. First, the label takes
-//      into account the pre/eff in the operator over non-relevant variables.
-//   Then, we use t_by_op over variables describing the abstract states.
-//   tBDD is the product of those BDDs.
-
-//   swapVarsS/swapVarsSp
-//   existsVars/existsBwVars is just the conjunction of swapVarsS and swapVarsSp
-//   */
-
-//   BDD labelTransitions = sV->oneBDD();
-//   //Put precondition of label
-//   for (int i = 0; i < op->get_preconditions().size(); i++) {
-//     const GlobalCondition &prevail = op->get_preconditions()[i];
-//     if(!abs.is_in_varset(prevail.var)){
-//       labelTransitions *= sV->preBDD(prevail.var, prevail.prev);
-//     }
-//   }
-
-//   //  op->dump();
-
-
-//   // Update values affected by operator.
-//   for (int i = 0; i < op->get_effects().size(); i++) {
-//     const GlobalEffect &pre_post = op->get_effects()[i];
-//     //    cout << "Effect over variable: " << pre_post.var << " " <<
-//     //      g_variable_name[pre_post.var] <<  endl;
-//     if(!abs.is_in_varset(pre_post.var)){
-//       BDD ppBDD = sV->effBDD(pre_post.var, pre_post.post);
-//       if(pre_post.pre != -1){
-//      ppBDD *= sV->preBDD(pre_post.var, pre_post.pre);
-//       }
-//       labelTransitions *= ppBDD;
-//       effVars.push_back(pre_post.var);
-//       //We are applying an effect so we must "forget" the value of that variables
-//       vector <int> varsS = sV->varsS(pre_post.var);
-//       //effVarsS.insert(effVarsS.end(), varsS.begin(), varsS.end());
-//       for(int var = 0; var < varsS.size(); var++){
-//      swapVarsS.push_back(sV->bddVar(varsS[var]));
-//      swapVarsSp.push_back(sV->bddVar(varsS[var]+1));
-//      //TODO: Check if we are doing this in the right order.
-//       }
-//     }
-//   }
-
-//   //    cout << "Abstract state" << endl;
-
-//   // Consider all the pairs of abstract states with that transition
-//   BDD absStateTransitions = sV->zeroBDD();
-//   for(int i = 0; i < t_by_op.size(); i++){
-//     AbstractStateRef sSrc = t_by_op[i].src;
-//     AbstractStateRef sTar = t_by_op[i].target;
-
-//     BDD bddSrc = abs.absStatePreBDD(sSrc);
-//     BDD bddTar = abs.absStateEffBDD(sTar);
-
-//     absStateTransitions += bddSrc*bddTar;
-//     //    cout << "TInfo Adding " << sSrc << " -> " << sTar << endl;
-//     //(bddSrc*bddTar).print(1, 1);
-//   }
-
-
-//   swapVarsS.insert(swapVarsS.end(),
-//                 abs.getAbsVarsS().begin(), abs.getAbsVarsS().end());
-//   swapVarsSp.insert(swapVarsSp.end(),
-//                  abs.getAbsVarsSp().begin(), abs.getAbsVarsSp().end());
-
-//   assert(swapVarsS.size() == swapVarsSp.size());
-//   for(int i = 0; i < swapVarsS.size(); i++){
-//     existsVars *= swapVarsS[i];
-//     existsBwVars *= swapVarsSp[i];
-//   }
-//   tBDD = labelTransitions*absStateTransitions;
-
-//   sort(effVars.begin(), effVars.end());
-//   //  cout << "Computing tr with " << t_by_op.size() << " abstract state transitions took " << tr_timer; tBDD.print(1, 1);
-//   /*  cout << "TInfo: " << op->get_name() << endl;
-//   labelTransitions.print(1, 1);
-//   absStateTransitions.print(1, 1);
-//   tBDD.print(1, 1);*/
-//   //lalalatBDD *= absStateTransitions;
-//   //vector <int> varsS = sV->absStateVarsS();
-//   //effVarsS.insert(effVarsS.end(), varsS.begin(), varsS.end());
-// }
-
-
-void TransitionRelation::edeletion(SymStateSpaceManager &mgr) {
-    if (ops.size() != 1) {
-        cerr << "Error, trying to apply edeletion over a transition with more than one op" << endl;
-        utils::exit_with(utils::ExitCode::CRITICAL_ERROR);
-    }
-
+    void TransitionRelation::edeletion(const std::vector<std::vector<BDD>> & notMutexBDDsByFluentFw, 
+				       const std::vector<std::vector<BDD>> & notMutexBDDsByFluentBw, 
+				       const std::vector<std::vector<BDD>> & exactlyOneBDDsByFluent) {
+    assert(ops.size() == 1);
+    assert(notMutexBDDsByFluentFw.size() == g_variable_domain.size());
+    assert(notMutexBDDsByFluentBw.size() == g_variable_domain.size());
+    assert(exactlyOneBDDsByFluent.size() == g_variable_domain.size());
     //For each op, include relevant mutexes
-    for (const GlobalOperator *op : ops) {
-        for (const GlobalEffect &pp : op->get_effects()) {
+    for (const auto *op : ops) {
+        for (const auto &pp : op->get_effects()) {
             auto pre =
                 std::find_if(std::begin(op->get_preconditions()),
                              std::end(op->get_preconditions()),
@@ -497,18 +263,18 @@ void TransitionRelation::edeletion(SymStateSpaceManager &mgr) {
                 //That means that every previous value is possible
                 //for each value of the variable
                 for (int val = 0; val < g_variable_domain[pp.var]; val++) {
-                    tBDD *= mgr.getNotMutexBDDBw(pp.var, val);
+                    tBDD *= notMutexBDDsByFluentBw[pp.var][val];
                 }
             } else {
                 //In regression, we are making true pp.pre
                 //So we must negate everything of these.
-                tBDD *= mgr.getNotMutexBDDBw(pp.var, pre->val);
+                tBDD *= notMutexBDDsByFluentBw[pp.var] [pre->val];
             }
             //edeletion fw
-            tBDD *= mgr.getNotMutexBDDFw(pp.var, pp.val).SwapVariables(swapVarsS, swapVarsSp);
+            tBDD *= notMutexBDDsByFluentFw[pp.var][pp.val].SwapVariables(swapVarsS, swapVarsSp);
 
             //edeletion invariants
-            tBDD *= mgr.getExactlyOneBDD(pp.var, pp.val);
+            tBDD *= exactlyOneBDDsByFluent[pp.var][pp.val];
         }
     }
 }
@@ -522,69 +288,4 @@ ostream &operator<<(std::ostream &os, const TransitionRelation &tr) {
     return os << "): " << tr.tBDD.nodeCount() << endl;
 }
 
-
-
-
-// TransitionRelation::TransitionRelation(const SymVariables * sV, const Operator * op,
-//            int cost_, const SymAbstraction & abs):
-//   cost (cost_), tBDD (sV->oneBDD()),
-//   existsVars(sV->oneBDD()), existsBwVars(sV->oneBDD()), id (op->get_name()) {
-
-//   // Timer tr_timer;
-
-//   //  cout << "Creating abstract transition for: " <<  id << endl;
-//   /* In this case, we only take into account the label:
-//      pre/eff in the operator over non-relevant variables.
-
-//      swapVarsS/swapVarsSp
-//      existsVars/existsBwVars is just the conjunction of swapVarsS and swapVarsSp
-//   */
-//   ops.insert(op);
-//   BDD labelTransitions = sV->oneBDD();
-//   //Put precondition of label
-//   for (int i = 0; i < op->get_preconditions().size(); i++) {
-//     const GlobalCondition &prevail = op->get_preconditions()[i];
-//     if(abs.isRelevantVar(prevail.var)){
-//       labelTransitions *= sV->preBDD(prevail.var, prevail.prev);
-//     }
-//   }
-
-//   //  op->dump();
-
-
-//   // Update values affected by operator.
-//   for (int i = 0; i < op->get_effects().size(); i++) {
-//     const GlobalEffect &pre_post = op->get_effects()[i];
-//     //  cout << "Effect over variable: " << pre_post.var << " " <<
-//     //      g_variable_name[pre_post.var] <<  endl;
-//     if(abs.isRelevantVar(pre_post.var)){
-//       effVars.push_back(pre_post.var);
-//       BDD ppBDD = sV->effBDD(pre_post.var, pre_post.post);
-//       if(pre_post.pre != -1){
-//      ppBDD *= sV->preBDD(pre_post.var, pre_post.pre);
-//       }
-//       labelTransitions *= ppBDD;
-
-//       //We are applying an effect so we must "forget" the value of that variables
-//       vector <int> varsS = sV->varsS(pre_post.var);
-//       //effVarsS.insert(effVarsS.end(), varsS.begin(), varsS.end());
-//       for(int var = 0; var < varsS.size(); var++){
-//      swapVarsS.push_back(sV->bddVar(varsS[var]));
-//      swapVarsSp.push_back(sV->bddVar(varsS[var]+1));
-//      //TODO: Check if we are doing this in the right order.
-//       }
-//     }
-//   }
-
-//   assert(swapVarsS.size() == swapVarsSp.size());
-//   for(int i = 0; i < swapVarsS.size(); i++){
-//     existsVars *= swapVarsS[i];
-//     existsBwVars *= swapVarsSp[i];
-//   }
-
-//   tBDD = labelTransitions;
-//   sort(effVars.begin(), effVars.end());
-
-//   //cout << "Computing tr took " << tr_timer; tBDD.print(1, 1);
-// }
 }

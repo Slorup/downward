@@ -2,99 +2,110 @@
 
 #include "sym_util.h"
 #include "transition_relation.h"
+#include "original_state_space.h"
 
 #include "../utils/system.h"
+#include "../utils/debug_macros.h"
 
 
 using namespace std;
 
 namespace symbolic {
-SymPDB::SymPDB(SymVariables *bdd_vars, const SymParamsMgr &params, shared_ptr<OperatorCostFunction> cost_type_) :
-    SymStateSpaceManager(bdd_vars, params, cost_type_) {
-    for (size_t i = 0; i < g_variable_name.size(); i++) {
-        fullVars.insert(i);
-    }
 
-    nonRelVarsCube = bdd_vars->oneBDD();
-    nonRelVarsCubeWithPrimes = bdd_vars->oneBDD();
-    if (!nonRelVarsCube.IsCube()) {
-        cout << "Error in sym_pdb: nonRelVars should be a cube";
-        nonRelVarsCube.print(0, 1);
-        cout << endl;
-        utils::exit_with(utils::ExitCode::CRITICAL_ERROR);
-    }
-}
-
-SymPDB::SymPDB(SymVariables *bdd_vars, const SymParamsMgr &params,
-	       AbsTRsStrategy, const set<int> &relevantVars, 
-               shared_ptr<OperatorCostFunction> cost_type_) :
-    SymStateSpaceManager(bdd_vars, params, cost_type_) {
-    fullVars = relevantVars;
-    for (size_t i = 0; i < g_variable_name.size(); i++) {
-        if (!fullVars.count(i)) {
-            nonRelVars.insert(i);
-        }
-    }
+    SymPDB::SymPDB(const OriginalStateSpace & parent, 
+		   const std::set<int> &relevantVars, 
+		   OperatorCostFunction * cost_type) :
+	SymStateSpaceManager(parent.getVars(), parent.getParams(), relevantVars) {
+	std::set<int> nonRelVars;
+	for (size_t i = 0; i < g_variable_domain.size(); ++i) {
+	    if(!isRelevantVar(i)) {
+		nonRelVars.insert(i);
+	    }
+	}
+       
+	assert(isAbstracted());
 
     nonRelVarsCube = vars->getCubePre(nonRelVars);    // * vars->getCubep(nonRelVars);
     nonRelVarsCubeWithPrimes = nonRelVarsCube * vars->getCubeEff(nonRelVars);
-    if (!nonRelVarsCube.IsCube()) {
-        cout << "Error in sym_pdb: nonRelVars should be a cube";
-        nonRelVarsCube.print(0, 1);
-        cout << endl;
-        utils::exit_with(utils::ExitCode::CRITICAL_ERROR);
+    assert(nonRelVarsCube.IsCube()) ;
+	// Init initial state
+	vector<pair<int, int>> abstract_ini;
+	for (int var : relevant_vars) {
+	    abstract_ini.push_back(std::pair<int, int> (var, g_initial_state_data[var]));
     }
+	initialState = vars->getPartialStateBDD(abstract_ini);
+
+	//Init goal
+	vector<pair<int, int>> abstract_goal;
+	for (auto goal_var : g_goal) {
+	    if (isRelevantVar(goal_var.first)) {
+		abstract_goal.push_back(goal_var);
 }
+	}
+	goal = vars->getPartialStateBDD(abstract_goal);
 
-    SymPDB::SymPDB(shared_ptr<SymStateSpaceManager> parent, 
-		   AbsTRsStrategy absTRsStrategy,
-		   const std::set<int> &relevantVars) :
-	SymPDB(parent, absTRsStrategy, relevantVars, parent->get_cost_type()) {
+	//Init mutex 
 
 
-	assert(isAbstracted());
-
-	//Both are put into notDeadEndFw for the case of abstract
-	//searches
-	for (const auto & bdd : parent->getNotDeadEnds(false)) {
+	//Init dead ends: Both are put into notDeadEndFw for the case
+	//of abstract searches
+	for (const auto & bdd : parent.getNotDeadEnds(false)) {
 	    notDeadEndFw.push_back(bdd);
 	}
 
-	for (const auto & bdd : parent->getNotDeadEnds(true)) {
+	for (const auto & bdd : parent.getNotDeadEnds(true)) {
 	    notDeadEndFw.push_back(bdd);
 	}
 	mergeBucketAnd(notDeadEndFw);
 
 	for (auto & bdd : notDeadEndFw) {
 	    bdd = shrinkExists(bdd, p.max_mutex_size);
-	}
     }
 
-    SymPDB::SymPDB(shared_ptr<SymStateSpaceManager> parent, 
-		   AbsTRsStrategy absTRsStrategy,
-		   const std::set<int> &relevantVars, 
-		   std::shared_ptr<OperatorCostFunction> cost_type_) :
-	SymStateSpaceManager(parent, absTRsStrategy, relevantVars, cost_type_) {
-	nonRelVarsCube = vars->getCubePre(nonRelVars);    // * vars->getCubep(nonRelVars);
-	nonRelVarsCubeWithPrimes = nonRelVarsCube * vars->getCubeEff(nonRelVars);
-	assert(nonRelVarsCube.IsCube()) ;
-	assert(isAbstracted());
+	//Init transitions
+	std::map<int, std::vector <TransitionRelation>> indTRs;
+	std::map<int, std::vector <TransitionRelation>> failedToShrink;
+	for (const auto &indTRsCost : parent.getIndividualTRs()) {
+	    for (const auto &trParent : indTRsCost.second) {
+		TransitionRelation absTransition = TransitionRelation(trParent);
+		assert(absTransition.getCost() == indTRsCost.first);
+		assert (absTransition.getOps().size() == 1);
+		if(!is_relevant_op(**(absTransition.getOps().begin()))) continue;
 	
-	//Both are put into notDeadEndFw for the case of abstract
-	//searches
-	for (const auto & bdd : parent->getNotDeadEnds(false)) {
-	    notDeadEndFw.push_back(bdd);
+		int cost = cost_type ? 
+		    cost_type->get_adjusted_cost(*(absTransition.getOps().begin())) : 
+		    absTransition.getCost();
+		if(cost != absTransition.getCost()) absTransition.set_cost(cost);
+		try{
+		    vars->setTimeLimit(p.max_aux_time);
+		    absTransition.shrink(*this, p.max_aux_nodes);
+		    vars->unsetTimeLimit();
+		    indTRs[cost].push_back(absTransition);
+		}catch (BDDError e) {
+		    vars->unsetTimeLimit();
+		    failedToShrink[cost].push_back(absTransition);
+		}
+	    }
 	}
 
-	for (const auto & bdd : parent->getNotDeadEnds(true)) {
-	    notDeadEndFw.push_back(bdd);
+	init_transitions(indTRs);
+
+	for (auto & trs : transitions) {
+	    merge(vars, trs.second, mergeTR, p.max_aux_time, p.max_tr_size);
 	}
 
-	mergeBucketAnd(notDeadEndFw);
+	//Use Shrink after img in all the transitions that failedToShrink
+	DEBUG_MSG(cout << "Failed to shrink: " << (failedToShrink.empty() ? "no" : "yes") << endl;);
 
-	for (auto & bdd : notDeadEndFw) {
-	    bdd = shrinkExists(bdd, p.max_mutex_size);
+	for (auto &failedTRs : failedToShrink) {
+	    merge(vars, failedTRs.second, mergeTR, p.max_aux_time, p.max_tr_size);
+	    for (auto &tr : failedTRs.second) {
+		tr.setAbsAfterImage(this);
+		transitions[failedTRs.first].push_back(tr);
 	}
+    }
+	DEBUG_MSG(cout << "Finished init trs: " << transitions.size() << endl;);
+	assert(!hasTR0 || transitions.count(0));
     }
 
 BDD SymPDB::shrinkExists(const BDD &bdd, int maxNodes) const {
@@ -107,11 +118,6 @@ BDD SymPDB::shrinkTBDD(const BDD &bdd, int maxNodes) const {
 
 BDD SymPDB::shrinkForall(const BDD &bdd, int maxNodes) const {
     return bdd.UnivAbstract(nonRelVarsCube, maxNodes);
-}
-
-void SymPDB::init_individual_trs() {
-    cout << "Not implemented SymPDB::init_individual_trs ()" << endl;
-    utils::exit_with(utils::ExitCode::UNSUPPORTED);
 }
 
 // void SymPDB::init_mutex(const std::vector<MutexGroup> & mutex_groups) {
@@ -138,69 +144,25 @@ void SymPDB::init_individual_trs() {
 //      //      init_mutex(mutex_groups, true, false);
 //      //     }
 // }
+	
 
-
-/*void SymPDB::getTransitions(map<int, std::vector <TransitionRelation> > & trs) const{
-  cout << "Initialize trs "<< *this << endl;
-  for(int i = 0; i < g_operators.size(); i++){
-  const Operator * op = &(g_operators[i]);
-  // Skip spurious operators
-  if (op->spurious){
-  continue;
-  }
-  int cost = op->get_cost();
-
-  if(cost == 0){
-  trs[0].push_back(TransitionRelation(vars, op, cost, *this));
-  }else{
-  trs[cost].push_back(TransitionRelation(vars, op, cost, *this));
-  }
-  }
-  }*/
-
-
-void SymPDB::init_initial_state() {
-    vector<pair<int, int>> abstract_ini;
-    for (int var : fullVars) {
-        abstract_ini.push_back(std::pair<int, int> (var, g_initial_state_data[var]));
-    }
-    initialState = vars->getPartialStateBDD(abstract_ini);
-}
-
-
-void SymPDB::init_goal() {
-    vector<pair<int, int>> abstract_goal;
-    for (auto goal_var : g_goal) {	
-        if (isRelevantVar(goal_var.first)) {
-            abstract_goal.push_back(goal_var);
-        }
-    }
-    goal = vars->getPartialStateBDD(abstract_goal);
-}
 
 std::string SymPDB::tag() const {
     return "PDB";
 }
 
 void SymPDB::print(std::ostream &os, bool fullInfo) const {
-    os << "PDB (" << fullVars.size() << "/" << (nonRelVars.size() + fullVars.size()) << "): ";
-    for (int v : fullVars) {
+	os << "PDB (" << relevant_vars.size() << "/" << (g_variable_domain.size()) << "): ";
+	for (int v : relevant_vars) {
         os << v << " ";
     }
-    if (fullInfo && !nonRelVars.empty()) {
+	if (fullInfo && isAbstracted()) {
         os << " [";
-        for (int v : fullVars)
+	    for (int v : relevant_vars)
             os << v << " ";
         os << "]";
-        os << endl << "Abstracted propositions: ";
-        for (int v : nonRelVars) {
-            os << v << ": ";
-            for (auto &prop : g_fact_names[v])
-                cout << prop << ", ";
-            os << endl;
-        }
         os << endl << "Considered propositions: ";
-        for (int v : fullVars) {
+	    for (int v : relevant_vars) {
             os << v << ": ";
             for (auto &prop : g_fact_names[v])
                 os << prop << ", ";
@@ -210,10 +172,4 @@ void SymPDB::print(std::ostream &os, bool fullInfo) const {
     }
 }
 
-ADD SymPDB::getExplicitHeuristicADD(bool /*fw*/) {
-    return vars->getADD(0);
-}
-void SymPDB::getExplicitHeuristicBDD(bool /*fw*/, map<int, BDD> &res) {
-    res[0] = vars->oneBDD();
-}
 }
