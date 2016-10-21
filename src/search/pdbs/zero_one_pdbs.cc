@@ -26,7 +26,14 @@ ZeroOnePDBs::ZeroOnePDBs(TaskProxy task_proxy, const PatternCollection &patterns
     for (const Pattern &pattern : patterns) {
 	if(pattern.empty()) continue;
 	shared_ptr<PatternDatabaseInterface> pdb = pdb_factory.compute_pdb(task_proxy, pattern, operator_costs,time_limit);
-         
+
+        pattern_databases.push_back(pdb);
+	
+	if(pdb_factory.is_solved()) {
+	    break;
+	}
+
+
         /* Set cost of relevant operators to 0 for further iterations
            (action cost partitioning). */
         for (OperatorProxy op : operators) {
@@ -34,7 +41,6 @@ ZeroOnePDBs::ZeroOnePDBs(TaskProxy task_proxy, const PatternCollection &patterns
                 operator_costs[op.get_id()] = 0;
         }
 
-        pattern_databases.push_back(pdb);
     }
 }
 
