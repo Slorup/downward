@@ -25,14 +25,14 @@ namespace symbolic {
        
 	assert(isAbstracted());
 
-    nonRelVarsCube = vars->getCubePre(nonRelVars);    // * vars->getCubep(nonRelVars);
-    nonRelVarsCubeWithPrimes = nonRelVarsCube * vars->getCubeEff(nonRelVars);
-    assert(nonRelVarsCube.IsCube()) ;
+	nonRelVarsCube = vars->getCubePre(nonRelVars);    // * vars->getCubep(nonRelVars);
+	nonRelVarsCubeWithPrimes = nonRelVarsCube * vars->getCubeEff(nonRelVars);
+	assert(nonRelVarsCube.IsCube()) ;
 	// Init initial state
 	vector<pair<int, int>> abstract_ini;
 	for (int var : relevant_vars) {
 	    abstract_ini.push_back(std::pair<int, int> (var, g_initial_state_data[var]));
-    }
+	}
 	initialState = vars->getPartialStateBDD(abstract_ini);
 
 	//Init goal
@@ -40,28 +40,31 @@ namespace symbolic {
 	for (auto goal_var : g_goal) {
 	    if (isRelevantVar(goal_var.first)) {
 		abstract_goal.push_back(goal_var);
-}
+	    }
 	}
 	goal = vars->getPartialStateBDD(abstract_goal);
 
 	//Init mutex 
 
-
 	//Init dead ends: Both are put into notDeadEndFw for the case
 	//of abstract searches
+	vector<BDD> candidates; 
 	for (const auto & bdd : parent.getNotDeadEnds(false)) {
-	    notDeadEndFw.push_back(bdd);
+	    candidates.push_back(bdd);
 	}
 
 	for (const auto & bdd : parent.getNotDeadEnds(true)) {
-	    notDeadEndFw.push_back(bdd);
+	    candidates.push_back(bdd);
 	}
-	mergeBucketAnd(notDeadEndFw);
+	mergeBucketAnd(candidates);
 
-	for (auto & bdd : notDeadEndFw) {
-	    bdd = shrinkExists(bdd, p.max_mutex_size);
-    }
+	for (const auto & bdd : candidates) {
+	    try{ 
+		notDeadEndFw.push_back(shrinkExists(bdd, p.max_aux_nodes));
 
+	    } catch(BDDError ) {		
+	    }
+	}
 	//Init transitions
 	std::map<int, std::vector <TransitionRelation>> indTRs;
 	std::map<int, std::vector <TransitionRelation>> failedToShrink;
@@ -102,23 +105,23 @@ namespace symbolic {
 	    for (auto &tr : failedTRs.second) {
 		tr.setAbsAfterImage(this);
 		transitions[failedTRs.first].push_back(tr);
+	    }
 	}
-    }
 	DEBUG_MSG(cout << "Finished init trs: " << transitions.size() << endl;);
 	assert(!hasTR0 || transitions.count(0));
     }
 
-BDD SymPDB::shrinkExists(const BDD &bdd, int maxNodes) const {
-    return bdd.ExistAbstract(nonRelVarsCube, maxNodes);
-}
+    BDD SymPDB::shrinkExists(const BDD &bdd, int maxNodes) const {
+	return bdd.ExistAbstract(nonRelVarsCube, maxNodes);
+    }
 
-BDD SymPDB::shrinkTBDD(const BDD &bdd, int maxNodes) const {
-    return bdd.ExistAbstract(nonRelVarsCubeWithPrimes, maxNodes);
-}
+    BDD SymPDB::shrinkTBDD(const BDD &bdd, int maxNodes) const {
+	return bdd.ExistAbstract(nonRelVarsCubeWithPrimes, maxNodes);
+    }
 
-BDD SymPDB::shrinkForall(const BDD &bdd, int maxNodes) const {
-    return bdd.UnivAbstract(nonRelVarsCube, maxNodes);
-}
+    BDD SymPDB::shrinkForall(const BDD &bdd, int maxNodes) const {
+	return bdd.UnivAbstract(nonRelVarsCube, maxNodes);
+    }
 
 // void SymPDB::init_mutex(const std::vector<MutexGroup> & mutex_groups) {
 //      // if(/*p.init_mutex_from_parent &&*/ parentMgr){
@@ -147,29 +150,29 @@ BDD SymPDB::shrinkForall(const BDD &bdd, int maxNodes) const {
 	
 
 
-std::string SymPDB::tag() const {
-    return "PDB";
-}
+    std::string SymPDB::tag() const {
+	return "PDB";
+    }
 
-void SymPDB::print(std::ostream &os, bool fullInfo) const {
+    void SymPDB::print(std::ostream &os, bool fullInfo) const {
 	os << "PDB (" << relevant_vars.size() << "/" << (g_variable_domain.size()) << "): ";
 	for (int v : relevant_vars) {
-        os << v << " ";
-    }
+	    os << v << " ";
+	}
 	if (fullInfo && isAbstracted()) {
-        os << " [";
+	    os << " [";
 	    for (int v : relevant_vars)
-            os << v << " ";
-        os << "]";
-        os << endl << "Considered propositions: ";
+		os << v << " ";
+	    os << "]";
+	    os << endl << "Considered propositions: ";
 	    for (int v : relevant_vars) {
-            os << v << ": ";
-            for (auto &prop : g_fact_names[v])
-                os << prop << ", ";
-            os << endl;
-        }
-        os << endl;
+		os << v << ": ";
+		for (auto &prop : g_fact_names[v])
+		    os << prop << ", ";
+		os << endl;
+	    }
+	    os << endl;
+	}
     }
-}
 
 }
