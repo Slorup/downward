@@ -44,8 +44,11 @@ namespace pdbs {
 	  disjoint_patterns(opts.get<bool>("disjoint")), 
 	  time_limit(opts.get<int>("time_limit")) {
 
-	cout<<"Setting num_collections to 1 no matter the input!"<<endl; // ???????
+	cout<<"Setting num_collections to 1 no matter the input,peak memory:"<<utils::get_peak_memory_in_kb()<<endl; // ???????
 	num_collections=1;
+	if(pdb_factory->name()=="symbolic"){
+	  pdb_max_size=2*pow(10,5);
+	}
 	if(recompute_max_additive_subsets)
 	  cout<<"recompute_max_additive_subsets is on"<<endl;
 	else
@@ -268,8 +271,14 @@ namespace pdbs {
 	    min_size=0;
 	  }
     }
-    else{
-      pdb_max_size=numeric_limits<double>::max();;
+    else{//so symbolic
+      //pdb_max_size=numeric_limits<double>::max();
+      if(!last_sampler_too_big){
+	if(bin_packed_episode){
+	  pdb_max_size*=10;
+	  cout<<"pdb_max_size raised to:"<<pdb_max_size<<endl;
+	}
+      }
       min_size=1;//avoid empty patterns
     }
     
@@ -300,13 +309,13 @@ namespace pdbs {
 		Pattern pattern = transform_to_pattern_normal_form(bitvector);
 		//cout<<"transformed Pattern:"<<pattern<<endl;
 
-		if(pdb_factory->name()!="symbolic"){
+		//if(pdb_factory->name()!="symbolic"){
 		  if (is_pattern_too_large(pattern)) {
 		      DEBUG_MSG(cout << "pattern exceeds the memory limit!,pdb_max_size:" << pdb_max_size<<endl;);
 		      pattern_valid = false;
 		      break;
 		  }
-		}
+		//}
 		
 		remove_irrelevant_variables(pattern);
 
@@ -383,6 +392,14 @@ namespace pdbs {
 		overall_pdb_gen_time+=utils::g_timer()-temp;
 		double pdb_gen_time=utils::g_timer()-temp;
 		cout<<"generated candidate,pdb_size:,"<<overall_pdb_size<<",pdb_gen_time:,"<<pdb_gen_time<<endl;
+		if(pdb_factory->name()=="symbolic"){
+		  if(pdb_gen_time>time_limit){
+		    last_sampler_too_big=true;
+		    pdb_max_size=max(10000.0,pdb_max_size/10.0);
+		    cout<<"Fixing pdb_max_size to:"<<pdb_max_size<<endl;
+		  }
+		}
+
 
 		fitness=0.001;
 		best_fitness=0.001;
@@ -712,27 +729,27 @@ namespace pdbs {
 		int var_id = variable_ids[j];
 		double next_var_size = variables[var_id].get_domain_size();
 
-		if(pdb_factory->name()!="symbolic"){
-		  if (next_var_size > pdb_max_size){
-		      //cout<<"\t\tvar:"<<var_id<<" never fits into bin for pdb_max_size:"<<pdb_max_size<<endl;
-		      DEBUG_MSG(cout<<"\t\tvar:"<<var_id<<" never fits into bin for pdb_max_size:"<<pdb_max_size<<endl;);
-		      // var never fits into a bin.
-		      continue;
-		  }
-		  if(!utils::is_product_within_limit(current_size, next_var_size,
+		if (next_var_size > pdb_max_size){
+		    //cout<<"\t\tvar:"<<var_id<<" never fits into bin for pdb_max_size:"<<pdb_max_size<<endl;
+		    DEBUG_MSG(cout<<"\t\tvar:"<<var_id<<" never fits into bin for pdb_max_size:"<<pdb_max_size<<endl;);
+		    // var never fits into a bin.
+		    continue;
+		}
+		else if(!utils::is_product_within_limit(current_size, next_var_size,
 							pdb_max_size)) {
-			// Open a new bin for var.
 			pattern_collection.push_back(pattern);
 			//cout<<"\tpattern added to collection, pattern_collection_size:"<<pattern_collection.size()<<endl;
 			DEBUG_MSG(cout<<"\tpattern added to collection, pattern_collection_size:"<<pattern_collection.size()<<endl;);
 			pattern.clear();
 			pattern.resize(variables.size(), false);
 			current_size = 1;
-		  }
+			var_counter=0;
+			vars_to_combine = (*g_rng())(variable_ids.size()-j)+1;
+			cout<<pattern_collection.size()<<"th pattern,vars to combine="<<vars_to_combine<<" out of remaining "<<variable_ids.size()-j<<endl;
 		}
-		else if(vars_to_combine<var_counter){//symbolic pattern, using number of vars instead of pdb_size
+		else if(pdb_factory->name()=="symbolic"&&vars_to_combine<var_counter){//symbolic pattern, using number of vars instead of pdb_size
 		      pattern_collection.push_back(pattern);
-		      cout<<"\t adding pattern["<<pattern_collection.size()-1<<"];";
+		      cout<<"\t adding pattern["<<pattern_collection.size()-1<<"],pdb_size:"<<current_size*next_var_size<<endl;
 		      for(size_t i=0; i<pattern.size(); ++i){
 			if(pattern.at(i)){
 			      std::cout << i << ',';
@@ -742,12 +759,18 @@ namespace pdbs {
 		      pattern.clear();
 		      pattern.resize(variables.size(), false);
 		      var_counter=0;
+		      current_size = 1;
 		      vars_to_combine = (*g_rng())(variable_ids.size()-j)+1;
 		      cout<<pattern_collection.size()<<"th pattern,vars to combine="<<vars_to_combine<<" out of remaining "<<variable_ids.size()-j<<endl;
 		}
 
 		  current_size *= next_var_size;
+		  cout<<"\t\tcurrent_size:"<<current_size<<",var_counter:"<<var_counter<<endl;
 		  pattern[var_id] = true;
+		  
+		  if(pattern_collection.size()>4){
+		    break;
+		  }
 		  //cout<<"\t\tcurrent_size:"<<current_size<<",added var:"<<var_id<<",domain_size of var:"<<next_var_size<<endl;
 		}
 	    /*
@@ -824,7 +847,16 @@ namespace pdbs {
 
 	    }
 	    else if(current_episode%100==0){
-		if(utils::g_timer()>time_to_clean_dom){
+	      if (recompute_max_additive_subsets) {
+		PatternCollectionInformation result (task, make_shared<PatternCollection>());
+		for (auto pdb_collection : best_pdb_collections){
+		  result.include_additive_pdbs(pdb_collection);
+		}
+		result.recompute_max_additive_subsets();
+		best_pdb_collections.resize(1);
+		best_pdb_collections[0]=result.get_pdbs();
+	      }
+	      else  if(utils::g_timer()>time_to_clean_dom){
 		    cout<<"time:"<<utils::g_timer()<<",time to clear dominated heuristics every 100 secs"<<endl;
 		    clear_dominated_heuristics();
 		    cout<<"time:"<<utils::g_timer()<<",finished clearing dominated heuristics every 100 secs"<<endl;
@@ -1546,10 +1578,10 @@ namespace pdbs {
     if(!dominated_heur){
       cout<<"adding heur["<<i<<"] to list of heurs"<<endl;
       cleaned_best_pdb_collections.push_back(best_pdb_collections.at(i));
-      if(cleaned_best_pdb_collections.size()>15){
+      /*if(cleaned_best_pdb_collections.size()>15){
 	cout<<"max of 15 pdb_collections, otherwise timewise takes too long"<<endl;
        break;
-      } 
+      } */
     }
     else{
       cout<<"collection["<<i<<"] is dominated,eliminating "<<endl;
@@ -1724,7 +1756,7 @@ namespace pdbs {
     parser.add_option<bool>(
         "recompute_max_additive_subsets",
         "attempts to recompute max additive subsets after generating all patterns",
-        "false");
+        "true");
     parser.add_option<int>(
         "time_limit",
         "time limit in seconds for symbolic pdb_generation cut off",
