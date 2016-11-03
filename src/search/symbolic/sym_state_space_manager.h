@@ -224,19 +224,19 @@ public:
 
     //Methods that require of TRs initialized
     inline int getMinTransitionCost() const {
-        assert(!transitions.empty());
+        assert(!transitions.empty() || g_operators.size() == 0);
         return min_transition_cost;
     }
 
     inline int getAbsoluteMinTransitionCost() const {
-        assert(!transitions.empty());
+        assert(!transitions.empty()  || g_operators.size() == 0);
 	if(hasTR0) return 0;
         return min_transition_cost;
     }
 
 
     inline bool hasTransitions0() const {
-        assert(!transitions.empty());
+        assert(!transitions.empty() || g_operators.size() == 0);
         return hasTR0;
     }
 

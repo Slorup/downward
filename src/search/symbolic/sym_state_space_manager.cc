@@ -29,8 +29,6 @@ SymStateSpaceManager::SymStateSpaceManager(SymVariables *v,
 	initialState(v->zeroBDD()), goal(v->zeroBDD()),
 	min_transition_cost(0), hasTR0(false) {
 
-
-
 	if(relevant_vars.empty()) {
         for (size_t i = 0; i < g_variable_domain.size(); ++i) {
 		relevant_vars.insert(i);
@@ -241,12 +239,19 @@ void SymStateSpaceManager::shrinkBucket(Bucket &bucket, int maxNodes) {
 void SymStateSpaceManager::init_transitions(const map<int, vector <TransitionRelation>> & (indTRs)) {
     transitions = indTRs; //Copy
 
+
+    if(transitions.empty()) {
+	hasTR0 = false; 
+	min_transition_cost = 1;
+	return;
+    }
+
     for (map<int, vector<TransitionRelation>>::iterator it = transitions.begin();
          it != transitions.end(); ++it) {
         merge(vars, it->second, mergeTR, p.max_tr_time, p.max_tr_size);
-}
+    }
 
-
+   
     min_transition_cost = transitions.begin()->first;
     if (min_transition_cost == 0) {
 	hasTR0 = true;
