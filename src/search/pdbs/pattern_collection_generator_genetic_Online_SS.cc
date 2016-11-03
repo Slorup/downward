@@ -45,6 +45,7 @@ namespace pdbs {
 	  time_limit(opts.get<int>("time_limit")) {
 
 	cout<<"Setting num_collections to 1 no matter the input,peak memory:"<<utils::get_peak_memory_in_kb()<<endl; // ???????
+	cout<<"hybrid_pdb_size:"<<hybrid_pdb_size<<endl;
 	num_collections=1;
 	if(pdb_factory->name()=="symbolic"){
 	  pdb_max_size=2*pow(10,5);
@@ -239,6 +240,7 @@ namespace pdbs {
       
 	if(pdb_factory->name()!="symbolic"){
 	  if(hybrid_pdb_size){
+	    //cout<<"hybrid_pdb_size is set"<<endl;
 	      if(utils::g_timer()<100.0){
 		  //min_size=1;
 		  pdb_max_size=50000; 
@@ -356,8 +358,8 @@ namespace pdbs {
 		  }*/
 
 		valid_pattern_counter++;
-		if(valid_pattern_counter%200==0){
-	    cout<<"time:"<<utils::g_timer()<<",valid_pattern_counter:"<<valid_pattern_counter<<endl;
+		if(valid_pattern_counter%100==0){
+		  cout<<"time:"<<utils::g_timer()<<",valid_pattern_counter:"<<valid_pattern_counter<<endl;
 		}
 		DEBUG_MSG(cout<<"pattern valid!,SS evaluating:"<<endl;);
 		if(genetic_SS_timer->is_expired()||(double(utils::get_peak_memory_in_kb())/1024>2000)){
@@ -391,7 +393,7 @@ namespace pdbs {
 		//cout<<"ZeroOnePDBs candidate_explicit has type:"<<pdb_type_explicit->name()<<endl;
 		overall_pdb_gen_time+=utils::g_timer()-temp;
 		double pdb_gen_time=utils::g_timer()-temp;
-		cout<<"generated candidate,pdb_size:,"<<overall_pdb_size<<",pdb_gen_time:,"<<pdb_gen_time<<endl;
+		//cout<<"generated candidate,pdb_size:,"<<overall_pdb_size<<",pdb_gen_time:,"<<pdb_gen_time<<endl;
 		if(pdb_factory->name()=="symbolic"){
 		  if(pdb_gen_time>time_limit){
 		    last_sampler_too_big=true;
@@ -721,7 +723,7 @@ namespace pdbs {
 	      if(pdb_factory->name()=="symbolic"){
 		vars_to_combine = (*g_rng())(variable_ids.size())+1;
 	    }
-	    cout<<"1st pattern,vars to combine="<<vars_to_combine<<" out of "<<variable_ids.size()<<endl;
+	    DEBUG_MSG(cout<<"1st pattern,vars to combine="<<vars_to_combine<<" out of "<<variable_ids.size()<<endl;);
 
 	    size_t var_counter=0;
 	    for (size_t j = 0; j < variable_ids.size(); ++j) {
@@ -745,27 +747,27 @@ namespace pdbs {
 			current_size = 1;
 			var_counter=0;
 			vars_to_combine = (*g_rng())(variable_ids.size()-j)+1;
-			cout<<pattern_collection.size()<<"th pattern,vars to combine="<<vars_to_combine<<" out of remaining "<<variable_ids.size()-j<<endl;
+			DEBUG_MSG(cout<<pattern_collection.size()<<"th pattern,vars to combine="<<vars_to_combine<<" out of remaining "<<variable_ids.size()-j<<endl;);
 		}
 		else if(pdb_factory->name()=="symbolic"&&vars_to_combine<var_counter){//symbolic pattern, using number of vars instead of pdb_size
 		      pattern_collection.push_back(pattern);
-		      cout<<"\t adding pattern["<<pattern_collection.size()-1<<"],pdb_size:"<<current_size*next_var_size<<endl;
+		      DEBUG_MSG(cout<<"\t adding pattern["<<pattern_collection.size()-1<<"],pdb_size:"<<current_size*next_var_size<<endl;
 		      for(size_t i=0; i<pattern.size(); ++i){
 			if(pattern.at(i)){
 			      std::cout << i << ',';
 			   }
 			 }
-		      cout<<endl;
+		      cout<<endl;);
 		      pattern.clear();
 		      pattern.resize(variables.size(), false);
 		      var_counter=0;
 		      current_size = 1;
 		      vars_to_combine = (*g_rng())(variable_ids.size()-j)+1;
-		      cout<<pattern_collection.size()<<"th pattern,vars to combine="<<vars_to_combine<<" out of remaining "<<variable_ids.size()-j<<endl;
+		      DEBUG_MSG(cout<<pattern_collection.size()<<"th pattern,vars to combine="<<vars_to_combine<<" out of remaining "<<variable_ids.size()-j<<endl;);
 		}
 
 		  current_size *= next_var_size;
-		  cout<<"\t\tcurrent_size:"<<current_size<<",var_counter:"<<var_counter<<endl;
+		  DEBUG_MSG(cout<<"\t\tcurrent_size:"<<current_size<<",var_counter:"<<var_counter<<endl;);
 		  pattern[var_id] = true;
 		  
 		  if(pattern_collection.size()>4){
@@ -789,11 +791,13 @@ namespace pdbs {
 	    //Sort patterns by size, so zero_one cost partition benefits larger patterns over shorter ones
 	    sort(pattern_collection.begin(),pattern_collection.end(),compare_pattern_length);
 	    
-	    cout<<"\t sorted pattern lengths:";
-	    for(size_t i=0;i<pattern_collection.size();i++){
-	      cout<<std::count(pattern_collection.at(i).begin(),pattern_collection.at(i).end(),true)<<",";
-	    }
-	    cout<<endl;
+	    DEBUG_MSG(
+		cout<<"\t sorted pattern lengths:";
+		for(size_t i=0;i<pattern_collection.size();i++){
+		  cout<<std::count(pattern_collection.at(i).begin(),pattern_collection.at(i).end(),true)<<",";
+		}
+	       	cout<<endl;
+	    );
 	    
 	    pattern_collections.push_back(pattern_collection);
 	}

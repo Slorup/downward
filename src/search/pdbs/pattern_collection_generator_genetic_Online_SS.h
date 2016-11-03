@@ -87,7 +87,7 @@ class PatternCollectionGeneratorGeneticSS : public PatternCollectionGenerator {
     /* Specifies whether patterns in each pattern collection need to be disjoint
        or not. */
     bool disjoint_patterns;
-    bool hybrid_pdb_size;
+    bool hybrid_pdb_size=true;
     int time_limit=1;
     
 
