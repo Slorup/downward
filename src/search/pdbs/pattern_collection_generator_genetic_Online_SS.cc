@@ -702,7 +702,7 @@ namespace pdbs {
     }
 
     void PatternCollectionGeneratorGeneticSS::bin_packing() {
-	DEBUG_MSG(cout<<"Starting bin_packing"<<endl;);
+	DEBUG_MSG(cout<<"Starting bin_packing, pdb_max_size:"<<pdb_max_size<<endl;);
 	TaskProxy task_proxy(*task);
 	VariablesProxy variables = task_proxy.get_variables();
 
@@ -850,8 +850,8 @@ namespace pdbs {
 		cout<<"Peak memory:"<<utils::get_peak_memory_in_kb()<<endl;fflush(stdout);
 
 	    }
-	    else if(current_episode%100==0){
-	      if (recompute_max_additive_subsets) {
+	    else if(current_episode%100==0&&i>0){//do not call recompute for 1st episode!
+	      if (recompute_max_additive_subsets){
 		PatternCollectionInformation result (task, make_shared<PatternCollection>());
 		for (auto pdb_collection : best_pdb_collections){
 		  result.include_additive_pdbs(pdb_collection);
