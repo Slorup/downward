@@ -60,6 +60,8 @@ CanonicalSymbolicPDBs::CanonicalSymbolicPDBs(
     if(compress_nodes) {
 	merge(symbolic_vars.get(), dead_ends, symbolic::mergeOrBDD, compress_time, compress_nodes);
     }
+    
+    cout << "Max additive subsets before ADD indexes: " << max_additive_subsets.size() << endl;
    
     for (const auto & subset : *max_additive_subsets_) {
 	if(subset.empty()) continue;
@@ -101,7 +103,7 @@ CanonicalSymbolicPDBs::CanonicalSymbolicPDBs(
     for (const auto & pdb : dead_ends) cout << pdb.nodeCount() << " ";
 
     cout << endl;
-    cout << "Max additive subsets: " << max_additive_subsets.size() << endl;
+    cout << "Max additive subsets after ADD indexes: " << max_additive_subsets.size() << endl;
    
 }
 

@@ -17,7 +17,8 @@ bool are_pdbs_additive(const PatternDatabaseInterface &pdb1,
     assert(!costs1.empty());
  
     for (size_t i = 0; i < costs1.size(); ++i) {
-	if (costs1[i] > 0 || costs2[i] > 0) {
+      //cout<<"costs1["<<i<<"]:"<<costs1[i]<<",costs2["<<i<<"]:"<<costs2[i]<<endl;
+	if (costs1[i] > 0 && costs2[i] > 0) {
 	    return false;
 	}   
     }
@@ -75,6 +76,7 @@ shared_ptr<MaxAdditivePDBSubsets> compute_max_additive_subsets(const PDBCollecti
 }
 
 shared_ptr<MaxAdditivePDBSubsets> compute_max_additive_subsets(const PDBCollection &pdbs) {
+  cout<<"calling compute_max_additive_subsets"<<endl;
     // Initialize compatibility graph.
     vector<vector<int>> cgraph;
     cgraph.resize(pdbs.size());
@@ -82,11 +84,15 @@ shared_ptr<MaxAdditivePDBSubsets> compute_max_additive_subsets(const PDBCollecti
     for (size_t i = 0; i < pdbs.size(); ++i) {
         for (size_t j = i + 1; j < pdbs.size(); ++j) {
             if (are_pdbs_additive(*(pdbs[i]), *(pdbs[j]))) {
+	      //cout<<"pdbs"<<i<<","<<j<<" are additive"<<endl;
                 /* If the two patterns are additive, there is an edge in the
                    compatibility graph. */
                 cgraph[i].push_back(j);
                 cgraph[j].push_back(i);
             }
+	    else{
+	      //cout<<"pdbs"<<i<<","<<j<<" are not additive"<<endl;
+	    }
         }
     }
 

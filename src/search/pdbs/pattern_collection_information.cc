@@ -2,6 +2,7 @@
 
 #include "pattern_database.h"
 #include "max_additive_pdb_sets.h"
+#include "dominance_pruning.h"
 #include "validation.h"
 
 #include <algorithm>
@@ -122,7 +123,56 @@ void PatternCollectionInformation::include_additive_pdbs(const shared_ptr<PDBCol
 
 void PatternCollectionInformation::recompute_max_additive_subsets() {   
     max_additive_subsets = compute_max_additive_subsets(*pdbs);
+    cout<<"pdbs before Dominance prune:"<<pdbs->size()<<endl;
+    size_t last_size=max_additive_subsets->size();
+    cout<<"max_additive subsets before Dominance prune"<<max_additive_subsets->size()<<endl;
+    max_additive_subsets = prune_dominated_subsets(*pdbs, *max_additive_subsets);
+    
+
+    cout<<"last_size:"<<last_size<<",max_additive_subsets->size()"<<max_additive_subsets->size()<<endl;
+    if(last_size>max_additive_subsets->size()){
+
+      unordered_set<shared_ptr<PatternDatabaseInterface> > remaining_pdbs;
+      for (const PDBCollection &collection : *max_additive_subsets) {
+	  for (const shared_ptr<PatternDatabaseInterface> &pdb : collection) {
+	    pair<unordered_set<shared_ptr<PatternDatabaseInterface> >::iterator, bool> ret;
+	    ret=remaining_pdbs.insert(pdb);
+	    if(ret.second){
+	      cout<<"\t pdb added:";
+	      for(auto i : pdb->get_pattern()) cout<<i<<","; cout<<endl;
+	    }
+	  }
+      }
+      
+      size_t adjust=0;
+      unordered_set<shared_ptr<PatternDatabaseInterface> > new_pdbs;
+      pair<unordered_set<shared_ptr<PatternDatabaseInterface> >::iterator, bool> ret;
+      for (size_t pdb=0;pdb<pdbs->size();pdb++){
+	//cout<<"Working on pdb:"<<pdb<<endl;
+	ret=new_pdbs.insert(pdbs->at(pdb-adjust));//To avoid duplicate pdbs, not sure why they exist at all
+	if(remaining_pdbs.find(pdbs->at(pdb-adjust))==remaining_pdbs.end()||!ret.second){
+	  if(!ret.second){
+	    cout<<"\t pdb["<<pdb+adjust<<"] is already in remaining pdbs and needs to be removed:"<<flush;
+	  }
+	  else{
+	    cout<<"\t pdb["<<pdb+adjust<<"] is not found in remaining pdbs and needs to be removed:"<<flush;
+	  }
+	  cout<<*(pdbs->at(pdb-adjust))<<endl;
+	  pdbs->erase(pdbs->begin()+pdb-adjust);
+	  adjust++;
+	}
+	else{
+	  cout<<"\t pdb["<<pdb+adjust<<"] remains:";
+	  cout<<*(pdbs->at(pdb-adjust))<<endl;
+	}
+      }
+    }
+    cout<<"max_additive subsets after Dominance prune"<<max_additive_subsets->size()<<endl;
+    cout<<"pdbs after Dominance prune"<<pdbs->size()<<endl;
 }
+//void PatternCollectionInformation::pdb_counts() {   
+//  cout<<"pdbs:"<<pdbs->size()<<endl;
+//}
 
 void PatternCollectionInformation::set_max_additive_subsets(
     shared_ptr<MaxAdditivePDBSubsets> max_additive_subsets_) {
@@ -143,5 +193,35 @@ shared_ptr<PDBCollection> PatternCollectionInformation::get_pdbs() {
 shared_ptr<MaxAdditivePDBSubsets> PatternCollectionInformation::get_max_additive_subsets() {
     create_max_additive_subsets_if_missing();
     return max_additive_subsets;
+}
+
+int PatternCollectionInformation::get_value(const State &state) const {
+  //cout<<"hola2"<<flush<<endl;
+    // If we have an empty collection, then max_additive_subsets = { \emptyset }.
+    //assert(!max_additive_subsets->empty());
+    if(!max_additive_subsets){
+      //cout<<"max_additive_subsets size is 0, so returning 0"<<endl;
+      return 0;
+    }
+    //else{
+    //  cout<<"max_additive_subsets_size:"<<max_additive_subsets->size()<<flush<<endl;
+    //}
+
+    int max_h = 0;
+    for (const auto &subset : *max_additive_subsets) {
+        int subset_h = 0;
+        for (const shared_ptr<PatternDatabaseInterface> &pdb : subset) {
+            /* Experiments showed that it is faster to recompute the
+               h values than to cache them in an unordered_map. */
+            int h = pdb->get_value(state);
+	    //DEBUG_MSG(cout << *pdb << ": " << h << endl;);
+            if (h == numeric_limits<int>::max()) {
+                return numeric_limits<int>::max();
+	    }
+            subset_h += h;
+        }
+        max_h = max(max_h, subset_h);
+    }
+    return max_h;
 }
 }

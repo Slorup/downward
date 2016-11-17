@@ -32,6 +32,7 @@ int CanonicalPDBs::get_value(const State &state) const {
     cache_id++;
 
     int max_h = 0;
+    //cout<<"max additive subset number:"<<max_additive_subsets->size()<<endl;
     for (const auto &subset : *max_additive_subsets) {
         int subset_h = 0;
         for (const shared_ptr<PatternDatabaseInterface> &pdb : subset) {

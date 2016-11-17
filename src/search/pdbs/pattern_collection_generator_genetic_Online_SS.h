@@ -49,6 +49,7 @@ class PatternCollectionGeneratorGeneticSS : public PatternCollectionGenerator {
     // Maximum number of states for each pdb
     int modifier=1;
     double pdb_max_size;
+    double min_size=0;
     int num_collections;
     int num_episodes;
     double mutation_probability;
@@ -60,7 +61,6 @@ class PatternCollectionGeneratorGeneticSS : public PatternCollectionGenerator {
     double prev_current_collector=0;
     double max_collector=0;
     double overall_pdb_gen_time=0;
-    double pdb_gen_time_limit=900;
     double overall_sample_generation_timer=0;
     double overall_sampling_time=0;
     double overall_probe_time=0;
@@ -89,12 +89,15 @@ class PatternCollectionGeneratorGeneticSS : public PatternCollectionGenerator {
     bool disjoint_patterns;
     bool hybrid_pdb_size=true;
     int time_limit=1;
+    double genetic_time_limit=900;
+    bool best_pdb_added=false;
     
 
     // Store best pattern collection over all episodes and its fitness value.
     std::shared_ptr<PatternCollection> best_patterns; //Alvaro: Eliminate best_patterns?
     std::vector<std::vector<std::vector<bool>>> best_pattern_collection; //Alvaro: Eliminate best_pattern_collection?    
     vector<std::shared_ptr<PDBCollection> >best_pdb_collections; //Store the PDBs as well
+    shared_ptr<PatternCollectionInformation> result;
 
         
     set< vector<Pattern> > chosen_pattern_collections;
@@ -208,6 +211,7 @@ public:
     static bool compare_pattern_length(vector<bool> one,vector<bool> two) { return (std::count(two.begin(), two.end(), true)<std::count(one.begin(), one.end(), true)); }
     //Dominated in terms of all sampled unique states having a h value lower or better than the max of all other heuristics
     void clear_dominated_heuristics();
+    int get_best_value_zero_one(State current_state);
     int get_best_value(State current_state);
 };
 ostream& operator<<(ostream& os, const vector<bool>& v);
