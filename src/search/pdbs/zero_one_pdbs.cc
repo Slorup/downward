@@ -16,16 +16,22 @@ using namespace std;
 
 namespace pdbs {
 ZeroOnePDBs::ZeroOnePDBs(TaskProxy task_proxy, const PatternCollection &patterns, PDBFactory & pdb_factory, int time_limit) {
+  cout<<"ZeroOne calling time:"<<utils::g_timer()<<endl;
+  float before_op_time=utils::g_timer();
     vector<int> operator_costs;
     OperatorsProxy operators = task_proxy.get_operators();
     operator_costs.reserve(operators.size());
     for (OperatorProxy op : operators)
         operator_costs.push_back(op.get_cost());
+  cout<<"ZeroOne calling time:"<<utils::g_timer()-before_op_time<<endl;
 
     pattern_databases.reserve(patterns.size());
     for (const Pattern &pattern : patterns) {
 	if(pattern.empty()) continue;
+	float start_gen_time=utils::g_timer();
+	cout<<"start_gen_time:"<<start_gen_time<<endl;
 	shared_ptr<PatternDatabaseInterface> pdb = pdb_factory.compute_pdb(task_proxy, pattern, operator_costs,time_limit);
+	cout<<"compute_pdb_time:"<<utils::g_timer()-start_gen_time<<endl;
 
         pattern_databases.push_back(pdb);
 	

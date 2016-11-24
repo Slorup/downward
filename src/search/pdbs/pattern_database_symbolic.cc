@@ -30,6 +30,7 @@ namespace pdbs {
 	PatternDatabaseInterface(task_proxy, pattern, operator_costs), 
 	vars (vars_), manager (manager_), heuristic(vars->getADD(0)), dead_ends(vars->zeroBDD()), 
 	finished(false), hvalue_unseen_states(0), average(0) {
+	  cout<<"start_time_pdb_constructor:"<<utils::g_timer()<<",";
 	
 	create_pdb(engine,params, generationTime, generationMemoryGB);
     }
@@ -37,8 +38,12 @@ namespace pdbs {
 
     void PatternDatabaseSymbolic::create_pdb(SymController * engine, const SymParamsSearch & params, 
 					     int generationTime, double generationMemoryGB) {
+	float start_time=utils::g_timer();
+	cout<<"start_time_create_pdb:"<<utils::g_timer()<<",";
 	symbolic::UniformCostSearch search (engine, params);
+	cout<<"UniformCostSearch.time:"<<utils::g_timer()-start_time<<",";
 	search.init(manager, false);
+	cout<<"serach.init.time:"<<utils::g_timer()-start_time<<",";
 
 	Timer time; 
 	while (!search.finished() && 
@@ -63,10 +68,10 @@ namespace pdbs {
 	} else {
 	  //cout<<"time before serch.getHeuristic(false):"<<time()<<endl;
 	    heuristic = search.getHeuristic(false);
-	  //cout<<"time after serch.getHeuristic(false)":<<time()<<endl;
+	  //cout<<"time after serch.getHeuristic(false):"<<time()<<endl;
 	    if(finished) dead_ends += search.notClosed(); 
 	}
-	  //cout<<"Overall generationTime:"<<time()<<",create_pdb finished"<<endl;
+	  cout<<"Overall generationTime:,"<<utils::g_timer()-start_time<<endl;
     }
 
     int PatternDatabaseSymbolic::get_value(const State & state) const {

@@ -9,6 +9,8 @@
 #include <cassert>
 #include <unordered_set>
 #include <utility>
+#include "../state_registry.h"
+#include "../task_proxy.h"
 
 using namespace std;
 
@@ -121,15 +123,24 @@ void PatternCollectionInformation::include_additive_pdbs(const shared_ptr<PDBCol
     assert(information_is_valid());
 }
 
+//void PatternCollectionInformation::incremental_recompute_max_additive_subsets() { 
+//    max_additive_subsets = compute_max_additive_subsets(*pdbs);
+//}
+
+
 void PatternCollectionInformation::recompute_max_additive_subsets() {   
     max_additive_subsets = compute_max_additive_subsets(*pdbs);
     cout<<"pdbs before Dominance prune:"<<pdbs->size()<<endl;
     size_t last_size=max_additive_subsets->size();
     cout<<"max_additive subsets before Dominance prune"<<max_additive_subsets->size()<<endl;
     max_additive_subsets = prune_dominated_subsets(*pdbs, *max_additive_subsets);
-    
-
+    std::shared_ptr<MaxAdditivePDBSubsets> max_additive_subsets2;
+    max_additive_subsets2 = prune_dominated_subsets_sample_space(*pdbs, *max_additive_subsets);
     cout<<"last_size:"<<last_size<<",max_additive_subsets->size()"<<max_additive_subsets->size()<<endl;
+    cout<<"Peak memory2:"<<flush<<utils::get_peak_memory_in_kb()<<endl;fflush(stdout);
+    max_additive_subsets=max_additive_subsets2;
+    cout<<"Peak memory3:"<<flush<<utils::get_peak_memory_in_kb()<<endl;fflush(stdout);
+
     if(last_size>max_additive_subsets->size()){
 
       unordered_set<shared_ptr<PatternDatabaseInterface> > remaining_pdbs;
@@ -169,6 +180,29 @@ void PatternCollectionInformation::recompute_max_additive_subsets() {
     }
     cout<<"max_additive subsets after Dominance prune"<<max_additive_subsets->size()<<endl;
     cout<<"pdbs after Dominance prune"<<pdbs->size()<<endl;
+    cout<<"remaining_subsets:"<<endl;
+      for (const PDBCollection &collection : *max_additive_subsets) {
+	  for (const shared_ptr<PatternDatabaseInterface> &pdb : collection) {
+	    cout<<*pdb<<",";
+	  }
+	  cout<<endl;
+      }
+      /*
+      cout<<"calculating new intial_h value:"<<flush<<endl;
+      int max_h=0;
+      TaskProxy task_proxy(*task);
+      const State &initial_state = task_proxy.get_initial_state();
+      for (const PDBCollection &collection : *max_additive_subsets) {
+	int h=0;
+	  for (const shared_ptr<PatternDatabaseInterface> &pdb : collection) {
+	    cout<<"\t partial_h:"<<pdb->get_value(initial_state)<<flush<<",";
+	    h+=pdb->get_value(initial_state);
+	  }
+	  max_h=max(h,max_h);
+	  cout<<"h:"<<h<<",max_h:"<<max_h<<flush<<endl;
+      }
+      exit(0);*/
+    cout<<"Peak memory3:"<<utils::get_peak_memory_in_kb()<<endl;fflush(stdout);
 }
 //void PatternCollectionInformation::pdb_counts() {   
 //  cout<<"pdbs:"<<pdbs->size()<<endl;
@@ -204,7 +238,7 @@ int PatternCollectionInformation::get_value(const State &state) const {
       return 0;
     }
     //else{
-    //  cout<<"max_additive_subsets_size:"<<max_additive_subsets->size()<<flush<<endl;
+      //cout<<"max_additive_subsets_size:"<<max_additive_subsets->size()<<flush<<endl;
     //}
 
     int max_h = 0;
@@ -214,12 +248,13 @@ int PatternCollectionInformation::get_value(const State &state) const {
             /* Experiments showed that it is faster to recompute the
                h values than to cache them in an unordered_map. */
             int h = pdb->get_value(state);
-	    //DEBUG_MSG(cout << *pdb << ": " << h << endl;);
+	    //DEBUG_MSG(cout <<"\t" << *pdb << ": " << h <<endl;);
             if (h == numeric_limits<int>::max()) {
                 return numeric_limits<int>::max();
 	    }
             subset_h += h;
         }
+	//DEBUG_MSG(cout << "subset_h:" << subset_h <<endl;);
         max_h = max(max_h, subset_h);
     }
     return max_h;

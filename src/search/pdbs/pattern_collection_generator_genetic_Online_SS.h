@@ -91,7 +91,9 @@ class PatternCollectionGeneratorGeneticSS : public PatternCollectionGenerator {
     int time_limit=1;
     double genetic_time_limit=900;
     bool best_pdb_added=false;
-    
+    float avg_pdb_gen_time=0;
+    int valid_pattern_counter=0;
+    int last_valid_pattern_counter=0;
 
     // Store best pattern collection over all episodes and its fitness value.
     std::shared_ptr<PatternCollection> best_patterns; //Alvaro: Eliminate best_patterns?
@@ -111,7 +113,6 @@ class PatternCollectionGeneratorGeneticSS : public PatternCollectionGenerator {
     double average_operator_cost;
     int num_samples;
     vector<State> samples;
-    map<size_t,State> unique_samples;
 
     
     vector<int> best_heuristic_values;

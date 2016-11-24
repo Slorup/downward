@@ -24,6 +24,7 @@
 #include <sstream>
 #include <string>
 #include <vector>
+#include <map>
 
 using namespace std;
 using utils::ExitCode;
@@ -387,5 +388,6 @@ vector<int> g_id_first_fact;
 string g_plan_filename = "sas_plan";
 int g_num_previously_generated_plans = 0;
 bool g_is_part_of_anytime_portfolio = false;
+std::map<size_t,pair<State,int> > unique_samples;
 
 utils::Log g_log;
