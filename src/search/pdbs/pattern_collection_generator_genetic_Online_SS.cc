@@ -54,6 +54,9 @@ namespace pdbs {
 	if(pdb_factory->name()=="symbolic"){
 	  pdb_max_size=2*pow(10,5);
 	}
+	else{
+	  pdb_max_size=2*pow(10,4);
+	}
 	if(recompute_max_additive_subsets)
 	  cout<<"recompute_max_additive_subsets is on"<<endl;
 	else
@@ -280,7 +283,7 @@ namespace pdbs {
       if(!last_sampler_too_big){
 	if(valid_pattern_counter!=0&&valid_pattern_counter%10==0&&valid_pattern_counter>last_valid_pattern_counter){
 	  pdb_max_size*=10;
-	  min_size=pdb_max_size/100;
+	  min_size=pdb_max_size/1000;
 	  cout<<"current_episode:"<<current_episode<<",pdb_max_size raised to:,"<<pdb_max_size<<",min_size:,"<<min_size<<endl;
 	  last_valid_pattern_counter=valid_pattern_counter;
 	}
@@ -299,6 +302,7 @@ namespace pdbs {
 	pdb_max_size=min(pow(10.0,8),pdb_max_size);
 	min_size=min(pdb_max_size/100,min_size);//in case current_episode<100
       }
+      min_size=max(min_size,1.0);//no empty patterns!
 	  //pdb_max_size=pow(10.0,8);
 	  //min_size=pow(10.0,6);
     //}
@@ -328,8 +332,9 @@ namespace pdbs {
 	    for (const vector<bool> &bitvector : collection) {
 		//cout<<"working on bitvector:"<<bitvector<<endl;
 		Pattern pattern = transform_to_pattern_normal_form(bitvector);
-		//cout<<"transformed Pattern:"<<pattern<<endl;
 		remove_irrelevant_variables(pattern);
+		DEBUG_MSG(cout<<"transformed Pattern:"<<pattern<<endl;);
+
 
 		//if(pdb_factory->name()!="symbolic"){
 		  if (is_pattern_too_large(pattern)) {
@@ -368,7 +373,7 @@ namespace pdbs {
 		//cout<<"pattern collection size:"<<overall_pdb_size<<" too small, skipping"<<endl;
 		fitness = 0.001;
 	    } else {
-		  cout << "collection valid ,overall_pdb_size:" << min_size<<",overall size:"<<overall_pdb_size<<endl;
+		  //cout << "collection valid ,overall_pdb_size:" << min_size<<",overall size:"<<overall_pdb_size<<endl;
 	
 		/*
 		  std::pair<set< vector<Pattern> >,bool > ret; // all current pattern collections
@@ -388,8 +393,8 @@ namespace pdbs {
 		  cout<<"time:"<<utils::g_timer()<<",valid_pattern_counter:"<<valid_pattern_counter<<endl;
 		}
 		DEBUG_MSG(cout<<"pattern valid!,SS evaluating:"<<endl;);
-		if(genetic_SS_timer->is_expired()||(double(utils::get_peak_memory_in_kb())/1024>2000)){
-		    if(double(utils::get_peak_memory_in_kb())/1024>2000){
+		if(genetic_SS_timer->is_expired()||(double(utils::get_peak_memory_in_kb())/1024>memory_limit)){
+		    if(double(utils::get_peak_memory_in_kb())/1024>memory_limit){
 			cout<<"no more PDB generation, Peak memory above 2 GB max:"<<utils::get_peak_memory_in_kb()<<endl;
 		    }
 		    cout<<"breaking-1 out of GA Algortihm, current gen_time:"<<genetic_SS_timer<<" bigger than time_limit:"<<genetic_time_limit<<endl;
@@ -411,9 +416,18 @@ namespace pdbs {
 		    cout<<"Solution found while generating PDB candidate of type:"<<pdb_factory->name()<<", adding PDB and exiting generation at time"<<utils::g_timer()<<endl;
 
 		    cout<<"final episode:,"<<current_episode<<",time:,"<<utils::g_timer()<<",overall_pdb_gen_time:,"<<overall_pdb_gen_time<<",online_samples:,"<<total_online_samples<<",overall_sampling_time:,"<<overall_sampling_time<<",avg samp time:,"<<double(overall_sampling_time)/double((total_online_samples == 0) ? 1 : total_online_samples)<<",avg_sampled_states:,"<<avg_sampled_states<<",overall_probe_time:"<<overall_probe_time<<",candidate_count:,"<<candidate_count<<",unique_samples.size:,"<<unique_samples.size()<<",best_heuristics count:,"<<best_pdb_collections.size()<<endl;
-		    best_pdb_collections.push_back(make_shared<PDBCollection> (candidate.get_pattern_databases()));
 		    best_pdb_added=true;
+		    float start_time_dom=utils::g_timer();
+		    cout<<"calling recompute"<<flush<<endl;
+		    result->include_additive_pdbs(pdb_factory->terminate_creation(candidate.get_pattern_databases()));
+		    result->recompute_max_additive_subsets();
+		    cout<<"recompute finished"<<flush<<endl;
+		    overall_dominance_prunning_time+=utils::g_timer()-start_time_dom;
+
+		    best_pdb_collections.resize(1);
+		    best_pdb_collections[0]=result->get_pdbs();
 		    unique_samples.clear();
+		    return;
 		}
 		candidate_count++;
 		//ZeroOnePDBs candidate_explicit(task_proxy, *pattern_collection, *pdb_type_explicit );
@@ -421,17 +435,25 @@ namespace pdbs {
 		overall_pdb_gen_time+=utils::g_timer()-temp;
 		double pdb_gen_time=utils::g_timer()-temp;
 		//cout<<"generated candidate,pdb_size:,"<<overall_pdb_size<<",pdb_gen_time:,"<<pdb_gen_time<<endl;
-		if(pdb_factory->name()=="symbolic"){
+		//if(pdb_factory->name()=="symbolic"){
 		  avg_pdb_gen_time+=pdb_gen_time;
 		  if(valid_pattern_counter%10==0){
-		    if(avg_pdb_gen_time/10.0>time_limit){
+		    if(utils::g_timer()-last_time_collections_improved>50.0){
+		      time_limit+=1;
+		      last_sampler_too_big=false;
+		      pdb_max_size=max(last_improv_collection_size*10.0,20000.0);//20K just in case something went wrong 
+		      min_size=pdb_max_size/100;
+		      cout<<"increasing time_limit to,"<<time_limit<<",pdb_max_size:"<<pdb_max_size<<",min_size:"<<min_size<<", too long since last improvement found"<<endl; 
+		      last_time_collections_improved=utils::g_timer();
+		    }
+		    else if(avg_pdb_gen_time/10.0>time_limit){
 		      last_sampler_too_big=true;
 		      pdb_max_size=max(10000.0,pdb_max_size/10.0);
 		      cout<<"Last 10 pdbs took on average more than generation time_limit, Fixing pdb_max_size to:"<<pdb_max_size<<endl;
 		    }
 		    avg_pdb_gen_time=0;
 		  }
-		}
+		//}
 
 
 		fitness=0.001;
@@ -465,10 +487,13 @@ namespace pdbs {
 			//cout<<"best_pdb is empty!"<<endl;
 		      //}
 		      cout<<"initial h value:"<<candidate.get_value(initial_state)<<flush<<endl;
+		      float start_time_dom=utils::g_timer();
 		      result->include_additive_pdbs(best_pdb_collections[0]);
 			
 		      cout<<"calling recompute"<<flush<<endl;
 		      result->recompute_max_additive_subsets();
+		      overall_dominance_prunning_time+=utils::g_timer()-start_time_dom;
+
 		      best_pdb_collections.resize(1);
 		      best_pdb_collections[0]=result->get_pdbs();
 		      //result->set_dead_ends(pdb_factory->get_dead_ends());
@@ -655,20 +680,21 @@ namespace pdbs {
 
 		    fitness+=candidate_h;
 
-		    if(candidate_h+SS_iter->g>sampling_threshold){
+		    /*  if(candidate_h+SS_iter->g>sampling_threshold){
 			pruned_states+=SS_iter->weight;
 			raised_states++;
 			//cout<<"id:,"<<SS_iter->id<<",sampled_state:,"<<sampled_states<<",out of "<<SS_states.size()<<"is now pruned by higher F, weight:"<<SS_iter->weight<<",current_total:"<<total_SS_gen_nodes<<endl;
 			//cout<<"h1="<<current_heuristic->get_heuristic()<<"+g="<<SS_iter->g<<",f:"<<current_heuristic->get_heuristic()+SS_iter->g<<",sampling_threshold:"<<sampling_threshold<<endl;
 			//cout<<"h2="<<best_heuristic->get_heuristic()<<"+g="<<SS_iter->g<<",f:"<<best_heuristic->get_heuristic()+SS_iter->g<<",sampling_threshold:"<<sampling_threshold<<endl;
 		    }
-		    else {
+		    else {*/
 			if(candidate_h>best_h){
 			    pruned_states+=SS_iter->weight;
 			    raised_states++;
+			    //cout<<"id:,"<<SS_iter->id<<",candidate_h:"<<candidate_h<<",best_h:"<<best_h<<endl;
 			    //cout<<"sampled_state:,"<<sampled_states<<",out of "<<SS_states.size()<<"is now pruned by higher h, weight:"<<SS_iter->weight<<",current_total:"<<total_SS_gen_nodes<<endl;
 			}
-		    }
+		    //}
 		    SS_iter++;
 		}
 		DEBUG_MSG(cout<<"episode:"<<current_episode<<",finished sampling,sampled_states:"<<sampled_states<<",raised_states:"<<raised_states<<",pruned_states:"<<pruned_states<<endl;fflush(stdout););
@@ -676,7 +702,7 @@ namespace pdbs {
 		overall_sampling_time+=sampler_time;
 	    DEBUG_MSG(cout<<"sampler_time:"<<sampler_time<<",last_sampler_too_big:"<<last_sampler_too_big<<endl;);
 	      
-	    if(pdb_factory->name()!="symbolic"){
+	    /*  if(pdb_factory->name()!="symbolic"){
 	      if(!last_sampler_too_big){
 		if(sampler_time<2.0&&pdb_gen_time<0.1){
 		      last_pdb_max_size=pdb_max_size;
@@ -687,7 +713,7 @@ namespace pdbs {
 		      last_sampler_too_big=true;
 		}
 	      }
-	    }
+	    }*/
 		DEBUG_MSG(cout<<"collection size:"<<overall_pdb_size<<",sampler_time:,"<<sampler_time<<",candidate_count:,"<<candidate_count<<endl;);
 		if(sampled_states>0){
 		    fitness/=sampled_states;
@@ -721,7 +747,29 @@ namespace pdbs {
 		    }
 		    best_pdb_collections.push_back(pdb_factory->terminate_creation(candidate.get_pattern_databases()));
 		    best_pdb_added=true;
+		    float start_time_dom=utils::g_timer();
+		    result->include_additive_pdbs(best_pdb_collections.back());
+		    result->recompute_max_additive_subsets();
+		    best_pdb_collections.resize(1);
+		    best_pdb_collections[0]=result->get_pdbs();
+		    
+		    std::map<size_t,std::pair<State,int> >::iterator sample;
+		    for (sample=unique_samples.begin();sample!=unique_samples.end();sample++){
+		      if (sample->second.second == numeric_limits<int>::max()){
+			continue;
+		      }
+		      sample->second.second=get_best_value(sample->second.first);
+		      //cout<<"sample_id:"<<sample->first<<" updated to h:"<<sample->second.second<<","<<get_best_value(sample->second.first)<<endl;
+		    }
+		    overall_dominance_prunning_time+=utils::g_timer()-start_time_dom;
+		    last_time_collections_improved=utils::g_timer();
+		    last_improv_collection_size=overall_pdb_size;
+		    cout<<"last_improv_collection_size:"<<last_improv_collection_size<<endl;
+
 		    if(get_best_value(initial_state)<current_heur_initial_value){
+		      for(auto pdb : candidate.get_pattern_databases()){
+			cout<<"candidate_pdb:"<<*pdb<<endl;
+		      }
 			cout<<"DEBUG ME, just added candidate_heur with initial h value:"<<current_heur_initial_value<<"but best_value for initial state is calculated as "<<get_best_value(initial_state)<<"!!!!"<<endl;
 			exit(1);
 		    }
@@ -737,6 +785,9 @@ namespace pdbs {
 		    DEBUG_MSG(cout<<"overall_pdb_gen_time:"<<overall_pdb_gen_time<<endl;);
 		    best_fitness_was_duplicate=false;
 		} else {
+		  if(raised_states>1)
+		    cout<<"not_adding:,"<<utils::g_timer()<<",raised_states:,"<<raised_states<<",sampled_states:,"<<sampled_states<<",ratio:"<<float(raised_states)/float(sampled_states)<<endl;
+		  
 		    DEBUG_MSG(if(current_heuristic!=NULL){
 			cout<<"time:,"<<utils::g_timer()<<",bin_packed:,"<<bin_packed_episode<<",current_heuristic rejected,online_sampling time:,"<<sampler_time
 			    <<",raised_ratio:,"<<float(raised_states)/float(sampled_states)<<",fitness:,"<<fitness<<",sampled_states:,"<<sampled_states
@@ -761,6 +812,10 @@ namespace pdbs {
 	for (size_t i = 0; i < variables.size(); ++i) {
 	    variable_ids.push_back(i);
 	}
+	size_t max_patterns=INT_MAX;
+	if(rand() % 10 >4){
+	  max_patterns=0;
+	}
 
 	for (int i = 0; i < num_collections; ++i) {
 	    // Use random variable ordering for all pattern collections.
@@ -769,9 +824,9 @@ namespace pdbs {
 	    vector<bool> pattern(variables.size(), false);
 	    double current_size = 1;
 	    size_t vars_to_combine=variable_ids.size();
-	      if(pdb_factory->name()=="symbolic"){
+	      //if(pdb_factory->name()=="symbolic"){
 		vars_to_combine = (*g_rng())(variable_ids.size())+1;
-	    }
+	    //}
 	    DEBUG_MSG(cout<<"1st pattern,vars to combine="<<vars_to_combine<<" out of "<<variable_ids.size()<<endl;);
 
 	    size_t var_counter=0;
@@ -795,10 +850,16 @@ namespace pdbs {
 			pattern.resize(variables.size(), false);
 			current_size = 1;
 			var_counter=0;
-			vars_to_combine = (*g_rng())(variable_ids.size()-j)+1;
+			//if(pattern_collection.size()>3){//Max 5 collections
+			  vars_to_combine = variable_ids.size()-j;
+			//}
+			//else{
+			  //vars_to_combine = (*g_rng())(variable_ids.size()-j)+1;
+			//}
 			DEBUG_MSG(cout<<pattern_collection.size()<<"th pattern,vars to combine="<<vars_to_combine<<" out of remaining "<<variable_ids.size()-j<<endl;);
 		}
-		else if(pdb_factory->name()=="symbolic"&&vars_to_combine<var_counter){//symbolic pattern, using number of vars instead of pdb_size
+		//else if(pdb_factory->name()=="symbolic"&&vars_to_combine<var_counter)//symbolic pattern, using number of vars instead of pdb_size
+		else if(vars_to_combine<var_counter){//symbolic pattern, using number of vars instead of pdb_size
 		      pattern_collection.push_back(pattern);
 		      DEBUG_MSG(cout<<"\t adding pattern["<<pattern_collection.size()-1<<"],pdb_size:"<<current_size*next_var_size<<endl;
 		      for(size_t i=0; i<pattern.size(); ++i){
@@ -818,10 +879,16 @@ namespace pdbs {
 		  current_size *= next_var_size;
 		  DEBUG_MSG(cout<<"\t\tcurrent_size:"<<current_size<<",var_counter:"<<var_counter<<endl;);
 		  pattern[var_id] = true;
+		    //sometime worse, e.g. floortile
+		    if(pattern_collection.size()>max_patterns){//Max 5 collections
+		      break;
+		    }
 		  
-		  if(pattern_collection.size()>1){
-		    break;
-		  }
+		  //if(pdb_factory->name()=="symbolic"){
+		    //if(pattern_collection.size()>0){
+		    //  break;
+		    //}
+		   //}
 		  //cout<<"\t\tcurrent_size:"<<current_size<<",added var:"<<var_id<<",domain_size of var:"<<next_var_size<<endl;
 		}
 	    /*
@@ -831,9 +898,12 @@ namespace pdbs {
 	      can only be 1 if *all* variables have a domain larger than
 	      pdb_max_size.
 	    */
-	    if (current_size > 1 || var_counter>0) {
-		pattern_collection.push_back(pattern);
-	    }
+
+	    //if(pdb_factory->name()!="symbolic"){
+	      if (current_size > 1 || var_counter>0) {
+		  pattern_collection.push_back(pattern);
+	      }
+	    //}
 	    //else{
 		//cout<<"\t skipping pattern"<<endl;
 	    //}
@@ -850,7 +920,7 @@ namespace pdbs {
 	    
 	    pattern_collections.push_back(pattern_collection);
 	}
-	DEBUG_MSG(cout<<"bin_packed finished generating "<<pattern_collections.size()<<endl;);
+	DEBUG_MSG(cout<<"bin_packed finished generating "<<pattern_collections.back().size()<<" patterns"<<endl;);
     }
 
     void PatternCollectionGeneratorGeneticSS::genetic_algorithm(
@@ -862,6 +932,12 @@ namespace pdbs {
 	best_patterns = nullptr;
 	    
        	if(create_perimeter){
+	  min_improvement_ratio=0.1;//we want any heuristic improving perimenter
+	  
+	  //do not want to start with 20,000 elements if cant find improvement on perimeter
+	  //on first 50 secs, 10 mill should be a more reasonable start
+	  last_improv_collection_size=pow(10,6);
+	  
 	  pattern_collections.clear();
 	  TaskProxy task_proxy(*task);
 	  VariablesProxy variables = task_proxy.get_variables();
@@ -873,13 +949,33 @@ namespace pdbs {
 	  pattern_collection.push_back(pattern);
 	  cout<<"g_timer before calling ZeroOnePDB to generate initial perimeter:"<<utils::g_timer()<<endl;
 	  //ZeroOnePDBs *candidate= new ZeroOnePDBs(task_proxy, pattern_collection, *pdb_factory, 10);
-	  ZeroOnePDBs candidate(task_proxy, pattern_collection, *pdb_factory, 20);
+	  ZeroOnePDBs candidate(task_proxy, pattern_collection, *pdb_factory, 250);
 	  cout<<"g_timer after calling ZeroOnePDB to generate initial perimeter:"<<utils::g_timer()<<endl;
 	  cout<<"g_timer before calling terminate_creation to push perimeter into best_pdb_collections"<<utils::g_timer()<<endl;
 	  best_pdb_collections.push_back(pdb_factory->terminate_creation(candidate.get_pattern_databases()));
+	  result->include_additive_pdbs(best_pdb_collections.back());
+	  result->recompute_max_additive_subsets();
 	  best_pdb_added=true;
+	  if(pdb_factory->is_solved()){
+	    problem_solved_while_pdb_gen=true;
+	    cout<<"Solution found while generating PDB candidate of type:"<<pdb_factory->name()<<", adding PDB and exiting generation at time"<<utils::g_timer()<<endl;
+
+	    cout<<"final episode:,"<<current_episode<<",time:,"<<utils::g_timer()<<",overall_pdb_gen_time:,"<<overall_pdb_gen_time<<",online_samples:,"<<total_online_samples<<",overall_sampling_time:,"<<overall_sampling_time<<",avg samp time:,"<<double(overall_sampling_time)/double((total_online_samples == 0) ? 1 : total_online_samples)<<",avg_sampled_states:,"<<avg_sampled_states<<",overall_probe_time:"<<overall_probe_time<<",candidate_count:,"<<candidate_count<<",unique_samples.size:,"<<unique_samples.size()<<",best_heuristics count:,"<<best_pdb_collections.size()<<endl;
+	    best_pdb_added=true;
+	    float start_time_dom=utils::g_timer();
+	    cout<<"calling recompute"<<flush<<endl;
+	    result->include_additive_pdbs(pdb_factory->terminate_creation(candidate.get_pattern_databases()));
+	    result->recompute_max_additive_subsets();
+	    overall_dominance_prunning_time+=utils::g_timer()-start_time_dom;
+
+	    best_pdb_collections.resize(1);
+	    best_pdb_collections[0]=result->get_pdbs();
+	    unique_samples.clear();
+	    return;
+	  }
 	  cout<<"g_timer after calling terminate_creation to push perimeter into best_pdb_collections"<<utils::g_timer()<<endl;
 	  const State &initial_state = task_proxy.get_initial_state();
+	  cout<<"perimeter h value:"<<candidate.get_value(initial_state)<<endl;
 	  initial_perimeter_threshold=candidate.get_value(initial_state)*2;
 	}
 	else{
@@ -897,10 +993,15 @@ namespace pdbs {
 		//cout<<"breaking-3 out of GA Algortihm, current gen time:"<<timer()<<" bigger than time_limit:"<<time_limit<<endl;
 		avg_sampled_states=double(overall_sampled_states)/double(total_online_samples);
 		//cout<<"final episode:,"<<current_episode<<",time:,"<<utils::g_timer()<<",overall_pdb_gen_time:,"<<overall_pdb_gen_time<<",overall_pdb_helper_time:,"<<overall_pdb_helper_gen_time<<",online_samples:,"<<total_online_samples<<",overall_sampling_time:,"<<overall_online_samp_time<<",avg samp time:,"<<double(overall_online_samp_time)/double((total_online_samples == 0) ? 1 : total_online_samples)<<",avg_sampled_states:,"<<avg_sampled_states<<",overall_probe_time:"<<overall_probe_time<<endl;
-		cout<<"final episode:,"<<current_episode<<",time:,"<<utils::g_timer()<<",overall_pdb_gen_time:,"<<overall_pdb_gen_time<<",online_samples:,"<<total_online_samples<<",overall_sampling_time:,"<<overall_sampling_time<<",avg samp time:,"<<double(overall_sampling_time)/double((total_online_samples == 0) ? 1 : total_online_samples)<<",avg_sampled_states:,"<<avg_sampled_states<<",overall_probe_time:"<<overall_probe_time<<",candidate_count:,"<<candidate_count<<",unique_samples.size:,"<<unique_samples.size()<<",best_heuristics count:,"<<best_pdb_collections.size()<<endl;
+		cout<<"final episode:,"<<current_episode<<",time:,"<<utils::g_timer()<<",overall_pdb_gen_time:,"<<overall_pdb_gen_time<<",online_samples:,"<<total_online_samples<<",overall_sampling_time:,"<<overall_sampling_time<<",avg samp time:,"<<double(overall_sampling_time)/double((total_online_samples == 0) ? 1 : total_online_samples)<<",avg_sampled_states:,"<<avg_sampled_states<<",overall_probe_time:"<<overall_probe_time<<",candidate_count:,"<<candidate_count<<",unique_samples.size:,"<<unique_samples.size()<<",best_heuristics count:,"<<best_pdb_collections.size()<<",overall_dominance_prunning_time:"<<overall_dominance_prunning_time<<endl;
 		unique_samples.clear();
 		cout<<"Peak memory:"<<utils::get_peak_memory_in_kb()<<endl;fflush(stdout);
-
+		std::shared_ptr<PDBCollection> best_pdb_collections_print=result->get_pdbs();
+		int counter=0;
+		for(auto pdb : *best_pdb_collections_print){
+		    cout<<"final_pdb["<<counter<<"]:"<<*pdb<<endl;
+		    counter++;
+		}
 	    }
 	    else if(current_episode%100==0&&i>0){
 	      if(utils::g_timer()>time_to_clean_dom){
@@ -929,7 +1030,9 @@ namespace pdbs {
 	      cout<<"recomputing best_pdbs as max_additive_subsets,time:"<<utils::g_timer()<<",best collections:"<<best_pdb_collections.size()<<flush<<endl;
 	      result->include_additive_pdbs(best_pdb_collections.back());
 	      cout<<"calling recompute_max_additive_subsets"<<flush<<endl;
+	      float start_time_dom=utils::g_timer();
 	      result->recompute_max_additive_subsets();
+	      overall_dominance_prunning_time+=utils::g_timer()-start_time_dom;
 	      best_pdb_collections.resize(1);
 	      best_pdb_collections[0]=result->get_pdbs();
 	      //result->set_dead_ends(pdb_factory->get_dead_ends());
@@ -941,14 +1044,20 @@ namespace pdbs {
 	    vector<double> fitness_values;
 	    evaluate(fitness_values);
 	    // We allow to select invalid pattern collections.
-	    if(genetic_SS_timer->is_expired()||(double(utils::get_peak_memory_in_kb())/1024>2000)){
+	    if(genetic_SS_timer->is_expired()||(double(utils::get_peak_memory_in_kb())/1024>memory_limit)){
 		avg_sampled_states=double(overall_sampled_states)/double(total_online_samples);
 		if (!recompute_max_additive_subsets) {
 		  clear_dominated_heuristics();
 		}
 		//cout<<"final episode:,"<<current_episode<<",g_time:,"<<utils::g_timer()<<",genetic_SS_timer:"<<genetic_SS_timer<<",overall_pdb_gen_time:,"<<overall_pdb_gen_time<<",overall_pdb_helper_time:,"<<overall_pdb_helper_gen_time<<",online_samples:,"<<total_online_samples<<",overall_sampling_time:,"<<overall_online_samp_time<<",avg samp time:,"<<double(overall_online_samp_time)/double((total_online_samples == 0) ? 1 : total_online_samples)<<",overall_backward_sampling_time:,"<<overall_backward_sampling_timer<<",avg_sampled_states:,"<<avg_sampled_states<<endl;
-		cout<<"final episode:,"<<current_episode<<",time:,"<<utils::g_timer()<<",overall_pdb_gen_time:,"<<overall_pdb_gen_time<<",online_samples:,"<<total_online_samples<<",overall_sampling_time:,"<<overall_sampling_time<<",avg samp time:,"<<double(overall_sampling_time)/double((total_online_samples == 0) ? 1 : total_online_samples)<<",avg_sampled_states:,"<<avg_sampled_states<<",overall_probe_time:"<<overall_probe_time<<",candidate_count:,"<<candidate_count<<",unique_samples.size:,"<<unique_samples.size()<<",best_heuristics count:,"<<best_pdb_collections.size()<<endl;
+		cout<<"final episode:,"<<current_episode<<",time:,"<<utils::g_timer()<<",overall_pdb_gen_time:,"<<overall_pdb_gen_time<<",online_samples:,"<<total_online_samples<<",overall_sampling_time:,"<<overall_sampling_time<<",avg samp time:,"<<double(overall_sampling_time)/double((total_online_samples == 0) ? 1 : total_online_samples)<<",avg_sampled_states:,"<<avg_sampled_states<<",overall_probe_time:"<<overall_probe_time<<",candidate_count:,"<<candidate_count<<",unique_samples.size:,"<<unique_samples.size()<<",best_heuristics count:,"<<best_pdb_collections.size()<<",overall_dominance_prunning_time:"<<overall_dominance_prunning_time<<endl;
 		unique_samples.clear();
+		std::shared_ptr<PDBCollection> best_pdb_collections_print=result->get_pdbs();
+		int counter=0;
+		for(auto pdb : *best_pdb_collections_print){
+		    cout<<"final_pdb["<<counter<<"]:"<<*pdb<<endl;
+		    counter++;
+		}
 		//cout<<"breaking-4 out of GA Algortihm, current gen time:"<<timer()<<" bigger than time_limit:"<<time_limit<<endl;fflush(stdout);
 		//clear_dominated_heuristics(&unique_samples);
 		break;
@@ -1044,13 +1153,18 @@ namespace pdbs {
 	//const State &initial_state2 = g_initial_state();
         size_t initial_state_id = initial_state.hash();
 
-	pair<map<size_t,pair<State,int> >::iterator,bool> ret;
-	cout<<"inserted initial unique sample with h="<<get_best_value(initial_state)<<endl;
-	ret=unique_samples.insert(make_pair(initial_state_id,make_pair(child,get_best_value(initial_state))));
-	if(!ret.second){
-	  ret.first->second.first=State(child);
-	  ret.first->second.second=get_best_value(initial_state);
-	}
+		
+	unique_samples.insert(make_pair(initial_state_id,make_pair(child,0)));
+	//pair<map<size_t,pair<State,int> >::iterator,bool> ret;
+	//ret=unique_samples.insert(make_pair(initial_state_id,make_pair(child,5)));
+	//if(ret.second){
+	 // cout<<"state_id:"<<initial_state_id<<"is new in unique_samples"<<endl;
+	//}
+	//cout<<"inserted initial unique sample with h="<<get_best_value(initial_state)<<endl;
+	//if(!ret.second){
+	//  ret.first->second.first=State(child);
+	  //ret.first->second.second=max(get_best_value(child),ret.first->second.second);
+	//}
 
 	//visited_states.insert(initial_state.hash());
 	map<size_t,int> cycle_check;
@@ -1279,12 +1393,12 @@ namespace pdbs {
       
 		//add to the collector
 	
-		pair<map<size_t,pair<State,int> >::iterator,bool> ret;
-		ret=unique_samples.insert(make_pair(child_hash,make_pair(child,h)));
-		if(!ret.second){
-		  ret.first->second.first=State(child);
-		  ret.first->second.second=h;
-		}
+		unique_samples.insert(make_pair(child_hash,make_pair(child,0)));
+		//pair<map<size_t,pair<State,int> >::iterator,bool> ret;
+		//ret=unique_samples.insert(make_pair(child_hash,make_pair(child,5)));
+		//if(!ret.second){
+		//  ret.first->second.first=State(child);
+		//}
 		//visited_states.insert(child.hash());
 		if ( h + g_real + op.get_cost()  <= threshold) {
 		    //Keep a record of all sampled states and their maximum weights and minimum depths
@@ -1543,6 +1657,9 @@ namespace pdbs {
 	return max_collector;
     }
     double PatternCollectionGeneratorGeneticSS::get_pattern_size(Pattern pattern){
+      if(pattern.size()==0){
+	return 0;
+      }
 	// test if the pattern respects the memory limit
 	double mem = 1;
 	for (size_t j = 0; j < pattern.size(); ++j) {

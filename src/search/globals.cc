@@ -391,3 +391,4 @@ bool g_is_part_of_anytime_portfolio = false;
 std::map<size_t,pair<State,int> > unique_samples;
 
 utils::Log g_log;
+float memory_limit=2000;//MB

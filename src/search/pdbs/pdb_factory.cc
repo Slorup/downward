@@ -40,11 +40,11 @@ static options::PluginTypePlugin<PDBFactory> _type_plugin(
 	}
 
 	num_patterns_created ++;
-        cout<<"compute_before_create,g_timer:"<<utils::g_timer()<<endl;
+        //cout<<"compute_before_create,g_timer:"<<utils::g_timer()<<endl;
 	shared_ptr<PatternDatabaseInterface> result = create_pdb(task, pattern, operator_costs, time_limit); 
-        cout<<"compute_after create,g_timer:"<<utils::g_timer()<<endl;
+        //cout<<"compute_after create,g_timer:"<<utils::g_timer()<<endl;
 	stored_pdbs[PDBKey(pattern, operator_costs)] = result;    
-        cout<<"compute_after stored,g_timer"<<utils::g_timer()<<endl;
+        //cout<<"compute_after stored,g_timer"<<utils::g_timer()<<endl;
 	
 	return result;
     }

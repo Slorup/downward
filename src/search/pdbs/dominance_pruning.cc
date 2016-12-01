@@ -60,6 +60,8 @@ PDBRelation compute_superset_relation(const PDBCollection &pattern_databases) {
 		      PDBs use the same pattern, which violates the invariant that
 		      lists of patterns are sorted and unique.
 		    */
+		    assert(superset_relation.count(make_pair(pdb2.get(),
+							     pdb1.get())) == 0);
 		    assert(pdb1 == pdb2 ||
 			   superset_relation.count(make_pair(pdb2.get(),
 							     pdb1.get())) == 0);
@@ -157,10 +159,11 @@ shared_ptr<MaxAdditivePDBSubsets> prune_dominated_subsets(
 shared_ptr<MaxAdditivePDBSubsets> prune_dominated_subsets_sample_space(
     const PDBCollection &pattern_databases,
     const MaxAdditivePDBSubsets &max_additive_subsets){
+    utils::Timer timer;
 
     shared_ptr<MaxAdditivePDBSubsets> nondominated_subsets =
         make_shared<MaxAdditivePDBSubsets>();
-    cout<<"pattern databases:"<<pattern_databases.size()<<endl;
+    cout<<"pattern databases:"<<pattern_databases.size()<<",max_additive_subsets:"<<max_additive_subsets.size()<<endl;
 
     
     //First add all the pdbs which exist in the max_additive_subsets
@@ -193,7 +196,7 @@ shared_ptr<MaxAdditivePDBSubsets> prune_dominated_subsets_sample_space(
         }
 	counter++;
     }
-    cout<<"subsets:"<<max_additive_subsets.size()<<endl;
+    //cout<<"subsets:"<<max_additive_subsets.size()<<endl;
      
     map<vector<bool>,long > culprit_counters; 
     counter=0;
@@ -213,11 +216,23 @@ shared_ptr<MaxAdditivePDBSubsets> prune_dominated_subsets_sample_space(
   
     std::map<size_t,pair<State,int> >::iterator uniq;
     int max_h=0;
-    double start_sampling=utils::g_timer();
     counter=0;
     vector<int> heuristic_values;
     for (uniq=unique_samples.begin();uniq!=unique_samples.end();uniq++){
       counter++;
+      if(counter%1000==0){
+	if(timer()>1){
+	  cout<<"interrupting unique_samples, already taken more than 1 secs,time:"<<timer<<endl;
+	  break;
+	}
+      }
+      //NOT SKIPPING DEAD_ENDS, SOME HEURISTICS MIGHT NOT CALL THIS NODE A DEAD END
+      //DO NOT WANT TO REMOVE A HEURISTIC IF IT IS HERE BECAUE OF ONLY IT DETECT SOME DEAD_ENDS!!!
+      //if(uniq->second.second==numeric_limits<int>::max()){
+	//continue;//skipping dead_ends
+      //}
+
+
       max_h=0;
       counter=0;
       heuristic_values.clear();
@@ -256,7 +271,7 @@ shared_ptr<MaxAdditivePDBSubsets> prune_dominated_subsets_sample_space(
 	//cout<<"subset[,"<<subset<<",]:"<<h<<endl;
       //cout<<"max_h:"<<max_h<<",stored h:"<<uniq->second.second<<endl;
     }
-    cout<<"unique_states_sampling_time:,"<<utils::g_timer()-start_sampling<<",size:,"<<unique_samples.size()<<endl;
+    cout<<"unique_states_sampling_time:,"<<timer<<",size:,"<<unique_samples.size()<<endl;
     int improvements=0;
     set<int> best_subsets;
     do{
@@ -264,22 +279,22 @@ shared_ptr<MaxAdditivePDBSubsets> prune_dominated_subsets_sample_space(
       int best_subset=0;
       int max_winner=0;
       for (size_t subset=0;subset<max_additive_subsets.size();subset++){
-	cout<<"subset["<<subset<<"],winners:,"<<winners[subset]<<endl;
+	//cout<<"subset["<<subset<<"],winners:,"<<winners[subset]<<endl;
 	if(winners[subset]>max_winner){
 	  best_subset=subset;
 	  max_winner=winners[subset];
 	}
       }
-      if(best_subsets.size()>0){
+      /*if(best_subsets.size()>0){
 	if(float(max_winner)<float(unique_samples.size())/10){
 	  cout<<"skipping adding more subsets, improvement less than 10% of unique_samples"<<endl;
 	  break;
 	}
-      }
+      }*/
 
 
       best_subsets.insert(best_subset);
-      cout<<"best_subset:"<<best_subset<<flush<<endl;
+      //cout<<"best_subset:"<<best_subset<<flush<<endl;
       
       //clear unnened culpritrs
       map<vector<bool>,long >::iterator cc3;
@@ -312,21 +327,21 @@ shared_ptr<MaxAdditivePDBSubsets> prune_dominated_subsets_sample_space(
     } while(improvements>0);
 
     for(auto subset : best_subsets){
-      cout<<"adding subset:"<<subset<<" to nondominated_subsets"<<endl;
+      //cout<<"adding subset:"<<subset<<" to nondominated_subsets"<<endl;
       nondominated_subsets->push_back(max_additive_subsets.at(subset));
     }
 
     
-    for (const PDBCollection &collection : *nondominated_subsets) {
+    /*for (const PDBCollection &collection : *nondominated_subsets) {
 	  cout<<"remaining_subset_dominance_pruning:"<<flush;
         for (const shared_ptr<PatternDatabaseInterface> &pdb : collection) {
 	  cout<<*pdb<<",";
 	}
 	cout<<endl;
-    }
+    }*/
    
-    cout<<"Peak memory:"<<utils::get_peak_memory_in_kb()<<endl;fflush(stdout);
-    cout<<"Finished, returning nondominated_subsets"<<flush<<endl; 
+    //cout<<"Peak memory:"<<utils::get_peak_memory_in_kb()<<endl;fflush(stdout);
+    cout<<"Finished, returning nondominated_subsets_sample_space,time:,"<<timer<<endl;
     return nondominated_subsets;
 }
 }

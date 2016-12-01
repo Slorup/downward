@@ -46,6 +46,8 @@ public:
 };
 
 class SymStateSpaceManager {
+  float avg_call_time=0;
+  int call_no=0;
     void zero_preimage(const BDD &bdd, std::vector <BDD> &res, int maxNodes) const;
     void cost_preimage(const BDD &bdd, std::map <int, std::vector<BDD>> &res, int maxNodes) const;
     void zero_image(const BDD &bdd, std::vector <BDD> &res, int maxNodes) const;

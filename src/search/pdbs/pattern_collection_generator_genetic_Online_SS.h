@@ -70,6 +70,7 @@ class PatternCollectionGeneratorGeneticSS : public PatternCollectionGenerator {
     double avg_sampled_states=0;
     int initial_perimeter_threshold=-1;
     int threshold=1;
+    double overall_dominance_prunning_time=0;
     
     //SS data
     std::set<SSQueue, classcomp> L;
@@ -80,8 +81,10 @@ class PatternCollectionGeneratorGeneticSS : public PatternCollectionGenerator {
     double last_pdb_max_size=50000;
     double last_pdb_min_size=0;
     bool last_sampler_too_big=false;
-    float min_improvement_ratio=0.10;
+    float min_improvement_ratio=0.20;
     long candidate_count=0;
+    float last_time_collections_improved=0;
+    double last_improv_collection_size=20000;
 
     std::shared_ptr<AbstractTask> task;
     /* Specifies whether patterns in each pattern collection need to be disjoint

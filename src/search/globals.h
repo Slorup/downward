@@ -90,5 +90,6 @@ extern const std::shared_ptr<AbstractTask> g_root_task();
 
 extern utils::Log g_log;
 extern std::map<size_t,std::pair<State,int> > unique_samples;
+extern float memory_limit;//For PDB generation,global because it is used by several PDB methods
 
 #endif
