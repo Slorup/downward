@@ -42,6 +42,7 @@ public:
       }
       return count;
     }
+    static bool compare_dead_ends_nodes(BDD i, BDD j) { return (i.nodeCount()>j.nodeCount()); }
 
 };
 }

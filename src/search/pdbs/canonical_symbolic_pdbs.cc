@@ -25,6 +25,8 @@ CanonicalSymbolicPDBs::CanonicalSymbolicPDBs(
 					     valid_cache(info.get_pdbs()->size()), 
 					     cache(info.get_pdbs()->size()) {
 
+
+					       
     auto pattern_databases = info.get_pdbs();
     auto max_additive_subsets_ = info.get_max_additive_subsets();
 
@@ -48,14 +50,6 @@ CanonicalSymbolicPDBs::CanonicalSymbolicPDBs(
 	
         
     
-    float start_merge=utils::g_timer();
-   // std::shared_ptr<symbolic::OriginalStateSpace> manager;
-    //manager = make_shared<symbolic::OriginalStateSpace>(symbolic_vars.get(), symbolic::mgrParams,
-	//OperatorCostFunction::get_cost_function());
-    //manager->mergeBucketAnd(dead_ends,50,100000);
-    cout<<"mergeBucketDeadEnds time:"<<utils::g_timer()-start_merge<<endl;
-
-
     // assert(!dead_ends.empty() ||
     // 	   std::all_of(pattern_databases->begin(), 
     // 		       pattern_databases->end(),
@@ -74,7 +68,7 @@ CanonicalSymbolicPDBs::CanonicalSymbolicPDBs(
 	merge(symbolic_vars.get(), dead_ends, symbolic::mergeOrBDD, compress_time, compress_nodes);
     }
     
-    cout << "Max additive subsets before ADD indexes: " << max_additive_subsets.size() << endl;
+    cout << "Max additive subsets before ADD indexes: " << max_additive_subsets.size() << flush<<endl;
    
     for (const auto & subset : *max_additive_subsets_) {
 	if(subset.empty()) continue;
@@ -113,12 +107,22 @@ CanonicalSymbolicPDBs::CanonicalSymbolicPDBs(
     cout << endl << "Shared PDBs: ";
     
     for (const auto & pdb : pdbs) cout << pdb.nodeCount() << " ";
-    cout << endl << "Dead-end PDBs: ";
+    
+    cout << endl << "Dead-end PDBs before resize: ";
     for (const auto & pdb : dead_ends) cout << pdb.nodeCount() << " ";
-
+    
+    cout << endl << "Dead-end PDBs after resize: ";
+    sort(dead_ends.begin(),dead_ends.end(),compare_dead_ends_nodes);
+    for (const auto & pdb : dead_ends) cout << pdb.nodeCount() << " ";
     cout << endl;
+
+    if(dead_ends.size()>5){
+      cout<<"resizing dead_ends from "<<dead_ends.size();
+      dead_ends.resize(5);
+      cout<<"to "<<dead_ends.size()<<endl;
+    }
+    
     cout << "Max additive subsets after ADD indexes: " << max_additive_subsets.size() << endl;
-   
 }
 
 int CanonicalSymbolicPDBs::get_value(const State &state) const {

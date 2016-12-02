@@ -112,8 +112,17 @@ void PatternCollectionInformation::include_additive_pdbs(const shared_ptr<PDBCol
     if(!pdbs) {
       cout<<"First call, pdbs empty"<<endl;
 	pdbs = make_shared<PDBCollection> ();
-	max_additive_subsets = make_shared<vector<PDBCollection>>();
     } 
+    else{
+      cout<<"prev pdbs:"<<pdbs->size()<<endl;
+    }
+    if(!max_additive_subsets){
+      cout<<"First call, max_additive_subsets empty"<<endl;
+	max_additive_subsets = make_shared<vector<PDBCollection>>();
+    }
+    else{
+      cout<<"prev max_additive_subsets::"<<max_additive_subsets->size()<<endl;
+    }
 
       for (const auto & new_pdb : *pdbs_) {
 	const auto & costs1 = new_pdb->get_operator_costs();

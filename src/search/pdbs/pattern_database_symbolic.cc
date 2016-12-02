@@ -44,7 +44,7 @@ namespace pdbs {
 
     void PatternDatabaseSymbolic::create_pdb(SymController * engine, const SymParamsSearch & params, 
 					     int generationTime, double generationMemoryGB) {
-	float start_time=utils::g_timer();
+	//float start_time=utils::g_timer();
 	//cout<<"start_time_create_pdb:"<<utils::g_timer()<<",";
 	symbolic::UniformCostSearch search (engine, params);
 	//cout<<"UniformCostSearch.time:"<<utils::g_timer()-start_time<<",";
@@ -81,7 +81,7 @@ namespace pdbs {
 	  //cout<<"time after serch.getHeuristic(false):"<<time()<<endl;
 	    if(finished) dead_ends += search.notClosed(); 
 	}
-	  cout<<"Overall generationTime:,"<<utils::g_timer()-start_time<<endl;
+	  //cout<<"Overall generationTime:,"<<utils::g_timer()-start_time<<endl;
     }
 
     int PatternDatabaseSymbolic::get_value(const State & state) const {

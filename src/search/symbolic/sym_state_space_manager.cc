@@ -56,7 +56,7 @@ void SymStateSpaceManager::addDeadEndStates(bool fw, BDD bdd) {
     //too large. Therefore we just keep this states in another vectors
     //and spurious states are always removed. TODO: this has been
     //improved. to ony once in getDeadEnds function 
-    float start_time=utils::g_timer();
+    //float start_time=utils::g_timer();
 
     if (fw || isAbstracted()) {
         if (isAbstracted()) {
@@ -68,7 +68,7 @@ void SymStateSpaceManager::addDeadEndStates(bool fw, BDD bdd) {
 	notDeadEndBw.push_back(!bdd);
 	//mergeBucketAnd(notDeadEndBw);
     }
-    cout<<"adding pdb_dead_ends,time:"<<utils::g_timer()-start_time<<",";
+   // cout<<"adding pdb_dead_ends,time:"<<utils::g_timer()-start_time<<",";
 }
 
 void SymStateSpaceManager::addDeadEndStates(const std::vector<BDD> &fw_dead_ends,
