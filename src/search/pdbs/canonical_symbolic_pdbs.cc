@@ -6,6 +6,9 @@
 
 #include "../symbolic/sym_variables.h"
 #include "../symbolic/sym_util.h"
+#include "../symbolic/original_state_space.h"
+#include "../symbolic/sym_controller.h"
+#include "../symbolic/sym_enums.h"
 
 #include <algorithm>
 #include <cassert>
@@ -42,6 +45,16 @@ CanonicalSymbolicPDBs::CanonicalSymbolicPDBs(
 	    }
 	}	
     }
+	
+        
+    
+    float start_merge=utils::g_timer();
+   // std::shared_ptr<symbolic::OriginalStateSpace> manager;
+    //manager = make_shared<symbolic::OriginalStateSpace>(symbolic_vars.get(), symbolic::mgrParams,
+	//OperatorCostFunction::get_cost_function());
+    //manager->mergeBucketAnd(dead_ends,50,100000);
+    cout<<"mergeBucketDeadEnds time:"<<utils::g_timer()-start_merge<<endl;
+
 
     // assert(!dead_ends.empty() ||
     // 	   std::all_of(pattern_databases->begin(), 
@@ -98,6 +111,7 @@ CanonicalSymbolicPDBs::CanonicalSymbolicPDBs(
     cout << "Single PDBs: ";
     for (const auto & pdb : singlePDBs) cout << pdb.nodeCount() << " ";
     cout << endl << "Shared PDBs: ";
+    
     for (const auto & pdb : pdbs) cout << pdb.nodeCount() << " ";
     cout << endl << "Dead-end PDBs: ";
     for (const auto & pdb : dead_ends) cout << pdb.nodeCount() << " ";

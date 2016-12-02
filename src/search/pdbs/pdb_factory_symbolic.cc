@@ -104,7 +104,7 @@ symbolic::Bucket PDBFactorySymbolic::get_dead_ends() const {
     auto & non_dead_ends = manager->getNotDeadEnds(true);
     float start_merge=utils::g_timer();
     symbolic::Bucket merged_dead_ends=non_dead_ends;
-    manager->mergeBucketAnd(merged_dead_ends,50,100000);
+    manager->mergeBucketAnd(merged_dead_ends,60000,1000000);
     cout<<"mergeBucketDeadEnds time:"<<utils::g_timer()-start_merge<<endl;
 
     //cout << "Obtaining dead ends from factory: " << non_dead_ends.size() << endl;
