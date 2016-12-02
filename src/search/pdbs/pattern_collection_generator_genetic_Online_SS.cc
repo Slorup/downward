@@ -45,7 +45,8 @@ namespace pdbs {
 	  disjoint_patterns(opts.get<bool>("disjoint")), 
 	  hybrid_pdb_size(opts.get<bool>("hybrid_pdb_size")),
 	  time_limit(opts.get<int>("time_limit")),
-	  genetic_time_limit(opts.get<int>("genetic_time_limit")){
+	  genetic_time_limit(opts.get<int>("genetic_time_limit")),
+	  create_perimeter(opts.get<bool>("create_perimeter")){
 
 	cout<<"Setting num_collections to 1 no matter the input,peak memory:"<<utils::get_peak_memory_in_kb()<<endl; // ???????
 	cout<<"hybrid_pdb_size:"<<hybrid_pdb_size<<endl;
@@ -818,9 +819,10 @@ namespace pdbs {
 	    variable_ids.push_back(i);
 	}
 	size_t max_patterns=INT_MAX;
-	if(rand() % 10 >4){
-	  max_patterns=0;
-	}
+	//Some problems benefit form less patterns, higher sizes
+	//if(rand() % 10 >4){
+	//  max_patterns=0;
+	//}
 
 	for (int i = 0; i < num_collections; ++i) {
 	    // Use random variable ordering for all pattern collections.
@@ -1992,6 +1994,10 @@ namespace pdbs {
         "genetic_time_limit",
         "time limit in seconds for genetic algorithm cut off",
         "900");
+    parser.add_option<bool>(
+        "create_perimeter",
+        "whether to start with a perimeter",
+        "false");
 
 	Options opts = parser.parse();
 	if (parser.dry_run())

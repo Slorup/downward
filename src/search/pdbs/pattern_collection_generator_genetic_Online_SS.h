@@ -93,6 +93,7 @@ class PatternCollectionGeneratorGeneticSS : public PatternCollectionGenerator {
     bool hybrid_pdb_size=true;
     int time_limit=1;
     double genetic_time_limit=900;
+    bool create_perimeter=false;
     bool best_pdb_added=false;
     float avg_pdb_gen_time=0;
     int valid_pattern_counter=0;
@@ -123,7 +124,6 @@ class PatternCollectionGeneratorGeneticSS : public PatternCollectionGenerator {
     bool best_fitness_was_duplicate;
     set<vector<int> > chosen_patterns;
     bool problem_solved_while_pdb_gen=false;
-    bool create_perimeter=false;
     //PDBHeuristicOnline *current_heuristic,
 
     /*
