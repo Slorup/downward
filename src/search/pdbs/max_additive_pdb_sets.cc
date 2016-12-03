@@ -17,10 +17,14 @@ bool are_pdbs_additive(const PatternDatabaseInterface &pdb1,
     assert(!costs1.empty());
  
     for (size_t i = 0; i < costs1.size(); ++i) {
-	if (costs1[i] > 0 || costs2[i] > 0) {
+      //if(costs1[i]>0||costs2[i]>0){
+	//cout<<"costs1["<<i<<"]:"<<costs1[i]<<",costs2["<<i<<"]:"<<costs2[i]<<endl;
+     // }
+	if (costs1[i] > 0 && costs2[i] > 0) {
 	    return false;
 	}   
     }
+    //cout<<"pdb1:"<<pdb1<<",pdb2:"<<pdb2<<"are additive"<<endl;
     return true;
 }
 
@@ -57,8 +61,10 @@ VariableAdditivity compute_additive_vars(TaskProxy task_proxy) {
 shared_ptr<MaxAdditivePDBSubsets> compute_max_additive_subsets(const PDBCollection &pdbs,
 							       const vector<vector<int>> & cgraph) {
 
+    cout<<"compute_max_additive_subsets,pdbs"<<pdbs.size()<<flush<<endl;
     vector<vector<int>> max_cliques;
     compute_max_cliques(cgraph, max_cliques);
+    cout<<"after compute_max_cliques,size:"<<max_cliques.size()<<endl;
 
     shared_ptr<MaxAdditivePDBSubsets> max_additive_sets =
         make_shared<MaxAdditivePDBSubsets>();
@@ -75,6 +81,12 @@ shared_ptr<MaxAdditivePDBSubsets> compute_max_additive_subsets(const PDBCollecti
 }
 
 shared_ptr<MaxAdditivePDBSubsets> compute_max_additive_subsets(const PDBCollection &pdbs) {
+  //cout<<"calling compute_max_additive_subsets"<<endl;
+  if(pdbs.size()==0){
+    cout<<"pdbs is empty,compute_max_additive_subsets impossible!!!"<<endl;
+    exit(1);
+  }
+  //cout<<"pdbs:"<<pdbs.size()<<flush<<endl;
     // Initialize compatibility graph.
     vector<vector<int>> cgraph;
     cgraph.resize(pdbs.size());
@@ -82,11 +94,15 @@ shared_ptr<MaxAdditivePDBSubsets> compute_max_additive_subsets(const PDBCollecti
     for (size_t i = 0; i < pdbs.size(); ++i) {
         for (size_t j = i + 1; j < pdbs.size(); ++j) {
             if (are_pdbs_additive(*(pdbs[i]), *(pdbs[j]))) {
+	      //cout<<"pdbs"<<i<<","<<j<<" are additive"<<endl;
                 /* If the two patterns are additive, there is an edge in the
                    compatibility graph. */
                 cgraph[i].push_back(j);
                 cgraph[j].push_back(i);
             }
+	    //else{
+	    //  cout<<"pdbs"<<i<<","<<j<<" are not additive"<<endl;
+	    //}
         }
     }
 

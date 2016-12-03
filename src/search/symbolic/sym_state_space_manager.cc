@@ -52,18 +52,21 @@ void SymStateSpaceManager::addDeadEndStates(bool fw, BDD bdd) {
     //and modify the TRs, so that the new spurious states are never
     //generated. However, the TRs are already merged and the may get
     //too large. Therefore we just keep this states in another vectors
-    //and spurious states are always removed. TODO: this could be
-    //improved.
+    //and spurious states are always removed. TODO: this has been
+    //improved. to ony once in getDeadEnds function 
+    float start_time=utils::g_timer();
+
     if (fw || isAbstracted()) {
         if (isAbstracted()) {
             bdd = shrinkForall(bdd);
 	}
 	notDeadEndFw.push_back(!bdd);
-	mergeBucketAnd(notDeadEndFw);
+	//mergeBucketAnd(notDeadEndFw);
     } else {
 	notDeadEndBw.push_back(!bdd);
-	mergeBucketAnd(notDeadEndBw);
+	//mergeBucketAnd(notDeadEndBw);
     }
+    cout<<"adding pdb_dead_ends,time:"<<utils::g_timer()-start_time<<",";
 }
 
 void SymStateSpaceManager::addDeadEndStates(const std::vector<BDD> &fw_dead_ends,

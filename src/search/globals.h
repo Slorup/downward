@@ -5,6 +5,7 @@
 #include <memory>
 #include <string>
 #include <vector>
+#include <map>
 
 class AbstractTask;
 class Axiom;
@@ -16,6 +17,7 @@ class GlobalState;
 class IntPacker;
 class StateRegistry;
 class SuccessorGenerator;
+class State;
 
 namespace utils {
 struct Log;
@@ -87,5 +89,7 @@ extern std::shared_ptr<utils::RandomNumberGenerator> g_rng();
 extern const std::shared_ptr<AbstractTask> g_root_task();
 
 extern utils::Log g_log;
+extern std::map<size_t,std::pair<State,int> > unique_samples;
+extern float memory_limit;//For PDB generation,global because it is used by several PDB methods
 
 #endif

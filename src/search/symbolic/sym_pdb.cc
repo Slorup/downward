@@ -48,23 +48,6 @@ namespace symbolic {
 
 	//Init dead ends: Both are put into notDeadEndFw for the case
 	//of abstract searches
-	vector<BDD> candidates; 
-	for (const auto & bdd : parent.getNotDeadEnds(false)) {
-	    candidates.push_back(bdd);
-	}
-
-	for (const auto & bdd : parent.getNotDeadEnds(true)) {
-	    candidates.push_back(bdd);
-	}
-	mergeBucketAnd(candidates);
-
-	for (const auto & bdd : candidates) {
-	    try{ 
-		notDeadEndFw.push_back(shrinkExists(bdd, p.max_aux_nodes));
-
-	    } catch(BDDError ) {		
-	    }
-	}
 	//Init transitions
 	std::map<int, std::vector <TransitionRelation>> indTRs;
 	std::map<int, std::vector <TransitionRelation>> failedToShrink;
