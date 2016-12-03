@@ -40,7 +40,6 @@ class PatternDatabaseSymbolic : public PatternDatabaseInterface {
 
      int get_value(int * inputs) const;
 
-
  public:
      /*
        Important: It is assumed that the pattern (passed via Options) is
@@ -65,7 +64,6 @@ class PatternDatabaseSymbolic : public PatternDatabaseInterface {
 
      virtual int get_value(const std::vector<int> &state) const override;
 
-
      virtual std::shared_ptr<symbolic::SymVariables> get_symbolic_variables() {
 	 return vars;
      }
@@ -86,6 +84,7 @@ class PatternDatabaseSymbolic : public PatternDatabaseInterface {
 	return hvalue_unseen_states;
     }
 
+    int get_goal_cost(const State & state) const;
 
     /*
       Returns the average h-value over all states, where dead-ends are

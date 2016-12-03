@@ -60,11 +60,9 @@ PDBRelation compute_superset_relation(const PDBCollection &pattern_databases) {
 		      PDBs use the same pattern, which violates the invariant that
 		      lists of patterns are sorted and unique.
 		    */
-		    assert(superset_relation.count(make_pair(pdb2.get(),
-							     pdb1.get())) == 0);
 		    assert(pdb1 == pdb2 ||
-			   superset_relation.count(make_pair(pdb2.get(),
-							     pdb1.get())) == 0);
+		    	   superset_relation.count(make_pair(pdb2.get(),
+		    					     pdb1.get())) == 0);
 		}
             }
         }

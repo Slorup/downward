@@ -122,7 +122,7 @@ void PatternCollectionInformation::include_additive_pdbs(const shared_ptr<PDBCol
     }
     else{
       cout<<"prev max_additive_subsets::"<<max_additive_subsets->size()<<endl;
-    }
+    } 
 
       for (const auto & new_pdb : *pdbs_) {
 	const auto & costs1 = new_pdb->get_operator_costs();

@@ -57,10 +57,10 @@ public:
     std::shared_ptr<PDBCollection> get_pdbs();
     int get_value(const State &state) const ;
     std::shared_ptr<MaxAdditivePDBSubsets> get_max_additive_subsets();
+
     const symbolic::Bucket & get_dead_ends() const{
 	return dead_ends;
     }
-
 };
 }
 
