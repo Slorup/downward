@@ -40,6 +40,7 @@ namespace pdbs {
 	symbolic::UniformCostSearch search (engine, params);
 	search.init(manager, false);
 
+
 	Timer time; 
 	while (!search.finished() && 
 	       time() < generationTime &&
@@ -88,8 +89,24 @@ namespace pdbs {
 	return (abs_cost == -1 ? numeric_limits<int>::max() : abs_cost);    
     }
 
+
+    int PatternDatabaseSymbolic::get_goal_cost(const State & state) const {
+	auto bin = vars->getBinaryDescription(state.get_values());
+	int value = get_value (bin);
+	if(is_finished() || value < hvalue_unseen_states) {
+	    return value;
+	}else {
+	    return -1;
+	}
+    }
+
+
+
+
+
     double PatternDatabaseSymbolic::compute_mean_finite_h() const {
 	return average;
     }
 
 }
+

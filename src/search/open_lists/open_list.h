@@ -129,8 +129,7 @@ public:
       values, which are then cached in eval_context as a side effect.
     */
     virtual bool is_dead_end(EvaluationContext &eval_context) const = 0;
-    virtual bool is_reliable_dead_end(
-        EvaluationContext &eval_context) const = 0;
+    virtual bool is_reliable_dead_end(EvaluationContext &eval_context) const = 0;
 };
 
 

@@ -100,6 +100,7 @@ void GeneratorSwitch::generate_applicable_ops(
                           immediate_operators.begin(),
                           immediate_operators.end());
     int val = state[switch_var].get_value();
+    assert(val >= 0 && (size_t)val < generator_for_value.size());
     generator_for_value[val]->generate_applicable_ops(state, applicable_ops);
     default_generator->generate_applicable_ops(state, applicable_ops);
 }

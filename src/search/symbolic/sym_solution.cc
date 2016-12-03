@@ -60,9 +60,9 @@ namespace symbolic {
     }
 
     ADD SymSolution::getADD() const {
-	if(!solved()) {
-	    return vars->getADD(-1);; 
-	}
+	// if(!solved()) {
+	//     return vars->getADD(-1);; 
+	// }
 
 	assert(exp_fw || exp_bw);
 	vector <const GlobalOperator *> path;

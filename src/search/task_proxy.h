@@ -596,6 +596,10 @@ public:
         : task(&task) {}
     ~TaskProxy() = default;
 
+    const AbstractTask & get_task() const {
+        return *task;
+    }
+
     VariablesProxy get_variables() const {
         return VariablesProxy(*task);
     }
