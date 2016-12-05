@@ -25,7 +25,7 @@ namespace pdbs {
 						     std::shared_ptr<SymVariables> vars_, 
 						     std::shared_ptr<SymStateSpaceManager> manager_, 
 						     const SymParamsSearch & params, 
-						     int generationTime, 
+						     double generationTime, 
 						     double generationMemoryGB) : 
 	PatternDatabaseInterface(task_proxy, pattern, operator_costs), 
 	vars (vars_), manager (manager_), heuristic(vars->getADD(0)), dead_ends(vars->zeroBDD()), 
@@ -43,7 +43,7 @@ namespace pdbs {
 
 
     void PatternDatabaseSymbolic::create_pdb(SymController * engine, const SymParamsSearch & params, 
-					     int generationTime, double generationMemoryGB) {
+					     double generationTime, double generationMemoryGB) {
 	//float start_time=utils::g_timer();
 	//cout<<"start_time_create_pdb:"<<utils::g_timer()<<",";
 	symbolic::UniformCostSearch search (engine, params);

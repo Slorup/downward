@@ -15,7 +15,7 @@ namespace pdbs {
 class PatternCollectionGeneratorManualMultiple : public PatternCollectionGenerator {
     std::shared_ptr<PatternCollection> patterns;
     std::shared_ptr<PDBFactory> pdb_type;
-    int time_limit;
+    double time_limit;
 
 public:
     explicit PatternCollectionGeneratorManualMultiple(const options::Options &opts);

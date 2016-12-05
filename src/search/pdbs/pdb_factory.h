@@ -73,7 +73,7 @@ protected:
 	create_pdb(const TaskProxy & task, 
 		    const Pattern &pattern, 
 		   const std::vector<int> &operator_costs = std::vector<int>(),
-		   int time_limit = std::numeric_limits<int>::max()
+		   double time_limit = std::numeric_limits<int>::max()
 	    ) = 0;    
 public:
 PDBFactory() : num_patterns_created(0), num_patterns_requested(0), num_patterns_regenerated(0) {}
@@ -84,7 +84,7 @@ PDBFactory() : num_patterns_created(0), num_patterns_requested(0), num_patterns_
 	compute_pdb(const TaskProxy & task, 
 		    const Pattern &pattern, 
 		    const std::vector<int> &operator_costs = std::vector<int>(), 
-		    int time_limit = std::numeric_limits<int>::max()
+		    double time_limit = std::numeric_limits<int>::max()
 	    );
 
     virtual std::string name() const = 0;

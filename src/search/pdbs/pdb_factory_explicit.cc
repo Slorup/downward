@@ -23,7 +23,7 @@ PDBFactoryExplicit::PDBFactoryExplicit() :
 PDBFactoryExplicit::create_pdb(const TaskProxy & task, 
 			       const Pattern &pattern, 
 			       const std::vector<int> &operator_costs, 
-			       int /*time_limit*/){
+			       double /*time_limit*/){
 	return make_shared<PatternDatabase> (task, pattern, dump, operator_costs);
 }
 

@@ -20,7 +20,7 @@ PDBFactoryOnline::PDBFactoryOnline(const options::Options & opts) :
 PDBFactoryOnline::create_pdb(const TaskProxy & task, 
 			     const Pattern &pattern, 
 			     const std::vector<int> &operator_costs, 
-			     int /*time_limit*/){
+			     double /*time_limit*/){
 	return make_shared<PatternDatabaseOnline> (task, pattern, dump, operator_costs);
 }
 

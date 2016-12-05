@@ -27,7 +27,7 @@ namespace pdbs {
 
 
 class PDBFactorySymbolic : public PDBFactory, public symbolic::SymController {
-	const int generationTime;
+	const double generationTime;
 	const double generationMemoryGB; 
         const bool dump;
 
@@ -45,7 +45,7 @@ class PDBFactorySymbolic : public PDBFactory, public symbolic::SymController {
 	create_pdb(const TaskProxy & task, 
 		   const Pattern &pattern, 
 		   const std::vector<int> &operator_costs = std::vector<int>(), 
-		   int time_limit = std::numeric_limits<int>::max()
+		   double time_limit = std::numeric_limits<int>::max()
 	    );
 
     virtual std::string name() const override;

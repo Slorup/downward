@@ -36,7 +36,7 @@ class PatternDatabaseSymbolic : public PatternDatabaseInterface {
 
     void create_pdb(symbolic::SymController * engine, 
 		    const symbolic::SymParamsSearch & params, 
-		    int generationTime, double generationMemoryGB);
+		    double generationTime, double generationMemoryGB);
 
      int get_value(int * inputs) const;
 
@@ -56,7 +56,7 @@ class PatternDatabaseSymbolic : public PatternDatabaseInterface {
 			     symbolic::SymController * engine, 
 			     std::shared_ptr<symbolic::SymVariables> vars, 
 			     std::shared_ptr<symbolic::SymStateSpaceManager> manager, 
-			     const symbolic::SymParamsSearch & params, int generationTime, double generationMemoryGB);
+			     const symbolic::SymParamsSearch & params, double generationTime, double generationMemoryGB);
 
      virtual ~PatternDatabaseSymbolic() = default;
 

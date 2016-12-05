@@ -44,12 +44,13 @@ namespace pdbs {
 	  mutation_probability(opts.get<double>("mutation_probability")),
 	  disjoint_patterns(opts.get<bool>("disjoint")), 
 	  hybrid_pdb_size(opts.get<bool>("hybrid_pdb_size")),
-	  time_limit(opts.get<int>("time_limit")),
+	  time_limit(opts.get<double>("time_limit")),
 	  genetic_time_limit(opts.get<int>("genetic_time_limit")),
 	  create_perimeter(opts.get<bool>("create_perimeter")){
 
 	cout<<"Setting num_collections to 1 no matter the input,peak memory:"<<utils::get_peak_memory_in_kb()<<endl; // ???????
 	cout<<"hybrid_pdb_size:"<<hybrid_pdb_size<<endl;
+	cout<<"create_perimeter:"<<create_perimeter<<endl;
 	num_collections=1;
 	result=make_shared<PatternCollectionInformation>(task, make_shared<PatternCollection>());
 	if(pdb_factory->name()=="symbolic"){
@@ -939,7 +940,8 @@ namespace pdbs {
 	best_patterns = nullptr;
 	    
        	if(create_perimeter){
-	  min_improvement_ratio=0.1;//we want any heuristic improving perimenter
+	  cout<<"creating_perimeter"<<endl;
+	  min_improvement_ratio=0.01;//we want any heuristic improving perimenter
 	  
 	  //do not want to start with 20,000 elements if cant find improvement on perimeter
 	  //on first 50 secs, 10 mill should be a more reasonable start
@@ -958,8 +960,8 @@ namespace pdbs {
 	  //ZeroOnePDBs *candidate= new ZeroOnePDBs(task_proxy, pattern_collection, *pdb_factory, 10);
 	  ZeroOnePDBs candidate(task_proxy, pattern_collection, *pdb_factory, 250);
 	  cout<<"g_timer after calling ZeroOnePDB to generate initial perimeter:"<<utils::g_timer()<<endl;
-	  cout<<"g_timer before calling terminate_creation to push perimeter into best_pdb_collections"<<utils::g_timer()<<endl;
 	  best_pdb_collections.push_back(pdb_factory->terminate_creation(candidate.get_pattern_databases()));
+	  cout<<"g_timer before calling terminate_creation to push perimeter into best_pdb_collections"<<utils::g_timer()<<endl;
 	  if(recompute_max_additive_subsets){
 	    result->include_additive_pdbs(best_pdb_collections.back());
 	    result->recompute_max_additive_subsets();
@@ -1850,7 +1852,7 @@ namespace pdbs {
 	  clear_dominated_heuristics();
 	  cout<<"final best_pdb_collections:"<<best_pdb_collections.size()<<endl;
 	  for (size_t collection=0; collection<best_pdb_collections.size();collection++){
-	    cout<<"\tcollection["<<collection<<"]"<<best_pdb_collections[collection]<<endl;
+	    cout<<"\tcollection["<<collection<<"]"<<*best_pdb_collections[collection]<<endl;
 	    result->include_additive_pdbs(best_pdb_collections[collection]);
 	  }
 	}
@@ -1986,10 +1988,10 @@ namespace pdbs {
         "recompute_max_additive_subsets",
         "attempts to recompute max additive subsets after generating all patterns",
         "false");
-    parser.add_option<int>(
+    parser.add_option<double>(
         "time_limit",
         "time limit in seconds for symbolic pdb_generation cut off",
-        "1");
+        "0.5");
     parser.add_option<int>(
         "genetic_time_limit",
         "time limit in seconds for genetic algorithm cut off",

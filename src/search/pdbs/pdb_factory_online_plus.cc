@@ -34,7 +34,7 @@ namespace pdbs {
 PDBFactoryOnlinePlus::create_pdb(const TaskProxy & task, 
 			       const Pattern &pattern, 
 			       const std::vector<int> &operator_costs, 
-			       int time_limit) {
+			       double time_limit) {
 	
 	assert(!pattern.empty());
 	assert(!solved());

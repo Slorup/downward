@@ -21,7 +21,7 @@ namespace pdbs {
 							 std::shared_ptr<symbolic::SymVariables> vars, 
 							 std::shared_ptr<symbolic::SymStateSpaceManager> manager, 
 							 const symbolic::SymParamsSearch & params, 
-							 int generationTime, double generationMemoryGB)
+							 double generationTime, double generationMemoryGB)
 	: PatternDatabaseInterface(task, pattern, operator_costs), pdb_task(pdb_task_),
 	  heuristics(heuristics_), task_proxy(task), 
 	successor_generator(pdb_task),

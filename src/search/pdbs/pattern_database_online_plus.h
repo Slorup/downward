@@ -124,7 +124,7 @@ public:
 			      std::shared_ptr<symbolic::SymVariables> vars, 
 			      std::shared_ptr<symbolic::SymStateSpaceManager> manager, 
 			      const symbolic::SymParamsSearch & params, 
-			      int generationTime, double generationMemoryGB);
+			      double generationTime, double generationMemoryGB);
 
     virtual ~PatternDatabaseOnlinePlus() = default;
 

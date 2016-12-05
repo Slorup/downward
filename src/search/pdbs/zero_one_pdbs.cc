@@ -15,7 +15,7 @@
 using namespace std;
 
 namespace pdbs {
-ZeroOnePDBs::ZeroOnePDBs(TaskProxy task_proxy, const PatternCollection &patterns, PDBFactory & pdb_factory, int time_limit) {
+ZeroOnePDBs::ZeroOnePDBs(TaskProxy task_proxy, const PatternCollection &patterns, PDBFactory & pdb_factory, double time_limit) {
   //cout<<"ZeroOne calling time:"<<utils::g_timer()<<endl;
   //float before_op_time=utils::g_timer();
     vector<int> operator_costs;
