@@ -283,7 +283,7 @@ namespace pdbs {
     else{//so symbolic*/
       //pdb_max_size=numeric_limits<double>::max();
       if(!last_sampler_too_big){
-	if(valid_pattern_counter!=0&&valid_pattern_counter%10==0&&valid_pattern_counter>last_valid_pattern_counter){
+	if(valid_pattern_counter!=0&&valid_pattern_counter%100==0&&valid_pattern_counter>last_valid_pattern_counter){
 	  pdb_max_size*=10;
 	  min_size=pdb_max_size/1000;
 	  cout<<"time:"<<utils::g_timer<<",current_episode:"<<current_episode<<",pdb_max_size raised to:,"<<pdb_max_size<<",min_size:,"<<min_size<<endl;
@@ -347,11 +347,6 @@ namespace pdbs {
 		  }
 		//}
 		
-		if(min_size>get_pattern_size(pattern)){
-		  DEBUG_MSG(cout << "pattern is too small!,pdb_min_size:" << min_size<<endl;);
-		  pattern_valid = false;
-		  break;
-		}
 
 		if (disjoint_patterns) {
 		    if (mark_used_variables(pattern, variables_used)) {
@@ -365,6 +360,10 @@ namespace pdbs {
 		pattern_collection.push_back(pattern);
 		overall_pdb_size+=get_pattern_size(pattern);
 	    }
+	    if(overall_pdb_size<min_size){
+	      DEBUG_MSG(cout<<"collection too small"<<endl;);
+	      pattern_valid=false;
+	    }
 	    DEBUG_MSG(cout<<"finished making pattern_collection"<<endl;);
 	    if (!pattern_valid) {
 		/* Set fitness to a very small value to cover cases in which all
@@ -373,10 +372,10 @@ namespace pdbs {
 		fitness = 0.001;
 	    }
 	    else if(overall_pdb_size<min_size){
-		//cout<<"pattern collection size:"<<overall_pdb_size<<" too small, skipping"<<endl;
+		cout<<"pattern collection size:"<<overall_pdb_size<<" too small, skipping"<<endl;
 		fitness = 0.001;
 	    } else {
-		  //cout << "collection valid ,overall_pdb_size:" << min_size<<",overall size:"<<overall_pdb_size<<endl;
+		  DEBUG_MSG(cout << "collection valid ,overall_pdb_size:" << min_size<<",overall size:"<<overall_pdb_size<<endl;);
 	
 		/*
 		  std::pair<set< vector<Pattern> >,bool > ret; // all current pattern collections
@@ -450,11 +449,10 @@ namespace pdbs {
 		      cout<<"increasing time_limit to,"<<time_limit<<",pdb_max_size:"<<pdb_max_size<<",min_size:"<<min_size<<", too long since last improvement found"<<endl; 
 		      last_time_collections_improved=utils::g_timer();
 		    }
-		    else if(avg_pdb_gen_time/10.0>time_limit&&Not_Fixed_Yet){
+		    else if(avg_pdb_gen_time/10.0>time_limit){
 		      last_sampler_too_big=true;
 		      pdb_max_size=max(10000.0,pdb_max_size/10.0);
 		      cout<<"Last 10 pdbs took on average more than generation time_limit, Fixing pdb_max_size to:"<<pdb_max_size<<endl;
-		      Not_Fixed_Yet=false;
 		    }
 		    avg_pdb_gen_time=0;
 		  }
@@ -859,7 +857,7 @@ namespace pdbs {
 							pdb_max_size)) {
 			pattern_collection.push_back(pattern);
 			//cout<<"\tpattern added to collection, pattern_collection_size:"<<pattern_collection.size()<<endl;
-			DEBUG_MSG(cout<<"\tpattern added to collection, pattern_collection_size:"<<pattern_collection.size()<<endl;);
+			DEBUG_MSG(cout<<"\tpattern added to collection, pattern_collection_size:"<<pattern_collection.size()<<",pattern_size:"<<current_size*next_var_size<<endl;);
 			pattern.clear();
 			pattern.resize(variables.size(), false);
 			current_size = 1;
@@ -1891,7 +1889,6 @@ namespace pdbs {
 
 
 	cout <<"Finished,episodes:"<<current_episode<<",Pattern generation (Edelkamp) time: " << timer <<",Peak Memory:"<<utils::get_peak_memory_in_kb()<<endl;fflush(stdout);
-	assert(best_patterns);
 	return *result;
     }
 
