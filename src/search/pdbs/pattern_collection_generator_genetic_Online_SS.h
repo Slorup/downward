@@ -98,10 +98,11 @@ class PatternCollectionGeneratorGeneticSS : public PatternCollectionGenerator {
     float avg_pdb_gen_time=0;
     int valid_pattern_counter=0;
     int last_valid_pattern_counter=0;
+    bool Not_Fixed_Yet=true;
 
     // Store best pattern collection over all episodes and its fitness value.
-    std::shared_ptr<PatternCollection> best_patterns; //Alvaro: Eliminate best_patterns?
-    std::vector<std::vector<std::vector<bool>>> best_pattern_collection; //Alvaro: Eliminate best_pattern_collection?    
+    vector<PatternCollection> best_patterns; //Alvaro: Eliminate best_patterns?
+    //std::vector<std::vector<std::vector<bool>>> best_pattern_collection; //Alvaro: Eliminate best_pattern_collection?    
     vector<std::shared_ptr<PDBCollection> >best_pdb_collections; //Store the PDBs as well
     shared_ptr<PatternCollectionInformation> result;
 

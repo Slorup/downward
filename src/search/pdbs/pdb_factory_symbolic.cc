@@ -64,7 +64,7 @@ PDBFactorySymbolic::create_pdb(const TaskProxy & task,
 			cout << "Problem proved unsolvable by: " << *new_pdb << endl;
 			utils::exit_with(utils::ExitCode::UNSOLVABLE);
 	    }
-	    manager->addDeadEndStates(true, new_pdb->get_dead_ends());
+	    //manager->addDeadEndStates(true, new_pdb->get_dead_ends());
 
 	}
 	
@@ -105,7 +105,7 @@ symbolic::Bucket PDBFactorySymbolic::get_dead_ends() const {
     cout<<"non_dead_ends:"<<non_dead_ends.size()<<endl;
     float start_merge=utils::g_timer();
     symbolic::Bucket merged_dead_ends=non_dead_ends;
-    manager->mergeBucketAnd(merged_dead_ends,60000,1000000);
+    manager->mergeBucketAnd(merged_dead_ends,80000,10000000);
     cout<<"mergeBucketDeadEnds time:"<<utils::g_timer()-start_merge<<endl;
 
     //cout << "Obtaining dead ends from factory: " << non_dead_ends.size() << endl;

@@ -329,8 +329,9 @@ namespace pdbs {
 
 
 	    DEBUG_MSG(cout<<"making pattern_collection"<<endl;);
-	    shared_ptr<PatternCollection> pattern_collection = make_shared<PatternCollection>();
-	    pattern_collection->reserve(collection.size());
+	    //shared_ptr<PatternCollection> pattern_collection = make_shared<PatternCollection>();
+	    //pattern_collection->reserve(collection.size());
+	    PatternCollection pattern_collection;
 	    for (const vector<bool> &bitvector : collection) {
 		//cout<<"working on bitvector:"<<bitvector<<endl;
 		Pattern pattern = transform_to_pattern_normal_form(bitvector);
@@ -361,7 +362,7 @@ namespace pdbs {
 		}
 
 		DEBUG_MSG(cout << "valid pattern ,pdb_min_size:" << min_size<<",pdb_max_size:"<<pdb_max_size<<",overall size:"<<get_pattern_size(pattern)<<endl;);
-		pattern_collection->push_back(pattern);
+		pattern_collection.push_back(pattern);
 		overall_pdb_size+=get_pattern_size(pattern);
 	    }
 	    DEBUG_MSG(cout<<"finished making pattern_collection"<<endl;);
@@ -411,7 +412,7 @@ namespace pdbs {
 		double temp=utils::g_timer();
 		//cout<<"pattern_collection:"<<*pattern_collection<<endl;fflush(stdout);
 
-		ZeroOnePDBs candidate (task_proxy, *pattern_collection, *pdb_factory, time_limit);
+		ZeroOnePDBs candidate (task_proxy, pattern_collection, *pdb_factory,100);
 		cout<<"generated candidate[,"<<candidate_count+1<<",],time:,"<<utils::g_timer()<<",size:,"<<overall_pdb_size<<",generation_time:,"<<utils::g_timer()-temp<<endl;
 		if(pdb_factory->is_solved()){
 		    problem_solved_while_pdb_gen=true;
@@ -442,17 +443,18 @@ namespace pdbs {
 		  avg_pdb_gen_time+=pdb_gen_time;
 		  if(valid_pattern_counter%10==0){
 		    if(utils::g_timer()-last_time_collections_improved>50.0){
-		      //time_limit+=1;
+		      time_limit+=1;
 		      //last_sampler_too_big=false;
 		      pdb_max_size=max(last_improv_collection_size*10.0,20000.0);//20K just in case something went wrong 
 		      min_size=pdb_max_size/100;
 		      cout<<"increasing time_limit to,"<<time_limit<<",pdb_max_size:"<<pdb_max_size<<",min_size:"<<min_size<<", too long since last improvement found"<<endl; 
 		      last_time_collections_improved=utils::g_timer();
 		    }
-		    else if(avg_pdb_gen_time/10.0>time_limit){
+		    else if(avg_pdb_gen_time/10.0>time_limit&&Not_Fixed_Yet){
 		      last_sampler_too_big=true;
 		      pdb_max_size=max(10000.0,pdb_max_size/10.0);
 		      cout<<"Last 10 pdbs took on average more than generation time_limit, Fixing pdb_max_size to:"<<pdb_max_size<<endl;
+		      Not_Fixed_Yet=false;
 		    }
 		    avg_pdb_gen_time=0;
 		  }
@@ -479,7 +481,7 @@ namespace pdbs {
 		if(best_pdb_collections.size()==0||create_perimeter){
 		    cout<<"no initial heuristic yet"<<endl;fflush(stdout);
 		    fitness = 1.0;//best_heuristic not populated yet
-		    best_patterns = pattern_collection;
+		    best_patterns.push_back(pattern_collection);
 		    if(!create_perimeter){
 		      //cout<<"added initial best_pdb"<<endl;
 		      best_pdb_collections.push_back(pdb_factory->terminate_creation(candidate.get_pattern_databases()));
@@ -506,7 +508,7 @@ namespace pdbs {
 		    create_perimeter=false;
 		    cout<<"initial best_pattern==1st collection:"<<endl;
 		    //best_patterns->erase(std::remove_if (best_patterns->begin(),best_patterns->end(), delete_empty_vector()),best_patterns->end());
-		    for (auto pattern : *best_patterns) {
+		    for (auto pattern : best_patterns.back()) {
 			cout<<"best_patterns:"<<pattern<<endl;
 		    }
 		    cout<<"\tget_best_value_zero_one best_heuristic initial h:"<<get_best_value_zero_one(initial_state)<<endl;fflush(stdout);
@@ -611,7 +613,8 @@ namespace pdbs {
 			    SS_states_vector.push_back(temp);
 			    SS_iter_map++;
 			}
-			sort(SS_states_vector.begin(),SS_states_vector.end(),compare_SS_states);
+			//sort(SS_states_vector.begin(),SS_states_vector.end(),compare_SS_states);
+			g_rng()->shuffle(SS_states_vector);
 		    }
 		    DEBUG_MSG(cout<<"time:,"<<utils::g_timer()<<",finished randomzing SS states vector,size:"<<SS_states.size()<<",best_heur_dead_ends"<<best_heur_dead_ends<<endl;);
 		}
@@ -619,6 +622,7 @@ namespace pdbs {
 		fitness=0;
 		sampled_states=0;
 		raised_states=0;
+		g_rng()->shuffle(SS_states_vector);
 		double start_sampler_time=utils::g_timer();
 		vector<SS_state>::iterator SS_iter;
 
@@ -633,8 +637,8 @@ namespace pdbs {
 		    }
 		    if(sampled_states%100==0){
 			if(pruned_states==0){
-			    if(utils::g_timer()-start_sampler_time>0.1){
-				DEBUG_MSG(cout<<"\tcurrent_episode:"<<current_episode<<",exiting candidate vs best_heuristic SS_states comparison, 0.1 secs iterating without a single better h value"<<endl;);
+			    if(utils::g_timer()-start_sampler_time>0.2){
+				DEBUG_MSG(cout<<"\tcurrent_episode:"<<current_episode<<",exiting candidate vs best_heuristic SS_states comparison, 0.2 secs iterating without a single better h value"<<endl;);
 				break;
 			    }
 			}
@@ -742,11 +746,13 @@ namespace pdbs {
 		    //  cout<<"best_heuristic being set for the first time"<<endl;
 		    //}
 		    cout<<"time:,"<<utils::g_timer()<<",bin_packed:,"<<bin_packed_episode<<",adding1 best_heuristic,episode:,"<<current_episode<<",collection:,"<<collection_counter<<",new raised_ratio:,"<<float(raised_states)/float(sampled_states)<<",actual_states_ratio:,"<<float(raised_states)/float(sampled_states)<<",total_nodes:"<<total_SS_gen_nodes<<",pruned_states:"<<pruned_states<<",fitness:,"<<fitness<<",sampled_states:,"<<sampled_states<<",initial_value:,"<<current_heur_initial_value<<",skip_sampling:,"<<skip_sampling<<",best_heur_dead_ends:,"<<best_heur_dead_ends<<",best_heuristics count:"<<best_pdb_collections.size()<<endl;
+		    candidate.set_fitness(fitness);
 		    double start_adding_best_time=utils::g_timer();
 
-		    for(size_t i=0;i<pattern_collection->size();i++){
-			if(pattern_collection->at(i).size()>0){
-			    best_patterns->push_back(pattern_collection->at(i));
+		    best_patterns.resize(best_patterns.size()+1);
+		    for(size_t i=0;i<pattern_collection.size();i++){
+			if(pattern_collection.at(i).size()>0){
+			    best_patterns.back().push_back(pattern_collection.at(i));
 			}
 		    }
 		    best_pdb_collections.push_back(pdb_factory->terminate_creation(candidate.get_pattern_databases()));
@@ -833,7 +839,7 @@ namespace pdbs {
 	    double current_size = 1;
 	    size_t vars_to_combine=variable_ids.size();
 	      //if(pdb_factory->name()=="symbolic"){
-		vars_to_combine = (*g_rng())(variable_ids.size())+1;
+		//vars_to_combine = (*g_rng())(variable_ids.size())+1;
 	    //}
 	    DEBUG_MSG(cout<<"1st pattern,vars to combine="<<vars_to_combine<<" out of "<<variable_ids.size()<<endl;);
 
@@ -937,7 +943,7 @@ namespace pdbs {
 	bin_packed_episode=true;
 	task = task_;
 	best_fitness = -1;
-	best_patterns = nullptr;
+	//best_patterns = nullptr;
 	    
        	if(create_perimeter){
 	  cout<<"creating_perimeter"<<endl;
@@ -1023,7 +1029,29 @@ namespace pdbs {
 		}
 		disjoint_patterns=!disjoint_patterns;
 		num_collections=1;
-		bin_packing();
+		    
+//		  if(utils::g_timer()-last_time_collections_improved>50.0){
+//		  if(best_patterns.size()>2&&rand()%2==0){
+//		    vector<vector<bool> > pattern_coll_bool;
+//		    //size_t selected_coll=max(size_t(1),size_t(rand()%best_patterns.size()));//avoiding perimeter pdb, no point mutating that one
+//		    size_t selected_coll=best_patterns.size()-1;
+//		    vector<vector<int> > pattern_coll_int=best_patterns.at(selected_coll);
+//		    double current_pdb_size=0;
+//		    for(size_t i=0;i<best_patterns.back().size();i++){
+//		      current_pdb_size+=get_pattern_size(pattern_coll_int[i]);
+//		      vector<bool> pattern_bit;
+//		      transform_to_pattern_bitvector_form(pattern_bit,pattern_coll_int[i]);
+//		      pattern_coll_bool.push_back(pattern_bit);
+//		    }
+//		    pattern_collections.assign(1,pattern_coll_bool);
+//		    cout<<"no bin_packing, using existing selected pattern collection to mutate a bigger pdb:"<<endl;
+//		    pdb_max_size=current_pdb_size*10;
+//		    mutate2();
+//		  }
+//		}
+//		else{
+		  bin_packing();
+//		}
 		bin_packed_episode=true;
 		mutation_probability=((double) rand() / (RAND_MAX))/10.0;
 	    }

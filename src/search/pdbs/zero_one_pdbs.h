@@ -16,6 +16,7 @@ public:
     ~ZeroOnePDBs() = default;
 
     int get_value(const State &state) const;
+    float fitness=0;
     /*
       Returns the sum of all mean finite h-values of every PDB.
       This is an approximation of the real mean finite h-value of the Heuristic,
@@ -30,6 +31,8 @@ public:
     const PDBCollection & get_pattern_databases () const {
 	return pattern_databases;
     } 
+    void set_fitness(float fitness_) {fitness=fitness_;};
+    float get_fitness() const {return fitness;};
 };
 }
 

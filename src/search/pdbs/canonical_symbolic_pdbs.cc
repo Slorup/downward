@@ -116,11 +116,11 @@ CanonicalSymbolicPDBs::CanonicalSymbolicPDBs(
     for (const auto & pdb : dead_ends) cout << pdb.nodeCount() << " ";
     cout << endl;
 
-    if(dead_ends.size()>5){
-      cout<<"resizing dead_ends from "<<dead_ends.size();
-      dead_ends.resize(5);
-      cout<<"to "<<dead_ends.size()<<endl;
-    }
+    //if(dead_ends.size()>5){
+    //  cout<<"resizing dead_ends from "<<dead_ends.size();
+    //  dead_ends.resize(5);
+     // cout<<"to "<<dead_ends.size()<<endl;
+    //}
     
     cout << "Max additive subsets after ADD indexes: " << max_additive_subsets.size() << endl;
 }
