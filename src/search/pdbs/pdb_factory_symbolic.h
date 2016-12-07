@@ -45,7 +45,8 @@ class PDBFactorySymbolic : public PDBFactory, public symbolic::SymController {
 	create_pdb(const TaskProxy & task, 
 		   const Pattern &pattern, 
 		   const std::vector<int> &operator_costs = std::vector<int>(), 
-		   double time_limit = std::numeric_limits<int>::max()
+		   double time_limit = std::numeric_limits<int>::max(),
+		   double memory_limit = 2000
 	    );
 
     virtual std::string name() const override;

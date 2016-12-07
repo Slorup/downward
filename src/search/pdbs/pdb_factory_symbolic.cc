@@ -32,7 +32,8 @@ namespace pdbs {
 PDBFactorySymbolic::create_pdb(const TaskProxy & task, 
 			       const Pattern &pattern, 
 			       const std::vector<int> &operator_costs, 
-			       double time_limit) {
+			       double time_limit,
+			       double memory_limit) {
 	
 	assert(!pattern.empty());
 	assert(!solved());
@@ -51,10 +52,12 @@ PDBFactorySymbolic::create_pdb(const TaskProxy & task,
 	}
 	DEBUG_MSG(cout << "INIT PatternDatabaseSymbolic" << endl;);
 
+	memory_limit=min(generationMemoryGB,memory_limit);
+
 	auto new_pdb = make_shared<PatternDatabaseSymbolic> (task, pattern, operator_costs,
 							     this, vars, state_space_mgr, 
 							     searchParams, std::min(generationTime, time_limit),
-							     generationMemoryGB);
+							     memory_limit);
 
 	if(new_pdb->is_finished()) {
 	    DEBUG_MSG(cout << "Dead end states discovered: " << new_pdb->get_dead_ends().nodeCount() << endl;);

@@ -744,6 +744,10 @@ namespace pdbs {
 		    //  cout<<"best_heuristic being set for the first time"<<endl;
 		    //}
 		    cout<<"time:,"<<utils::g_timer()<<",bin_packed:,"<<bin_packed_episode<<",adding1 best_heuristic,episode:,"<<current_episode<<",collection:,"<<collection_counter<<",new raised_ratio:,"<<float(raised_states)/float(sampled_states)<<",actual_states_ratio:,"<<float(raised_states)/float(sampled_states)<<",total_nodes:"<<total_SS_gen_nodes<<",pruned_states:"<<pruned_states<<",fitness:,"<<fitness<<",sampled_states:,"<<sampled_states<<",initial_value:,"<<current_heur_initial_value<<",skip_sampling:,"<<skip_sampling<<",best_heur_dead_ends:,"<<best_heur_dead_ends<<",best_heuristics count:"<<best_pdb_collections.size()<<endl;
+		    if(min_improvement_ratio<0.02&&current_episode>200&&float(raised_states)/float(sampled_states)>0.2){
+		      min_improvement_ratio=0.2;
+		      cout<<"updated min_improv_ratio, was low because of perimeter but it seems perimeter was not that good to start with"<<endl;
+		    }
 		    candidate.set_fitness(fitness);
 		    double start_adding_best_time=utils::g_timer();
 
@@ -962,7 +966,7 @@ namespace pdbs {
 	  pattern_collection.push_back(pattern);
 	  cout<<"g_timer before calling ZeroOnePDB to generate initial perimeter:"<<utils::g_timer()<<endl;
 	  //ZeroOnePDBs *candidate= new ZeroOnePDBs(task_proxy, pattern_collection, *pdb_factory, 10);
-	  ZeroOnePDBs candidate(task_proxy, pattern_collection, *pdb_factory, 250);
+	  ZeroOnePDBs candidate(task_proxy, pattern_collection, *pdb_factory, 250,1.0);//max_memory 1 GB
 	  cout<<"g_timer after calling ZeroOnePDB to generate initial perimeter:"<<utils::g_timer()<<endl;
 	  best_pdb_collections.push_back(pdb_factory->terminate_creation(candidate.get_pattern_databases()));
 	  cout<<"g_timer before calling terminate_creation to push perimeter into best_pdb_collections"<<utils::g_timer()<<endl;

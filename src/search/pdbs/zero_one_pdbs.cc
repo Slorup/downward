@@ -15,7 +15,7 @@
 using namespace std;
 
 namespace pdbs {
-ZeroOnePDBs::ZeroOnePDBs(TaskProxy task_proxy, const PatternCollection &patterns, PDBFactory & pdb_factory, double time_limit) {
+ZeroOnePDBs::ZeroOnePDBs(TaskProxy task_proxy, const PatternCollection &patterns, PDBFactory & pdb_factory, double time_limit,double symbolic_memory_limit) {
   //cout<<"ZeroOne calling time:"<<utils::g_timer()<<endl;
   //float before_op_time=utils::g_timer();
     vector<int> operator_costs;
@@ -30,7 +30,7 @@ ZeroOnePDBs::ZeroOnePDBs(TaskProxy task_proxy, const PatternCollection &patterns
 	if(pattern.empty()) continue;
 	//float start_gen_time=utils::g_timer();
 	//cout<<"start_gen_time:"<<start_gen_time<<endl;
-	shared_ptr<PatternDatabaseInterface> pdb = pdb_factory.compute_pdb(task_proxy, pattern, operator_costs,time_limit);
+	shared_ptr<PatternDatabaseInterface> pdb = pdb_factory.compute_pdb(task_proxy, pattern, operator_costs,time_limit,symbolic_memory_limit);
 	//cout<<"compute_pdb_time:"<<utils::g_timer()-start_gen_time<<endl;
 
         pattern_databases.push_back(pdb);
