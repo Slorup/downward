@@ -47,8 +47,7 @@ namespace pdbs {
 	  time_limit(opts.get<double>("time_limit")),
 	  genetic_time_limit(opts.get<int>("genetic_time_limit")),
 	  create_perimeter(opts.get<bool>("create_perimeter")){
-
-	cout<<"Setting num_collections to 1 no matter the input,peak memory:"<<utils::get_peak_memory_in_kb()<<endl; // ???????
+	
 	cout<<"hybrid_pdb_size:"<<hybrid_pdb_size<<endl;
 	cout<<"create_perimeter:"<<create_perimeter<<endl;
 	num_collections=1;
@@ -966,6 +965,8 @@ namespace pdbs {
 	  pattern_collection.push_back(pattern);
 	  cout<<"g_timer before calling ZeroOnePDB to generate initial perimeter:"<<utils::g_timer()<<endl;
 	  //ZeroOnePDBs *candidate= new ZeroOnePDBs(task_proxy, pattern_collection, *pdb_factory, 10);
+	
+	  //std::shared_ptr<PDBFactory> pdb_type_symbolic;
 	  ZeroOnePDBs candidate(task_proxy, pattern_collection, *pdb_factory, 250,1.0);//max_memory 1 GB
 	  cout<<"g_timer after calling ZeroOnePDB to generate initial perimeter:"<<utils::g_timer()<<endl;
 	  best_pdb_collections.push_back(pdb_factory->terminate_creation(candidate.get_pattern_databases()));
@@ -1873,6 +1874,17 @@ namespace pdbs {
 	shared_ptr<AbstractTask> task) {
 	utils::Timer timer;
 
+	TaskProxy task_proxy(*task);
+	const State &initial_state = task_proxy.get_initial_state();
+	SuccessorGenerator successor_generator(task);
+	vector<OperatorProxy> applicable_ops; 
+	successor_generator.generate_applicable_ops(initial_state,applicable_ops); //count nodes generated
+	if(applicable_ops.size()==0){
+	  cout<<"Initial state is dead_end,probably unsolvable in preprocessor,";
+	  exit(1);
+	}
+
+	cout<<"Setting num_collections to 1 no matter the input,peak memory:"<<utils::get_peak_memory_in_kb()<<endl; // ???????
 	genetic_algorithm(task);
 	DEBUG_MSG(cout<<"genetic_algorithm is finished"<<endl;);
     
