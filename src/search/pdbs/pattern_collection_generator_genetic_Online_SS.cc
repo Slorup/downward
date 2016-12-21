@@ -411,7 +411,7 @@ namespace pdbs {
 		//cout<<"pattern_collection:"<<*pattern_collection<<endl;fflush(stdout);
 
 		ZeroOnePDBs candidate (task_proxy, pattern_collection, *pdb_factory,100);
-		cout<<"generated candidate[,"<<candidate_count+1<<",],time:,"<<utils::g_timer()<<",size:,"<<overall_pdb_size<<",generation_time:,"<<utils::g_timer()-temp<<endl;
+		//cout<<"generated candidate[,"<<candidate_count+1<<",],time:,"<<utils::g_timer()<<",size:,"<<overall_pdb_size<<",generation_time:,"<<utils::g_timer()-temp<<endl;
 		if(pdb_factory->is_solved()){
 		    problem_solved_while_pdb_gen=true;
 		    cout<<"Solution found while generating PDB candidate of type:"<<pdb_factory->name()<<", adding PDB and exiting generation at time"<<utils::g_timer()<<endl;
