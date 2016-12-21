@@ -416,7 +416,7 @@ namespace pdbs {
 		    problem_solved_while_pdb_gen=true;
 		    cout<<"Solution found while generating PDB candidate of type:"<<pdb_factory->name()<<", adding PDB and exiting generation at time"<<utils::g_timer()<<endl;
 
-		    cout<<"final episode:,"<<current_episode<<",time:,"<<utils::g_timer()<<",overall_pdb_gen_time:,"<<overall_pdb_gen_time<<",online_samples:,"<<total_online_samples<<",overall_sampling_time:,"<<overall_sampling_time<<",avg samp time:,"<<double(overall_sampling_time)/double((total_online_samples == 0) ? 1 : total_online_samples)<<",avg_sampled_states:,"<<avg_sampled_states<<",overall_probe_time:"<<overall_probe_time<<",candidate_count:,"<<candidate_count<<",unique_samples.size:,"<<unique_samples.size()<<",best_heuristics count:,"<<best_pdb_collections.size()<<endl;
+		    cout<<"final episode:,"<<current_episode<<",time:,"<<utils::g_timer()<<",overall_pdb_gen_time:,"<<overall_pdb_gen_time<<",online_samples:,"<<total_online_samples<<",overall_sampling_time:,"<<overall_sampling_time<<",avg samp time:,"<<double(overall_sampling_time)/double((total_online_samples == 0) ? 1 : total_online_samples)<<",avg_sampled_states:,"<<avg_sampled_states<<",overall_probe_time:,"<<overall_probe_time<<",candidate_count:,"<<candidate_count<<",unique_samples.size:,"<<unique_samples.size()<<",best_heuristics count:,"<<best_pdb_collections.size()<<",overall_dominance_prunning_time:,"<<overall_dominance_prunning_time<<endl;
 		    best_pdb_added=true;
 		    float start_time_dom=utils::g_timer();
 		    if(recompute_max_additive_subsets){
@@ -980,7 +980,7 @@ namespace pdbs {
 	    problem_solved_while_pdb_gen=true;
 	    cout<<"Solution found while generating PDB candidate of type:"<<pdb_factory->name()<<", adding PDB and exiting generation at time"<<utils::g_timer()<<endl;
 
-	    cout<<"final episode:,"<<current_episode<<",time:,"<<utils::g_timer()<<",overall_pdb_gen_time:,"<<overall_pdb_gen_time<<",online_samples:,"<<total_online_samples<<",overall_sampling_time:,"<<overall_sampling_time<<",avg samp time:,"<<double(overall_sampling_time)/double((total_online_samples == 0) ? 1 : total_online_samples)<<",avg_sampled_states:,"<<avg_sampled_states<<",overall_probe_time:"<<overall_probe_time<<",candidate_count:,"<<candidate_count<<",unique_samples.size:,"<<unique_samples.size()<<",best_heuristics count:,"<<best_pdb_collections.size()<<endl;
+	    cout<<"final episode:,"<<current_episode<<",time:,"<<utils::g_timer()<<",overall_pdb_gen_time:,"<<overall_pdb_gen_time<<",online_samples:,"<<total_online_samples<<",overall_sampling_time:,"<<overall_sampling_time<<",avg samp time:,"<<double(overall_sampling_time)/double((total_online_samples == 0) ? 1 : total_online_samples)<<",avg_sampled_states:,"<<avg_sampled_states<<",overall_probe_time:,"<<overall_probe_time<<",candidate_count:,"<<candidate_count<<",unique_samples.size:,"<<unique_samples.size()<<",best_heuristics count:,"<<best_pdb_collections.size()<<",overall_dominance_prunning_time:,"<<overall_dominance_prunning_time<<endl;
 	    best_pdb_added=true;
 	    float start_time_dom=utils::g_timer();
 	    if(recompute_max_additive_subsets){
@@ -1014,7 +1014,7 @@ namespace pdbs {
 		//cout<<"breaking-3 out of GA Algortihm, current gen time:"<<timer()<<" bigger than time_limit:"<<time_limit<<endl;
 		avg_sampled_states=double(overall_sampled_states)/double(total_online_samples);
 		//cout<<"final episode:,"<<current_episode<<",time:,"<<utils::g_timer()<<",overall_pdb_gen_time:,"<<overall_pdb_gen_time<<",overall_pdb_helper_time:,"<<overall_pdb_helper_gen_time<<",online_samples:,"<<total_online_samples<<",overall_sampling_time:,"<<overall_online_samp_time<<",avg samp time:,"<<double(overall_online_samp_time)/double((total_online_samples == 0) ? 1 : total_online_samples)<<",avg_sampled_states:,"<<avg_sampled_states<<",overall_probe_time:"<<overall_probe_time<<endl;
-		cout<<"final episode:,"<<current_episode<<",time:,"<<utils::g_timer()<<",overall_pdb_gen_time:,"<<overall_pdb_gen_time<<",online_samples:,"<<total_online_samples<<",overall_sampling_time:,"<<overall_sampling_time<<",avg samp time:,"<<double(overall_sampling_time)/double((total_online_samples == 0) ? 1 : total_online_samples)<<",avg_sampled_states:,"<<avg_sampled_states<<",overall_probe_time:"<<overall_probe_time<<",candidate_count:,"<<candidate_count<<",unique_samples.size:,"<<unique_samples.size()<<",best_heuristics count:,"<<best_pdb_collections.size()<<",overall_dominance_prunning_time:"<<overall_dominance_prunning_time<<endl;
+		cout<<"final episode:,"<<current_episode<<",time:,"<<utils::g_timer()<<",overall_pdb_gen_time:,"<<overall_pdb_gen_time<<",online_samples:,"<<total_online_samples<<",overall_sampling_time:,"<<overall_sampling_time<<",avg samp time:,"<<double(overall_sampling_time)/double((total_online_samples == 0) ? 1 : total_online_samples)<<",avg_sampled_states:,"<<avg_sampled_states<<",overall_probe_time:,"<<overall_probe_time<<",candidate_count:,"<<candidate_count<<",unique_samples.size:,"<<unique_samples.size()<<",best_heuristics count:,"<<best_pdb_collections.size()<<",overall_dominance_prunning_time:,"<<overall_dominance_prunning_time<<endl;
 		cout<<"Peak memory:"<<utils::get_peak_memory_in_kb()<<endl;fflush(stdout);
 		std::shared_ptr<PDBCollection> best_pdb_collections_print=result->get_pdbs();
 		int counter=0;
