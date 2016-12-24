@@ -273,12 +273,11 @@ size_t PatternDatabaseOnline::hash_index(const State &state) const {
 }
 
 int PatternDatabaseOnline::get_value(const State &state) const {
-  vector<PatternDatabase*> temp_vector;
-    int val=const_cast<PatternDatabaseOnline*>(this)->OnlineDistanceCalculator2(state,temp_vector,0);
+    int val=const_cast<PatternDatabaseOnline*>(this)->OnlineDistanceCalculator2(state,0);
     //if(val>0){
     //  cout<<"Pattern:"<<pattern<<",initial_state:,"<<hash_index(state)<<",h:"<<val<<endl;
    //}
-    if ( val== DEAD_END){
+    if ( val== DEAD_END || val == INT_MAX/2){
         return numeric_limits<int>::max();
     }
     else{
@@ -289,7 +288,8 @@ int PatternDatabaseOnline::get_value(const State &state) const {
 int PatternDatabaseOnline::get_value(const vector<int> &state) const {
     return distances[hash_index(state)];
 }
-int PatternDatabaseOnline::OnlineDistanceCalculator2(const State current_state,vector<PatternDatabase*> &candidate_pdbs_offline,int h_value_to_beat=0){
+int PatternDatabaseOnline::OnlineDistanceCalculator2(const State current_state,int h_value_to_beat=0){
+  //cout<<"calling OnlineDistaceCalculator2 with pattern:"<<pattern<<",size:"<<get_pattern_size(pattern)<<",precalculated:"<<precalculated<<flush<<endl;
   //cout<<"Calling OnlineDistCalculator2,stored_abstract_distances:"<<stored_abstract_distance.size()<<endl;
     //for (size_t i = 0; i < pattern.size(); ++i) {
     //  cout<<"input var:"<<pattern[i]<<",value:"<<current_state[pattern[i]]<<endl;
@@ -299,6 +299,12 @@ int PatternDatabaseOnline::OnlineDistanceCalculator2(const State current_state,v
     //int expansion_counter=0;
     //static int call_counter=0;
     //call_counter++;
+		
+    if(precalculated){
+      size_t state_index=hash_index(current_state);
+      //cout<<"\tprecalculated_h:"<<candidate_pdbs_offline.back().compute_heuristic_id(state_index);
+      return candidate_pdbs_offline.back().compute_heuristic_id(state_index);
+    }
     if(pattern.size()==0){
       //cout<<"pattern size is 0!!!"<<endl;
       return 0;
@@ -343,8 +349,13 @@ int PatternDatabaseOnline::OnlineDistanceCalculator2(const State current_state,v
 	//cout<<"subset_has["<<i<<"],state_index:"<<state_index<<endl;fflush(stdout);
 	//cout<<",hash:"<<get_subset_hash(state_index,i);fflush(stdout);
 	//initial_h=max(candidate_pdbs_offline[i]->compute_heuristi<<endl;_id(get_subset_hash(state_index,i)),initial_h);
-	initial_h=max(candidate_pdbs_offline[i]->compute_heuristic_id(get_subset_hash_unoptimized(i)),initial_h);
+	initial_h=max(candidate_pdbs_offline[i].compute_heuristic_id(get_subset_hash_unoptimized(i)),initial_h);
 	//cout<<"\t\tpattern:"<<candidate_pdbs_offline[i]->get_pattern()<<",pdb_helper["<<i<<"]:"<<candidate_pdbs_offline[i]->compute_heuristic_id(get_subset_hash(state_index,i))<<endl;fflush(stdout);
+      }
+      if(initial_h==INT_MAX/2){
+	//cout<<"initial state is dead_end"<<endl;
+	stored_abstract_distance[state_index]=INT_MAX/2;
+	return INT_MAX/2;
       }
     }
     if(initial_h==0){//heuristic has to be admissible!
@@ -357,7 +368,7 @@ int PatternDatabaseOnline::OnlineDistanceCalculator2(const State current_state,v
     //cout<<"initial_h:"<<initial_h<<endl;
     if(initial_h==INT_MAX/2){
       //cout<<"initial_state:,"<<state_index<<", is DEAD_END according to helper_pdb"<<endl;
-      return DEAD_END;
+      return INT_MAX/2;
     }
     pq.push(initial_h,make_pair(state_index,0) );
     map<size_t,pair<int,int> > backtracking_ops;//storing hash_effect and op_cost
@@ -386,23 +397,40 @@ int PatternDatabaseOnline::OnlineDistanceCalculator2(const State current_state,v
     int current_boundary=0;
     int counter=0;
     double start_timer=utils::g_timer();
+    //double saved_start_timer=start_timer;
     if(helper_max_size==0){
-      if(num_states<100000){
-	helper_max_size=get_pattern_size(pattern)/1;
+      if(num_states<20000){//Too small to deserve online calculation
+	precalculated=true;
+	PatternDatabase pdb_database_helper1=PatternDatabase(task_proxy, pattern,false,operator_costs);
+	//cout<<"finished building helper1"<<endl;fflush(stdout);
+	candidate_pdbs_offline.push_back(pdb_database_helper1);
+	return candidate_pdbs_offline.back().compute_heuristic_id(state_index);
       }
-      else{
+      else if(num_states<100000){//If slow at this size, simply pre=calculcate PDB
+	helper_max_size=get_pattern_size(pattern)/100;
+      }
+      else{//This PDB is big, pdb_helpers 3 orders of magnitude smaller
 	helper_max_size=get_pattern_size(pattern)/1000;
       }
     }
-    //cout<<"initial helper_max_size:"<<helper_max_size<<endl;fflush(stdout);
+    //cout<<"\tinitial helper_max_size:"<<helper_max_size<<",pattern_size:"<<get_pattern_size(pattern)<<flush<<endl;
     while (!pq.empty()) {
       counter++;
       //cout<<"counter:,"<<counter<<endl;fflush(stdout);
       if(counter%1000==0){
 	//cout<<"counter:,"<<counter<<", memory:,"<<utils::get_peak_memory_in_kb()<<endl;fflush(stdout);
 	
-	if(utils::g_timer()-start_timer>0.01){
+	if(utils::g_timer()-start_timer>0.001){
+	  if(utils::g_timer()-start_timer>0.1){
+	    cout<<"taking too long,"<<utils::g_timer()-start_timer<<",returning current_boundary:"<<current_boundary<<endl;
+	    stored_abstract_distance[initial_state_index]=current_boundary;//otherwise, it will take too long again next time we go through this state
+	    //it is inconsistent, but still admissible way of estimating the actual h value
+	    //and it allows us to compare PDBs much quicker this way
+	    return current_boundary;
+	  }
+
 	  //cout<<"\thelper_max_size:"<<helper_max_size<<endl;fflush(stdout);
+	  //cout<<"helper_max_size:"<<helper_max_size<<",pattern:"<<pattern<<endl;
 	    if(subset_patterns.size()<10&&helper_max_size<=get_pattern_size(pattern)&&helper_max_size<500000){
 	      double start_extra_helper_gen_time=utils::g_timer();
 	      //we are going to add a new pdb_helper to hopefully speed up things
@@ -416,12 +444,18 @@ int PatternDatabaseOnline::OnlineDistanceCalculator2(const State current_state,v
 		remove_irrelevant_variables_util(candidate_subset_pattern);
 	      }
 	      if(candidate_subset_pattern.size()>1){
-		cout<<"generating extra pdb_helper["<<subset_patterns.size()<<"],subset_par:"<<candidate_subset_pattern<<",mem size:"<<get_pattern_size(candidate_subset_pattern)<<endl;fflush(stdout);
-		PatternDatabase *pdb_database_helper1=new PatternDatabase(task_proxy, candidate_subset_pattern,false,operator_costs);
+		//cout<<"generating extra pdb_helper["<<subset_patterns.size()<<"],subset_par:"<<candidate_subset_pattern<<",pattern:"<<pattern<<",mem size:"<<get_pattern_size(candidate_subset_pattern)<<endl;fflush(stdout);
+		PatternDatabase pdb_database_helper1=PatternDatabase(task_proxy, candidate_subset_pattern,false,operator_costs);
 		//cout<<"finished building helper1"<<endl;fflush(stdout);
 		candidate_pdbs_offline.push_back(pdb_database_helper1);
+		if(candidate_subset_pattern==pattern){
+		  //cout<<"pdb of pattern:"<<pattern<<" is precalculated, return from now on regular PDB value"<<endl;
+		  precalculated=true;//from now on, we just return the regular PDB, no online operations for small PDBs
+		  return candidate_pdbs_offline.back().compute_heuristic_id(state_index);
+		}
 		set_transformer_subset(candidate_subset_pattern);
 		overall_extra_helper_gen_time+=utils::g_timer()-start_extra_helper_gen_time;
+		overall_pdb_gen_time+=utils::g_timer()-start_extra_helper_gen_time;//This is really part of the PDB generation costs as well, just delayed
 		//cout<<"extra,helper["<<subset_patterns.size()<<",helper_max_size:"<<helper_max_size<<",pattern_size:"<<get_pattern_size(pattern)<<",overall_extra_helper_gen_time:"<<overall_extra_helper_gen_time<<endl;
 		//if(utils::g_timer()-start_extra_helper_gen_time>0.2){
 		//  create_pdb_time_limit(operator_costs_copy,0.2);
@@ -461,7 +495,7 @@ int PatternDatabaseOnline::OnlineDistanceCalculator2(const State current_state,v
 		//opts2.set<vector<int> >("pattern", candidate_subset_pattern);
 		//PDBHeuristic *pdb_heuristic_helper1=new PDBHeuristic(opts2);
 		
-		PatternDatabase *pdb_database_helper1=new PatternDatabase(task_proxy, candidate_subset_pattern,false,operator_costs);
+		PatternDatabase pdb_database_helper1=PatternDatabase(task_proxy, candidate_subset_pattern,false,operator_costs);
 		candidate_pdbs_offline.push_back(pdb_database_helper1);
 		set_transformer_subset(candidate_subset_pattern);
 		overall_extra_helper_gen_time+=utils::g_timer()-start_extra_helper_gen_time;
@@ -506,6 +540,7 @@ int PatternDatabaseOnline::OnlineDistanceCalculator2(const State current_state,v
 	  }
 	  //cout<<"returning best_stored_goal_distance.current_f="<<current_f<<endl;
 	  //cout<<"initial_state:"<<initial_state_index<<",h:"<<best_stored_goal_distance<<endl;
+	  //cout<<"\t\tcurrent_f:"<<current_f<<",best_stored_goal_distance:"<<best_stored_goal_distance<<",time:"<<saved_start_timer-utils::g_timer()<<",finished"<<endl;
 	  return best_stored_goal_distance;
 	}
 
@@ -524,7 +559,7 @@ int PatternDatabaseOnline::OnlineDistanceCalculator2(const State current_state,v
 	      //NO POINT KEEPING DONIG SEARCH IF GUARANTEED BIGGEST POSSIBLE GOAL DIST IS LESS THAN 
 	      //BEST HEURISTIC VALUE ALREADY
 	      if(h_value_to_beat>best_stored_goal_distance){
-		//cout<<"\t\th_value_to_beat:"<<h_value_to_beat<<",best_stored_goal_distance:"<<best_stored_goal_distance<<",utils::g_timer:"<<utils::g_timer()<<",finished"<<endl;
+		//cout<<"\t\th_value_to_beat:"<<h_value_to_beat<<",best_stored_goal_distance:"<<best_stored_goal_distance<<",time:"<<saved_start_timer-utils::g_timer()<<",finished"<<endl;
 		//cout<<"initial_state:"<<initial_state_index<<",h:"<<best_stored_goal_distance<<endl;
 		return best_stored_goal_distance;
 	      }
@@ -583,7 +618,7 @@ int PatternDatabaseOnline::OnlineDistanceCalculator2(const State current_state,v
 		     best_stored_goal_distance=alternative_cost;
 		     goal_state_index=successor;
 		     if(h_value_to_beat>best_stored_goal_distance){
-		       //cout<<"\t\th_value_to_beat:"<<h_value_to_beat<<",best_stored_goal_distance:"<<best_stored_goal_distance<<",utils::g_timer:"<<utils::g_timer()<<",finished"<<endl;
+		       //cout<<"\t\th_value_to_beat:"<<h_value_to_beat<<",best_stored_goal_distance:"<<best_stored_goal_distance<<",time:"<<saved_start_timer-utils::g_timer()<<",finished"<<endl;
 		       return best_stored_goal_distance;
 		     }
 		   }
@@ -593,7 +628,7 @@ int PatternDatabaseOnline::OnlineDistanceCalculator2(const State current_state,v
 		if(candidate_pdbs_offline.size()>0){
 		  get_var_values(successor);
 		  for(size_t j=0;j<candidate_pdbs_offline.size();j++){
-		    h=max(candidate_pdbs_offline[j]->compute_heuristic_id(get_subset_hash_unoptimized(j)),h);
+		    h=max(candidate_pdbs_offline[j].compute_heuristic_id(get_subset_hash_unoptimized(j)),h);
 		    //cout<<",pdb_helper["<<j<<"]:"<<candidate_pdbs_offline[j]->compute_heuristic_id(get_subset_hash(successor,j))<<endl;//fflush(stdout);
 		  }
 		  //cout<<"h:"<<h<<endl;fflush(stdout);
@@ -627,7 +662,7 @@ int PatternDatabaseOnline::OnlineDistanceCalculator2(const State current_state,v
 	      if(candidate_pdbs_offline.size()>0){
 		get_var_values(successor);
 		for(size_t j=0;j<candidate_pdbs_offline.size();j++){
-		  h=max(candidate_pdbs_offline[j]->compute_heuristic_id(get_subset_hash_unoptimized(j)),h);
+		  h=max(candidate_pdbs_offline[j].compute_heuristic_id(get_subset_hash_unoptimized(j)),h);
 		  //cout<<"\th["<<j<<"]:"<<candidate_pdbs_offline[j]->compute_heuristic_id(get_subset_hash(successor,j))<<endl;//fflush(stdout);
 		}
 		if(h==INT_MAX/2){
@@ -653,7 +688,7 @@ int PatternDatabaseOnline::OnlineDistanceCalculator2(const State current_state,v
 		 best_stored_goal_distance=alternative_cost;
 		 goal_state_index=successor;
 		 if(h_value_to_beat>best_stored_goal_distance){
-		   //cout<<"\t\th_value_to_beat:"<<h_value_to_beat<<",best_stored_goal_distance:"<<best_stored_goal_distance<<",utils::g_timer:"<<utils::g_timer()<<",finished"<<endl;
+		   //cout<<"\t\th_value_to_beat:"<<h_value_to_beat<<",best_stored_goal_distance:"<<best_stored_goal_distance<<",time:"<<saved_start_timer-utils::g_timer()<<",finished"<<endl;
 		   return best_stored_goal_distance;
 		 }
 	       }
@@ -680,7 +715,7 @@ int PatternDatabaseOnline::OnlineDistanceCalculator2(const State current_state,v
     stored_abstract_distance[initial_state_index]=INT_MAX/2;
     //unconfirmed_stored_abstract_distance[initial_state_index]=DEAD_END;
     //cout<<"no more pq,initial_state is dead_end"<<initial_state_index<<",h:"<<DEAD_END<<endl;
-    return DEAD_END;
+    return INT_MAX/2;
 }
 
 double PatternDatabaseOnline::compute_mean_finite_h() const {

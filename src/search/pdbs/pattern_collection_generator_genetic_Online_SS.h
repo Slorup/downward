@@ -60,7 +60,6 @@ class PatternCollectionGeneratorGeneticSS : public PatternCollectionGenerator {
     int sampling_threshold=0;
     double prev_current_collector=0;
     double max_collector=0;
-    double overall_pdb_gen_time=0;
     double overall_sample_generation_timer=0;
     double overall_sampling_time=0;
     double overall_probe_time=0;
@@ -99,6 +98,7 @@ class PatternCollectionGeneratorGeneticSS : public PatternCollectionGenerator {
     int valid_pattern_counter=0;
     int last_valid_pattern_counter=0;
     bool Not_Fixed_Yet=true;
+    double last_overall_pdb_gen_time=0;
 
     // Store best pattern collection over all episodes and its fitness value.
     vector<PatternCollection> best_patterns; //Alvaro: Eliminate best_patterns?

@@ -392,3 +392,4 @@ std::map<size_t,pair<State,int> > unique_samples;
 
 utils::Log g_log;
 float memory_limit=2000;//MB
+double overall_pdb_gen_time=0;

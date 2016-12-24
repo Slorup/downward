@@ -40,8 +40,7 @@ int PDBHeuristicOnline::compute_heuristic(const GlobalState &global_state) {
 }
 
 int PDBHeuristicOnline::compute_heuristic(const State &state) {
-    vector<PatternDatabase*> candidate_pdbs;//empty for now, until online sampling and selection of patterns is added
-    int h = pdb_online.OnlineDistanceCalculator2(state,candidate_pdbs,0);
+    int h = pdb_online.OnlineDistanceCalculator2(state,0);
     if (h == numeric_limits<int>::max())
         return DEAD_END;
     return h;

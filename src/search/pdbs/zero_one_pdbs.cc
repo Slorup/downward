@@ -30,6 +30,7 @@ ZeroOnePDBs::ZeroOnePDBs(TaskProxy task_proxy, const PatternCollection &patterns
 	if(pattern.empty()) continue;
 	//float start_gen_time=utils::g_timer();
 	//cout<<"start_gen_time:"<<start_gen_time<<endl;
+	cout<<"\tcreating pdb with pattern:"<<pattern<<endl;
 	shared_ptr<PatternDatabaseInterface> pdb = pdb_factory.compute_pdb(task_proxy, pattern, operator_costs,time_limit,symbolic_memory_limit);
 	//cout<<"compute_pdb_time:"<<utils::g_timer()-start_gen_time<<endl;
 
