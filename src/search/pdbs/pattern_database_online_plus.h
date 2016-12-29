@@ -41,63 +41,97 @@ public:
 class SearchInfo {
 
     struct LocalStateIDSemanticHash {
-        const std::vector<State> &state_data_pool;
+        const std::vector<int> &state_data_pool;
+	int numvars;
         LocalStateIDSemanticHash(
-            const std::vector<State> &state_data_pool)
-            : state_data_pool(state_data_pool)
+            const std::vector<int> &state_data_pool, int num_vars_)
+	: state_data_pool(state_data_pool), numvars(num_vars_)
 	    {
-        }
+	    }
 
         size_t operator()(LocalStateID id) const {
-            return state_data_pool[id].hash();
+	    std::size_t seed = numvars;
+	    for(int i = 0; i < numvars; ++i){
+		seed ^= state_data_pool[id + i] + 0x9e3779b9 + (seed << 6) + (seed >> 2);
+	    }
+	    return seed;
         }
     };
 
     struct LocalStateIDSemanticEqual {
-        const std::vector<State> &state_data_pool;
-    LocalStateIDSemanticEqual(const std::vector<State> &state_data_pool) :
-	state_data_pool(state_data_pool) {
-        }
+        const std::vector<int> &state_data_pool;
+	int numvars;
+    LocalStateIDSemanticEqual(const std::vector<int> &state_data_pool, int num_vars) :
+	state_data_pool(state_data_pool), numvars(num_vars) {
+    }
 
         bool operator()(LocalStateID lhs, LocalStateID rhs) const {
-            return state_data_pool[lhs] == state_data_pool[rhs];
+	    for(int i = 0; i < numvars; ++i){
+		if(state_data_pool[lhs + i] != state_data_pool[rhs + i]) {
+		    return false;
+		}
+	    }
+	    return true;
         }
     };
 
+
+
+    int num_pdb_vars; 
+    std::vector<int> data_pool;    
     std::vector<SearchStateInfo> state_info;
-    std::vector<State> data_pool;
     std::unordered_set<LocalStateID,  LocalStateIDSemanticHash, LocalStateIDSemanticEqual> idSet;
 
 public:
-    SearchInfo() : idSet (0,
-			  LocalStateIDSemanticHash(data_pool), 
-			  LocalStateIDSemanticEqual(data_pool)) { 
+SearchInfo(int num_pdb_vars_, int num_allocated_states) :
+    num_pdb_vars(num_pdb_vars_), 
+	data_pool(num_pdb_vars*num_allocated_states), 
+	state_info(num_allocated_states), 
+
+	idSet (0,
+	       LocalStateIDSemanticHash(data_pool, num_pdb_vars), 
+	       LocalStateIDSemanticEqual(data_pool, num_pdb_vars)) { 
+	;
     }
 
     LocalStateID get_id(const State & state){ 
-	LocalStateID id(data_pool.size());
-	data_pool.push_back(state);
-	auto result = idSet.insert(id);
-	bool is_new_entry = result.second;
-	if (!is_new_entry) {
-	    data_pool.pop_back();
+	LocalStateID id = idSet.size()*num_pdb_vars;
+	const auto & values = state.get_values(); 
+	if((int)data_pool.size() < id + num_pdb_vars) {
+	    data_pool.resize(id + num_pdb_vars);
+	} 
+	for(int i = 0; i < num_pdb_vars; ++i) {
+	    data_pool[id+i] = values[i];
 	}
-	assert(idSet.size() == data_pool.size());
+
+	auto result = idSet.insert(id);
+	if (!result.second) {
+	    id = *(result.first);
+	} 
 	return id;	
     }
 
     SearchStateInfo & get_state_info(LocalStateID id)  {
-	if((int)(state_info.size()) <= id) {
-	    state_info.resize(id + 1);
+	int num_state = id/num_pdb_vars; 
+	if((int)(state_info.size()) <= num_state) {
+	    state_info.resize(num_state + 1);
 	}
-	assert(id < (int)(state_info.size()));
-
-	return state_info[id];
+	return state_info[num_state];
     }
 
-    State & get_state(LocalStateID id) {
-	assert(id < (int)(data_pool.size()));
-	return data_pool[id];
+    void get_state_values(LocalStateID id, std::vector<int> & values) {
+	for(int i = 0; i < num_pdb_vars; ++i) {
+	    values[i] = data_pool[id+i];
+	}
+    } 
+    
+    void clear() {
+	idSet.clear();
+	state_info.clear();	
+    }
+
+    bool is_clear() const {
+	return idSet.empty() && state_info.empty();	
     }
 
 };
@@ -105,9 +139,15 @@ public:
 class PatternDatabaseOnlinePlus : public PatternDatabaseInterface {
     
     std::shared_ptr<AbstractTask> pdb_task;
+    std::unique_ptr<TaskProxy> pdb_task_proxy;
     std::vector <Heuristic *> heuristics;
     TaskProxy task_proxy;
     SuccessorGenerator successor_generator;
+
+    // Data-structure used for the online searches. We reuse the same
+    // data-structure all the time so that we don't perform additional
+    // memory allocations.
+    mutable SearchInfo search_info;
 
     std::unique_ptr<PatternDatabaseSymbolic> symbolic_pdb;
 

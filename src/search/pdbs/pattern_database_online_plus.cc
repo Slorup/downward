@@ -9,9 +9,6 @@ using namespace std;
 
 namespace pdbs {
 
-
-
-
     PatternDatabaseOnlinePlus::PatternDatabaseOnlinePlus(const TaskProxy &task, 
 							 const Pattern &pattern,
 							 const std::vector<int> &operator_costs,
@@ -24,40 +21,53 @@ namespace pdbs {
 							 double generationTime, double generationMemoryGB)
 	: PatternDatabaseInterface(task, pattern, operator_costs), pdb_task(pdb_task_),
 	  heuristics(heuristics_), task_proxy(task), 
-	successor_generator(pdb_task),
+	successor_generator(pdb_task), search_info(pattern.size(), 1000), 
 	symbolic_pdb(make_unique<PatternDatabaseSymbolic>(task, pattern, operator_costs, 
 							  engine, vars, manager, params, 
 							  generationTime,
 							  generationMemoryGB)){
+
+
+	pdb_task_proxy = make_unique<TaskProxy>(*pdb_task);
 	
     }
 
-    int PatternDatabaseOnlinePlus::get_value(const State & initial_state) const {
+    int PatternDatabaseOnlinePlus::get_value(const State & original_state) const {
 
-	int goal_cost = get_goal_cost(initial_state);
-	if(goal_cost >= 0) {
-	    return goal_cost;
-	}
+	State initial_state = pdb_task_proxy->convert_ancestor_state(original_state); 
 
-	int initial_h = compute_heuristic(initial_state); 
-	if (initial_h == std::numeric_limits<int>::max()) {
-	    return initial_h;
-	}
+	// original_state.dump_pddl();
+	// state.dump_pddl();
+	
+	// int goal_cost = get_goal_cost(state); // Check symbolic PDB 
+	// if(goal_cost >= 0) {
+	//     return goal_cost;
+	// }
+
+	int initial_h = 0;
+	// int initial_h = compute_heuristic(state); 
+	// if (initial_h == std::numeric_limits<int>::max()) {
+	//     return initial_h;
+	// }
 	
         // (first implicit entry: priority,) second entry: index for an abstract state
-	AdaptiveQueue<LocalStateID> open_list; 
+	assert(search_info.is_clear());
 
-	SearchInfo search_info; 
+	AdaptiveQueue<LocalStateID> open_list;
 
 	LocalStateID initial_id = search_info.get_id(initial_state);
+
 	SearchStateInfo & initial_node = search_info.get_state_info(initial_id);
+
 	initial_node.h = initial_h;
 	initial_node.g = 0;
 	DEBUG_MSG(cout << "Initial: " << initial_id << " with h=" << initial_h << endl;);
-	cout << "Initial: " << initial_id << " with h=" << initial_h << endl;
 	open_list.push(initial_h, initial_id);
 	int upper_bound = std::numeric_limits<int>::max();
-	while (!open_list.empty()) {	    
+	
+	State state (initial_state);
+
+	while (!open_list.empty()) {	  
 	    pair<int, size_t> node = open_list.pop();
 	    if (node.first > upper_bound) {
 		return upper_bound;
@@ -68,9 +78,11 @@ namespace pdbs {
 		continue;
 	    }
 	    node_info.closed = true;
-
+	    
 	    int parent_g = node_info.g;
-	    const State & state = search_info.get_state(node.second);
+	    search_info.get_state_values(node.second, state.get_mutable_values());
+
+	    assert(state.get_abstract_task());
 	    int goal_cost = get_goal_cost(state);
 	    if (goal_cost >= 0) { //Goal cost could be determined
 		if (goal_cost < upper_bound - parent_g) {
@@ -79,10 +91,16 @@ namespace pdbs {
 		continue;
 	    }
 
+	    assert(state.get_abstract_task());
+
+
 	    vector<OperatorProxy> applicable_ops;
 	    successor_generator.generate_applicable_ops(state, applicable_ops);
 
 	    for (const auto & op : applicable_ops) {
+		assert(state.get_abstract_task());
+
+		
 		int succ_g = parent_g + op.get_cost(); // get_adjusted_cost(op)
 		if (succ_g >= upper_bound) {
 		    continue;
@@ -90,18 +108,25 @@ namespace pdbs {
 
 		State succ_state = state.get_successor(op);
 		int goal_cost = get_goal_cost(succ_state);
+
 		if (goal_cost >= 0) { //Goal cost could be determined
 		    if (goal_cost < upper_bound - succ_g) {
 			upper_bound = min(upper_bound, succ_g + goal_cost);
 		    }
+
 		    continue;
 		}
 
+		assert(state.get_abstract_task());
+
 		LocalStateID succ_id = search_info.get_id(succ_state); 
 	        SearchStateInfo & succ_node = search_info.get_state_info(succ_id);
+
 		if(succ_node.h ==  std::numeric_limits<int>::max()) {
 		    continue;
 		}
+
+		assert(state.get_abstract_task());
 
 		if (succ_node.g == -1) { //new node
 		    succ_node.g = succ_g;
@@ -117,14 +142,15 @@ namespace pdbs {
 		}
 	    }
 	}
+	search_info.clear();
 
-
-	cout << "Upper bound" << upper_bound << endl;
+	cout << "Upper bound: " << upper_bound << endl;
 	return upper_bound;
     }
 
 
     int PatternDatabaseOnlinePlus::compute_heuristic(const State & /*state*/) const {
+	//return 0;
 	return symbolic_pdb->get_hvalue_unseen_states();
     }
 
@@ -133,6 +159,8 @@ namespace pdbs {
     }
 
     double PatternDatabaseOnlinePlus::compute_mean_finite_h() const {
+	cerr << "PatternDatabaseOnlinePlus::compute_mean_finite_h should not be used" << endl;
+	utils::exit_with(utils::ExitCode::CRITICAL_ERROR); 
 	return symbolic_pdb->compute_mean_finite_h();
     }
 
