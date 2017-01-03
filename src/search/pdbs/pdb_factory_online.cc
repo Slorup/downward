@@ -45,6 +45,10 @@ static shared_ptr<PDBFactory>_parse(options::OptionParser &parser) {
     else
         return make_shared<PDBFactoryOnline>(options);
 }
+    
+std::shared_ptr<PDBCollection> terminate_creation (const PDBCollection & pdb_collection) {
+	return std::make_shared<PDBCollection>(pdb_collection);
+}
 
 static options::PluginShared<PDBFactory> _plugin("online", _parse);
 
