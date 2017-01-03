@@ -6,6 +6,7 @@
 #include "pattern_database_symbolic.h"
 
 #include "../task_proxy.h"
+#include "../tasks/pdb_task.h"
 
 #include <utility>
 #include <vector>
@@ -16,7 +17,7 @@
 
 namespace options {
 class Options;
-}
+}    
 
 namespace pdbs {
 
@@ -75,8 +76,6 @@ class SearchInfo {
         }
     };
 
-
-
     int num_pdb_vars; 
     std::vector<int> data_pool;    
     std::vector<SearchStateInfo> state_info;
@@ -86,12 +85,12 @@ public:
 SearchInfo(int num_pdb_vars_, int num_allocated_states) :
     num_pdb_vars(num_pdb_vars_), 
 	data_pool(num_pdb_vars*num_allocated_states), 
-	state_info(num_allocated_states), 
-
+	state_info(), 
 	idSet (0,
 	       LocalStateIDSemanticHash(data_pool, num_pdb_vars), 
 	       LocalStateIDSemanticEqual(data_pool, num_pdb_vars)) { 
-	;
+	state_info.reserve(num_allocated_states);
+	
     }
 
     LocalStateID get_id(const State & state){ 
@@ -138,7 +137,7 @@ SearchInfo(int num_pdb_vars_, int num_allocated_states) :
 
 class PatternDatabaseOnlinePlus : public PatternDatabaseInterface {
     
-    std::shared_ptr<AbstractTask> pdb_task;
+    std::shared_ptr<extra_tasks::PDBTask> pdb_task;
     std::unique_ptr<TaskProxy> pdb_task_proxy;
     std::vector <Heuristic *> heuristics;
     TaskProxy task_proxy;
@@ -150,6 +149,7 @@ class PatternDatabaseOnlinePlus : public PatternDatabaseInterface {
     mutable SearchInfo search_info;
 
     std::unique_ptr<PatternDatabaseSymbolic> symbolic_pdb;
+    std::unique_ptr<PatternDatabaseSymbolic> DEBUG_pdb;
 
     int compute_heuristic(const State & state) const;
     int get_goal_cost(const State & state) const;
@@ -158,7 +158,7 @@ public:
     PatternDatabaseOnlinePlus(const TaskProxy &task_proxy, 
 			      const Pattern &pattern,
 			      const std::vector<int> &operator_costs,
-			      std::shared_ptr<AbstractTask> pdb_task,
+			      std::shared_ptr<extra_tasks::PDBTask> pdb_task,
 			      std::vector<Heuristic *> heuristics_, 
 			      symbolic::SymController * engine, 
 			      std::shared_ptr<symbolic::SymVariables> vars, 

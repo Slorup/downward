@@ -6,13 +6,14 @@ using namespace std;
 #include "../priority_queue.h"
 
 #include "../utils/debug_macros.h"
+#include "../tasks/pdb_task.h"
 
 namespace pdbs {
 
     PatternDatabaseOnlinePlus::PatternDatabaseOnlinePlus(const TaskProxy &task, 
 							 const Pattern &pattern,
 							 const std::vector<int> &operator_costs,
-							 std::shared_ptr<AbstractTask> pdb_task_,
+							 std::shared_ptr<extra_tasks::PDBTask> pdb_task_,
 							 std::vector<Heuristic *> heuristics_, 
 							 symbolic::SymController * engine, 
 							 std::shared_ptr<symbolic::SymVariables> vars, 
@@ -25,30 +26,29 @@ namespace pdbs {
 	symbolic_pdb(make_unique<PatternDatabaseSymbolic>(task, pattern, operator_costs, 
 							  engine, vars, manager, params, 
 							  generationTime,
-							  generationMemoryGB)){
+							  generationMemoryGB))  {
 
+	//TODO: Problem, right now symbolic_pdb and online_pdb operate
+	//on different tasks!
 
 	pdb_task_proxy = make_unique<TaskProxy>(*pdb_task);
-	
     }
 
     int PatternDatabaseOnlinePlus::get_value(const State & original_state) const {
-
+	
 	State initial_state = pdb_task_proxy->convert_ancestor_state(original_state); 
 
 	// original_state.dump_pddl();
 	// state.dump_pddl();
 	
-	// int goal_cost = get_goal_cost(state); // Check symbolic PDB 
-	// if(goal_cost >= 0) {
-	//     return goal_cost;
-	// }
-
-	int initial_h = 0;
-	// int initial_h = compute_heuristic(state); 
-	// if (initial_h == std::numeric_limits<int>::max()) {
-	//     return initial_h;
-	// }
+	int goal_cost = get_goal_cost(initial_state); // Check symbolic PDB 
+	if(goal_cost >= 0) {
+	    return goal_cost;
+	}
+	int initial_h = compute_heuristic(initial_state); 
+	if (initial_h == std::numeric_limits<int>::max()) {
+	    return initial_h;
+	}
 	
         // (first implicit entry: priority,) second entry: index for an abstract state
 	assert(search_info.is_clear());
@@ -70,7 +70,7 @@ namespace pdbs {
 	while (!open_list.empty()) {	  
 	    pair<int, size_t> node = open_list.pop();
 	    if (node.first > upper_bound) {
-		return upper_bound;
+		break;
 	    }
 	    SearchStateInfo & node_info = search_info.get_state_info(node.second);
 
@@ -144,7 +144,7 @@ namespace pdbs {
 	}
 	search_info.clear();
 
-	cout << "Upper bound: " << upper_bound << endl;
+       
 	return upper_bound;
     }
 
@@ -155,7 +155,7 @@ namespace pdbs {
     }
 
     int PatternDatabaseOnlinePlus::get_goal_cost(const State & state) const {
-	return symbolic_pdb->get_goal_cost(state);
+	return symbolic_pdb->get_goal_cost(pattern, state);
     }
 
     double PatternDatabaseOnlinePlus::compute_mean_finite_h() const {

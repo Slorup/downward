@@ -59,6 +59,7 @@ class SymVariables {
     //Vector to store the binary description of an state
     //Avoid allocating memory during heuristic evaluation
     std::vector <int> binState;
+    mutable std::vector<int> state_values_in_pattern;
     //bool state_cached;
 
     void init(const std::vector <int> &v_order);
@@ -219,6 +220,20 @@ public:
 
         return &(binState[0]);
     }
+
+    
+
+template <class T> 
+    int *getBinaryDescription(const std::vector<int> & pattern, const T &state) {
+
+    assert(pattern.size() == state.size());
+    
+    for(size_t i = 0; i < pattern.size(); ++i) {
+	state_values_in_pattern [pattern[i]] = state[i];
+    } 
+
+    return getBinaryDescription(state_values_in_pattern);
+}
 
     /* template <class T>  */
     /* void cache_state(const T &state) { */

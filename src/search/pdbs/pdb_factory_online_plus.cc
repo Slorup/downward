@@ -31,11 +31,11 @@ namespace pdbs {
     }
 
     std::shared_ptr<PatternDatabaseInterface> 
-PDBFactoryOnlinePlus::create_pdb(const TaskProxy & task, 
-			       const Pattern &pattern, 
-			       const std::vector<int> &operator_costs, 
-			       double time_limit,
-			       double /*memory_lmit*/) {
+    PDBFactoryOnlinePlus::create_pdb(const TaskProxy & task, 
+				     const Pattern &pattern, 
+				     const std::vector<int> &operator_costs, 
+				     double time_limit,
+				     double /*memory_lmit*/) {
 	
 	assert(!pattern.empty());
 	assert(!solved());
@@ -72,8 +72,8 @@ PDBFactoryOnlinePlus::create_pdb(const TaskProxy & task,
 
 
 	    if(!(new_pdb->get_dead_ends()*manager->getInitialState()).IsZero()) {
-			cout << "Problem proved unsolvable by: " << *new_pdb << endl;
-			utils::exit_with(utils::ExitCode::UNSOLVABLE);
+		cout << "Problem proved unsolvable by: " << *new_pdb << endl;
+		utils::exit_with(utils::ExitCode::UNSOLVABLE);
 	    }
 	    manager->addDeadEndStates(true, new_pdb->get_dead_ends());
 
