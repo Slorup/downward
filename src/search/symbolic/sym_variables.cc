@@ -132,6 +132,7 @@ void SymVariables::init(const vector <int> &v_order) {
     }
 
     binState.resize(_numBDDVars, 0);
+    state_values_in_pattern.resize(num_fd_vars, 0);
     cout << "Symbolic Variables... Done." << endl;
 
     /*  for(int i = 0; i < g_variable_domain.size(); i++){

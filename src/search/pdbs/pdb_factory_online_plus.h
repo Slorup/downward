@@ -54,7 +54,7 @@ class PDBFactoryOnlinePlus : public PDBFactory, public symbolic::SymController {
     virtual bool is_solved () const override {
 	return solved();
     }
-
+    
     virtual symbolic::Bucket get_dead_ends() const override;
 
 

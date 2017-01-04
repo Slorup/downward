@@ -503,15 +503,17 @@ class State {
     std::vector<int> values;
 public:
     using ItemType = FactProxy;
-    State(const AbstractTask &task, std::vector<int> &&values)
-        : task(&task), values(std::move(values)) {
-        assert(static_cast<int>(size()) == this->task->get_num_variables());
+    State(const AbstractTask &task_, std::vector<int> &&values)
+        : task(&task_), values(std::move(values)) {
+        assert(static_cast<int>(size()) == task->get_num_variables());
+	assert(task); 
     }
     ~State() = default;
     State(const State &) = default;
 
     State(State &&other)
         : task(other.task), values(std::move(other.values)) {
+	std::cout << "moving" << std::endl; 
         other.task = nullptr;
     }
 
@@ -554,17 +556,29 @@ public:
 
     inline TaskProxy get_task() const;
 
+    inline const AbstractTask * get_abstract_task() const {
+	return task;
+    }
+
+
     const std::vector<int> &get_values() const {
         return values;
     }
 
+    std::vector<int> &get_mutable_values() {
+        return values;
+    }
+
     State get_successor(OperatorProxy op) const {
+	assert(task); 
+	
         if (task->get_num_axioms() > 0) {
             ABORT("State::apply currently does not support axioms.");
         }
         assert(!op.is_axiom());
-        //assert(is_applicable(op, state));
+        //assert(is_applicable(op, *this));
         std::vector<int> new_values = values;
+
         for (EffectProxy effect : op.get_effects()) {
             if (does_fire(effect, *this)) {
                 FactProxy effect_fact = effect.get_fact();
@@ -628,6 +642,7 @@ public:
       case, the function aborts.
     */
     State convert_ancestor_state(const State &ancestor_state) const {
+	assert(task);
         TaskProxy ancestor_task_proxy = ancestor_state.get_task();
         // Create a copy of the state values for the new state.
         std::vector<int> state_values = ancestor_state.get_values();
@@ -655,6 +670,8 @@ inline VariableProxy FactProxy::get_variable() const {
 }
 
 inline TaskProxy State::get_task() const {
+    assert(task);
+
     return TaskProxy(*task);
 }
 
