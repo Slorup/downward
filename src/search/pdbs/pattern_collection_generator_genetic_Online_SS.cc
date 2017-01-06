@@ -431,9 +431,9 @@ namespace pdbs {
 		      cout<<"recompute finished"<<flush<<endl;
 		      overall_dominance_prunning_time+=utils::g_timer()-start_time_dom;
 		      unique_samples.clear();
-		      best_pdb_collections.resize(1);
-		      best_pdb_collections[0]=result->get_pdbs();
 		    }
+		    best_pdb_collections.clear();
+		    best_pdb_collections.push_back(pdb_factory->terminate_creation(candidate.get_pattern_databases()));
 		    return;
 		}
 		candidate_count++;
@@ -1017,7 +1017,7 @@ namespace pdbs {
 	  best_pdb_added=true;
 	  if(pdb_factory->is_solved()){
 	    problem_solved_while_pdb_gen=true;
-	    cout<<"Solution found while generating PDB candidate of type:"<<pdb_factory->name()<<", adding PDB and exiting generation at time"<<utils::g_timer()<<endl;
+	    cout<<"Solution found while generating Perimeter PDB candidate of type:"<<pdb_factory->name()<<", adding PDB and exiting generation at time"<<utils::g_timer()<<endl;
 
 	    cout<<"final episode:,"<<current_episode<<",time:,"<<utils::g_timer()<<",overall_pdb_gen_time:,"<<overall_pdb_gen_time<<",online_samples:,"<<total_online_samples<<",overall_sampling_time:,"<<overall_sampling_time<<",avg samp time:,"<<double(overall_sampling_time)/double((total_online_samples == 0) ? 1 : total_online_samples)<<",avg_sampled_states:,"<<avg_sampled_states<<",overall_probe_time:,"<<overall_probe_time<<",candidate_count:,"<<candidate_count<<",unique_samples.size:,"<<unique_samples.size()<<",best_heuristics count:,"<<best_pdb_collections.size()<<",overall_dominance_prunning_time:,"<<overall_dominance_prunning_time<<endl;
 	    best_pdb_added=true;
