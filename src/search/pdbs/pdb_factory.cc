@@ -28,6 +28,7 @@ static options::PluginTypePlugin<PDBFactory> _type_plugin(
 			    const std::vector<int> &operator_costs, 
 			    double time_limit,
 			    double memory_limit) {
+      cout<<"compute_pdb:memory_limit:"<<memory_limit<<",time_limit:"<<time_limit<<endl;
 	assert(!pattern.empty ());
 	num_patterns_requested ++;
 	auto item = stored_pdbs.find(PDBKey(pattern, operator_costs));
