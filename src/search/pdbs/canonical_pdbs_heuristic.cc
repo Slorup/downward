@@ -35,6 +35,14 @@ CanonicalPDBsHeuristic::CanonicalPDBsHeuristic(const Options &opts)
       canonical_pdbs(get_canonical_pdbs_from_options(task, opts)) {
 }
 
+
+CanonicalPDBsHeuristic::CanonicalPDBsHeuristic(const PDBCollection & pattern_databases, 
+					       bool max_additive_subsets, bool dominance_pruning)
+    : Heuristic(Heuristic::default_options()),
+      canonical_pdbs(pattern_databases, max_additive_subsets, dominance_pruning) {
+}
+
+
 int CanonicalPDBsHeuristic::compute_heuristic(const GlobalState &global_state) {  
     State state = convert_global_state(global_state);
     return compute_heuristic(state);

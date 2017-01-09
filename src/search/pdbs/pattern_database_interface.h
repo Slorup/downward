@@ -66,6 +66,10 @@ public:
 	return nullptr;
     }
 
+    virtual std::shared_ptr<PatternDatabaseInterface> get_offline_pdb() const {
+	return nullptr;
+    }
+
     virtual const ADD & get_ADD() const {
 	std::cerr << "Error: get_ADD not implemented for this type of " << std::endl;
 	utils::exit_with(utils::ExitCode::CRITICAL_ERROR);	

@@ -2,6 +2,8 @@
 
 #include "dominance_pruning.h"
 #include "pattern_database.h"
+#include "max_additive_pdb_sets.h"
+
 
 #include "../symbolic/sym_variables.h"
 #include "../utils/debug_macros.h"
@@ -14,6 +16,27 @@
 using namespace std;
 
 namespace pdbs {
+
+CanonicalPDBs::CanonicalPDBs(
+    const PDBCollection & pattern_databases, bool compute_canonical, bool dominance_pruning) : cache_id(0) {
+
+    if(compute_canonical) {
+	max_additive_subsets = compute_max_additive_subsets(pattern_databases);
+    } else {
+	for(const auto & pdb : pattern_databases) {
+	    PDBCollection p;
+	    p.push_back(pdb);
+	    max_additive_subsets->push_back(p);
+	}
+    }
+
+    if (dominance_pruning) {
+	max_additive_subsets = prune_dominated_subsets(pattern_databases,
+						       *max_additive_subsets);
+    }
+
+}
+
 CanonicalPDBs::CanonicalPDBs(
     shared_ptr<PDBCollection> pattern_databases,
     shared_ptr<MaxAdditivePDBSubsets> max_additive_subsets_,

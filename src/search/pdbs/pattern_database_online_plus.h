@@ -11,7 +11,7 @@
 #include <utility>
 #include <vector>
 #include <map>
-#include "match_tree_online.h"
+
 #include "pdb_heuristic.h"
 #include "../successor_generator.h"
 
@@ -20,6 +20,8 @@ class Options;
 }    
 
 namespace pdbs {
+
+    class PDBFactoryOnlinePlus;
 
 typedef int LocalStateID;
 
@@ -137,9 +139,10 @@ SearchInfo(int num_pdb_vars_, int num_allocated_states) :
 
 class PatternDatabaseOnlinePlus : public PatternDatabaseInterface {
     
+    PDBFactoryOnlinePlus * factory;
     std::shared_ptr<extra_tasks::PDBTask> pdb_task;
     std::unique_ptr<TaskProxy> pdb_task_proxy;
-    std::vector <Heuristic *> heuristics;
+    mutable std::vector <std::shared_ptr<Heuristic>> heuristics;
     TaskProxy task_proxy;
     SuccessorGenerator successor_generator;
 
@@ -148,19 +151,17 @@ class PatternDatabaseOnlinePlus : public PatternDatabaseInterface {
     // memory allocations.
     mutable SearchInfo search_info;
 
-    std::unique_ptr<PatternDatabaseSymbolic> symbolic_pdb;
-    std::unique_ptr<PatternDatabaseSymbolic> DEBUG_pdb;
-
+    std::shared_ptr<PatternDatabaseSymbolic> symbolic_pdb;
+ 
     int compute_heuristic(const State & state) const;
     int get_goal_cost(const State & state) const;
 
 public:
-    PatternDatabaseOnlinePlus(const TaskProxy &task_proxy, 
+    PatternDatabaseOnlinePlus(PDBFactoryOnlinePlus * factory_, 
+			      const TaskProxy &task_proxy, 
 			      const Pattern &pattern,
 			      const std::vector<int> &operator_costs,
-			      std::shared_ptr<extra_tasks::PDBTask> pdb_task,
-			      std::vector<Heuristic *> heuristics_, 
-			      symbolic::SymController * engine, 
+			      std::shared_ptr<extra_tasks::PDBTask> pdb_task,			    
 			      std::shared_ptr<symbolic::SymVariables> vars, 
 			      std::shared_ptr<symbolic::SymStateSpaceManager> manager, 
 			      const symbolic::SymParamsSearch & params, 
@@ -178,6 +179,10 @@ public:
     virtual const BDD & get_dead_ends() const override{
 	assert(symbolic_pdb);
 	return symbolic_pdb->get_dead_ends();
+    }
+
+    virtual std::shared_ptr<PatternDatabaseInterface> get_offline_pdb() const override {
+	return symbolic_pdb;
     }
 
 

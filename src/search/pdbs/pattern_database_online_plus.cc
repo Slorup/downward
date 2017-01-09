@@ -3,6 +3,8 @@
 
 using namespace std;
 
+#include "pdb_factory_online_plus.h"
+
 #include "../priority_queue.h"
 
 #include "../utils/debug_macros.h"
@@ -10,27 +12,22 @@ using namespace std;
 
 namespace pdbs {
 
-    PatternDatabaseOnlinePlus::PatternDatabaseOnlinePlus(const TaskProxy &task, 
+    PatternDatabaseOnlinePlus::PatternDatabaseOnlinePlus(PDBFactoryOnlinePlus * factory_, 
+							 const TaskProxy &task, 
 							 const Pattern &pattern,
 							 const std::vector<int> &operator_costs,
 							 std::shared_ptr<extra_tasks::PDBTask> pdb_task_,
-							 std::vector<Heuristic *> heuristics_, 
-							 symbolic::SymController * engine, 
 							 std::shared_ptr<symbolic::SymVariables> vars, 
 							 std::shared_ptr<symbolic::SymStateSpaceManager> manager, 
 							 const symbolic::SymParamsSearch & params, 
 							 double generationTime, double generationMemoryGB)
-	: PatternDatabaseInterface(task, pattern, operator_costs), pdb_task(pdb_task_),
-	  heuristics(heuristics_), task_proxy(task), 
+	: PatternDatabaseInterface(task, pattern, operator_costs),
+	factory(factory_),  pdb_task(pdb_task_), task_proxy(task), 
 	successor_generator(pdb_task), search_info(pattern.size(), 1000), 
 	symbolic_pdb(make_unique<PatternDatabaseSymbolic>(task, pattern, operator_costs, 
-							  engine, vars, manager, params, 
+							  factory, vars, manager, params, 
 							  generationTime,
 							  generationMemoryGB))  {
-
-	//TODO: Problem, right now symbolic_pdb and online_pdb operate
-	//on different tasks!
-
 	pdb_task_proxy = make_unique<TaskProxy>(*pdb_task);
     }
 
@@ -50,6 +47,10 @@ namespace pdbs {
 	    return initial_h;
 	}
 	
+	if(heuristics.empty()) {
+	    factory->get_heuristics_for(*this, heuristics);
+	}
+
         // (first implicit entry: priority,) second entry: index for an abstract state
 	assert(search_info.is_clear());
 
@@ -67,6 +68,8 @@ namespace pdbs {
 	
 	State state (initial_state);
 
+	int expanded_states = 0;
+
 	while (!open_list.empty()) {	  
 	    pair<int, size_t> node = open_list.pop();
 	    if (node.first > upper_bound) {
@@ -77,6 +80,7 @@ namespace pdbs {
 	    if(node_info.closed){
 		continue;
 	    }
+	    expanded_states++;
 	    node_info.closed = true;
 	    
 	    int parent_g = node_info.g;
@@ -144,7 +148,7 @@ namespace pdbs {
 	}
 	search_info.clear();
 
-       
+	DEBUG_MSG(cout << "Upper bound: " << upper_bound << " expanded: " << expanded_states << endl;);
 	return upper_bound;
     }
 

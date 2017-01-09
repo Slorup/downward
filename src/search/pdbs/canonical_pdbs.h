@@ -20,6 +20,7 @@ class CanonicalPDBs {
     std::shared_ptr <symbolic::SymVariables> symbolic_vars;
 
 public:
+    CanonicalPDBs(const PDBCollection & pattern_databases, bool compute_canonical, bool dominance_pruning);
     CanonicalPDBs(std::shared_ptr<PDBCollection> pattern_databases,
                   std::shared_ptr<MaxAdditivePDBSubsets> max_additive_subsets,
                   bool dominance_pruning);

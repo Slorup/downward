@@ -6,6 +6,7 @@
 #include <vector>
 #include <map>
 #include <limits>
+#include <algorithm>
 
 #include "../utils/system.h"
 #include "../symbolic/sym_bucket.h"
@@ -56,15 +57,29 @@ public:
 	}
 	return true;
     }
+    
+    bool is_pdb_for (const std::vector<int> & other_pattern, const std::vector<int> & other_operator_costs) const {
+	if (!std::includes(other_pattern.begin(), other_pattern.end(), pattern.begin(), pattern.end())) {
+	    return false;
+	} 
+
+	for(size_t i = 0; i < operator_costs.size(); i++) {
+	    if (operator_costs[i] > other_operator_costs[i]) return false;	    
+	}
+	
+	return true;
+    } 
 };
 class PDBFactory {
     //std::map <PDBKey, std::weak_ptr<PatternDatabaseInterface>> stored_pdbs;
-    std::map <PDBKey, std::shared_ptr<PatternDatabaseInterface>> stored_pdbs;
+    
 
     int num_patterns_created;
     int num_patterns_requested; 
     int num_patterns_regenerated;
 protected:
+    std::map <PDBKey, std::shared_ptr<PatternDatabaseInterface>> stored_pdbs;
+
     virtual void dump_strategy_specific_options() const = 0;
 
     // Type is shared because, in certain configurations, the factories

@@ -11,7 +11,7 @@
 #include <utility>
 #include "../state_registry.h"
 #include "../task_proxy.h"
-
+#include "../utils/debug_macros.h"
 using namespace std;
 
 namespace pdbs {
@@ -162,8 +162,8 @@ void PatternCollectionInformation::recompute_max_additive_subsets() {
   //static int last_call=1;
   //last_call++;
     if(!pdbs){
-    cout<<"pdbs is empty, no recompute!!!"<<endl;
-    return;
+	DEBUG_MSG(cout<<"pdbs is empty, no recompute!!!"<<endl;);
+		  return;
     }  
     max_additive_subsets = compute_max_additive_subsets(*pdbs);
     /*cout<<"after compute:"<<endl;
@@ -178,6 +178,10 @@ void PatternCollectionInformation::recompute_max_additive_subsets() {
     //cout<<"max_additive subsets before Dominance prune"<<max_additive_subsets->size()<<endl;
     max_additive_subsets = prune_dominated_subsets(*pdbs, *max_additive_subsets);
     //if(last_call%10==0){
+    /* SANTIAGO_CHECK: Why not directly: 
+       max_additive_subsets = prune_dominated_subsets_sample_space(*pdbs, *max_additive_subsets);
+       This should avoid an innecessary copy */
+
       std::shared_ptr<MaxAdditivePDBSubsets> max_additive_subsets2;
       max_additive_subsets2 = prune_dominated_subsets_sample_space(*pdbs, *max_additive_subsets);
       max_additive_subsets=max_additive_subsets2;

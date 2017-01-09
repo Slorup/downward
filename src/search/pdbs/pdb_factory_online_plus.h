@@ -9,6 +9,8 @@
 
 #include <vector>
 
+class Heuristic;
+
 namespace options {
 class OptionParser;
 class Options;
@@ -18,18 +20,22 @@ namespace symbolic {
     class SymSolution;
 }
 
-
 namespace utils {
 class RandomNumberGenerator;
 }
 
 namespace pdbs {
 
+    class PatternDatabaseOnlinePlus;
 
 class PDBFactoryOnlinePlus : public PDBFactory, public symbolic::SymController {
 	const double generationTime;
 	const double generationMemoryGB; 
-        const bool dump;
+        const bool use_pdbs_in_online_search;
+        const bool online_use_canonical_pdbs;
+        const bool online_prune_dominated_pdbs; 
+	const bool dump;
+	
 
         std::shared_ptr<symbolic::OriginalStateSpace> manager;
 
@@ -49,6 +55,9 @@ class PDBFactoryOnlinePlus : public PDBFactory, public symbolic::SymController {
 		   double memory_limit=2000
 	    );
 
+    void get_heuristics_for (const PatternDatabaseOnlinePlus & pdb, 
+			     std::vector<std::shared_ptr<Heuristic>> & heuristics);
+
     virtual std::string name() const override;
 
     virtual bool is_solved () const override {
@@ -56,8 +65,6 @@ class PDBFactoryOnlinePlus : public PDBFactory, public symbolic::SymController {
     }
     
     virtual symbolic::Bucket get_dead_ends() const override;
-
-
 };
 }
 
