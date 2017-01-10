@@ -22,11 +22,16 @@ namespace pdbs {
 
     PDBFactoryOnlinePlus::PDBFactoryOnlinePlus(const options::Options & opts) : 
 	SymController(opts), 
-	generationTime(opts.get<int>("max_time")), 
-	generationMemoryGB(opts.get<double>("max_memory_gb")),
+	precomputationTime(opts.get<int>("precomputation_time")), 
+	precomputationNodes(opts.get<int>("precomputation_nodes")), 
+	terminationTime(opts.get<int>("termination_time")), 
+	terminationNodes(opts.get<int>("termination_nodes")), 
+	onlineTime(opts.get<int>("online_time")), 
+	onlineExpansions(opts.get<int>("online_expansions")), 
 	use_pdbs_in_online_search (opts.get<bool>("use_pdbs_in_online_search")), 
 	online_use_canonical_pdbs (opts.get<bool>("online_use_canonical_pdbs")), 
 	online_prune_dominated_pdbs(opts.get<bool>("online_prune_dominated_pdbs")), 
+	use_online_during_search(opts.get<bool>("use_online_during_search")), 
 	dump (opts.get<bool>("dump")) {
 	manager = make_shared<OriginalStateSpace>(vars.get(), mgrParams,
 						  OperatorCostFunction::get_cost_function());
@@ -69,7 +74,6 @@ namespace pdbs {
 	if(new_pdb->is_finished()) {
 	    DEBUG_MSG(cout << "Dead end states discovered: " << new_pdb->get_dead_ends().nodeCount() << endl;);
 
-
 	    if(!(new_pdb->get_dead_ends()*manager->getInitialState()).IsZero()) {
 		cout << "Problem proved unsolvable by: " << *new_pdb << endl;
 		utils::exit_with(utils::ExitCode::UNSOLVABLE);
@@ -80,6 +84,16 @@ namespace pdbs {
 	
 	return new_pdb;
     }
+
+    std::shared_ptr<PDBCollection> PDBFactoryOnlinePlus::terminate_creation (PDBCollection & pdb_collection) {
+	auto result = std::make_shared<PDBCollection> ();
+	for(auto & pdb : pdb_collection ) {
+	    pdb->terminate_creation(terminationTime, terminationMemoryGB);
+	    result.push_back(pdb);
+	}
+	return result;
+    }
+
 
     void PDBFactoryOnlinePlus::dump_strategy_specific_options() const {
 	cout << " dump: " << (dump ? "true" : "false") << endl;
@@ -99,6 +113,9 @@ namespace pdbs {
 	parser.add_option<bool> ("use_pdbs_in_online_search", "Whether smaller PDBs are used by the heuristic.", "false");
 	parser.add_option<bool> ("online_use_canonical_pdbs", "Use canonical PDBs or just max PDBs.", "false");
 	parser.add_option<bool> ("online_prune_dominated_pdbs", "Prune dominated PDBs in those selected for symbolic online.", "false");
+	parser.add_option<int> ("termination_time", "Maximum construction time for the termination phase of each PDB.", "1800");
+	parser.add_option<double> ("termination_memory_gb", "Maximum memory in GB for the termination phase.", "4.0");
+
 
 	options::Options options = parser.parse();
 	parser.document_synopsis(

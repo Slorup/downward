@@ -29,12 +29,16 @@ namespace pdbs {
     class PatternDatabaseOnlinePlus;
 
 class PDBFactoryOnlinePlus : public PDBFactory, public symbolic::SymController {
-	const double generationTime;
-	const double generationMemoryGB; 
-        const bool use_pdbs_in_online_search;
-        const bool online_use_canonical_pdbs;
-        const bool online_prune_dominated_pdbs; 
-	const bool dump;
+    const int precomputationTime, precomputationNodes;
+    const int terminationTime, terminationNodes;
+    const int onlineTime, onlineExpansions;
+
+     const bool use_pdbs_in_online_search;
+    const bool online_use_canonical_pdbs;
+    const bool online_prune_dominated_pdbs; 
+
+    const bool use_online_during_search;
+    const bool dump;
 	
 
         std::shared_ptr<symbolic::OriginalStateSpace> manager;
@@ -65,6 +69,8 @@ class PDBFactoryOnlinePlus : public PDBFactory, public symbolic::SymController {
     }
     
     virtual symbolic::Bucket get_dead_ends() const override;
+
+    virtual std::shared_ptr<PDBCollection> terminate_creation (PDBCollection & pdb_collection); 
 };
 }
 

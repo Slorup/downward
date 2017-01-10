@@ -115,7 +115,7 @@ PDBFactory() : num_patterns_created(0), num_patterns_requested(0), num_patterns_
 	return symbolic::Bucket();
     } 
 
-    std::shared_ptr<PDBCollection> terminate_creation (const PDBCollection & pdb_collection) {
+    virtual std::shared_ptr<PDBCollection> terminate_creation (const PDBCollection & pdb_collection) {
 	//By default we just make a copy
 	return std::make_shared<PDBCollection>(pdb_collection);
     }

@@ -121,6 +121,8 @@ public:
     virtual double compute_mean_finite_h() const = 0;
 
     friend std::ostream & operator<<(std::ostream& os, const PatternDatabaseInterface & v);
+
+    virtual void terminate_creation (int /*max_time*/, int /*max_memory*/) {} 
 };
 }
 
