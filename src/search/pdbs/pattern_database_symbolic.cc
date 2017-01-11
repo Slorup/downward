@@ -31,9 +31,9 @@ namespace pdbs {
 	vars (vars_), manager (manager_), heuristic(vars->getADD(0)), dead_ends(vars->zeroBDD()), 
 	finished(false), hvalue_unseen_states(0), average(0) {
 	  DEBUG_MSG(cout<<"start_time_pdb_constructor:"<<utils::g_timer()<<",";);
-	  generationMemoryGB=(memory_limit/1024.0)-(utils::get_peak_memory_in_kb()/(1024.0*1024.0));
+	  generationMemoryGB=(memory_limit)-(utils::get_current_memory_in_kb()/(1024.0));
 	  if(generationMemoryGB<=0){
-	    cout<<"No more pdb gen, reached Memory limit!!!"<<endl;
+	    cout<<"No more pdb gen, reached Memory limit,current memory in GB:"<<utils::get_current_memory_in_kb()/1024.0<<endl;
 	    return;
 	  }
 	  DEBUG_MSG(cout<<"generationMemoryGB for symbolic:"<<generationMemoryGB<<endl;);

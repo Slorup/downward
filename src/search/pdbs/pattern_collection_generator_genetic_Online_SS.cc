@@ -117,7 +117,9 @@ namespace pdbs {
 	}
     }
     int PatternCollectionGeneratorGeneticSS::mutate2() {
+	DEBUG_MSG(cout<<"time:,"<<utils::g_timer()<<",calling mutate2"<<endl;);
 	int mutations=0;
+	vector<int> trans_pattern;
 	for (size_t i = 0; i < pattern_collections.size(); ++i) {
 	    for (size_t j = 0; j < pattern_collections[i].size(); ++j) {
 		vector<bool> &pattern = pattern_collections[i][j];
@@ -128,17 +130,65 @@ namespace pdbs {
 			pattern[k].flip();
 		   
 			//Check if new pattern has any irrelevant irrelevant variables
-			vector<int> trans_pattern;
+			//DEBUG_MSG(cout<<"\ttime:,"<<utils::g_timer()<<",calling transform_to_pattern"<<endl;);
 			trans_pattern=transform_to_pattern_normal_form(pattern);
+			//DEBUG_MSG(cout<<"\ttime:,"<<utils::g_timer()<<",calling remove_irrelevant"<<endl;);
 			remove_irrelevant_variables(trans_pattern);
+			//DEBUG_MSG(cout<<"\ttime:,"<<utils::g_timer()<<",called trans_patter"<<endl;);
 			transform_to_pattern_bitvector_form(pattern,trans_pattern);
-			if(pattern!=orig_pattern){
-			    mutations++;
-			}
+			//DEBUG_MSG(cout<<"\ttime:,"<<utils::g_timer()<<",called trans_pattern"<<endl;);
 		    }
+		}
+		//In some domains with lots of variables with large problems, e.g. airport, we end up generating too many large patterns
+		//so testing to remove vars at random till pattern is not oversize
+		//cout<<"time:,"<<utils::g_timer<<",pattern too large:"<<trans_pattern<<endl;
+		if(is_pattern_too_large(trans_pattern)){
+		  vector<int> pattern_vars;
+		  for (size_t i = 0; i < trans_pattern.size(); ++i) {
+		      pattern_vars.push_back(trans_pattern[i]);
+		  }
+		  g_rng()->shuffle(pattern_vars);
+		  //cout<<"shuffled pattern_vars:"<<pattern_vars<<endl;
+		  //cout<<"starting pattern:"<<trans_pattern<<endl;
+		  //cout<<"pattern:"<<endl;
+		  //for(size_t var=0;var<pattern.size();var++){
+		  //  if(pattern[var]){
+		  //    cout<<"\tvar:"<<var<<",value:"<<pattern[var]<<endl;
+		  //  }
+		  //}
+		  while(is_pattern_too_large(trans_pattern)){
+		      for (size_t k = 0; k < pattern_vars.size(); k++) {
+		        if(pattern[pattern_vars[k]]){//so var is on, lets turn it off
+			  pattern[pattern_vars[k]]=false;
+			  trans_pattern=transform_to_pattern_normal_form(pattern);
+			  remove_irrelevant_variables(trans_pattern);
+			  transform_to_pattern_bitvector_form(pattern,trans_pattern);
+			  DEBUG_MSG(cout<<"dropped var:,"<<pattern_vars[k]<<",new pattern inc removal of irrelevant vars:"<<trans_pattern<<endl;);
+			  break;
+			}
+		      }
+		      //need to refresh list of variables
+		      pattern_vars.clear();
+		      for (size_t i = 0; i < trans_pattern.size(); ++i) {
+			  pattern_vars.push_back(trans_pattern[i]);
+		      }
+		      g_rng()->shuffle(pattern_vars);
+
+		      /*  cout<<"updated pattern:"<<endl;
+		      for(size_t var=0;var<pattern.size();var++){
+			if(pattern[var]){
+			  cout<<"\tvar:"<<var<<",value:"<<pattern[var]<<endl;
+			}
+		      }*/
+		  }
+		}
+		DEBUG_MSG(cout<<"time:,"<<utils::g_timer<<",pattern is now:"<<trans_pattern<<endl;);
+		if(pattern!=orig_pattern){
+		    mutations++;
 		}
 	    }
 	}
+	DEBUG_MSG(cout<<"time:,"<<utils::g_timer()<<",called mutate2,mutations:,"<<mutations<<endl;);
 	return mutations;
     }
 
@@ -327,7 +377,7 @@ namespace pdbs {
 	    int best_heur_dead_ends=0;
 
 
-	    DEBUG_MSG(cout<<"making pattern_collection"<<endl;);
+	    DEBUG_MSG(cout<<"time:,"<<utils::g_timer()<<",making pattern_collection,pdb_max_size:"<<pdb_max_size<<endl;);
 	    //shared_ptr<PatternCollection> pattern_collection = make_shared<PatternCollection>();
 	    //pattern_collection->reserve(collection.size());
 	    PatternCollection pattern_collection;
@@ -335,7 +385,7 @@ namespace pdbs {
 		//cout<<"working on bitvector:"<<bitvector<<endl;
 		Pattern pattern = transform_to_pattern_normal_form(bitvector);
 		remove_irrelevant_variables(pattern);
-		DEBUG_MSG(cout<<"transformed Pattern:"<<pattern<<endl;);
+		DEBUG_MSG(cout<<"time:,"<<utils::g_timer()<<",transformed Pattern:"<<pattern<<endl;);
 
 
 		//if(pdb_factory->name()!="symbolic"){
@@ -349,17 +399,17 @@ namespace pdbs {
 
 		if (disjoint_patterns) {
 		    if (mark_used_variables(pattern, variables_used)) {
-			//cout << "patterns are not disjoint anymore!" << endl;
+		      DEBUG_MSG(cout << "patterns are not disjoint anymore!" << endl;);
 			pattern_valid = false;
 			break;
 		    }
 		}
 
-		DEBUG_MSG(cout << "valid pattern ,pdb_min_size:" << min_size<<",pdb_max_size:"<<pdb_max_size<<",overall size:"<<get_pattern_size(pattern)<<endl;);
+		DEBUG_MSG(cout << "time:,"<<utils::g_timer()<<",valid pattern ,pdb_min_size:" << min_size<<",pdb_max_size:"<<pdb_max_size<<",overall size:"<<get_pattern_size(pattern)<<endl;);
 		pattern_collection.push_back(pattern);
 		overall_pdb_size+=get_pattern_size(pattern);
 	    }
-	    if(overall_pdb_size<min_size){
+	    if(overall_pdb_size<min_size||overall_pdb_size==0){
 	      DEBUG_MSG(cout<<"collection too small"<<endl;);
 	      pattern_valid=false;
 	    }
@@ -394,9 +444,9 @@ namespace pdbs {
 		  cout<<"time:"<<utils::g_timer()<<",valid_pattern_counter:"<<valid_pattern_counter<<endl;
 		}
 		DEBUG_MSG(cout<<"pattern valid!,SS evaluating:"<<endl;);
-		if(genetic_SS_timer->is_expired()||(double(utils::get_peak_memory_in_kb())/1024>memory_limit)){
-		    if(double(utils::get_peak_memory_in_kb())/1024>memory_limit){
-			cout<<"no more PDB generation, Peak memory above 2 GB max:"<<utils::get_peak_memory_in_kb()<<endl;
+		if(genetic_SS_timer->is_expired()||(double(utils::get_peak_memory_in_kb())/1024.0>memory_limit)){
+		    if(double(utils::get_current_memory_in_kb())/1024.0>memory_limit){
+			cout<<"No more PDB generation, Current memory above 2 GB max:"<<utils::get_current_memory_in_kb()/1024.0<<endl;
 		    }
 		    cout<<"breaking-1 out of GA Algortihm, current gen_time:"<<genetic_SS_timer<<" bigger than time_limit:"<<genetic_time_limit<<endl;
 		    break;
@@ -416,7 +466,7 @@ namespace pdbs {
 		  max_gen_time=utils::g_timer()-temp;
 	  	  max_gen_size=overall_pdb_size;
 		}
-		cout<<"generated candidate[,"<<candidate_count+1<<",],time:,"<<utils::g_timer()<<",size:,"<<overall_pdb_size<<",generation_time:,"<<utils::g_timer()-temp<<endl;
+		cout<<"generated candidate[,"<<candidate_count+1<<",],time:,"<<utils::g_timer()<<",size:,"<<overall_pdb_size<<",generation_time:,"<<pdb_gen_time<<endl;
 		if(pdb_factory->is_solved()){
 		    problem_solved_while_pdb_gen=true;
 		    cout<<"Solution found while generating PDB candidate of type:"<<pdb_factory->name()<<", adding PDB and exiting generation at time"<<utils::g_timer()<<endl;
@@ -1124,6 +1174,7 @@ namespace pdbs {
 	    //mutate();
 	    vector<double> fitness_values;
 	    evaluate(fitness_values);
+	    DEBUG_MSG(cout<<"time:"<<utils::g_timer()<<",evaluated finished"<<endl;);
 	    // We allow to select invalid pattern collections.
 	    if(genetic_SS_timer->is_expired()||(double(utils::get_peak_memory_in_kb())/1024>memory_limit)){
 		avg_sampled_states=double(overall_sampled_states)/double(total_online_samples);
@@ -1142,13 +1193,13 @@ namespace pdbs {
 		//clear_dominated_heuristics(&unique_samples);
 		break;
 	    }
-	    //cout<<"calling select"<<endl;fflush(stdout);
+	    DEBUG_MSG(cout<<"time:,"<<utils::g_timer()<<",calling select"<<flush<<endl;);
 	    select(fitness_values);
-	    //cout<<"after select"<<endl;fflush(stdout);
+	    DEBUG_MSG(cout<<"time:,"<<utils::g_timer()<<",select finished"<<flush<<endl;);
 	    current_episode++;
 	}
-	DEBUG_MSG(cout<<"finished with episodes"<<flush<<endl;);
-	//cout<<"SKIPPING clear_dominated, heurs"<<best_heuristic.count_zero_one_pdbs()<<endl;fflush(stdout);
+	    
+	DEBUG_MSG(cout<<"time:,"<<utils::g_timer()<<",finished with episodes"<<flush<<endl;);
 	
 	if (!recompute_max_additive_subsets) {
 	  cout<<"starting clear_dominated,starting heurs"<<best_pdb_collections.size()<<endl;fflush(stdout);
@@ -1287,6 +1338,10 @@ namespace pdbs {
 	{
 	    queue_counter++;
 	    if(queue_counter%1000==0){
+		if(SS_states.size()>22000){
+		  cout<<"SS_states past limit,size:"<<SS_states.size()<<", no more SS generation, getting out"<<endl;
+		  return 0;
+		}
 		if(utils::g_timer()>genetic_time_limit){
 		    cout<<"Search_timer past maximum sampling_time"<<endl;fflush(stdout);
 		    //cout<<"selecting best heuristic after search_time: "<<search_time()<<", seconds,g_timer:"<<g_timer()<<endl;

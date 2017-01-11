@@ -247,7 +247,7 @@ int get_current_memory_in_kb() {
 #endif
 
     if (memory_in_kb == -1)
-        cerr << "warning: could not determine peak memory" << endl;
+        cerr << "warning: could not determine current memory" << endl;
     return memory_in_kb;
 }
 

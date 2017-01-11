@@ -60,6 +60,17 @@ PDBRelation compute_superset_relation(const PDBCollection &pattern_databases) {
 		      PDBs use the same pattern, which violates the invariant that
 		      lists of patterns are sorted and unique.
 		    */
+		    std::cout<<"pdb1:";
+		    for(auto var : pattern1){
+		      std::cout<<var<<",";
+		    }
+		    std::cout<<"pdb2:";
+		    for(auto var2 : pattern2){
+		      std::cout<<var2<<",";
+		    }
+		    std::cout<<std::endl;
+		    
+		    
 		    assert(pdb1 == pdb2 ||
 		    	   superset_relation.count(make_pair(pdb2.get(),
 		    					     pdb1.get())) == 0);
