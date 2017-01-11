@@ -165,7 +165,7 @@ public:
 			      std::shared_ptr<symbolic::SymVariables> vars, 
 			      std::shared_ptr<symbolic::SymStateSpaceManager> manager, 
 			      const symbolic::SymParamsSearch & params, 
-			      double generationTime, double generationMemoryGB);
+			      double precomputationTime, double precomputationNodes);
 
     virtual ~PatternDatabaseOnlinePlus() = default;
 
@@ -185,7 +185,7 @@ public:
 	return symbolic_pdb;
     }
 
-
+    virtual void terminate_creation (double  max_time, double max_nodes);
 };
 }
 

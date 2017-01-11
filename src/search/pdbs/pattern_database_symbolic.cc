@@ -26,63 +26,68 @@ namespace pdbs {
 						     std::shared_ptr<SymStateSpaceManager> manager_, 
 						     const SymParamsSearch & params, 
 						     double generationTime, 
-						     double generationMemoryGB) : 
+						     double generationMemory) : 
 	PatternDatabaseInterface(task_proxy, pattern, operator_costs), 
 	vars (vars_), manager (manager_), heuristic(vars->getADD(0)), dead_ends(vars->zeroBDD()), 
 	finished(false), hvalue_unseen_states(0), average(0) {
-	  DEBUG_MSG(cout<<"start_time_pdb_constructor:"<<utils::g_timer()<<",";);
-	  generationMemoryGB=(memory_limit/1024.0)-(utils::get_peak_memory_in_kb()/(1024.0*1024.0));
-	  if(generationMemoryGB<=0){
-	    cout<<"No more pdb gen, reached Memory limit!!!"<<endl;
-	    return;
-	  }
-	  DEBUG_MSG(cout<<"generationMemoryGB for symbolic:"<<generationMemoryGB<<endl;);
+
+	  // DEBUG_MSG(cout<<"start_time_pdb_constructor:"<<utils::g_timer()<<",";);
+	  // generationMemoryGB=(memory_limit/1024.0)-(utils::get_peak_memory_in_kb()/(1024.0*1024.0));
+	  // if(generationMemoryGB<=0){
+	  //   cout<<"No more pdb gen, reached Memory limit!!!"<<endl;
+	  //   return;
+	  // }
+	  // DEBUG_MSG(cout<<"generationMemoryGB for symbolic:"<<generationMemoryGB<<endl;);
 	
-	create_pdb(engine,params, generationTime, generationMemoryGB);
+	create_pdb(engine, params, generationTime, generationMemory);
     }
 
 
     void PatternDatabaseSymbolic::create_pdb(SymController * engine, const SymParamsSearch & params, 
-					     double generationTime, double generationMemoryGB) {
+					     double generationTime,  double generationMemoryGB) {
 	//float start_time=utils::g_timer();
 	//cout<<"start_time_create_pdb:"<<utils::g_timer()<<",";
-	symbolic::UniformCostSearch search (engine, params);
+	search= make_unique<symbolic::UniformCostSearch> (engine, params);
 	//cout<<"UniformCostSearch.time:"<<utils::g_timer()-start_time<<",";
-	search.init(manager, false);
+	search->init(manager, false);
 	//cout<<"serach.init.time:"<<utils::g_timer()-start_time<<",";
 
 
 	Timer time; 
-	while (!search.finished() && 
+	while (!search->finished() && 
 	       time() < generationTime &&
 	       vars->totalMemoryGB() < generationMemoryGB &&
-	       search.isSearchable()  && 
+	       search->isSearchable()  && 
 	       !engine->solved()) {
-	    search.step();
+	    search->step();
 	} 
 	
-	finished = search.finished();
-	hvalue_unseen_states = search.getHNotClosed();
-	average = search.getClosed()->average_hvalue();
+	finished = search->finished();
+	hvalue_unseen_states = search->getHNotClosed();
+	average = search->getClosed()->average_hvalue();
 	DEBUG_MSG(for (int v : pattern) cout << v << " ";);
 	
-	DEBUG_MSG(cout << "Solved: " << engine->solved() << " Finished: " << search.finished() <<  ", Average: " << average << endl;);
+	DEBUG_MSG(cout << "Solved: " << engine->solved() << " Finished: " << search->finished() <<  ", Average: " << average << endl;);
 	if(time()>=generationTime){
-	  cout<<"generationTimeLimit:"<<generationTime<<">GenTime:"<<time()<<",symbolic pdb interrupted"<<endl;
+	    cout<<"generationTimeLimit:"<<generationTime<<">GenTime:"<<time()<<",symbolic pdb interrupted"<<endl;
 	}
 	if(vars->totalMemoryGB() >= generationMemoryGB){
-	  cout<<"vars->totalMemoryGB():"<<vars->totalMemoryGB()<<">GenMemoryLimit(GB):"<<generationMemoryGB<<endl;
+	    cout<<"vars->totalMemoryGB():"<<vars->totalMemoryGB()<<">GenMemoryLimit(GB):"<<generationMemoryGB<<endl;
 	}
 
 	if(engine->solved()) {
-	    heuristic = engine->get_solution()->getADD();	    
+	    heuristic = engine->get_solution()->getADD();
+	    search.reset();
 	} else {
-	  //cout<<"time before serch.getHeuristic(false):"<<time()<<endl;
-	    heuristic = search.getHeuristic(false);
-	  //cout<<"time after serch.getHeuristic(false):"<<time()<<endl;
-	    if(finished) dead_ends += search.notClosed(); 
+	    //cout<<"time before serch.getHeuristic(false):"<<time()<<endl;
+	    heuristic = search->getHeuristic(false);
+	    //cout<<"time after serch.getHeuristic(false):"<<time()<<endl;
+	    if(finished) { 
+		dead_ends += search->notClosed(); 
+		search.reset();
+	    }
 	}
-	  //cout<<"Overall generationTime:,"<<utils::g_timer()-start_time<<endl;
+	//cout<<"Overall generationTime:,"<<utils::g_timer()-start_time<<endl;
     }
 
     int PatternDatabaseSymbolic::get_value(const State & state) const {
@@ -119,5 +124,35 @@ namespace pdbs {
 	return average;
     }
 
+
+    void PatternDatabaseSymbolic::terminate_creation (double generationTime, 
+						      double generationMemoryGB) {
+
+	if(!search) {
+	    return;
+	}
+	
+	Timer time; 
+	while (!search->finished() && 
+	       time() < generationTime &&
+	       vars->totalMemoryGB() < generationMemoryGB &&
+	       search->isSearchable()  && 
+	       !search->getEngine()->solved()) {
+	    search->step();
+	} 
+	
+	finished = search->finished();
+	hvalue_unseen_states = search->getHNotClosed();
+	average = search->getClosed()->average_hvalue();
+
+	if(search->getEngine()->solved()) {
+	    heuristic = search->getEngine()->get_solution()->getADD();	    
+	} else {
+	    //cout<<"time before serch.getHeuristic(false):"<<time()<<endl;
+	    heuristic = search->getHeuristic(false);
+	    //cout<<"time after serch.getHeuristic(false):"<<time()<<endl;
+	    if(finished) dead_ends += search->notClosed(); 
+	}
+    }
 }
 

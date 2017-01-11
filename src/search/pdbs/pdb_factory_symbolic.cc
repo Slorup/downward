@@ -24,6 +24,7 @@ namespace pdbs {
 	generationTime(opts.get<int>("max_time")), 
 	generationMemoryGB(opts.get<double>("max_memory_gb")), 
 	dump (opts.get<bool>("dump")) {
+	  
 	manager = make_shared<OriginalStateSpace>(vars.get(), mgrParams,
 						  OperatorCostFunction::get_cost_function());
     }
@@ -53,6 +54,9 @@ PDBFactorySymbolic::create_pdb(const TaskProxy & task,
 	DEBUG_MSG(cout << "INIT PatternDatabaseSymbolic" << endl;);
 
 	memory_limit=min(generationMemoryGB,memory_limit);
+	
+	DEBUG_MSG(cout<<"MemoryLimit in GB:"<<memory_limit<<",";
+	    cout<<"Peak memory:"<<utils::get_peak_memory_in_kb()<<endl;fflush(stdout););
 
 	auto new_pdb = make_shared<PatternDatabaseSymbolic> (task, pattern, operator_costs,
 							     this, vars, state_space_mgr, 

@@ -513,7 +513,7 @@ public:
 
     State(State &&other)
         : task(other.task), values(std::move(other.values)) {
-	std::cout << "moving" << std::endl; 
+	//std::cout << "moving" << std::endl; 
         other.task = nullptr;
     }
 

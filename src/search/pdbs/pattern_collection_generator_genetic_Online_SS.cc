@@ -411,6 +411,11 @@ namespace pdbs {
 		//cout<<"pattern_collection:"<<*pattern_collection<<endl;fflush(stdout);
 
 		ZeroOnePDBs candidate (task_proxy, pattern_collection, *pdb_factory,100);
+		float pdb_gen_time=utils::g_timer()-temp;
+		if(utils::g_timer()-temp>max_gen_time){
+		  max_gen_time=utils::g_timer()-temp;
+	  	  max_gen_size=overall_pdb_size;
+		}
 		cout<<"generated candidate[,"<<candidate_count+1<<",],time:,"<<utils::g_timer()<<",size:,"<<overall_pdb_size<<",generation_time:,"<<utils::g_timer()-temp<<endl;
 		if(pdb_factory->is_solved()){
 		    problem_solved_while_pdb_gen=true;
@@ -420,15 +425,15 @@ namespace pdbs {
 		    best_pdb_added=true;
 		    float start_time_dom=utils::g_timer();
 		    if(recompute_max_additive_subsets){
-		      result->include_additive_pdbs(pdb_factory->terminate_creation(candidate.get_pattern_databases()));
+			result->include_additive_pdbs(pdb_factory->terminate_creation(candidate.get_pattern_databases()));
 		      cout<<"calling recompute"<<flush<<endl;
 		      result->recompute_max_additive_subsets();
 		      cout<<"recompute finished"<<flush<<endl;
 		      overall_dominance_prunning_time+=utils::g_timer()-start_time_dom;
 		      unique_samples.clear();
-		      best_pdb_collections.resize(1);
-		      best_pdb_collections[0]=result->get_pdbs();
 		    }
+		    best_pdb_collections.clear();
+		    best_pdb_collections.push_back(pdb_factory->terminate_creation(candidate.get_pattern_databases()));
 		    return;
 		}
 		candidate_count++;
@@ -439,23 +444,55 @@ namespace pdbs {
 		//cout<<"generated candidate,pdb_size:,"<<overall_pdb_size<<",pdb_gen_time:,"<<pdb_gen_time<<endl;
 		//if(pdb_factory->name()=="symbolic"){
 		  if(valid_pattern_counter%10==0){
+		      //every 10 colls we check if we need to change parameters
+		      //we also make sure we do not increase size if we are already generating some PDBs well above time_limit, for
+		      //domains where pdb_gen_time varies wildly for symbolic_pdbs as a function of explicit size,
+		      //we do not know symbolic size, so we use explicit size to estimate pdb_gen_times
+		      //some times std_deviation is orders of magnitude, e.g. childsnack
 		    avg_pdb_gen_time=(overall_pdb_gen_time-last_overall_pdb_gen_time)/10.0;
-		    cout<<"time:"<<utils::g_timer<<",avg_pdb_gen_time:"<<avg_pdb_gen_time;
+		    cout<<"time:"<<utils::g_timer<<",avg_pdb_gen_time:"<<avg_pdb_gen_time<<",max_time:"<<max_gen_time<<endl;
 		    last_overall_pdb_gen_time=overall_pdb_gen_time;
-		    if(utils::g_timer()-last_time_collections_improved>50.0){
-		      time_limit+=1;
-		      //last_sampler_too_big=false;
-		      pdb_max_size=max(last_improv_collection_size*10.0,20000.0);//20K just in case something went wrong 
+		    if(avg_pdb_gen_time<time_limit/2&&max_gen_time<(time_limit*2)){
+		      pdb_max_size=pdb_max_size*10.0;
 		      min_size=pdb_max_size/100;
-		      cout<<"increasing time_limit to,"<<time_limit<<",pdb_max_size:"<<pdb_max_size<<",min_size:"<<min_size<<", too long since last improvement found"<<endl; 
+		      cout<<"time:,"<<utils::g_timer()<<",increasing pdb_max_size to,"<<pdb_max_size<<",min_size:"<<min_size<<", avg_pdb_gen_time="<<avg_pdb_gen_time<<"<"<<time_limit<<endl; 
+		    }
+		    else if(utils::g_timer()-last_time_collections_improved>20.0){
+		      time_limit+=0.5;
+		      //last_sampler_too_big=false;
+		      //pdb_max_size=max(last_improv_collection_size*10.0,20000.0);//20K just in case something went wrong 
+
+		      if(max_gen_time<(time_limit*2)){
+			pdb_max_size=pdb_max_size*10.0;
+			min_size=pdb_max_size/100;
+		      }
+		      else{
+			min_size=pdb_max_size/10;
+		      }
+		      cout<<"time:,"<<utils::g_timer()<<",increasing time_limit to,"<<time_limit<<",pdb_max_size:"<<pdb_max_size<<",min_size:"<<min_size<<", too long since last improvement found"<<endl; 
 		      last_time_collections_improved=utils::g_timer();
 		    }
 		    else if(avg_pdb_gen_time>time_limit){
 		      last_sampler_too_big=true;
-		      pdb_max_size=max(10000.0,pdb_max_size/10.0);
-		      cout<<"Last 10 pdbs took on average more than generation time_limit, Fixing pdb_max_size to:"<<pdb_max_size<<endl;
+		      //pdb_max_size=max(10000.0,pdb_max_size/10.0);
+		      if(max_gen_time>5*time_limit){
+			pdb_max_size=min(max_gen_size/100.0,last_improv_collection_size*10);
+		      }
+		      else{
+			pdb_max_size=last_improv_collection_size*10.0;
+		      }
+		      cout<<"Last 10 pdbs avg_pdb_gen_time:"<<avg_pdb_gen_time<<",time_limit:"<<time_limit<<", Fixing pdb_max_size to:"<<pdb_max_size<<endl;
+		    }
+		    //Need to keep size limit for explicit representation
+		    string temp_string("symbolic");
+		    if (pdb_factory->name().find(temp_string) == std::string::npos) {
+		      cout<<"pdb is not symbolic, sticking to max pdb_size of :";
+		      pdb_max_size=min(9*pow(10,12),pdb_max_size);
+		      cout<<pdb_max_size<<endl;
 		    }
 		    avg_pdb_gen_time=0;
+		    max_gen_time=0;
+		    max_gen_size=0;
 		  }
 		//}
 
@@ -744,7 +781,7 @@ namespace pdbs {
 		    //else{
 		    //  cout<<"best_heuristic being set for the first time"<<endl;
 		    //}
-		    cout<<"time:,"<<utils::g_timer()<<",bin_packed:,"<<bin_packed_episode<<",adding1 best_heuristic,episode:,"<<current_episode<<",collection:,"<<collection_counter<<",new raised_ratio:,"<<float(raised_states)/float(sampled_states)<<",actual_states_ratio:,"<<float(raised_states)/float(sampled_states)<<",total_nodes:"<<total_SS_gen_nodes<<",pruned_states:"<<pruned_states<<",fitness:,"<<fitness<<",sampled_states:,"<<sampled_states<<",initial_value:,"<<current_heur_initial_value<<",skip_sampling:,"<<skip_sampling<<",best_heur_dead_ends:,"<<best_heur_dead_ends<<",best_heuristics count:"<<best_pdb_collections.size()<<endl;
+		    cout<<"time:,"<<utils::g_timer()<<",bin_packed:,"<<bin_packed_episode<<",adding1 best_heuristic,episode:,"<<current_episode<<",collection:,"<<collection_counter<<",new raised_ratio:,"<<float(raised_states)/float(sampled_states)<<",actual_states_ratio:,"<<float(raised_states)/float(sampled_states)<<",total_nodes:"<<total_SS_gen_nodes<<",pruned_states:"<<pruned_states<<",fitness:,"<<fitness<<",sampled_states:,"<<sampled_states<<",initial_value:,"<<current_heur_initial_value<<",skip_sampling:,"<<skip_sampling<<",best_heur_dead_ends:,"<<best_heur_dead_ends<<",best_heuristics count:"<<best_pdb_collections.size()<<",size:"<<overall_pdb_size<<",pdb_gen_time:"<<pdb_gen_time<<endl;
 		    if(min_improvement_ratio<0.02&&current_episode>200&&float(raised_states)/float(sampled_states)>0.2){
 		      min_improvement_ratio=0.2;
 		      cout<<"updated min_improv_ratio, was low because of perimeter but it seems perimeter was not that good to start with"<<endl;
@@ -980,7 +1017,7 @@ namespace pdbs {
 	  best_pdb_added=true;
 	  if(pdb_factory->is_solved()){
 	    problem_solved_while_pdb_gen=true;
-	    cout<<"Solution found while generating PDB candidate of type:"<<pdb_factory->name()<<", adding PDB and exiting generation at time"<<utils::g_timer()<<endl;
+	    cout<<"Solution found while generating Perimeter PDB candidate of type:"<<pdb_factory->name()<<", adding PDB and exiting generation at time"<<utils::g_timer()<<endl;
 
 	    cout<<"final episode:,"<<current_episode<<",time:,"<<utils::g_timer()<<",overall_pdb_gen_time:,"<<overall_pdb_gen_time<<",online_samples:,"<<total_online_samples<<",overall_sampling_time:,"<<overall_sampling_time<<",avg samp time:,"<<double(overall_sampling_time)/double((total_online_samples == 0) ? 1 : total_online_samples)<<",avg_sampled_states:,"<<avg_sampled_states<<",overall_probe_time:,"<<overall_probe_time<<",candidate_count:,"<<candidate_count<<",unique_samples.size:,"<<unique_samples.size()<<",best_heuristics count:,"<<best_pdb_collections.size()<<",overall_dominance_prunning_time:,"<<overall_dominance_prunning_time<<endl;
 	    best_pdb_added=true;

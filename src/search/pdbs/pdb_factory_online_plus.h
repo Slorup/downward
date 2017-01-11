@@ -29,11 +29,11 @@ namespace pdbs {
     class PatternDatabaseOnlinePlus;
 
 class PDBFactoryOnlinePlus : public PDBFactory, public symbolic::SymController {
-    const int precomputationTime, precomputationNodes;
-    const int terminationTime, terminationNodes;
-    const int onlineTime, onlineExpansions;
+    const double precomputationTime, precomputationNodes;
+    const double terminationTime, terminationNodes;
+    const double onlineTime, onlineExpansions;
 
-     const bool use_pdbs_in_online_search;
+    const bool use_pdbs_in_online_search;
     const bool online_use_canonical_pdbs;
     const bool online_prune_dominated_pdbs; 
 

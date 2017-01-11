@@ -12,6 +12,7 @@
 
 #include "../symbolic/sym_state_space_manager.h"
 #include "../symbolic/sym_bucket.h"
+#include "../symbolic/uniform_cost_search.h"
 
 namespace symbolic {
     class SymController;
@@ -25,6 +26,8 @@ class PatternDatabaseSymbolic : public PatternDatabaseInterface {
     std::shared_ptr <symbolic::SymVariables> vars;
 
     std::shared_ptr <symbolic::SymStateSpaceManager> manager;
+
+    std::unique_ptr<symbolic::UniformCostSearch> search;
     
     ADD heuristic;
     BDD dead_ends;
@@ -56,7 +59,8 @@ class PatternDatabaseSymbolic : public PatternDatabaseInterface {
 			     symbolic::SymController * engine, 
 			     std::shared_ptr<symbolic::SymVariables> vars, 
 			     std::shared_ptr<symbolic::SymStateSpaceManager> manager, 
-			     const symbolic::SymParamsSearch & params, double generationTime, double generationMemoryGB);
+			     const symbolic::SymParamsSearch & params, 
+			     double precomputationTime, double precomputationMemory);
 
      virtual ~PatternDatabaseSymbolic() = default;
 
@@ -95,6 +99,8 @@ class PatternDatabaseSymbolic : public PatternDatabaseInterface {
       this method!
     */
     virtual double compute_mean_finite_h() const override;
+
+    virtual void terminate_creation (double  max_time, double max_nodes);
 };
 }
 

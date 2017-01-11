@@ -68,8 +68,8 @@ namespace pdbs {
 	    make_shared<PatternDatabaseOnlinePlus> (this, task, pattern, operator_costs, 
 						    pdb_task, vars, state_space_mgr, 
 						    searchParams, 
-						    std::min(generationTime, time_limit), 
-						    generationMemoryGB);
+						    std::min(precomputationTime, time_limit), 
+						    precomputationNodes);
 
 	if(new_pdb->is_finished()) {
 	    DEBUG_MSG(cout << "Dead end states discovered: " << new_pdb->get_dead_ends().nodeCount() << endl;);
@@ -88,8 +88,8 @@ namespace pdbs {
     std::shared_ptr<PDBCollection> PDBFactoryOnlinePlus::terminate_creation (PDBCollection & pdb_collection) {
 	auto result = std::make_shared<PDBCollection> ();
 	for(auto & pdb : pdb_collection ) {
-	    pdb->terminate_creation(terminationTime, terminationMemoryGB);
-	    result.push_back(pdb);
+	    pdb->terminate_creation(terminationTime, terminationNodes);
+	    result->push_back(pdb);
 	}
 	return result;
     }
