@@ -578,7 +578,7 @@ namespace pdbs {
 		    best_patterns.push_back(pattern_collection);
 		    if(!create_perimeter){
 		      //cout<<"added initial best_pdb"<<endl;
-			best_pdb_collections.push_back(pdb_factory->terminate_creation(candidate.get_pattern_databases(), perimeter_time_ms, perimeter_step_time_ms, perimeter_nodes));
+			best_pdb_collections.push_back(pdb_factory->terminate_creation(candidate.get_pattern_databases()));
 		      cout<<"best_pdb_collections.size:"<<best_pdb_collections.size()<<flush<<endl;
 			
 		      //std::shared_ptr<PDBCollection> best_pdb=make_shared<PDBCollection>  (candidate.get_pattern_databases());
@@ -1064,7 +1064,7 @@ namespace pdbs {
 	  //std::shared_ptr<PDBFactory> pdb_type_symbolic;
 	  ZeroOnePDBs candidate(task_proxy, pattern_collection, *pdb_factory);
 	  cout<<"g_timer after calling ZeroOnePDB to generate initial perimeter:"<<utils::g_timer()<<endl;
-	  best_pdb_collections.push_back(pdb_factory->terminate_creation(candidate.get_pattern_databases()));
+	  best_pdb_collections.push_back(pdb_factory->terminate_creation(candidate.get_pattern_databases(), perimeter_time_ms, perimeter_step_time_ms, perimeter_nodes));
 	  cout<<"g_timer before calling terminate_creation to push perimeter into best_pdb_collections"<<utils::g_timer()<<endl;
 	  if(recompute_max_additive_subsets){
 	    result->include_additive_pdbs(best_pdb_collections.back());
