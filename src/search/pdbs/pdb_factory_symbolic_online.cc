@@ -1,6 +1,6 @@
-#include "pdb_factory_online_plus.h"
+#include "pdb_factory_symbolic_online.h"
 
-#include "pattern_database_online_plus.h"
+#include "pattern_database_symbolic_online.h"
 #include "canonical_pdbs_heuristic.h"
 
 #include "../symbolic/sym_params_search.h"
@@ -20,7 +20,7 @@ using namespace symbolic;
 
 namespace pdbs {
 
-    PDBFactoryOnlinePlus::PDBFactoryOnlinePlus(const options::Options & opts) : 
+    PDBFactorySymbolicOnline::PDBFactorySymbolicOnline(const options::Options & opts) : 
 	SymController(opts), 
 	precomputation_time_ms(opts.get<int>("precomputation_time_ms")), 
 	precomputation_step_time_ms(opts.get<int>("precomputation_step_time_ms")), 
@@ -42,7 +42,7 @@ namespace pdbs {
     }
 
     std::shared_ptr<PatternDatabaseInterface> 
-    PDBFactoryOnlinePlus::create_pdb(const TaskProxy & task, const Pattern &pattern, 
+    PDBFactorySymbolicOnline::create_pdb(const TaskProxy & task, const Pattern &pattern, 
 				     const std::vector<int> &operator_costs) {
 	
 	assert(!pattern.empty());
@@ -66,7 +66,7 @@ namespace pdbs {
 
 	DEBUG_MSG(cout << "PDB Task created" << endl;);
 	auto new_pdb = 
-	    make_shared<PatternDatabaseOnlinePlus> (this, task, pattern, operator_costs, 
+	    make_shared<PatternDatabaseSymbolicOnline> (this, task, pattern, operator_costs, 
 						    pdb_task, vars, state_space_mgr, 
 						    searchParams, 
 						    precomputation_time_ms, 
@@ -88,7 +88,7 @@ namespace pdbs {
 	return new_pdb;
     }
 
-    std::shared_ptr<PDBCollection> PDBFactoryOnlinePlus::terminate_creation (PDBCollection & pdb_collection) {
+    std::shared_ptr<PDBCollection> PDBFactorySymbolicOnline::terminate_creation (PDBCollection & pdb_collection) {
 	auto result = std::make_shared<PDBCollection> ();
 
 	for(auto & pdb : pdb_collection ) {
@@ -103,7 +103,7 @@ namespace pdbs {
 	return result;
     }
 
-    void PDBFactoryOnlinePlus::increase_computational_limits() {
+    void PDBFactorySymbolicOnline::increase_computational_limits() {
 	precomputation_time_ms *= increase_factor; 
 	precomputation_time_ms = std::min(precomputation_time_ms, termination_time_ms);
 	precomputation_nodes *= increase_factor;
@@ -112,11 +112,11 @@ namespace pdbs {
 
 
 
-    void PDBFactoryOnlinePlus::dump_strategy_specific_options() const {
+    void PDBFactorySymbolicOnline::dump_strategy_specific_options() const {
 	cout << " dump: " << (dump ? "true" : "false") << endl;
     }
 
-    string PDBFactoryOnlinePlus::name() const {
+    string PDBFactorySymbolicOnline::name() const {
 	return "symbolic";
     }
 
@@ -157,10 +157,10 @@ namespace pdbs {
 	if (parser.dry_run())
 	    return nullptr;
 	else
-	    return make_shared<PDBFactoryOnlinePlus>(options);
+	    return make_shared<PDBFactorySymbolicOnline>(options);
     }
 
-    symbolic::Bucket PDBFactoryOnlinePlus::get_dead_ends() const {
+    symbolic::Bucket PDBFactorySymbolicOnline::get_dead_ends() const {
 
 	const auto & non_mutex = manager->getNotMutexBDDs(true);
 	const auto & non_dead_ends = manager->getNotDeadEnds(true);
@@ -180,7 +180,7 @@ namespace pdbs {
 	return dead_ends;
     }
 
-    void PDBFactoryOnlinePlus::get_heuristics_for (const PatternDatabaseOnlinePlus & pdb, 
+    void PDBFactorySymbolicOnline::get_heuristics_for (const PatternDatabaseSymbolicOnline & pdb, 
 						   std::vector<shared_ptr<Heuristic>> & heuristics) {
 	if(!use_pdbs_in_online_search) {
 	    return;

@@ -1,5 +1,5 @@
-#ifndef PDBS_PATTERN_DATABASE_ONLINE_PLUS_H
-#define PDBS_PATTERN_DATABASE_ONLINE_PLUS_H
+#ifndef PDBS_PATTERN_DATABASE_SYMBOLIC_ONLINE_H
+#define PDBS_PATTERN_DATABASE_SYMBOLIC_ONLINE_H
 
 #include "types.h"
 #include "pattern_database_interface.h"
@@ -21,7 +21,7 @@ class Options;
 
 namespace pdbs {
 
-    class PDBFactoryOnlinePlus;
+    class PDBFactorySymbolicOnline;
 
 typedef int LocalStateID;
 
@@ -137,9 +137,9 @@ SearchInfo(int num_pdb_vars_, int num_allocated_states) :
 
 };
 
-class PatternDatabaseOnlinePlus : public PatternDatabaseInterface {
+class PatternDatabaseSymbolicOnline : public PatternDatabaseInterface {
     
-    PDBFactoryOnlinePlus * factory;
+    PDBFactorySymbolicOnline * factory;
     std::shared_ptr<extra_tasks::PDBTask> pdb_task;
     std::unique_ptr<TaskProxy> pdb_task_proxy;
     mutable std::vector <std::shared_ptr<Heuristic>> heuristics;
@@ -157,7 +157,7 @@ class PatternDatabaseOnlinePlus : public PatternDatabaseInterface {
     int get_goal_cost(const State & state) const;
 
 public:
-    PatternDatabaseOnlinePlus(PDBFactoryOnlinePlus * factory_, 
+    PatternDatabaseSymbolicOnline(PDBFactorySymbolicOnline * factory_, 
 			      const TaskProxy &task_proxy, 
 			      const Pattern &pattern,
 			      const std::vector<int> &operator_costs,
@@ -168,7 +168,7 @@ public:
 			      int max_time_ms, int max_step_time_ms, int max_nodes, 
 			      int global_limit_memory_MB);
 
-    virtual ~PatternDatabaseOnlinePlus() = default;
+    virtual ~PatternDatabaseSymbolicOnline() = default;
 
     virtual int get_value(const State &state) const override;
     virtual int get_value(const std::vector<int> &state) const override {

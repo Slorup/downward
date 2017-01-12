@@ -474,7 +474,7 @@ fast_downward_plugin(
         pdbs/pattern_database.cc
         pdbs/pattern_database_interface.cc
         pdbs/pattern_database_online.cc
-        pdbs/pattern_database_online_plus.cc
+        pdbs/pattern_database_symbolic_online.cc
         pdbs/pattern_collection_generator_combo.cc
         pdbs/pattern_collection_generator_genetic.cc
         pdbs/pattern_collection_generator_genetic_Online_SS.cc
@@ -488,7 +488,7 @@ fast_downward_plugin(
 	pdbs/pdb_factory.cc
 	pdbs/pdb_factory_explicit.cc
 	pdbs/pdb_factory_online.cc
-	pdbs/pdb_factory_online_plus.cc
+	pdbs/pdb_factory_symbolic_online.cc
         pdbs/pdb_heuristic.cc
 	pdbs/pdb_heuristic_online.cc
         pdbs/types.cc

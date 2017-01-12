@@ -1,5 +1,5 @@
-#ifndef PDBS_PDB_FACTORY_ONLINE_PLUS_H
-#define PDBS_PDB_FACTORY_ONLINE_PLUS_H
+#ifndef PDBS_PDB_FACTORY_SYMBOLIC_ONLINE_H
+#define PDBS_PDB_FACTORY_SYMBOLIC_ONLINE_H
 
 #include "pdb_factory.h"
 
@@ -26,9 +26,9 @@ class RandomNumberGenerator;
 
 namespace pdbs {
 
-    class PatternDatabaseOnlinePlus;
+    class PatternDatabaseSymbolicOnline;
 
-class PDBFactoryOnlinePlus : public PDBFactory, public symbolic::SymController {
+class PDBFactorySymbolicOnline : public PDBFactory, public symbolic::SymController {
     int precomputation_time_ms, precomputation_step_time_ms, precomputation_nodes; 
     int termination_time_ms, termination_step_time_ms, termination_nodes;
     const int online_time_ms, online_expansions;
@@ -50,8 +50,8 @@ class PDBFactoryOnlinePlus : public PDBFactory, public symbolic::SymController {
     protected:
 	virtual void dump_strategy_specific_options() const override;
     public:
-        explicit PDBFactoryOnlinePlus(const options::Options &options);
-	virtual ~PDBFactoryOnlinePlus() override = default;
+        explicit PDBFactorySymbolicOnline(const options::Options &options);
+	virtual ~PDBFactorySymbolicOnline() override = default;
 
 	// Type is shared because, in certain configurations, the factories
 	// might want to store a copy of the result. 
@@ -62,7 +62,7 @@ class PDBFactoryOnlinePlus : public PDBFactory, public symbolic::SymController {
 	
     virtual void increase_computational_limits() override;
 
-    void get_heuristics_for (const PatternDatabaseOnlinePlus & pdb, 
+    void get_heuristics_for (const PatternDatabaseSymbolicOnline & pdb, 
 			     std::vector<std::shared_ptr<Heuristic>> & heuristics);
 
     virtual std::string name() const override;

@@ -1,18 +1,18 @@
-#include "pattern_database_online_plus.h"
+#include "pattern_database_symbolic_online.h"
 #include "pattern_database_symbolic.h"
 
-using namespace std;
-
-#include "pdb_factory_online_plus.h"
+#include "pdb_factory_symbolic_online.h"
 
 #include "../priority_queue.h"
 
 #include "../utils/debug_macros.h"
 #include "../tasks/pdb_task.h"
 
+using namespace std;
+
 namespace pdbs {
 
-    PatternDatabaseOnlinePlus::PatternDatabaseOnlinePlus(PDBFactoryOnlinePlus * factory_, 
+    PatternDatabaseSymbolicOnline::PatternDatabaseSymbolicOnline(PDBFactorySymbolicOnline * factory_, 
 							 const TaskProxy &task, 
 							 const Pattern &pattern,
 							 const std::vector<int> &operator_costs,
@@ -33,7 +33,7 @@ namespace pdbs {
     }
 
 
-    int PatternDatabaseOnlinePlus::get_value(const State & original_state) const {
+    int PatternDatabaseSymbolicOnline::get_value(const State & original_state) const {
 	
 	State initial_state = pdb_task_proxy->convert_ancestor_state(original_state); 
 
@@ -158,22 +158,22 @@ namespace pdbs {
 	return upper_bound;
     }
 
-    int PatternDatabaseOnlinePlus::compute_heuristic(const State & /*state*/) const {
+    int PatternDatabaseSymbolicOnline::compute_heuristic(const State & /*state*/) const {
 	//return 0;
 	return symbolic_pdb->get_hvalue_unseen_states();
     }
 
-    int PatternDatabaseOnlinePlus::get_goal_cost(const State & state) const {
+    int PatternDatabaseSymbolicOnline::get_goal_cost(const State & state) const {
 	return symbolic_pdb->get_goal_cost(pattern, state);
     }
 
-    double PatternDatabaseOnlinePlus::compute_mean_finite_h() const {
-	cerr << "PatternDatabaseOnlinePlus::compute_mean_finite_h should not be used" << endl;
+    double PatternDatabaseSymbolicOnline::compute_mean_finite_h() const {
+	cerr << "PatternDatabaseSymbolicOnline::compute_mean_finite_h should not be used" << endl;
 	utils::exit_with(utils::ExitCode::CRITICAL_ERROR); 
 	return symbolic_pdb->compute_mean_finite_h();
     }
 
-    void PatternDatabaseOnlinePlus::terminate_creation (int max_time_ms, int max_step_time_ms,
+    void PatternDatabaseSymbolicOnline::terminate_creation (int max_time_ms, int max_step_time_ms,
 							int max_nodes, 
 							int global_limit_memory_MB) {
 	symbolic_pdb->terminate_creation(max_time_ms, max_step_time_ms, max_nodes, global_limit_memory_MB);
