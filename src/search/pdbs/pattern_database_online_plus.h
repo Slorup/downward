@@ -165,7 +165,8 @@ public:
 			      std::shared_ptr<symbolic::SymVariables> vars, 
 			      std::shared_ptr<symbolic::SymStateSpaceManager> manager, 
 			      const symbolic::SymParamsSearch & params, 
-			      double precomputationTime, double precomputationNodes);
+			      int max_time_ms, int max_nodes, 
+			      int global_limit_memory_MB);
 
     virtual ~PatternDatabaseOnlinePlus() = default;
 
@@ -184,8 +185,9 @@ public:
     virtual std::shared_ptr<PatternDatabaseInterface> get_offline_pdb() const override {
 	return symbolic_pdb;
     }
-
-    virtual void terminate_creation (double  max_time, double max_nodes);
+    
+    virtual void terminate_creation (int max_time_ms, int max_nodes, 
+				     int global_limit_memory_MB) override;
 };
 }
 

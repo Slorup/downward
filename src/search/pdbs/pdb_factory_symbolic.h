@@ -27,11 +27,13 @@ namespace pdbs {
 
 
 class PDBFactorySymbolic : public PDBFactory, public symbolic::SymController {
-	const double generationTime;
-	const double generationMemoryGB; 
-        const bool dump;
-
-        std::shared_ptr<symbolic::OriginalStateSpace> manager;
+    int precomputation_time_ms, precomputation_nodes; 
+    int termination_time_ms, termination_nodes;
+    const int global_limit_memory_MB;
+    const double increase_factor; 
+    const bool dump;
+    
+    std::shared_ptr<symbolic::OriginalStateSpace> manager;
 
     protected:
 	virtual void dump_strategy_specific_options() const override;
@@ -42,12 +44,9 @@ class PDBFactorySymbolic : public PDBFactory, public symbolic::SymController {
     // Type is shared because, in certain configurations, the factories
     // might want to store a copy of the result. 
 	virtual std::shared_ptr<pdbs::PatternDatabaseInterface> 
-	create_pdb(const TaskProxy & task, 
-		   const Pattern &pattern, 
-		   const std::vector<int> &operator_costs = std::vector<int>(), 
-		   double time_limit = std::numeric_limits<int>::max(),
-		   double memory_limit = 2000
-	    );
+	    create_pdb(const TaskProxy & task, 
+		       const Pattern &pattern, 
+		       const std::vector<int> &operator_costs = std::vector<int>()) override;
 
     virtual std::string name() const override;
 
@@ -57,7 +56,10 @@ class PDBFactorySymbolic : public PDBFactory, public symbolic::SymController {
 
     virtual symbolic::Bucket get_dead_ends() const override;
 
+    virtual void increase_computational_limits() override;
 
+    virtual std::shared_ptr<PDBCollection> terminate_creation
+	(const PDBCollection & pdb_collection) override;
 };
 }
 

@@ -87,9 +87,7 @@ protected:
     virtual std::shared_ptr<PatternDatabaseInterface> 
 	create_pdb(const TaskProxy & task, 
 		    const Pattern &pattern, 
-		   const std::vector<int> &operator_costs = std::vector<int>(),
-		   double time_limit = std::numeric_limits<int>::max(),
-		   double memory_limit=2000
+		   const std::vector<int> &operator_costs = std::vector<int>()
 	    ) = 0;    
 public:
 PDBFactory() : num_patterns_created(0), num_patterns_requested(0), num_patterns_regenerated(0) {}
@@ -99,14 +97,16 @@ PDBFactory() : num_patterns_created(0), num_patterns_requested(0), num_patterns_
     std::shared_ptr<PatternDatabaseInterface> 
 	compute_pdb(const TaskProxy & task, 
 		    const Pattern &pattern, 
-		    const std::vector<int> &operator_costs = std::vector<int>(), 
-		    double time_limit = std::numeric_limits<int>::max(),
-		    double memory_limit = 2000
+		    const std::vector<int> &operator_costs = std::vector<int>()
+                    /*, double time_limit = std::numeric_limits<int>::max(),
+		    double memory_limit = 2000 */
 	    );
 
     virtual std::string name() const = 0;
     void statistics() const;
 
+    virtual void increase_computational_limits() {}
+    
     virtual bool is_solved () const {
 	return false;
     }
@@ -115,8 +115,7 @@ PDBFactory() : num_patterns_created(0), num_patterns_requested(0), num_patterns_
 	return symbolic::Bucket();
     } 
 
-    virtual std::shared_ptr<PDBCollection> terminate_creation (const PDBCollection & pdb_collection, 
-							       double /*time_limit*/ = std::numeric_limits<double>::max()) {
+    virtual std::shared_ptr<PDBCollection> terminate_creation (const PDBCollection & pdb_collection) {
 	//By default we just make a copy
 	return std::make_shared<PDBCollection>(pdb_collection);
     }

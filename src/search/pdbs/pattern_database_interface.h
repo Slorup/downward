@@ -122,7 +122,7 @@ public:
 
     friend std::ostream & operator<<(std::ostream& os, const PatternDatabaseInterface & v);
 
-    virtual void terminate_creation (double /*max_time*/, double /*max_memory*/) {} 
+    virtual void terminate_creation (int  /*max_time_ms*/, int /*max_nodes*/, int /*global_limit_memory_MB*/) {} 
 };
 }
 

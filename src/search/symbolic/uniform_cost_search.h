@@ -143,6 +143,8 @@ namespace symbolic {
 	void filterMutex (Bucket & bucket) {
 	    mgr->filterMutex(bucket, fw, initialization());
 	}
+
+	void set_limits(int max_time_ms, int max_nodes);
     private: 
 
 	void violated(TruncatedReason reason , double time, 

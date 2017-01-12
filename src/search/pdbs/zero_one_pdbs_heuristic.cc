@@ -28,10 +28,7 @@ ZeroOnePDBs get_zero_one_pdbs_from_options(
     } else {
 	pdb_factory = make_shared <PDBFactoryExplicit>();
     }
-    double time_limit=1;
-    return ZeroOnePDBs(task_proxy, *patterns, *pdb_factory,time_limit);
-
-
+    return ZeroOnePDBs(task_proxy, *patterns, *pdb_factory);
 }
 
 ZeroOnePDBsHeuristic::ZeroOnePDBsHeuristic(

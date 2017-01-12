@@ -21,8 +21,12 @@ namespace pdbs {
 
     PDBFactorySymbolic::PDBFactorySymbolic(const options::Options & opts) : 
 	SymController(opts), 
-	generationTime(opts.get<int>("max_time")), 
-	generationMemoryGB(opts.get<double>("max_memory_gb")), 
+	precomputation_time_ms(opts.get<int>("precomputation_time_ms")), 
+	precomputation_nodes(opts.get<int>("precomputation_nodes")), 
+	termination_time_ms(opts.get<int>("termination_time_ms")), 
+	termination_nodes(opts.get<int>("termination_nodes")),
+	global_limit_memory_MB(opts.get<int>("global_limit_memory_MB")),
+	increase_factor(opts.get<double>("increase_factor")),
 	dump (opts.get<bool>("dump")) {
 	  
 	manager = make_shared<OriginalStateSpace>(vars.get(), mgrParams,
@@ -30,11 +34,9 @@ namespace pdbs {
     }
 
     std::shared_ptr<PatternDatabaseInterface> 
-PDBFactorySymbolic::create_pdb(const TaskProxy & task, 
-			       const Pattern &pattern, 
-			       const std::vector<int> &operator_costs, 
-			       double time_limit,
-			       double memory_limit) {
+    PDBFactorySymbolic::create_pdb(const TaskProxy & task, 
+				   const Pattern &pattern, 
+				   const std::vector<int> &operator_costs) {
 	
 	assert(!pattern.empty());
 	assert(!solved());
@@ -52,31 +54,43 @@ PDBFactorySymbolic::create_pdb(const TaskProxy & task,
 						   OperatorCostFunction::get_cost_function(operator_costs).get());
 	}
 	DEBUG_MSG(cout << "INIT PatternDatabaseSymbolic" << endl;);
-
-	memory_limit=min(generationMemoryGB,memory_limit);
 	
-	DEBUG_MSG(cout<<"MemoryLimit in GB:"<<memory_limit<<",";
-	    cout<<"Peak memory:"<<utils::get_peak_memory_in_kb()<<endl;fflush(stdout););
-
 	auto new_pdb = make_shared<PatternDatabaseSymbolic> (task, pattern, operator_costs,
 							     this, vars, state_space_mgr, 
-							     searchParams, std::min(generationTime, time_limit),
-							     memory_limit);
+							     searchParams, precomputation_time_ms,
+							     precomputation_nodes, 
+							     global_limit_memory_MB);
 
 	if(new_pdb->is_finished()) {
 	    DEBUG_MSG(cout << "Dead end states discovered: " << new_pdb->get_dead_ends().nodeCount() << endl;);
-
 
 	    if(!(new_pdb->get_dead_ends()*manager->getInitialState()).IsZero()) {
 			cout << "Problem proved unsolvable by: " << *new_pdb << endl;
 			utils::exit_with(utils::ExitCode::UNSOLVABLE);
 	    }
-	    //manager->addDeadEndStates(true, new_pdb->get_dead_ends());
-
 	}
 	
 	return new_pdb;
     }
+
+
+    void PDBFactorySymbolic::increase_computational_limits() {
+	precomputation_time_ms *= increase_factor; 
+	precomputation_time_ms = std::min(precomputation_time_ms, termination_time_ms);
+	precomputation_nodes *= increase_factor;
+	precomputation_nodes = std::min(precomputation_nodes, termination_nodes);
+    }
+
+    std::shared_ptr<PDBCollection> 
+    PDBFactorySymbolic::terminate_creation (const PDBCollection & pdb_collection) {
+	auto result = std::make_shared<PDBCollection> ();
+	for(auto & pdb : pdb_collection) {
+	    pdb->terminate_creation(precomputation_time_ms, termination_nodes, global_limit_memory_MB);
+	    result->push_back(pdb);
+	}
+	return result;
+    }
+
 
 
 
@@ -93,8 +107,12 @@ static shared_ptr<PDBFactory>_parse(options::OptionParser &parser) {
     symbolic::SymController::add_options_to_parser(parser, 30e3, 1e7);
 
     parser.add_option<bool> ("dump", "If set to true, prints the construction time.", "false");
-    parser.add_option<int> ("max_time", "Maximum construction time for each PDB.", "1800");
-    parser.add_option<double> ("max_memory_gb", "Maximum memory in GB.", "4.0");
+    parser.add_option<int> ("precomputation_time_ms", "Maximum construction time for each PDB.", "500");
+    parser.add_option<int> ("precomputation_nodes", "Maximum number of BDD nodes in the frontier of the PDB.", "1000000");
+    parser.add_option<int> ("termination_time_ms", "Maximum construction time for each PDB.", "30000");
+    parser.add_option<int> ("termination_time_ms", "Maximum construction time for each PDB.", "30000");
+    parser.add_option<int> ("global_limit_memory_MB", "Maximum memory allowed for the whole execution of the planner.", "2000");
+    parser.add_option<double> ("increase_factor", "Multiplication factor when we increase the precomputation time for a PDB.", "2");
 
     options::Options options = parser.parse();
     parser.document_synopsis(

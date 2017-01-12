@@ -30,11 +30,8 @@ namespace pdbs {
 	// might want to store a copy of the result. 
 	virtual std::shared_ptr<pdbs::PatternDatabaseInterface> 
 	create_pdb(const TaskProxy & task, 
-		    const Pattern &pattern, 
-		   const std::vector<int> &operator_costs = std::vector<int>(),
-		   double time_limit = std::numeric_limits<int>::max(),
-		   double memory_limit=2000
-
+		   const Pattern &pattern, 
+		   const std::vector<int> &operator_costs = std::vector<int>()
 	    ) override;
 
     public:
@@ -42,8 +39,7 @@ namespace pdbs {
 	virtual ~PDBFactoryOnline() override = default;
 
     virtual std::string name() const override;
-    virtual std::shared_ptr<PDBCollection> terminate_creation (const PDBCollection & pdb_collection, 
-							       double /*max_time*/) override {
+    virtual std::shared_ptr<PDBCollection> terminate_creation (const PDBCollection & pdb_collection) override {
       //std::cout<<"calling terminate_creation_online"<<std::flush<<std::endl;
       std::shared_ptr<AbstractTask> task;
       const TaskProxy task_proxy(*g_root_task());

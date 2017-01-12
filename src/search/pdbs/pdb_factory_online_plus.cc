@@ -22,12 +22,14 @@ namespace pdbs {
 
     PDBFactoryOnlinePlus::PDBFactoryOnlinePlus(const options::Options & opts) : 
 	SymController(opts), 
-	precomputationTime(opts.get<int>("precomputation_time")), 
-	precomputationNodes(opts.get<int>("precomputation_nodes")), 
-	terminationTime(opts.get<int>("termination_time")), 
-	terminationNodes(opts.get<int>("termination_nodes")), 
-	onlineTime(opts.get<int>("online_time")), 
-	onlineExpansions(opts.get<int>("online_expansions")), 
+	precomputation_time_ms(opts.get<int>("precomputation_time_ms")), 
+	precomputation_nodes(opts.get<int>("precomputation_nodes")), 
+	termination_time_ms(opts.get<int>("termination_time_ms")), 
+	termination_nodes(opts.get<int>("termination_nodes")),
+	online_time_ms(opts.get<int>("online_time_ms")), 
+	online_expansions(opts.get<int>("online_expansions")), 
+	global_limit_memory_MB(opts.get<int>("global_limit_memory_MB")),
+	increase_factor(opts.get<double>("increase_factor")),
 	use_pdbs_in_online_search (opts.get<bool>("use_pdbs_in_online_search")), 
 	online_use_canonical_pdbs (opts.get<bool>("online_use_canonical_pdbs")), 
 	online_prune_dominated_pdbs(opts.get<bool>("online_prune_dominated_pdbs")), 
@@ -38,11 +40,8 @@ namespace pdbs {
     }
 
     std::shared_ptr<PatternDatabaseInterface> 
-    PDBFactoryOnlinePlus::create_pdb(const TaskProxy & task, 
-				     const Pattern &pattern, 
-				     const std::vector<int> &operator_costs, 
-				     double time_limit,
-				     double /*memory_lmit*/) {
+    PDBFactoryOnlinePlus::create_pdb(const TaskProxy & task, const Pattern &pattern, 
+				     const std::vector<int> &operator_costs) {
 	
 	assert(!pattern.empty());
 	assert(!solved());
@@ -68,8 +67,9 @@ namespace pdbs {
 	    make_shared<PatternDatabaseOnlinePlus> (this, task, pattern, operator_costs, 
 						    pdb_task, vars, state_space_mgr, 
 						    searchParams, 
-						    std::min(precomputationTime, time_limit), 
-						    precomputationNodes);
+						    precomputation_time_ms, 
+						    precomputation_nodes,
+						    global_limit_memory_MB);
 
 	if(new_pdb->is_finished()) {
 	    DEBUG_MSG(cout << "Dead end states discovered: " << new_pdb->get_dead_ends().nodeCount() << endl;);
@@ -88,11 +88,19 @@ namespace pdbs {
     std::shared_ptr<PDBCollection> PDBFactoryOnlinePlus::terminate_creation (PDBCollection & pdb_collection) {
 	auto result = std::make_shared<PDBCollection> ();
 	for(auto & pdb : pdb_collection ) {
-	    pdb->terminate_creation(terminationTime, terminationNodes);
+	    pdb->terminate_creation(termination_time_ms, termination_nodes, global_limit_memory_MB);
 	    result->push_back(pdb);
 	}
 	return result;
     }
+
+    void PDBFactoryOnlinePlus::increase_computational_limits() {
+	precomputation_time_ms *= increase_factor; 
+	precomputation_time_ms = std::min(precomputation_time_ms, termination_time_ms);
+	precomputation_nodes *= increase_factor;
+	precomputation_nodes = std::min(precomputation_nodes, termination_nodes);
+    }
+
 
 
     void PDBFactoryOnlinePlus::dump_strategy_specific_options() const {

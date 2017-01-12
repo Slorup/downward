@@ -20,17 +20,18 @@ namespace pdbs {
 							 std::shared_ptr<symbolic::SymVariables> vars, 
 							 std::shared_ptr<symbolic::SymStateSpaceManager> manager, 
 							 const symbolic::SymParamsSearch & params, 
-							 double precomputationTime, 
-							 double precomputationNodeLimit)
+							 int max_time_ms, int max_nodes, 
+							 int global_limit_memory_MB)
 	: PatternDatabaseInterface(task, pattern, operator_costs),
 	factory(factory_),  pdb_task(pdb_task_), task_proxy(task), 
 	successor_generator(pdb_task), search_info(pattern.size(), 1000), 
 	symbolic_pdb(make_unique<PatternDatabaseSymbolic>(task, pattern, operator_costs, 
 							  factory, vars, manager, params, 
-							  precomputationTime, 
-							  precomputationNodeLimit))  {
+							  max_time_ms, max_nodes, 
+							  global_limit_memory_MB))  {
 	pdb_task_proxy = make_unique<TaskProxy>(*pdb_task);
     }
+
 
     int PatternDatabaseOnlinePlus::get_value(const State & original_state) const {
 	
@@ -52,6 +53,10 @@ namespace pdbs {
 	    factory->get_heuristics_for(*this, heuristics);
 	}
 
+	const int max_online_time_ms = factory->get_online_time_ms();
+	const int max_online_expansions = factory->get_online_expansions();
+
+	utils::Timer time;
         // (first implicit entry: priority,) second entry: index for an abstract state
 	assert(search_info.is_clear());
 
@@ -68,10 +73,11 @@ namespace pdbs {
 	int upper_bound = std::numeric_limits<int>::max();
 	
 	State state (initial_state);
-
 	int expanded_states = 0;
 
-	while (!open_list.empty()) {	  
+	while (!open_list.empty() && 
+	       expanded_states < max_online_expansions && 
+	       time()*1000.0 < max_online_time_ms) {	  
 	    pair<int, size_t> node = open_list.pop();
 	    if (node.first > upper_bound) {
 		break;
@@ -97,7 +103,6 @@ namespace pdbs {
 	    }
 
 	    assert(state.get_abstract_task());
-
 
 	    vector<OperatorProxy> applicable_ops;
 	    successor_generator.generate_applicable_ops(state, applicable_ops);
@@ -153,7 +158,6 @@ namespace pdbs {
 	return upper_bound;
     }
 
-
     int PatternDatabaseOnlinePlus::compute_heuristic(const State & /*state*/) const {
 	//return 0;
 	return symbolic_pdb->get_hvalue_unseen_states();
@@ -169,9 +173,8 @@ namespace pdbs {
 	return symbolic_pdb->compute_mean_finite_h();
     }
 
-
-    void PatternDatabaseOnlinePlus::terminate_creation (double  max_time, double max_nodes) {
-	symbolic_pdb->terminate_creation(max_time, max_nodes);
+    void PatternDatabaseOnlinePlus::terminate_creation (int max_time_ms, int max_nodes, 
+							int global_limit_memory_MB) {
+	symbolic_pdb->terminate_creation(max_time_ms, max_nodes, global_limit_memory_MB);
     }
-
 }

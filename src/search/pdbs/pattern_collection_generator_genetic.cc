@@ -197,10 +197,9 @@ void PatternCollectionGeneratorGenetic::evaluate(vector<double> &fitness_values)
                patterns are invalid. */
             fitness = 0.001;
         } else {
-            /* Generate the pattern collection heuristic and get its fitness
-               value. */
+            /* Generate the pattern collection heuristic and get its fitness value. */
 
-            ZeroOnePDBs zero_one_pdbs(task_proxy, *pattern_collection, *pdb_factory, 1 );
+            ZeroOnePDBs zero_one_pdbs(task_proxy, *pattern_collection, *pdb_factory);
             fitness = zero_one_pdbs.compute_approx_mean_finite_h();
             // Update the best heuristic found so far.
             if (fitness > best_fitness) {

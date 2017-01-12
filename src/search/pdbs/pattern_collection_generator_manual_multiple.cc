@@ -40,7 +40,7 @@ PatternCollectionInformation PatternCollectionGeneratorManualMultiple::generate(
       cout<<"\tadded pattern to pattern_collection:"<<input_pdb_collections.size()<<endl;
       cout<<"collection "<<input_pdb_collections.size()<<" finished:"<<endl;
       pattern_collections.push_back(pattern_collection);
-      std::shared_ptr<ZeroOnePDBs> candidate =make_shared<ZeroOnePDBs> (task_proxy, pattern_collection, *pdb_type, time_limit );
+      std::shared_ptr<ZeroOnePDBs> candidate =make_shared<ZeroOnePDBs> (task_proxy, pattern_collection, *pdb_type);
       input_pdb_collections.push_back(make_shared<PDBCollection> (candidate->get_pattern_databases()));
       result.include_additive_pdbs(input_pdb_collections.back());
       pattern_collection.clear();
@@ -52,7 +52,7 @@ PatternCollectionInformation PatternCollectionGeneratorManualMultiple::generate(
   }
       
   cout<<"collection "<<input_pdb_collections.size()<<" finished:"<<endl;
-  std::shared_ptr<ZeroOnePDBs> candidate =make_shared<ZeroOnePDBs> (task_proxy, pattern_collection, *pdb_type, time_limit );
+  std::shared_ptr<ZeroOnePDBs> candidate =make_shared<ZeroOnePDBs> (task_proxy, pattern_collection, *pdb_type);
   input_pdb_collections.push_back(make_shared<PDBCollection> (candidate->get_pattern_databases()));
   result.include_additive_pdbs(input_pdb_collections.back());
   cout<<"total collections:"<<input_pdb_collections.size()<<endl;

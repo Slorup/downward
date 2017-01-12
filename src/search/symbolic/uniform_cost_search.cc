@@ -328,6 +328,9 @@ namespace symbolic {
 	return os;
     }
 
+    void UniformCostSearch::set_limits(int max_time_ms, int max_nodes) {
+	p.set_limits(max_time_ms, max_nodes);
+    }
     
     void UniformCostSearch::violated(TruncatedReason reason, double ellapsed_seconds, int maxTime, int maxNodes){
 	//DEBUG_MSG(

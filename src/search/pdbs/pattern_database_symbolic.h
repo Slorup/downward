@@ -39,7 +39,7 @@ class PatternDatabaseSymbolic : public PatternDatabaseInterface {
 
     void create_pdb(symbolic::SymController * engine, 
 		    const symbolic::SymParamsSearch & params, 
-		    double generationTime, double generationMemoryGB);
+		    int max_time_ms, int max_nodes, int global_limit_memory_MB);
 
      int get_value(int * inputs) const;
 
@@ -60,7 +60,7 @@ class PatternDatabaseSymbolic : public PatternDatabaseInterface {
 			     std::shared_ptr<symbolic::SymVariables> vars, 
 			     std::shared_ptr<symbolic::SymStateSpaceManager> manager, 
 			     const symbolic::SymParamsSearch & params, 
-			     double precomputationTime, double precomputationMemory);
+			     int max_time_ms, int max_nodes, int global_limit_memory_MB);
 
      virtual ~PatternDatabaseSymbolic() = default;
 
@@ -100,7 +100,8 @@ class PatternDatabaseSymbolic : public PatternDatabaseInterface {
     */
     virtual double compute_mean_finite_h() const override;
 
-    virtual void terminate_creation (double  max_time, double max_nodes);
+    virtual void terminate_creation (int max_time_ms, int max_nodes, 
+				     int global_limit_memory_MB) override;
 };
 }
 

@@ -25,10 +25,7 @@ static options::PluginTypePlugin<PDBFactory> _type_plugin(
     std::shared_ptr<PatternDatabaseInterface> 
     PDBFactory::compute_pdb(const TaskProxy & task, 
 			   const Pattern &pattern, 
-			    const std::vector<int> &operator_costs, 
-			    double time_limit,
-			    double memory_limit) {
-      cout<<"compute_pdb:memory_limit:"<<memory_limit<<",time_limit:"<<time_limit<<endl;
+			    const std::vector<int> &operator_costs) {
 	assert(!pattern.empty ());
 	num_patterns_requested ++;
 	auto item = stored_pdbs.find(PDBKey(pattern, operator_costs));
@@ -42,7 +39,7 @@ static options::PluginTypePlugin<PDBFactory> _type_plugin(
 	}
 
 	num_patterns_created ++;
-	shared_ptr<PatternDatabaseInterface> result = create_pdb(task, pattern, operator_costs, time_limit,memory_limit); 
+	shared_ptr<PatternDatabaseInterface> result = create_pdb(task, pattern, operator_costs); 
         //cout<<"compute_after create,g_timer:"<<utils::g_timer()<<endl;
 	stored_pdbs[PDBKey(pattern, operator_costs)] = result;    
         //cout<<"compute_after stored,g_timer"<<utils::g_timer()<<endl;

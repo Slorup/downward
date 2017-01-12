@@ -25,38 +25,29 @@ namespace pdbs {
 						     std::shared_ptr<SymVariables> vars_, 
 						     std::shared_ptr<SymStateSpaceManager> manager_, 
 						     const SymParamsSearch & params, 
-						     double generationTime, 
-						     double generationMemory) : 
+						     int max_time_ms, int max_nodes, int global_limit_memory_MB) : 
 	PatternDatabaseInterface(task_proxy, pattern, operator_costs), 
 	vars (vars_), manager (manager_), heuristic(vars->getADD(0)), dead_ends(vars->zeroBDD()), 
 	finished(false), hvalue_unseen_states(0), average(0) {
 
-	  // DEBUG_MSG(cout<<"start_time_pdb_constructor:"<<utils::g_timer()<<",";);
-	  // generationMemoryGB=(memory_limit/1024.0)-(utils::get_peak_memory_in_kb()/(1024.0*1024.0));
-	  // if(generationMemoryGB<=0){
-	  //   cout<<"No more pdb gen, reached Memory limit!!!"<<endl;
-	  //   return;
-	  // }
-	  // DEBUG_MSG(cout<<"generationMemoryGB for symbolic:"<<generationMemoryGB<<endl;);
-	
-	create_pdb(engine, params, generationTime, generationMemory);
+	create_pdb(engine,params, max_time_ms, max_nodes, global_limit_memory_MB);
     }
 
 
     void PatternDatabaseSymbolic::create_pdb(SymController * engine, const SymParamsSearch & params, 
-					     double generationTime,  double generationMemoryGB) {
+					     int max_time_ms, int max_nodes, int global_limit_memory_MB) {
 	//float start_time=utils::g_timer();
 	//cout<<"start_time_create_pdb:"<<utils::g_timer()<<",";
 	search= make_unique<symbolic::UniformCostSearch> (engine, params);
+	search->set_limits(max_time_ms, max_nodes);
 	//cout<<"UniformCostSearch.time:"<<utils::g_timer()-start_time<<",";
 	search->init(manager, false);
 	//cout<<"serach.init.time:"<<utils::g_timer()-start_time<<",";
 
-
 	Timer time; 
 	while (!search->finished() && 
-	       time() < generationTime &&
-	       vars->totalMemoryGB() < generationMemoryGB &&
+	       time()*1000.0 < (double)max_time_ms &&
+	       vars->totalMemoryGB()*1024 < global_limit_memory_MB &&
 	       search->isSearchable()  && 
 	       !engine->solved()) {
 	    search->step();
@@ -68,12 +59,6 @@ namespace pdbs {
 	DEBUG_MSG(for (int v : pattern) cout << v << " ";);
 	
 	DEBUG_MSG(cout << "Solved: " << engine->solved() << " Finished: " << search->finished() <<  ", Average: " << average << endl;);
-	if(time()>=generationTime){
-	    cout<<"generationTimeLimit:"<<generationTime<<">GenTime:"<<time()<<",symbolic pdb interrupted"<<endl;
-	}
-	if(vars->totalMemoryGB() >= generationMemoryGB){
-	    cout<<"vars->totalMemoryGB():"<<vars->totalMemoryGB()<<">GenMemoryLimit(GB):"<<generationMemoryGB<<endl;
-	}
 
 	if(engine->solved()) {
 	    heuristic = engine->get_solution()->getADD();
@@ -125,17 +110,18 @@ namespace pdbs {
     }
 
 
-    void PatternDatabaseSymbolic::terminate_creation (double generationTime, 
-						      double generationMemoryGB) {
+    void PatternDatabaseSymbolic::terminate_creation (int max_time_ms, int max_nodes, 
+						      int global_limit_memory_MB) {
 
 	if(!search) {
 	    return;
 	}
-	
+	search->set_limits(max_time_ms, max_nodes);
+
 	Timer time; 
 	while (!search->finished() && 
-	       time() < generationTime &&
-	       vars->totalMemoryGB() < generationMemoryGB &&
+	       time()*1000 < (double)max_time_ms &&
+	       vars->totalMemoryGB()*1024 < global_limit_memory_MB &&
 	       search->isSearchable()  && 
 	       !search->getEngine()->solved()) {
 	    search->step();
