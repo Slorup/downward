@@ -188,6 +188,10 @@ public:
     
     virtual void terminate_creation (int max_time_ms, int max_step_time_ms, int max_nodes, 
 				     int global_limit_memory_MB) override;
+
+    virtual bool is_finished() const override { 
+	return symbolic_pdb->is_finished();
+    }
 };
 }
 

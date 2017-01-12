@@ -59,7 +59,7 @@ namespace pdbs {
 	if(pdb_factory->name()=="symbolic"){
 	    pdb_max_size=2*pow(10,5);
 	} else {
-	  pdb_max_size=2*pow(10,4);
+	    pdb_max_size=2*pow(10,4);
 	}
 	
 	if(recompute_max_additive_subsets)
