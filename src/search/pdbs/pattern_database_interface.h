@@ -66,10 +66,6 @@ public:
 	return nullptr;
     }
 
-    virtual std::shared_ptr<PatternDatabaseInterface> get_offline_pdb() const {
-	return nullptr;
-    }
-
     virtual const ADD & get_ADD() const {
 	std::cerr << "Error: get_ADD not implemented for this type of " << std::endl;
 	utils::exit_with(utils::ExitCode::CRITICAL_ERROR);	
@@ -87,6 +83,14 @@ public:
 	}
 	return evaluation_cache_value;	
     }
+
+    virtual std::shared_ptr<PatternDatabaseInterface> get_offline_pdb() const {
+	std::cerr << "Error: method  get_offline_pdb not implemented in this type of PDBs" 
+		  << std::endl;
+	utils::exit_with(utils::ExitCode::UNSUPPORTED);
+	return nullptr;
+    }
+
 
     virtual int get_value(const State &state) const = 0;
 

@@ -90,10 +90,15 @@ namespace pdbs {
 
     std::shared_ptr<PDBCollection> PDBFactoryOnlinePlus::terminate_creation (PDBCollection & pdb_collection) {
 	auto result = std::make_shared<PDBCollection> ();
+
 	for(auto & pdb : pdb_collection ) {
 	    pdb->terminate_creation(termination_time_ms, termination_step_time_ms, 
 				    termination_nodes, global_limit_memory_MB);
-	    result->push_back(pdb);
+	    if(use_online_during_search) {
+		result->push_back(pdb);
+	    } else {
+		result->push_back(pdb->get_offline_pdb());
+	    }
 	}
 	return result;
     }
@@ -138,6 +143,9 @@ namespace pdbs {
 	parser.add_option<bool> ("use_pdbs_in_online_search", "Whether smaller PDBs are used by the heuristic.", "false");
 	parser.add_option<bool> ("online_use_canonical_pdbs", "Use canonical PDBs or just max PDBs.", "false");
 	parser.add_option<bool> ("online_prune_dominated_pdbs", "Prune dominated PDBs in those selected for symbolic online.", "false");
+
+	parser.add_option<bool> ("use_online_during_search", "If true, online searches will continue during the main FD search phase.", "false");
+
 	parser.add_option<int> ("termination_time", "Maximum construction time for the termination phase of each PDB.", "1800");
 	parser.add_option<double> ("termination_memory_gb", "Maximum memory in GB for the termination phase.", "4.0");
 
