@@ -36,14 +36,12 @@ class PDBFactorySymbolicOnline : public PDBFactory, public symbolic::SymControll
 
     const double increase_factor; 
 
-
     const bool use_pdbs_in_online_search;
     const bool online_use_canonical_pdbs;
     const bool online_prune_dominated_pdbs; 
 
     const bool use_online_during_search;
     const bool dump;
-	
 
     std::shared_ptr<symbolic::OriginalStateSpace> manager;
 
@@ -73,7 +71,7 @@ class PDBFactorySymbolicOnline : public PDBFactory, public symbolic::SymControll
     
     virtual symbolic::Bucket get_dead_ends() const override;
 
-    virtual std::shared_ptr<PDBCollection> terminate_creation (PDBCollection & pdb_collection); 
+    virtual std::shared_ptr<PDBCollection> terminate_creation (PDBCollection & pdb_collection, int min_max_time, int min_max_step_time, int min_max_nodes); 
 
     int  get_online_time_ms() const {
 	return online_time_ms;

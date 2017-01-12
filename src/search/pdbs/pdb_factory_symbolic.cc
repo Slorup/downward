@@ -87,10 +87,13 @@ namespace pdbs {
     }
 
     std::shared_ptr<PDBCollection> 
-    PDBFactorySymbolic::terminate_creation (const PDBCollection & pdb_collection) {
+    PDBFactorySymbolic::terminate_creation (const PDBCollection & pdb_collection, int min_max_time, int min_max_step_time, int min_max_nodes) {
 	auto result = std::make_shared<PDBCollection> ();
 	for(auto & pdb : pdb_collection) {
-	    pdb->terminate_creation(precomputation_time_ms, precomputation_step_time_ms, termination_nodes, global_limit_memory_MB);
+	    pdb->terminate_creation(std::max(termination_time_ms, min_max_time),
+				    std::max(termination_step_time_ms, min_max_step_time), 
+				    std::max(termination_nodes, min_max_nodes), 
+				    global_limit_memory_MB);
 	    result->push_back(pdb);
 	}
 	return result;

@@ -88,12 +88,16 @@ namespace pdbs {
 	return new_pdb;
     }
 
-    std::shared_ptr<PDBCollection> PDBFactorySymbolicOnline::terminate_creation (PDBCollection & pdb_collection) {
+    std::shared_ptr<PDBCollection> PDBFactorySymbolicOnline::terminate_creation (PDBCollection & pdb_collection, 
+										 int min_max_time, int min_max_step_time, 
+										 int min_max_nodes) {
 	auto result = std::make_shared<PDBCollection> ();
 
 	for(auto & pdb : pdb_collection ) {
-	    pdb->terminate_creation(termination_time_ms, termination_step_time_ms, 
-				    termination_nodes, global_limit_memory_MB);
+	    pdb->terminate_creation(std::max(termination_time_ms, min_max_time),
+				    std::max(termination_step_time_ms, min_max_step_time), 
+				    std::max(termination_nodes, min_max_nodes), 
+				    global_limit_memory_MB);
 	    if(use_online_during_search) {
 		result->push_back(pdb);
 	    } else {

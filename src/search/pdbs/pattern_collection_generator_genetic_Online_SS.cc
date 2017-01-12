@@ -44,8 +44,12 @@ namespace pdbs {
 	  mutation_probability(opts.get<double>("mutation_probability")),
 	  disjoint_patterns(opts.get<bool>("disjoint")), 
 	  hybrid_pdb_size(opts.get<bool>("hybrid_pdb_size")),
+	  time_limit(opts.get<int>("time_limit")),
 	  genetic_time_limit(opts.get<int>("genetic_time_limit")),
-	  create_perimeter(opts.get<bool>("create_perimeter")){
+	  create_perimeter(opts.get<bool>("create_perimeter")), 
+	  perimeter_time_ms(opts.get<int>("perimeter_time_ms")),
+	perimeter_step_time_ms(opts.get<int>("perimeter_step_time_ms")),
+	perimeter_nodes(opts.get<int>("perimeter_nodes")) {
 	
 	cout<<"hybrid_pdb_size:"<<hybrid_pdb_size<<endl;
 	cout<<"create_perimeter:"<<create_perimeter<<endl;
@@ -53,11 +57,11 @@ namespace pdbs {
 	result=make_shared<PatternCollectionInformation>(task, make_shared<PatternCollection>());
        
 	if(pdb_factory->name()=="symbolic"){
-	  pdb_max_size=2*pow(10,5);
-	}
-	else{
+	    pdb_max_size=2*pow(10,5);
+	} else {
 	  pdb_max_size=2*pow(10,4);
 	}
+	
 	if(recompute_max_additive_subsets)
 	  cout<<"recompute_max_additive_subsets is on"<<endl;
 	else
@@ -348,8 +352,8 @@ namespace pdbs {
       //Giving hard limit if pdb is not symbolic so we do not blow up memomry
       //100 million elements seems high enough while safe
       if(pdb_factory->name()!="symbolic"){
-	pdb_max_size=min(pow(10.0,8),pdb_max_size);
-	min_size=min(pdb_max_size/100,min_size);//in case current_episode<100
+	  pdb_max_size=min(pow(10.0,8),pdb_max_size);
+	  min_size=min(pdb_max_size/100,min_size);//in case current_episode<100
       }
       min_size=max(min_size,1.0);//no empty patterns!
 	  //pdb_max_size=pow(10.0,8);
@@ -574,7 +578,7 @@ namespace pdbs {
 		    best_patterns.push_back(pattern_collection);
 		    if(!create_perimeter){
 		      //cout<<"added initial best_pdb"<<endl;
-		      best_pdb_collections.push_back(pdb_factory->terminate_creation(candidate.get_pattern_databases()));
+			best_pdb_collections.push_back(pdb_factory->terminate_creation(candidate.get_pattern_databases(), perimeter_time_ms, perimeter_step_time_ms, perimeter_nodes));
 		      cout<<"best_pdb_collections.size:"<<best_pdb_collections.size()<<flush<<endl;
 			
 		      //std::shared_ptr<PDBCollection> best_pdb=make_shared<PDBCollection>  (candidate.get_pattern_databases());
@@ -948,9 +952,7 @@ namespace pdbs {
 		    DEBUG_MSG(cout<<"\t\tvar:"<<var_id<<" never fits into bin for pdb_max_size:"<<pdb_max_size<<endl;);
 		    // var never fits into a bin.
 		    continue;
-		}
-		else if(!utils::is_product_within_limit(current_size, next_var_size,
-							pdb_max_size)) {
+		} else if(!utils::is_product_within_limit(current_size, next_var_size, pdb_max_size)) {
 			pattern_collection.push_back(pattern);
 			//cout<<"\tpattern added to collection, pattern_collection_size:"<<pattern_collection.size()<<endl;
 			DEBUG_MSG(cout<<"\tpattern added to collection, pattern_collection_size:"<<pattern_collection.size()<<",pattern_size:"<<current_size*next_var_size<<endl;);
@@ -1091,8 +1093,7 @@ namespace pdbs {
 	  const State &initial_state = task_proxy.get_initial_state();
 	  cout<<"perimeter h value:"<<candidate.get_value(initial_state)<<endl;
 	  initial_perimeter_threshold=candidate.get_value(initial_state)*2;
-	}
-	else{
+	} else{
 	  bin_packing();
 	}
 	vector<double> initial_fitness_values;
@@ -2139,6 +2140,10 @@ namespace pdbs {
         "create_perimeter",
         "whether to start with a perimeter",
         "false");
+
+    parser.add_option<int>("perimeter_time_ms", "maximum time for the perimeter", "250000");
+    parser.add_option<int>("perimeter_step_time_ms", "ms for each step of the perimeter", "30000");
+    parser.add_option<int>("perimeter_nodes", "number of BDD nodes in the perimeter frontier", "5000000");
 
 	Options opts = parser.parse();
 	if (parser.dry_run())

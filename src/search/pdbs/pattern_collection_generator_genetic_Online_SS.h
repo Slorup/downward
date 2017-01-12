@@ -93,6 +93,7 @@ class PatternCollectionGeneratorGeneticSS : public PatternCollectionGenerator {
     double time_limit=0.5;
     double genetic_time_limit=900;
     bool create_perimeter=false;
+    int perimeter_time_ms, perimeter_step_time_ms, perimeter_nodes;
     bool best_pdb_added=false;
     float avg_pdb_gen_time=0;
     float max_gen_time=0;

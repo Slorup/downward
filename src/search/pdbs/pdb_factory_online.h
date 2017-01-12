@@ -39,7 +39,10 @@ namespace pdbs {
 	virtual ~PDBFactoryOnline() override = default;
 
     virtual std::string name() const override;
-    virtual std::shared_ptr<PDBCollection> terminate_creation (const PDBCollection & pdb_collection) override {
+    virtual std::shared_ptr<PDBCollection> terminate_creation (const PDBCollection & pdb_collection, 
+							       int /*min_max_time*/, 
+							       int /*min_max_step_time*/, 
+							       int /*min_max_nodes*/) override {
       //std::cout<<"calling terminate_creation_online"<<std::flush<<std::endl;
       std::shared_ptr<AbstractTask> task;
       const TaskProxy task_proxy(*g_root_task());
