@@ -106,6 +106,8 @@ namespace pdbs {
     void PDBFactorySymbolicOnline::increase_computational_limits() {
 	precomputation_time_ms *= increase_factor; 
 	precomputation_time_ms = std::min(precomputation_time_ms, termination_time_ms);
+	precomputation_step_time_ms *= increase_factor; 
+	precomputation_step_time_ms = std::min(precomputation_step_time_ms, termination_step_time_ms);
 	precomputation_nodes *= increase_factor;
 	precomputation_nodes = std::min(precomputation_nodes, termination_nodes);
     }
