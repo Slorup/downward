@@ -90,7 +90,7 @@ class PatternCollectionGeneratorGeneticSS : public PatternCollectionGenerator {
        or not. */
     bool disjoint_patterns;
     bool hybrid_pdb_size=true;
-    double time_limit=0.5;
+    int time_limit=500;
     double genetic_time_limit=900;
     bool create_perimeter=false;
     int perimeter_time_ms, perimeter_step_time_ms, perimeter_nodes;

@@ -1065,7 +1065,7 @@ namespace pdbs {
 	  ZeroOnePDBs candidate(task_proxy, pattern_collection, *pdb_factory);
 	  cout<<"g_timer after calling ZeroOnePDB to generate initial perimeter:"<<utils::g_timer()<<endl;
 	  best_pdb_collections.push_back(pdb_factory->terminate_creation(candidate.get_pattern_databases(), perimeter_time_ms, perimeter_step_time_ms, perimeter_nodes));
-	  cout<<"g_timer before calling terminate_creation to push perimeter into best_pdb_collections"<<utils::g_timer()<<endl;
+	  cout<<"g_timer after calling terminate_creation to push perimeter into best_pdb_collections"<<utils::g_timer()<<endl;
 	  if(recompute_max_additive_subsets){
 	    result->include_additive_pdbs(best_pdb_collections.back());
 	    result->recompute_max_additive_subsets();
@@ -2128,7 +2128,7 @@ namespace pdbs {
         "recompute_max_additive_subsets",
         "attempts to recompute max additive subsets after generating all patterns",
         "false");
-    parser.add_option<double>(
+    parser.add_option<int>(
         "time_limit",
         "time limit in seconds for symbolic pdb_generation cut off",
         "0.5");
