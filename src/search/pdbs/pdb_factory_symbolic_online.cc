@@ -146,10 +146,6 @@ namespace pdbs {
 
 	parser.add_option<bool> ("use_online_during_search", "If true, online searches will continue during the main FD search phase.", "false");
 
-	parser.add_option<int> ("termination_time", "Maximum construction time for the termination phase of each PDB.", "1800");
-	parser.add_option<double> ("termination_memory_gb", "Maximum memory in GB for the termination phase.", "4.0");
-
-
 	options::Options options = parser.parse();
 	parser.document_synopsis(
 	    "PDB Factory Symbolic",
