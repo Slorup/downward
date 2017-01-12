@@ -20,14 +20,14 @@ namespace pdbs {
 							 std::shared_ptr<symbolic::SymVariables> vars, 
 							 std::shared_ptr<symbolic::SymStateSpaceManager> manager, 
 							 const symbolic::SymParamsSearch & params, 
-							 int max_time_ms, int max_nodes, 
+							 int max_time_ms, int max_step_time_ms, int max_nodes, 
 							 int global_limit_memory_MB)
 	: PatternDatabaseInterface(task, pattern, operator_costs),
 	factory(factory_),  pdb_task(pdb_task_), task_proxy(task), 
 	successor_generator(pdb_task), search_info(pattern.size(), 1000), 
 	symbolic_pdb(make_unique<PatternDatabaseSymbolic>(task, pattern, operator_costs, 
 							  factory, vars, manager, params, 
-							  max_time_ms, max_nodes, 
+							  max_time_ms, max_step_time_ms,  max_nodes, 
 							  global_limit_memory_MB))  {
 	pdb_task_proxy = make_unique<TaskProxy>(*pdb_task);
     }
@@ -173,8 +173,9 @@ namespace pdbs {
 	return symbolic_pdb->compute_mean_finite_h();
     }
 
-    void PatternDatabaseOnlinePlus::terminate_creation (int max_time_ms, int max_nodes, 
+    void PatternDatabaseOnlinePlus::terminate_creation (int max_time_ms, int max_step_time_ms,
+							int max_nodes, 
 							int global_limit_memory_MB) {
-	symbolic_pdb->terminate_creation(max_time_ms, max_nodes, global_limit_memory_MB);
+	symbolic_pdb->terminate_creation(max_time_ms, max_step_time_ms, max_nodes, global_limit_memory_MB);
     }
 }

@@ -23,8 +23,10 @@ namespace pdbs {
     PDBFactoryOnlinePlus::PDBFactoryOnlinePlus(const options::Options & opts) : 
 	SymController(opts), 
 	precomputation_time_ms(opts.get<int>("precomputation_time_ms")), 
+	precomputation_step_time_ms(opts.get<int>("precomputation_step_time_ms")), 
 	precomputation_nodes(opts.get<int>("precomputation_nodes")), 
 	termination_time_ms(opts.get<int>("termination_time_ms")), 
+	termination_step_time_ms(opts.get<int>("termination_step_time_ms")), 
 	termination_nodes(opts.get<int>("termination_nodes")),
 	online_time_ms(opts.get<int>("online_time_ms")), 
 	online_expansions(opts.get<int>("online_expansions")), 
@@ -68,6 +70,7 @@ namespace pdbs {
 						    pdb_task, vars, state_space_mgr, 
 						    searchParams, 
 						    precomputation_time_ms, 
+						    precomputation_step_time_ms, 
 						    precomputation_nodes,
 						    global_limit_memory_MB);
 
@@ -88,7 +91,8 @@ namespace pdbs {
     std::shared_ptr<PDBCollection> PDBFactoryOnlinePlus::terminate_creation (PDBCollection & pdb_collection) {
 	auto result = std::make_shared<PDBCollection> ();
 	for(auto & pdb : pdb_collection ) {
-	    pdb->terminate_creation(termination_time_ms, termination_nodes, global_limit_memory_MB);
+	    pdb->terminate_creation(termination_time_ms, termination_step_time_ms, 
+				    termination_nodes, global_limit_memory_MB);
 	    result->push_back(pdb);
 	}
 	return result;
@@ -116,8 +120,21 @@ namespace pdbs {
 	symbolic::SymController::add_options_to_parser(parser, 30e3, 1e7);
 
 	parser.add_option<bool> ("dump", "If set to true, prints the construction time.", "false");
-	parser.add_option<int> ("max_time", "Maximum construction time for each PDB.", "1800");
-	parser.add_option<double> ("max_memory_gb", "Maximum memory in GB.", "4.0");
+
+	parser.add_option<int> ("precomputation_time_ms", "Maximum construction time for each PDB.", "1000");
+	parser.add_option<int> ("precomputation_step_time_ms", "Maximum time for each step in the PDB construction.", "500");
+	parser.add_option<int> ("precomputation_nodes", "Maximum number of BDD nodes in the frontier of the PDB.", "100000");
+
+	parser.add_option<int> ("termination_time_ms", "Maximum construction time for each PDB in the termination phase.", "30000");
+	parser.add_option<int> ("termination_step_time_ms", "Maximum time for each step in the PDB construction during the termination phase.", "10000");
+	parser.add_option<int> ("termination_nodes", "Maximum number of BDD nodes in the frontier of the PDB.", "10000000");
+
+	parser.add_option<int> ("online_time_ms", "Maximum time for each online process.", "1800000");
+	parser.add_option<int> ("online_expansions", "Maximum number of expansions for each online process.", "10000000");
+
+	parser.add_option<int> ("global_limit_memory_MB", "Maximum memory allowed for the whole execution of the planner.", "2000");
+	parser.add_option<double> ("increase_factor", "Multiplication factor when we increase the precomputation time for a PDB.", "2");
+
 	parser.add_option<bool> ("use_pdbs_in_online_search", "Whether smaller PDBs are used by the heuristic.", "false");
 	parser.add_option<bool> ("online_use_canonical_pdbs", "Use canonical PDBs or just max PDBs.", "false");
 	parser.add_option<bool> ("online_prune_dominated_pdbs", "Prune dominated PDBs in those selected for symbolic online.", "false");

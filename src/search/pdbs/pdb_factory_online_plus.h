@@ -29,8 +29,8 @@ namespace pdbs {
     class PatternDatabaseOnlinePlus;
 
 class PDBFactoryOnlinePlus : public PDBFactory, public symbolic::SymController {
-    int precomputation_time_ms, precomputation_nodes; 
-    int termination_time_ms, termination_nodes;
+    int precomputation_time_ms, precomputation_step_time_ms, precomputation_nodes; 
+    int termination_time_ms, termination_step_time_ms, termination_nodes;
     const int online_time_ms, online_expansions;
     const int global_limit_memory_MB;
 

@@ -25,21 +25,21 @@ namespace pdbs {
 						     std::shared_ptr<SymVariables> vars_, 
 						     std::shared_ptr<SymStateSpaceManager> manager_, 
 						     const SymParamsSearch & params, 
-						     int max_time_ms, int max_nodes, int global_limit_memory_MB) : 
+						     int max_time_ms, int max_step_time_ms, int max_nodes, int global_limit_memory_MB) : 
 	PatternDatabaseInterface(task_proxy, pattern, operator_costs), 
 	vars (vars_), manager (manager_), heuristic(vars->getADD(0)), dead_ends(vars->zeroBDD()), 
 	finished(false), hvalue_unseen_states(0), average(0) {
 
-	create_pdb(engine,params, max_time_ms, max_nodes, global_limit_memory_MB);
+	create_pdb(engine,params, max_time_ms, max_step_time_ms,  max_nodes, global_limit_memory_MB);
     }
 
 
     void PatternDatabaseSymbolic::create_pdb(SymController * engine, const SymParamsSearch & params, 
-					     int max_time_ms, int max_nodes, int global_limit_memory_MB) {
+					     int max_time_ms, int max_step_time_ms, int max_nodes, int global_limit_memory_MB) {
 	//float start_time=utils::g_timer();
 	//cout<<"start_time_create_pdb:"<<utils::g_timer()<<",";
 	search= make_unique<symbolic::UniformCostSearch> (engine, params);
-	search->set_limits(max_time_ms, max_nodes);
+	search->set_limits(max_step_time_ms, max_nodes);
 	//cout<<"UniformCostSearch.time:"<<utils::g_timer()-start_time<<",";
 	search->init(manager, false);
 	//cout<<"serach.init.time:"<<utils::g_timer()-start_time<<",";
@@ -110,13 +110,14 @@ namespace pdbs {
     }
 
 
-    void PatternDatabaseSymbolic::terminate_creation (int max_time_ms, int max_nodes, 
+    void PatternDatabaseSymbolic::terminate_creation (int max_time_ms, int max_step_time_ms,
+						      int max_nodes, 
 						      int global_limit_memory_MB) {
 
 	if(!search) {
 	    return;
 	}
-	search->set_limits(max_time_ms, max_nodes);
+	search->set_limits(max_step_time_ms, max_nodes);
 
 	Timer time; 
 	while (!search->finished() && 
