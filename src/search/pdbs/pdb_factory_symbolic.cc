@@ -43,6 +43,7 @@ namespace pdbs {
 	assert(!pattern.empty());
 	assert(!solved());
 	DEBUG_MSG(cout << "COMPUTE SYMBOLIC PDB" << endl;);
+	cout << "COMPUTE SYMBOLIC PDB" << flush<<endl;
 	std::set<int> pattern_set (pattern.begin(), pattern.end()); 
 	DEBUG_MSG(cout << "Pattern: "; for (int v : pattern_set) { cout << " " << v; }cout << endl;);
 	
@@ -84,6 +85,10 @@ namespace pdbs {
 	precomputation_step_time_ms = std::min(precomputation_step_time_ms, termination_step_time_ms);
 	precomputation_nodes *= increase_factor;
 	precomputation_nodes = std::min(precomputation_nodes, termination_nodes);
+	cout<<"New limits, precomputation_time_ms:"<<precomputation_time_ms<<endl;
+	cout<<"New limits, precomputation_step_time_ms:"<<precomputation_step_time_ms<<endl;
+	cout<<"New limits, precomputation nodes:"<<precomputation_nodes<<endl;
+
     }
 
     std::shared_ptr<PDBCollection> 

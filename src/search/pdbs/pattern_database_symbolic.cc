@@ -40,6 +40,7 @@ namespace pdbs {
 	//cout<<"start_time_create_pdb:"<<utils::g_timer()<<",";
 	search= make_unique<symbolic::UniformCostSearch> (engine, params);
 	search->set_limits(max_step_time_ms, max_nodes);
+	cout<<"\tmax_step_time_ms:"<<max_step_time_ms<<",max_nodes:"<<max_nodes<<flush<<endl;
 	//cout<<"UniformCostSearch.time:"<<utils::g_timer()-start_time<<",";
 	search->init(manager, false);
 	//cout<<"serach.init.time:"<<utils::g_timer()-start_time<<",";
@@ -55,10 +56,13 @@ namespace pdbs {
 	
 	finished = search->finished();
 	hvalue_unseen_states = search->getHNotClosed();
-	average = search->getClosed()->average_hvalue();
+	//average = search->getClosed()->average_hvalue();
 	DEBUG_MSG(for (int v : pattern) cout << v << " ";);
 	
 	DEBUG_MSG(cout << "Solved: " << engine->solved() << " Finished: " << search->finished() <<  ", Average: " << average << endl;);
+	cout << "\tpattern:";
+	for(auto var : pattern){cout<<var<<",";}
+	cout<<",Solved: " << engine->solved() << ",Finished: " << search->finished() <<",PeakMem:"<<utils::get_peak_memory_in_kb()<<endl;
 
 	if(engine->solved()) {
 	    heuristic = engine->get_solution()->getADD();

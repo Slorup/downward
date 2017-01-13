@@ -58,9 +58,10 @@ namespace pdbs {
        
 	if(pdb_factory->name()=="symbolic"){
 	    pdb_max_size=2*pow(10,5);
-	    max_target_size=12;
+	    max_target_size=15;
 	    min_target_size=5;
-	    //int rand=/
+	    int temp=rand()%(max_target_size-min_target_size);
+	    pdb_max_size=2*pow(10,temp);
 	} else {
 	    pdb_max_size=2*pow(10,4);
 	}
@@ -337,10 +338,17 @@ namespace pdbs {
     else{//so symbolic*/
       //pdb_max_size=numeric_limits<double>::max();
       if(!last_sampler_too_big){
-	if(valid_pattern_counter!=0&&valid_pattern_counter%100==0&&valid_pattern_counter>last_valid_pattern_counter){
-	  pdb_max_size*=10;
-	  min_size=pdb_max_size/1000;
-	  cout<<"time:"<<utils::g_timer<<",current_episode:"<<current_episode<<",pdb_max_size raised to:,"<<pdb_max_size<<",min_size:,"<<min_size<<endl;
+	if(valid_pattern_counter!=0&&valid_pattern_counter%20==0&&valid_pattern_counter>last_valid_pattern_counter){
+	  if(pdb_factory->name()!="symbolic"){
+	    min_target_size+=1;
+	    max_target_size=max(max_target_size,min_target_size);
+	    cout<<"time:"<<utils::g_timer<<",current_episode:"<<current_episode<<",max_target_size raised to:,"<<max_target_size<<",min_size:,"<<min_target_size<<endl;
+	  }
+	  else{
+	    pdb_max_size*=10;
+	    min_size=pdb_max_size/1000;
+	    cout<<"time:"<<utils::g_timer<<",current_episode:"<<current_episode<<",pdb_max_size raised to:,"<<pdb_max_size<<",min_size:,"<<min_size<<endl;
+	  }
 	  last_valid_pattern_counter=valid_pattern_counter;
 	}
       }
@@ -515,9 +523,20 @@ namespace pdbs {
 		      // pdb_max_size=pdb_max_size*10.0;
 		      // min_size=pdb_max_size/100;
 		      // cout<<"time:,"<<utils::g_timer()<<",increasing pdb_max_size to,"<<pdb_max_size<<",min_size:"<<min_size<<", avg_pdb_gen_time="<<avg_pdb_gen_time<<"<"<<time_limit<<endl; 
-		    } else*/ if(utils::g_timer()-last_time_collections_improved>20.0){
+		    } else*/ 
+		    if(utils::g_timer()-last_time_collections_improved>min_improv_time_limit){
+		      min_improvement_ratio/=2.0;//we want any heuristic improving perimenter
+		      if(pdb_factory->name()=="symbolic"){
 			pdb_factory->increase_computational_limits();
-			//last_sampler_too_big=false;
+			min_target_size+=1;
+			max_target_size+=1;
+		      }
+		      else{
+			min_improv_time_limit*=2.0;
+			cout<<"min_improv_time_limit:"<<min_improv_time_limit<<",time_limit:"<<time_limit<<",min_target_size:"<<min_target_size<<",max_target_size:"<<max_target_size<<endl;
+		      }
+		      time_limit*=2.0;
+			last_sampler_too_big=false;
 			//pdb_max_size=max(last_improv_collection_size*10.0,20000.0);//20K just in case something went wrong 
 
 			//SANTIAGO TODO: What is a good criteria for
@@ -532,18 +551,22 @@ namespace pdbs {
 		      // }
 		      cout<<"time:,"<<utils::g_timer()<<",increasing time_limit to,"<<time_limit<<",pdb_max_size:"<<pdb_max_size<<",min_size:"<<min_size<<", too long since last improvement found"<<endl; 
 		      last_time_collections_improved=utils::g_timer();
-		    }/* SANTIAGO TODO.
+		    }
 		    else if(avg_pdb_gen_time>time_limit){
 		      last_sampler_too_big=true;
+		      max_target_size-=1;
+		      min_target_size=min(max_target_size,min_target_size);
+		      cout<<"time:,"<<utils::g_timer()<<",time_limit:"<<time_limit<<",avg_pdb_gen_time:"<<avg_pdb_gen_time<<",reducing max_target_size to,"<<max_target_size<<",min_target_size:"<<min_target_size<<endl;
+
 		      //pdb_max_size=max(10000.0,pdb_max_size/10.0);
-		      if(max_gen_time>5*time_limit){
-			pdb_max_size=min(max_gen_size/100.0,last_improv_collection_size*10);
-		      }
-		      else{
-			pdb_max_size=last_improv_collection_size*10.0;
-		      }
+		      //if(max_gen_time>5*time_limit){
+			//pdb_max_size=min(max_gen_size/100.0,last_improv_collection_size*10);
+		      //}
+		      //else{
+		//	pdb_max_size=last_improv_collection_size*10.0;
+		 //     }
 		      cout<<"Last 10 pdbs avg_pdb_gen_time:"<<avg_pdb_gen_time<<",time_limit:"<<time_limit<<", Fixing pdb_max_size to:"<<pdb_max_size<<endl;
-		    }*/
+		    }
 		    //Need to keep size limit for explicit representation
 		    string temp_string("symbolic");
 		    if (pdb_factory->name().find(temp_string) == std::string::npos) {
@@ -843,7 +866,7 @@ namespace pdbs {
 		    //  cout<<"best_heuristic being set for the first time"<<endl;
 		    //}
 		    cout<<"time:,"<<utils::g_timer()<<",bin_packed:,"<<bin_packed_episode<<",adding1 best_heuristic,episode:,"<<current_episode<<",collection:,"<<collection_counter<<",new raised_ratio:,"<<float(raised_states)/float(sampled_states)<<",actual_states_ratio:,"<<float(raised_states)/float(sampled_states)<<",total_nodes:"<<total_SS_gen_nodes<<",pruned_states:"<<pruned_states<<",fitness:,"<<fitness<<",sampled_states:,"<<sampled_states<<",initial_value:,"<<current_heur_initial_value<<",skip_sampling:,"<<skip_sampling<<",best_heur_dead_ends:,"<<best_heur_dead_ends<<",best_heuristics count:"<<best_pdb_collections.size()<<",size:"<<overall_pdb_size<<",pdb_gen_time:"<<pdb_gen_time<<endl;
-		    if(min_improvement_ratio<0.02&&current_episode>200&&float(raised_states)/float(sampled_states)>0.2){
+		    if(min_improvement_ratio<0.02&&current_episode>40&&float(raised_states)/float(sampled_states)>0.2){
 		      min_improvement_ratio=0.2;
 		      cout<<"updated min_improv_ratio, was low because of perimeter but it seems perimeter was not that good to start with"<<endl;
 		    }
@@ -917,8 +940,16 @@ namespace pdbs {
 
     void PatternCollectionGeneratorGeneticSS::bin_packing() {
 	DEBUG_MSG(cout<<"Starting bin_packing, pdb_max_size:"<<pdb_max_size<<endl;);
+	
+	if(pdb_factory->name()=="symbolic"){
+	  int temp=rand()%(max_target_size-min_target_size);
+	  pdb_max_size=9*pow(10,min_target_size+temp);
+	  cout<<"g_timer:"<<utils::g_timer<<",temp:"<<temp<<",max_target_size:"<<max_target_size<<",min_target_size:"<<min_target_size<<",Starting bin_packing, pdb_max_size:"<<pdb_max_size<<endl;
+	}
+
 	TaskProxy task_proxy(*task);
 	VariablesProxy variables = task_proxy.get_variables();
+	
 
 	vector<int> variable_ids;
 	variable_ids.reserve(variables.size());
@@ -926,7 +957,9 @@ namespace pdbs {
 	for (size_t i = 0; i < variables.size(); ++i) {
 	    variable_ids.push_back(i);
 	}
-	size_t max_patterns=INT_MAX;
+	size_t max_patterns=INT_MAX;//As many patterns as needed
+
+	
 	//Some problems benefit form less patterns, higher sizes
 	//if(rand() % 10 >4){
 	//  max_patterns=0;

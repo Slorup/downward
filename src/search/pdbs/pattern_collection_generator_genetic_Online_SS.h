@@ -70,8 +70,9 @@ class PatternCollectionGeneratorGeneticSS : public PatternCollectionGenerator {
     int initial_perimeter_threshold=-1;
     int threshold=1;
     double overall_dominance_prunning_time=0;
-    double max_target_size=0;
-    double min_target_size=0;
+    int max_target_size=6;
+    int min_target_size=4;
+    double min_improv_time_limit=2.0;
    
     //SS data
     std::set<SSQueue, classcomp> L;
