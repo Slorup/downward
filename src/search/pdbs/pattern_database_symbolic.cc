@@ -55,10 +55,10 @@ namespace pdbs {
 	
 	finished = search->finished();
 	hvalue_unseen_states = search->getHNotClosed();
-	average = search->getClosed()->average_hvalue();
+	//average = search->getClosed()->average_hvalue();
 	DEBUG_MSG(for (int v : pattern) cout << v << " ";);
 	
-	DEBUG_MSG(cout << "Solved: " << engine->solved() << " Finished: " << search->finished() <<  ", Average: " << average << endl;);
+	DEBUG_MSG(cout << "Solved: " << engine->solved() << " Finished: " << search->finished() << " h unseen: " << hvalue_unseen_states << endl;);
 
 	if(engine->solved()) {
 	    heuristic = engine->get_solution()->getADD();
@@ -106,6 +106,9 @@ namespace pdbs {
     }
 
     double PatternDatabaseSymbolic::compute_mean_finite_h() const {
+	if(average == 0 && search) {
+	    average = search->getClosed()->average_hvalue();
+	}
 	return average;
     }
 
@@ -128,9 +131,12 @@ namespace pdbs {
 	    search->step();
 	} 
 	
+	cout << "g_timer when symbolic search finished: " << utils::g_timer() << endl; 
 	finished = search->finished();
 	hvalue_unseen_states = search->getHNotClosed();
-	average = search->getClosed()->average_hvalue();
+
+	cout << "finished: " << finished << " perimeter g: " << hvalue_unseen_states 
+	     << " average value: " << average << " g_timer: "  << utils::g_timer() << endl;
 
 	if(search->getEngine()->solved()) {
 	    heuristic = search->getEngine()->get_solution()->getADD();	    
@@ -140,6 +146,8 @@ namespace pdbs {
 	    //cout<<"time after serch.getHeuristic(false):"<<time()<<endl;
 	    if(finished) dead_ends += search->notClosed(); 
 	}
+	
+	cout << "Computed heuristic ADD. g_timer: " << utils::g_timer() << endl;
     }
 }
 
