@@ -58,6 +58,9 @@ namespace pdbs {
        
 	if(pdb_factory->name()=="symbolic"){
 	    pdb_max_size=2*pow(10,5);
+	    max_target_size=12;
+	    min_target_size=5;
+	    //int rand=/
 	} else {
 	    pdb_max_size=2*pow(10,4);
 	}
@@ -1117,7 +1120,7 @@ namespace pdbs {
 		    counter++;
 		}
 	    }
-	    else if(current_episode%100==0&&i>0){
+	    else if(current_episode%20==0&&i>0){
 	      if(utils::g_timer()>time_to_clean_dom){
 		    cout<<"time:"<<utils::g_timer()<<",time to clear dominated heuristics every 100 secs"<<endl;
 		    clear_dominated_heuristics();
