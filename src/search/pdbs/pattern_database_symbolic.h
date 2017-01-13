@@ -35,7 +35,7 @@ class PatternDatabaseSymbolic : public PatternDatabaseInterface {
     bool finished;
     int hvalue_unseen_states;
 
-    double average;
+    mutable double average;
 
     void create_pdb(symbolic::SymController * engine, 
 		    const symbolic::SymParamsSearch & params, 

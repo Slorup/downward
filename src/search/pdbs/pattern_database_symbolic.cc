@@ -40,7 +40,6 @@ namespace pdbs {
 	//cout<<"start_time_create_pdb:"<<utils::g_timer()<<",";
 	search= make_unique<symbolic::UniformCostSearch> (engine, params);
 	search->set_limits(max_step_time_ms, max_nodes);
-	cout<<"\tmax_step_time_ms:"<<max_step_time_ms<<",max_nodes:"<<max_nodes<<flush<<endl;
 	//cout<<"UniformCostSearch.time:"<<utils::g_timer()-start_time<<",";
 	search->init(manager, false);
 	//cout<<"serach.init.time:"<<utils::g_timer()-start_time<<",";
@@ -60,9 +59,6 @@ namespace pdbs {
 	DEBUG_MSG(for (int v : pattern) cout << v << " ";);
 	
 	DEBUG_MSG(cout << "Solved: " << engine->solved() << " Finished: " << search->finished() <<  ", Average: " << average << endl;);
-	cout << "\tpattern:";
-	for(auto var : pattern){cout<<var<<",";}
-	cout<<",Solved: " << engine->solved() << ",Finished: " << search->finished() <<",PeakMem:"<<utils::get_peak_memory_in_kb()<<endl;
 
 	if(engine->solved()) {
 	    heuristic = engine->get_solution()->getADD();
@@ -110,6 +106,9 @@ namespace pdbs {
     }
 
     double PatternDatabaseSymbolic::compute_mean_finite_h() const {
+	if(average == 0 && search) {
+	    average = search->getClosed()->average_hvalue();
+	}
 	return average;
     }
 
@@ -132,9 +131,11 @@ namespace pdbs {
 	    search->step();
 	} 
 	
+	cout << "g_timer when symbolic search finished: " << utils::g_timer() << endl; 
 	finished = search->finished();
 	hvalue_unseen_states = search->getHNotClosed();
-	average = search->getClosed()->average_hvalue();
+	cout << "finished: " << finished << " perimeter g: " << hvalue_unseen_states 
+	     << " average value: " << average << " g_timer: "  << utils::g_timer() << endl;
 
 	if(search->getEngine()->solved()) {
 	    heuristic = search->getEngine()->get_solution()->getADD();	    
@@ -144,6 +145,7 @@ namespace pdbs {
 	    //cout<<"time after serch.getHeuristic(false):"<<time()<<endl;
 	    if(finished) dead_ends += search->notClosed(); 
 	}
+	cout << "Computed heuristic ADD. g_timer: " << utils::g_timer() << endl;
     }
 }
 
