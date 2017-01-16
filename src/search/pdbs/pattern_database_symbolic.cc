@@ -50,7 +50,9 @@ namespace pdbs {
 	       vars->totalMemoryGB()*1024 < global_limit_memory_MB &&
 	       search->isSearchable()  && 
 	       !engine->solved()) {
+	  double start_step_time=utils::g_timer();
 	    search->step();
+	    cout<<"\tstep search time:"<<utils::g_timer()-start_step_time<<",overall time(secs):"<<time()*1000<<endl;
 	} 
 	
 	finished = search->finished();
@@ -105,6 +107,11 @@ namespace pdbs {
 	}else {
 	    return -1;
 	}
+    }
+    void PatternDatabaseSymbolic::set_goal_cost(const vector<int> & state_pattern, const State & state, int value) const {
+	assert(std::includes(pattern.begin(), pattern.end(), state_pattern.begin(), state_pattern.end()));
+	auto bin = vars->getBinaryDescription(state_pattern, state.get_values());
+	set_value(bin,value);
     }
 
     double PatternDatabaseSymbolic::compute_mean_finite_h() const {

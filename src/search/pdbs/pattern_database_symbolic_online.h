@@ -155,6 +155,7 @@ class PatternDatabaseSymbolicOnline : public PatternDatabaseInterface {
  
     int compute_heuristic(const State & state) const;
     int get_goal_cost(const State & state) const;
+    void set_goal_cost(const State & state,int value) const;
 
 public:
     PatternDatabaseSymbolicOnline(PDBFactorySymbolicOnline * factory_, 

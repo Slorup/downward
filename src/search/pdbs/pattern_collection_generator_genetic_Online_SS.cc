@@ -53,6 +53,7 @@ namespace pdbs {
 	
 	cout<<"hybrid_pdb_size:"<<hybrid_pdb_size<<endl;
 	cout<<"create_perimeter:"<<create_perimeter<<endl;
+	cout<<"pdb type:"<<pdb_factory->name()<<endl;
 	num_collections=1;
 	result=make_shared<PatternCollectionInformation>(task, make_shared<PatternCollection>());
        
@@ -751,18 +752,20 @@ namespace pdbs {
 		current_heur_initial_value=candidate.get_value(initial_state);
 		total_online_samples++;
 		for(SS_iter=SS_states_vector.begin();SS_iter!=SS_states_vector.end();){
-		    //cout<<"working on state:"<<SS_iter->id<<endl;
+		    cout<<"working on state:"<<SS_iter->id<<endl;
 		    if(unique_samples.find(SS_iter->id)==unique_samples.end()){
 			cout<<"state not in unique_samples!!!"<<endl;exit(0);
 		    }
 		    if(sampled_states%100==0){
 			if(pruned_states==0){
 			    if(utils::g_timer()-start_sampler_time>0.2){
+				cout<<"\tcurrent_episode:"<<current_episode<<",exiting candidate vs best_heuristic SS_states comparison, 0.2 secs iterating without a single better h value"<<endl;
 				DEBUG_MSG(cout<<"\tcurrent_episode:"<<current_episode<<",exiting candidate vs best_heuristic SS_states comparison, 0.2 secs iterating without a single better h value"<<endl;);
 				break;
 			    }
 			}
 			else if(pruned_states>0){
+			  cout<<"\t exiting candidate vs best_heuristic SS_states comparison, spent max 0.5 secs"<<endl;
 			    if(utils::g_timer()-start_sampler_time>0.5){
 				DEBUG_MSG(cout<<"\t exiting candidate vs best_heuristic SS_states comparison, spent max 0.5 secs"<<endl;);
 				break;
@@ -781,11 +784,13 @@ namespace pdbs {
 			best_heur_dead_ends++;
 			SS_states.erase(SS_iter->id);
 			SS_iter=SS_states_vector.erase(SS_iter);
+			cout<<"\tstate is already known dead_end, removing"<<endl;
 			continue;
 		    }
 		    else if(best_h+SS_iter->g>sampling_threshold){
 			SS_states.erase(SS_iter->id);
 			SS_iter=SS_states_vector.erase(SS_iter);
+			cout<<"\tstored best_h is above prunning threshold,f:"<<best_h+SS_iter->g<< ",threshold:"<<sampling_threshold<<endl;
 			continue;
 		    }
 		    sampled_states++;
@@ -801,7 +806,7 @@ namespace pdbs {
 		    if(candidate_h==numeric_limits<int>::max()){
 			raised_states++;
 			pruned_states+=SS_iter->weight;
-			//cout<<"sampled_state:,"<<sampled_states<<",out of "<<SS_states.size()<<"is now pruned by dead_end, weight:"<<SS_iter->weight<<",current_total:"<<total_SS_gen_nodes<<endl;
+			cout<<"sampled_state:,"<<sampled_states<<",out of "<<SS_states.size()<<"is now pruned by dead_end, weight:"<<SS_iter->weight<<",current_total:"<<total_SS_gen_nodes<<endl;
 			SS_iter++;
 			continue;
 		    }
@@ -820,7 +825,10 @@ namespace pdbs {
 			    pruned_states+=SS_iter->weight;
 			    raised_states++;
 			    //cout<<"id:,"<<SS_iter->id<<",candidate_h:"<<candidate_h<<",best_h:"<<best_h<<endl;
-			    //cout<<"sampled_state:,"<<sampled_states<<",out of "<<SS_states.size()<<"is now pruned by higher h, weight:"<<SS_iter->weight<<",current_total:"<<total_SS_gen_nodes<<endl;
+			    cout<<"sampled_state:,"<<sampled_states<<",out of "<<SS_states.size()<<"is now pruned by higher h, weight:"<<SS_iter->weight<<",current_total:"<<total_SS_gen_nodes<<endl;
+			}
+			else{
+			  cout<<"\tstored best_h is above candidate_h:"<<candidate_h<<",best_h:"<<best_h<<endl;
 			}
 		    //}
 		    SS_iter++;
@@ -879,6 +887,7 @@ namespace pdbs {
 			    best_patterns.back().push_back(pattern_collection.at(i));
 			}
 		    }
+		    cout<<"calling terminate_creation from genetic_online"<<endl;
 		    best_pdb_collections.push_back(pdb_factory->terminate_creation(candidate.get_pattern_databases()));
 		    best_pdb_added=true;
 

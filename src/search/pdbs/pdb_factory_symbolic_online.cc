@@ -91,6 +91,7 @@ namespace pdbs {
     std::shared_ptr<PDBCollection> PDBFactorySymbolicOnline::terminate_creation (PDBCollection & pdb_collection, 
 										 int min_max_time, int min_max_step_time, 
 										 int min_max_nodes) {
+      cout<<"calling terminate_creation symbolic_online"<<endl;
 	auto result = std::make_shared<PDBCollection> ();
 
 	for(auto & pdb : pdb_collection ) {
@@ -101,7 +102,8 @@ namespace pdbs {
 	    if(use_online_during_search) {
 		result->push_back(pdb);
 	    } else {
-		result->push_back(pdb->get_offline_pdb());
+	      cout<<"getting offline_pdb for selected pattern:";for (int v : pdb->get_pattern()) { cout << " " << v; }cout << endl; 
+	      result->push_back(pdb->get_offline_pdb());
 	    }
 	}
 	return result;
@@ -123,7 +125,7 @@ namespace pdbs {
     }
 
     string PDBFactorySymbolicOnline::name() const {
-	return "symbolic";
+	return "online_symbolic";
     }
 
 
@@ -140,8 +142,8 @@ namespace pdbs {
 	parser.add_option<int> ("termination_step_time_ms", "Maximum time for each step in the PDB construction during the termination phase.", "10000");
 	parser.add_option<int> ("termination_nodes", "Maximum number of BDD nodes in the frontier of the PDB.", "10000000");
 
-	parser.add_option<int> ("online_time_ms", "Maximum time for each online process.", "1800000");
-	parser.add_option<int> ("online_expansions", "Maximum number of expansions for each online process.", "10000000");
+	parser.add_option<int> ("online_time_ms", "Maximum time for each online process.", "10");
+	parser.add_option<int> ("online_expansions", "Maximum number of expansions for each online process.", "10000");
 
 	parser.add_option<int> ("global_limit_memory_MB", "Maximum memory allowed for the whole execution of the planner.", "2000");
 	parser.add_option<double> ("increase_factor", "Multiplication factor when we increase the precomputation time for a PDB.", "2");
