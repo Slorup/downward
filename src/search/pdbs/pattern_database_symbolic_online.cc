@@ -89,7 +89,7 @@ namespace pdbs {
 	  }
 
 	    pair<int, size_t> node = open_list.pop();
-	    if (node.first > upper_bound) {
+	    if (node.first >= upper_bound) {
 		break;
 	    }
 
@@ -165,7 +165,6 @@ namespace pdbs {
 	}
 	cout<<"finished, time:"<<time()<<",upper bound:"<<upper_bound<<",lower bound:"<<lower_bound<<endl;
 	search_info.clear();
-
 	
 	DEBUG_MSG(cout << "Upper bound: " << upper_bound << " expanded: " << expanded_states << endl;);
 
