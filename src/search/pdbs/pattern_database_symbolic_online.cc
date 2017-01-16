@@ -173,7 +173,7 @@ namespace pdbs {
 	    pair<int, size_t> node = open_list.pop();
 	    return std::min(upper_bound, node.first);
 	} else {
-	    return upper_bund;
+	    return upper_bound;
 	}
     }
 
