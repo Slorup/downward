@@ -216,7 +216,7 @@ shared_ptr<MaxAdditivePDBSubsets> prune_dominated_subsets_sample_space(
 	for(size_t j=0;j<collection_to_patterns[i].size();j++){
 	  if(collection_to_patterns[i][j]==pattern){
 	    collection_to_pdb_index[i].push_back(counter);
-	    //DEBUG_MSG(cout<<"collection_to_pdb_index["<<i<<"]["<<collection_to_pdb_index[i].size()-1<<"]:"<<collection_to_pdb_index[i].back()<<flush<<endl;);
+	    cout<<"collection_to_pdb_index["<<i<<"]["<<collection_to_pdb_index[i].size()-1<<"]:"<<collection_to_pdb_index[i].back()<<flush<<endl;
 	  }
 	}
       }

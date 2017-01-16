@@ -57,8 +57,10 @@ namespace pdbs {
 	hvalue_unseen_states = search->getHNotClosed();
 	//average = search->getClosed()->average_hvalue();
 	DEBUG_MSG(for (int v : pattern) cout << v << " ";);
+	for (int v : pattern) cout << v << ",";
 	
 	DEBUG_MSG(cout << "Solved: " << engine->solved() << " Finished: " << search->finished() <<  ", Average: " << average << endl;);
+	cout << "Solved: " << engine->solved() << " Finished: " << search->finished() <<  ", max_time_ms: " << max_time_ms << endl;
 
 	if(engine->solved()) {
 	    heuristic = engine->get_solution()->getADD();

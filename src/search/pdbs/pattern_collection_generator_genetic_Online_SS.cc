@@ -58,7 +58,7 @@ namespace pdbs {
        
 	if(pdb_factory->name()=="symbolic"){
 	    pdb_max_size=2*pow(10,5);
-	    max_target_size=15;
+	    max_target_size=25;
 	    min_target_size=5;
 	    int temp=rand()%(max_target_size-min_target_size);
 	    pdb_max_size=2*pow(10,temp);
@@ -342,7 +342,7 @@ namespace pdbs {
 	  if(pdb_factory->name()!="symbolic"){
 	    min_target_size+=1;
 	    max_target_size=max(max_target_size,min_target_size);
-	    cout<<"time:"<<utils::g_timer<<",current_episode:"<<current_episode<<",max_target_size raised to:,"<<max_target_size<<",min_size:,"<<min_target_size<<endl;
+	    cout<<"time:"<<utils::g_timer<<",current_episode:"<<current_episode<<",min_target_size raised to:,"<<max_target_size<<",min_size:,"<<min_target_size<<endl;
 	  }
 	  else{
 	    pdb_max_size*=10;
@@ -525,7 +525,7 @@ namespace pdbs {
 		      // cout<<"time:,"<<utils::g_timer()<<",increasing pdb_max_size to,"<<pdb_max_size<<",min_size:"<<min_size<<", avg_pdb_gen_time="<<avg_pdb_gen_time<<"<"<<time_limit<<endl; 
 		    } else*/ 
 		    if(utils::g_timer()-last_time_collections_improved>min_improv_time_limit){
-		      min_improvement_ratio/=2.0;//we want any heuristic improving perimenter
+		      min_improvement_ratio/=2.0;//its getting harder, so we lower the addition condition
 		      if(pdb_factory->name()=="symbolic"){
 			pdb_factory->increase_computational_limits();
 			min_target_size+=1;
