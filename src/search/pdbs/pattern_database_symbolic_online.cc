@@ -73,7 +73,6 @@ namespace pdbs {
 	DEBUG_MSG(cout << "Initial: " << initial_id << " with h=" << initial_h << endl;);
 	open_list.push(initial_h, initial_id);
 	int upper_bound = std::numeric_limits<int>::max();
-	int lower_bound = 0;
 	
 	State state (initial_state);
 	int expanded_states = 0;
@@ -89,14 +88,11 @@ namespace pdbs {
 	    }
 	  }
 
-
 	    pair<int, size_t> node = open_list.pop();
 	    if (node.first > upper_bound) {
 		break;
 	    }
-	    else{
-	      lower_bound=max(lower_bound,node.first);
-	    }
+
 	    SearchStateInfo & node_info = search_info.get_state_info(node.second);
 
 	    if(node_info.closed){
@@ -170,16 +166,15 @@ namespace pdbs {
 	cout<<"finished, time:"<<time()<<",upper bound:"<<upper_bound<<",lower bound:"<<lower_bound<<endl;
 	search_info.clear();
 
+	
 	DEBUG_MSG(cout << "Upper bound: " << upper_bound << " expanded: " << expanded_states << endl;);
-	if(goal_cost<0){//goal not found, return lower bound
-	  if(open_list.empty()){//dead end, no more nodes in open list, no goal found
-	    upper_bound = std::numeric_limits<int>::max();
-	  }
-	  else{//goal not found, search interupted
-	    return lower_bound;
-	  }
+
+	if(!open_list.empty()){//no more nodes in open list, no goal found 
+	    pair<int, size_t> node = open_list.pop();
+	    return std::min(upper_bound, node.first);
+	} else {
+	    return upper_bund;
 	}
-	return upper_bound;
     }
 
     int PatternDatabaseSymbolicOnline::compute_heuristic(const State & /*state*/) const {
