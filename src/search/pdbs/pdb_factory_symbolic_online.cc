@@ -88,7 +88,7 @@ namespace pdbs {
 	return new_pdb;
     }
 
-    std::shared_ptr<PDBCollection> PDBFactorySymbolicOnline::terminate_creation (PDBCollection & pdb_collection, 
+    std::shared_ptr<PDBCollection> PDBFactorySymbolicOnline::terminate_creation (const PDBCollection & pdb_collection, 
 										 int min_max_time, int min_max_step_time, 
 										 int min_max_nodes) {
       cout<<"calling terminate_creation symbolic_online"<<endl;
@@ -202,6 +202,6 @@ namespace pdbs {
     }
 
 
-    static options::PluginShared<PDBFactory> _plugin("online_symbolic", _parse);
+    static options::PluginShared<PDBFactory> _plugin("symbolic_online", _parse);
 
 }

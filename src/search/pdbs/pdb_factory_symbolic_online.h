@@ -56,7 +56,7 @@ class PDBFactorySymbolicOnline : public PDBFactory, public symbolic::SymControll
 	virtual std::shared_ptr<pdbs::PatternDatabaseInterface> 
 	    create_pdb(const TaskProxy & task, 
 		       const Pattern &pattern, 
-		       const std::vector<int> &operator_costs = std::vector<int>());
+		       const std::vector<int> &operator_costs = std::vector<int>()) override;
 	
     virtual void increase_computational_limits() override;
 
@@ -71,7 +71,9 @@ class PDBFactorySymbolicOnline : public PDBFactory, public symbolic::SymControll
     
     virtual symbolic::Bucket get_dead_ends() const override;
 
-    virtual std::shared_ptr<PDBCollection> terminate_creation (PDBCollection & pdb_collection, int min_max_time, int min_max_step_time, int min_max_nodes); 
+    virtual std::shared_ptr<PDBCollection> terminate_creation 
+	(const PDBCollection & pdb_collection, 
+	 int min_max_time, int min_max_step_time, int min_max_nodes) override; 
 
     int  get_online_time_ms() const {
 	return online_time_ms;

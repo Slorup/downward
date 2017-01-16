@@ -59,7 +59,8 @@ class PDBFactorySymbolic : public PDBFactory, public symbolic::SymController {
     virtual void increase_computational_limits() override;
 
     virtual std::shared_ptr<PDBCollection> terminate_creation
-	(const PDBCollection & pdb_collection, int min_max_time, int min_max_step_time, int min_max_nodes) override;
+	(const PDBCollection & pdb_collection, 
+	 int min_max_time, int min_max_step_time, int min_max_nodes) override;
 };
 }
 
