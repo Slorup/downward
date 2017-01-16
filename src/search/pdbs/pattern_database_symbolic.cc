@@ -108,11 +108,6 @@ namespace pdbs {
 	    return -1;
 	}
     }
-    void PatternDatabaseSymbolic::set_goal_cost(const vector<int> & state_pattern, const State & state, int value) const {
-	assert(std::includes(pattern.begin(), pattern.end(), state_pattern.begin(), state_pattern.end()));
-	auto bin = vars->getBinaryDescription(state_pattern, state.get_values());
-	set_value(bin,value);
-    }
 
     double PatternDatabaseSymbolic::compute_mean_finite_h() const {
 	if(average == 0 && search) {

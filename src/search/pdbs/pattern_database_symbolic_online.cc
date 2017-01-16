@@ -163,7 +163,7 @@ namespace pdbs {
 		}
 	    }
 	}
-	cout<<"finished, time:"<<time()<<",upper bound:"<<upper_bound<<",lower bound:"<<lower_bound<<endl;
+	//cout<<"finished, time:"<<time()<<",upper bound:"<<upper_bound<<",lower bound:"<<lower_bound<<endl;
 	search_info.clear();
 
 	
@@ -184,9 +184,6 @@ namespace pdbs {
 
     int PatternDatabaseSymbolicOnline::get_goal_cost(const State & state) const {
 	return symbolic_pdb->get_goal_cost(pattern, state);
-    }
-    void PatternDatabaseSymbolicOnline::set_goal_cost(const State & state,int value) const {
-	symbolic_pdb->set_goal_cost(pattern, state,value);
     }
 
     double PatternDatabaseSymbolicOnline::compute_mean_finite_h() const {
