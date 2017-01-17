@@ -43,10 +43,8 @@ namespace pdbs {
 	assert(!pattern.empty());
 	assert(!solved());
 	DEBUG_MSG(cout << "COMPUTE SYMBOLIC PDB" << endl;);
-	cout << "COMPUTE SYMBOLIC PDB" << flush<<endl;
 	std::set<int> pattern_set (pattern.begin(), pattern.end()); 
 	DEBUG_MSG(cout << "Pattern: "; for (int v : pattern_set) { cout << " " << v; }cout << endl;);
-	cout << "Pattern: "; for (int v : pattern_set) { cout << " " << v; }cout << endl;
 	
 	assert(manager);
 
@@ -67,12 +65,16 @@ namespace pdbs {
 							     global_limit_memory_MB);
 
 	if(new_pdb->is_finished()) {
+	  finished=true;
 	    DEBUG_MSG(cout << "Dead end states discovered: " << new_pdb->get_dead_ends().nodeCount() << endl;);
 
 	    if(!(new_pdb->get_dead_ends()*manager->getInitialState()).IsZero()) {
 			cout << "Problem proved unsolvable by: " << *new_pdb << endl;
 			utils::exit_with(utils::ExitCode::UNSOLVABLE);
 	    }
+	}
+	else{
+	  finished=false;
 	}
 	
 	return new_pdb;
@@ -97,7 +99,7 @@ namespace pdbs {
 					    int min_max_time, 
 					    int min_max_step_time, 
 					    int min_max_nodes) {
-      cout<<"calling terminate_creation symbolic"<<endl;
+      //cout<<"calling terminate_creation symbolic"<<endl;
 	auto result = std::make_shared<PDBCollection> ();
 	for(auto & pdb : pdb_collection) {
 	    pdb->terminate_creation(std::max(termination_time_ms, min_max_time),

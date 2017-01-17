@@ -334,7 +334,7 @@ namespace pdbs {
 	if(valid_pattern_counter!=0&&valid_pattern_counter%20==0&&valid_pattern_counter>last_valid_pattern_counter){
 	if(pdb_factory->name().find("symbolic")!=string::npos){
 	    min_target_size+=1;
-	    min_target_size=min(min_target_size,max_target_size-2);//We want a minimum spread between max_target_size and min_target_size
+	    min_target_size=min(min_target_size,max_target_size-3);//We want a minimum spread between max_target_size and min_target_size
 	    max_target_size=max(max_target_size,min_target_size);
 	    cout<<"time:"<<utils::g_timer<<",current_episode:"<<current_episode<<",min_target_size raised to:,"<<max_target_size<<",min_size:,"<<min_target_size<<endl;
 	  }
@@ -474,7 +474,7 @@ namespace pdbs {
 		  max_gen_time=utils::g_timer()-temp;
 	  	  max_gen_size=overall_pdb_size;
 		}
-		cout<<"generated candidate[,"<<candidate_count+1<<",],time:,"<<utils::g_timer()<<",size:,"<<overall_pdb_size<<",generation_time:,"<<pdb_gen_time<<",episode:,"<<current_episode<<endl;
+		cout<<"generated candidate[,"<<candidate_count+1<<",],time:,"<<utils::g_timer()<<",size:,"<<overall_pdb_size<<",generation_time:,"<<pdb_gen_time<<",episode:,"<<current_episode<<",finished:,"<<pdb_factory->is_finished()<<",bin_packed:,"<<bin_packed_episode<<endl;
 		if(pdb_factory->is_solved()){
 		    problem_solved_while_pdb_gen=true;
 		    cout<<"Solution found while generating PDB candidate of type:"<<pdb_factory->name()<<", adding PDB and exiting generation at time"<<utils::g_timer()<<endl;
@@ -866,7 +866,7 @@ namespace pdbs {
 		    //else{
 		    //  cout<<"best_heuristic being set for the first time"<<endl;
 		    //}
-		    cout<<"time:,"<<utils::g_timer()<<",bin_packed:,"<<bin_packed_episode<<",adding1 best_heuristic,episode:,"<<current_episode<<",collection:,"<<collection_counter<<",new raised_ratio:,"<<float(raised_states)/float(sampled_states)<<",actual_states_ratio:,"<<float(raised_states)/float(sampled_states)<<",total_nodes:"<<total_SS_gen_nodes<<",pruned_states:"<<pruned_states<<",fitness:,"<<fitness<<",sampled_states:,"<<sampled_states<<",initial_value:,"<<current_heur_initial_value<<",skip_sampling:,"<<skip_sampling<<",best_heur_dead_ends:,"<<best_heur_dead_ends<<",best_heuristics count:"<<best_pdb_collections.size()<<",size:"<<overall_pdb_size<<",pdb_gen_time:"<<pdb_gen_time<<",episode:,"<<current_episode<<endl;
+		    cout<<"time:,"<<utils::g_timer()<<",bin_packed:,"<<bin_packed_episode<<",adding1 best_heuristic,episode:,"<<current_episode<<",collection:,"<<collection_counter<<",new raised_ratio:,"<<float(raised_states)/float(sampled_states)<<",actual_states_ratio:,"<<float(raised_states)/float(sampled_states)<<",total_nodes:"<<total_SS_gen_nodes<<",pruned_states:"<<pruned_states<<",fitness:,"<<fitness<<",sampled_states:,"<<sampled_states<<",initial_value:,"<<current_heur_initial_value<<",skip_sampling:,"<<skip_sampling<<",best_heur_dead_ends:,"<<best_heur_dead_ends<<",best_heuristics count:"<<best_pdb_collections.size()<<",size:"<<overall_pdb_size<<",pdb_gen_time:"<<pdb_gen_time<<",episode:,"<<current_episode<<",finished:,"<<pdb_factory->is_finished()<<",bin_packed:,"<<bin_packed_episode<<endl;
 		    episodes_to_mutate=20;//Want to mutate around good episodes
 		    if(min_improvement_ratio<0.02&&current_episode>40&&float(raised_states)/float(sampled_states)>0.2){
 		      min_improvement_ratio=0.2;
@@ -1204,7 +1204,7 @@ namespace pdbs {
 		mutation_probability=((double) rand() / (RAND_MAX))/10.0;
 	    }
 	    else{
-	      cout<<"calling mutate2, current_episode:"<<i<<endl;
+	      //cout<<"calling mutate2, current_episode:"<<i<<endl;
 		int mutations=mutate2();
 		if(mutations==0){
 		  DEBUG_MSG(cout<<"mutations=0, next episode"<<endl<<flush;);

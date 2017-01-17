@@ -50,9 +50,9 @@ namespace pdbs {
 	       vars->totalMemoryGB()*1024 < global_limit_memory_MB &&
 	       search->isSearchable()  && 
 	       !engine->solved()) {
-	  double start_step_time=utils::g_timer();
+	  //double start_step_time=utils::g_timer();
 	    search->step();
-	    cout<<"\tstep search time:"<<utils::g_timer()-start_step_time<<",overall time(secs):"<<time()*1000<<endl;
+	    //cout<<"\tstep search time:"<<utils::g_timer()-start_step_time<<",overall time(secs):"<<time()*1000<<endl;
 	} 
 	
 	finished = search->finished();
@@ -62,7 +62,7 @@ namespace pdbs {
 	for (int v : pattern) cout << v << ",";
 	
 	DEBUG_MSG(cout << "Solved: " << engine->solved() << " Finished: " << search->finished() <<  ", Average: " << average << endl;);
-	cout << "Solved: " << engine->solved() << " Finished: " << search->finished() <<  ", max_time_ms: " << max_time_ms << endl;
+	//cout << "Solved: " << engine->solved() << " Finished: " << search->finished() <<  ", max_time_ms: " << max_time_ms << endl;
 
 	if(engine->solved()) {
 	    heuristic = engine->get_solution()->getADD();

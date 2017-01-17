@@ -113,6 +113,9 @@ PDBFactory() : num_patterns_created(0), num_patterns_requested(0), num_patterns_
     virtual bool is_solved () const {
 	return false;
     }
+    virtual bool is_finished () const {
+	return false;
+    }
 
     virtual symbolic::Bucket get_dead_ends() const {
 	return symbolic::Bucket();

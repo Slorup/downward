@@ -32,6 +32,7 @@ class PDBFactorySymbolic : public PDBFactory, public symbolic::SymController {
     const int global_limit_memory_MB;
     const double increase_factor; 
     const bool dump;
+    bool finished=false;
     
     std::shared_ptr<symbolic::OriginalStateSpace> manager;
 
@@ -52,6 +53,9 @@ class PDBFactorySymbolic : public PDBFactory, public symbolic::SymController {
 
     virtual bool is_solved () const override {
 	return solved();
+    }
+    virtual bool is_finished () const override {
+	return finished;
     }
 
     virtual symbolic::Bucket get_dead_ends() const override;
