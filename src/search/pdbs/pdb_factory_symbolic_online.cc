@@ -134,13 +134,13 @@ namespace pdbs {
 
 	parser.add_option<bool> ("dump", "If set to true, prints the construction time.", "false");
 
-	parser.add_option<int> ("precomputation_time_ms", "Maximum construction time for each PDB.", "1000");
-	parser.add_option<int> ("precomputation_step_time_ms", "Maximum time for each step in the PDB construction.", "500");
-	parser.add_option<int> ("precomputation_nodes", "Maximum number of BDD nodes in the frontier of the PDB.", "100000");
+	parser.add_option<int> ("precomputation_time_ms", "Maximum construction time for each PDB.", "100");
+	parser.add_option<int> ("precomputation_step_time_ms", "Maximum time for each step in the PDB construction.", "50");
+	parser.add_option<int> ("precomputation_nodes", "Maximum number of BDD nodes in the frontier of the PDB.", "10000");
 
-	parser.add_option<int> ("termination_time_ms", "Maximum construction time for each PDB in the termination phase.", "30000");
-	parser.add_option<int> ("termination_step_time_ms", "Maximum time for each step in the PDB construction during the termination phase.", "10000");
-	parser.add_option<int> ("termination_nodes", "Maximum number of BDD nodes in the frontier of the PDB.", "10000000");
+	parser.add_option<int> ("termination_time_ms", "Maximum construction time for each PDB in the termination phase.", "3000");
+	parser.add_option<int> ("termination_step_time_ms", "Maximum time for each step in the PDB construction during the termination phase.", "1000");
+	parser.add_option<int> ("termination_nodes", "Maximum number of BDD nodes in the frontier of the PDB.", "1000000");
 
 	parser.add_option<int> ("online_time_ms", "Maximum time for each online process.", "10");
 	parser.add_option<int> ("online_expansions", "Maximum number of expansions for each online process.", "10000");

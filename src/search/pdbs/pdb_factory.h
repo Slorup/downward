@@ -106,6 +106,9 @@ PDBFactory() : num_patterns_created(0), num_patterns_requested(0), num_patterns_
     void statistics() const;
 
     virtual void increase_computational_limits() {}
+    virtual int get_time_limit() {
+      return 0;
+    }
     
     virtual bool is_solved () const {
 	return false;

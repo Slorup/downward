@@ -59,6 +59,7 @@ class PDBFactorySymbolicOnline : public PDBFactory, public symbolic::SymControll
 		       const std::vector<int> &operator_costs = std::vector<int>()) override;
 	
     virtual void increase_computational_limits() override;
+    virtual int get_time_limit() override { return precomputation_time_ms;}
 
     void get_heuristics_for (const PatternDatabaseSymbolicOnline & pdb, 
 			     std::vector<std::shared_ptr<Heuristic>> & heuristics);

@@ -57,10 +57,12 @@ class PDBFactorySymbolic : public PDBFactory, public symbolic::SymController {
     virtual symbolic::Bucket get_dead_ends() const override;
 
     virtual void increase_computational_limits() override;
+    virtual int get_time_limit() override { return precomputation_time_ms;}
 
     virtual std::shared_ptr<PDBCollection> terminate_creation
 	(const PDBCollection & pdb_collection, 
 	 int min_max_time, int min_max_step_time, int min_max_nodes) override;
+
 };
 }
 

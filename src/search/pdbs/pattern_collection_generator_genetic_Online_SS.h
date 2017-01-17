@@ -72,7 +72,8 @@ class PatternCollectionGeneratorGeneticSS : public PatternCollectionGenerator {
     double overall_dominance_prunning_time=0;
     int max_target_size=6;
     int min_target_size=4;
-    double min_improv_time_limit=2.0;
+    double min_improv_time_limit=20.0;
+    int episodes_to_mutate=1;
    
     //SS data
     std::set<SSQueue, classcomp> L;

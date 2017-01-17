@@ -41,7 +41,7 @@ namespace pdbs {
 	// state.dump_pddl();
 	
 	int goal_cost = get_goal_cost(initial_state); // Check symbolic PDB 
-	cout<<"\tgoal_cost:"<<goal_cost<<endl;
+	//cout<<"\tgoal_cost:"<<goal_cost<<endl;
 	if(goal_cost >= 0) {
 	    return goal_cost;
 	}
@@ -55,7 +55,7 @@ namespace pdbs {
 	}
 
 	const int max_online_time_ms = factory->get_online_time_ms();
-	cout<<"\tmax_online_time_ms:"<<max_online_time_ms<<endl;
+	//cout<<"\tmax_online_time_ms:"<<max_online_time_ms<<endl;
 	const int max_online_expansions = factory->get_online_expansions();
 
 	utils::Timer time;
@@ -166,7 +166,7 @@ namespace pdbs {
 	//cout<<"finished, time:"<<time()<<",upper bound:"<<upper_bound<<",lower bound:"<<lower_bound<<endl;
 	search_info.clear();
 	
-	DEBUG_MSG(cout << "Upper bound: " << upper_bound << " expanded: " << expanded_states << endl;);
+	//DEBUG_MSG(cout << "Upper bound: " << upper_bound << " expanded: " << expanded_states << endl;);
 
 	if(!open_list.empty()){//no more nodes in open list, no goal found 
 	    pair<int, size_t> node = open_list.pop();

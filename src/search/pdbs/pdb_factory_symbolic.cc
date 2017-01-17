@@ -97,6 +97,7 @@ namespace pdbs {
 					    int min_max_time, 
 					    int min_max_step_time, 
 					    int min_max_nodes) {
+      cout<<"calling terminate_creation symbolic"<<endl;
 	auto result = std::make_shared<PDBCollection> ();
 	for(auto & pdb : pdb_collection) {
 	    pdb->terminate_creation(std::max(termination_time_ms, min_max_time),
