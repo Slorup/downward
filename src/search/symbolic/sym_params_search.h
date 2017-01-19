@@ -72,7 +72,7 @@ public:
     //Method to override the limits that we had set via parameter
     void set_limits(int max_time_ms, int max_nodes) { 
 	maxStepTime = max_time_ms; 
-	max_nodes = max_nodes;
+	maxStepNodes = max_nodes;
     }
 
 

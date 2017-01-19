@@ -71,6 +71,7 @@ class PatternCollectionGeneratorGeneticSS : public PatternCollectionGenerator {
     int threshold=1;
     double overall_dominance_prunning_time=0;
     int max_target_size=6;
+    int initial_max_target_size=6;
     int min_target_size=4;
     double min_improv_time_limit=20.0;
     int episodes_to_mutate=1;
@@ -106,6 +107,8 @@ class PatternCollectionGeneratorGeneticSS : public PatternCollectionGenerator {
     bool Not_Fixed_Yet=true;
     double last_overall_pdb_gen_time=0;
     double max_gen_size=0;
+    bool bin_pack_next=false;
+    bool perimeter_created=false;
 
     // Store best pattern collection over all episodes and its fitness value.
     vector<PatternCollection> best_patterns; //Alvaro: Eliminate best_patterns?
