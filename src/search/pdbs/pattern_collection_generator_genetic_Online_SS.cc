@@ -404,13 +404,11 @@ namespace pdbs {
 		counter++;
 
 		DEBUG_MSG(cout<<"time:,"<<utils::g_timer()<<",transformed Pattern:"<<pattern<<endl;);
-		cout<<"time:,"<<utils::g_timer()<<",transformed Pattern:"<<pattern<<",size:"<<get_pattern_size(pattern)<<endl;
 
 
 		//if(pdb_factory->name()!="symbolic"){
 		  if (is_pattern_too_large(pattern)) {
 		      DEBUG_MSG(cout << "pattern exceeds the memory limit!,pdb_max_size:" << pdb_max_size<<endl;);
-		      cout << "pattern exceeds the memory limit!,pdb_max_size:" << pdb_max_size<<endl;
 		      pattern_valid = false;
 		      break;
 		  }
@@ -420,14 +418,12 @@ namespace pdbs {
 		if (disjoint_patterns) {
 		    if (mark_used_variables(pattern, variables_used)) {
 		      DEBUG_MSG(cout << "patterns are not disjoint anymore!" << endl;);
-		      cout << "patterns are not disjoint anymore!" << endl;
 			pattern_valid = false;
 			break;
 		    }
 		}
 
 		DEBUG_MSG(cout << "time:,"<<utils::g_timer()<<",valid pattern ,pdb_min_size:" << min_size<<",pdb_max_size:"<<pdb_max_size<<",overall size:"<<get_pattern_size(pattern)<<endl;);
-		cout << "time:,"<<utils::g_timer()<<",valid pattern ,pdb_min_size:" << min_size<<",pdb_max_size:"<<pdb_max_size<<",overall size:"<<get_pattern_size(pattern)<<endl;
 		pattern_collection.push_back(pattern);
 		overall_pdb_size+=get_pattern_size(pattern);
 	    }
@@ -784,7 +780,6 @@ namespace pdbs {
 		    
 		current_heur_initial_value=candidate.get_value(initial_state);
 		total_online_samples++;
-		bool pdb_interrupted=pdb_factory.is_finished();
 		for(SS_iter=SS_states_vector.begin();SS_iter!=SS_states_vector.end();){
 		    //cout<<"time:,"<<utils::g_timer<<",working on state:"<<sampled_states<<endl;
 		    if(unique_samples.find(SS_iter->id)==unique_samples.end()){
@@ -999,17 +994,15 @@ namespace pdbs {
 
     void PatternCollectionGeneratorGeneticSS::bin_packing() {
 	DEBUG_MSG(cout<<"Starting bin_packing, pdb_max_size:"<<pdb_max_size<<endl;);
-	cout<<"g_timer:"<<utils::g_timer()<<",Starting bin_packing, pdb_max_size:"<<pdb_max_size<<endl;
 	
 	if(pdb_factory->name().find("symbolic")!=string::npos){
 	  std::default_random_engine generator;
 	  std::normal_distribution<double> distribution((max_target_size+min_target_size)/2,max_target_size-min_target_size);
 	  //int temp=rand()%(max_target_size-min_target_size);
 	  int temp=distribution(generator);
-	  cout<<"g_timer:"<<utils::g_timer<<",temp:"<<temp<<",max_target_size:"<<max_target_size<<",min_target_size:"<<min_target_size<<flush;
 	  pdb_max_size=9*pow(10,temp);
+	  cout<<"bin_packing,g_timer:"<<utils::g_timer<<",temp:"<<temp<<",max_target_size:"<<max_target_size<<",min_target_size:"<<min_target_size<<",pdb_max_size:"<<pdb_max_size<<flush;
 	}
-	cout<<",Starting bin_packing, pdb_max_size:"<<pdb_max_size<<flush<<endl;
 
 	TaskProxy task_proxy(*task);
 	VariablesProxy variables = task_proxy.get_variables();
@@ -1026,7 +1019,7 @@ namespace pdbs {
 		remaining_vars.insert(i);
 	      }
 	  }
-	  cout<<"remaining_vars:";for (auto var : remaining_vars) cout<<var<<",";cout<<endl;
+	  //cout<<"remaining_vars:";for (auto var : remaining_vars) cout<<var<<",";cout<<endl;
 
 	  vector<vector<bool>> pattern_collection;
 	  vector<bool> pattern(variables.size(), false);
@@ -1051,11 +1044,11 @@ namespace pdbs {
 		  set_difference(rel_vars_set.begin(), rel_vars_set.end(),
 		      candidate_pattern.begin(), candidate_pattern.end(),
 		      back_inserter(relevant_vars));
-		  cout<<"relevant vars to current_pattern:";for (auto item : relevant_vars) cout<<item<<",";cout<<endl;
+		  //cout<<"relevant vars to current_pattern:";for (auto item : relevant_vars) cout<<item<<",";cout<<endl;
 		  set_intersection(relevant_vars.begin(), relevant_vars.end(),
 		      remaining_vars.begin(), remaining_vars.end(),
 		      back_inserter(relevant_vars_in_remaining));
-		  cout<<"relevant vars in remaining:";for (auto item : relevant_vars_in_remaining) cout<<item<<",";cout<<endl;
+		  //cout<<"relevant vars in remaining:";for (auto item : relevant_vars_in_remaining) cout<<item<<",";cout<<endl;
 		  g_rng()->shuffle(relevant_vars);
 		  while(relevant_vars_in_remaining.size()>0){
 		    var_id=relevant_vars_in_remaining.back();
@@ -1066,7 +1059,7 @@ namespace pdbs {
 		      current_size *= next_var_size;
 		      pattern[var_id] = true;
 		      remaining_vars.erase(var_id);
-		      cout<<"added to pattern var_id:"<<var_id<<",current_size:"<<current_size<<",pdb_max_size:"<<pdb_max_size<<",new_pattern:"<<candidate_pattern<<",remaining vars:"<<remaining_vars.size()<<endl;
+		      //cout<<"added to pattern var_id:"<<var_id<<",current_size:"<<current_size<<",pdb_max_size:"<<pdb_max_size<<",new_pattern:"<<candidate_pattern<<",remaining vars:"<<remaining_vars.size()<<endl;
 		      break;
 		    }
 		  }
@@ -1074,11 +1067,11 @@ namespace pdbs {
 		    pattern_int=candidate_pattern;
 		  }
 		  else{//no var is small enough to be added, or none left
-		    cout<<"no more relevant vars can be added"<<flush<<endl;
+		    //cout<<"no more relevant vars can be added"<<flush<<endl;
 		    if(pattern_int.size()>0){
 			pattern_collection.push_back(pattern);
 			vector<int> trans_pattern=transform_to_pattern_normal_form(pattern_collection.back());
-			cout<<"added pattern["<<pattern_collection.size()-1<<"]:"<<trans_pattern<<",size:"<<get_pattern_size(trans_pattern)<<endl;
+			//cout<<"added pattern["<<pattern_collection.size()-1<<"]:"<<trans_pattern<<",size:"<<get_pattern_size(trans_pattern)<<endl;
 			pattern_int.clear();
 			pattern.clear();
 			pattern.resize(variables.size(), false);
@@ -1091,7 +1084,7 @@ namespace pdbs {
 		  advance(temp_it,rand()%remaining_vars.size());
 		  var_id=*temp_it;
 		  remaining_vars.erase(temp_it);
-		  cout<<"first var for pattern:"<<var_id<<",remaining vars:"<<remaining_vars.size()<<endl;
+		  //cout<<"first var for pattern:"<<var_id<<",remaining vars:"<<remaining_vars.size()<<endl;
 		  pattern[var_id]=true;
 		  pattern_int.push_back(var_id);
 		  double next_var_size = variables[var_id].get_domain_size();
@@ -1101,19 +1094,19 @@ namespace pdbs {
 		if(remaining_vars.empty()&&pattern_int.size()>0){
 		  pattern_collection.push_back(pattern);
 		  vector<int> trans_pattern=transform_to_pattern_normal_form(pattern_collection.back());
-		  cout<<"last added pattern["<<pattern_collection.size()-1<<"]:"<<trans_pattern<<",size:"<<get_pattern_size(trans_pattern)<<endl;
+		  //cout<<"last added pattern["<<pattern_collection.size()-1<<"]:"<<trans_pattern<<",size:"<<get_pattern_size(trans_pattern)<<endl;
 		}
 	    }
 	    //Sort patterns by size, so zero_one cost partition benefits larger patterns over shorter ones
 	    sort(pattern_collection.begin(),pattern_collection.end(),compare_pattern_length);
 	    
-	    //DEBUG_MSG(
+	    DEBUG_MSG(
 		cout<<"\t sorted pattern lengths:";
 		for(size_t i=0;i<pattern_collection.size();i++){
 		  cout<<std::count(pattern_collection.at(i).begin(),pattern_collection.at(i).end(),true)<<",";
 		}
 	       	cout<<endl;
-	    //);
+	    );
 	    pattern_collections.push_back(pattern_collection);
 	}
 	DEBUG_MSG(cout<<"bin_packed finished generating "<<pattern_collections.back().size()<<" patterns"<<endl;);
