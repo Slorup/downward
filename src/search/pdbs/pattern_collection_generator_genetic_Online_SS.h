@@ -200,6 +200,7 @@ class PatternCollectionGeneratorGeneticSS : public PatternCollectionGenerator {
       the disjoint_patterns flag).
     */
     void bin_packing();
+    void bin_packing_no_rel_analysis();
 
     /*
       Main genetic algorithm loop. All pattern collections are initialized with
