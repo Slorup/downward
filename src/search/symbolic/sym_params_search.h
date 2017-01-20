@@ -38,6 +38,7 @@ public:
     double ratioAfterRelax;
 
     bool non_stop;
+    bool stop_on_failure;
 
     bool debug;
 

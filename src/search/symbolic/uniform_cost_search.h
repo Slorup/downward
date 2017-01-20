@@ -50,6 +50,7 @@ namespace symbolic {
 	//to expand ready)
 	//SymStepCostEstimation estimationDisjCost, estimationDisjZero;
 	bool lastStepCost; //If the last step was a cost step (to know if we are in estimationDisjCost or Zero)
+	bool infeasible; //Boolean flag to stop the search when the frontier could not be prepared (if p.stop_on_failure)
 
 	SymController * engine; //Access to the bound and notification of new solutions
 

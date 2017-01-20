@@ -27,7 +27,7 @@ namespace symbolic {
 	UnidirectionalSearch(params), 
 	parent(nullptr), closed(make_shared<ClosedList>()),  
 	estimationCost(params), estimationZero(params),
-	lastStepCost(true), engine(eng) {}
+	lastStepCost(true), infeasible(false), engine(eng) {}
 
     bool UniformCostSearch::init(std::shared_ptr<SymStateSpaceManager>  manager, 
 				 bool forward, 
@@ -35,6 +35,7 @@ namespace symbolic {
 	mgr = manager;
 	fw = forward;
 	lastStepCost = true;
+	infeasible = false;
 	assert(mgr);
 
 	DEBUG_MSG(cout << "Init exploration: " << dirname(forward) << *this/* << " with mgr: " << manager */<< endl;);
@@ -88,6 +89,11 @@ namespace symbolic {
     }
 
     void UniformCostSearch::prepareBucket(){
+	if(infeasible) {
+	    return; 
+	}
+
+	bool shouldClose = false;
 	if(!frontier.bucketReady()){
 	    DEBUG_MSG(cout << "POP: bucketReady: " << frontier.bucketReady() << endl;);
 
@@ -111,43 +117,49 @@ namespace symbolic {
 	    mgr->filterMutex(frontier.bucket(), fw, initialization());
 	    removeZero(frontier.bucket());
 	
-	    // Close and move to reopen
-	    if(isAbstracted() || !lastStepCost || frontier.g() != 0){
-		//Avoid closing init twice
-		DEBUG_MSG (cout <<"Insert g="<< frontier.g() << " states into closed: " << 
-			   nodeCount(frontier.bucket()) << " (" << frontier.bucket().size() << " bdds)" << endl;);
-		for(const BDD & states : frontier.bucket()){
-		    DEBUG_MSG (cout <<"Closing: " << states.nodeCount() << endl;);
-
-		    closed->insert(frontier.g(), states);
-		}
-	    } 
-
-	    closed->setHNotClosed(open_list.minNextG(frontier, mgr->getAbsoluteMinTransitionCost()));
-	    closed->setFNotClosed(getF());
-
+	    // Close (Avoid closing init twice) 
+	    shouldClose = isAbstracted() || !lastStepCost || frontier.g() != 0;
+	    
 	    if(isOriginal()) engine->setLowerBound(getF());
        
 	    computeEstimation(true);
 	}
 
-	if(engine->solved()){
-	    DEBUG_MSG(cout << "SOLVED!!!: "<< engine->getLowerBound() << " >= " << engine->getUpperBound() << endl;);
-	    return; //If it has been solved, return 
+
+	if(!engine->solved()){
+	    int maxTime = p.getAllotedTime(nextStepTime());
+	    int maxNodes = p.getAllotedNodes(nextStepNodesResult());
+
+	    Result res = frontier.prepare(maxTime, maxNodes, fw, initialization()); 
+	    if(!res.ok) {
+		violated(res.truncated_reason, res.time_spent, maxTime, maxNodes);
+		if (p.stop_on_failure) {
+		    infeasible = true;
+		    return;
+		}
+	    }
 	}
 
-	initialization();
+	if(shouldClose) {
+	    const auto & frontier_bucket = engine->solved() ? frontier.bucket() : frontier.prepared_bucket();
+	    
+	    DEBUG_MSG (cout <<"Insert g="<< frontier.g() << " states into closed: " << 
+		       nodeCount(frontier_bucket) << " (" << frontier_bucket.size() << " bdds)" << endl;);
+	    for(const BDD & states : frontier_bucket){
+		DEBUG_MSG (cout <<"Closing: " << states.nodeCount() << endl;);
 
-	int maxTime = p.getAllotedTime(nextStepTime());
-	int maxNodes = p.getAllotedNodes(nextStepNodesResult());
+		closed->insert(frontier.g(), states);
+	    }
 
-        Result res = frontier.prepare(maxTime, maxNodes, fw, initialization()); 
-	if(!res.ok) {
-	    violated(res.truncated_reason, res.time_spent, maxTime, maxNodes);
+	    closed->setHNotClosed(open_list.minNextG(frontier, mgr->getAbsoluteMinTransitionCost()));
+	    closed->setFNotClosed(getF());
 	}
     }
 
     bool UniformCostSearch::stepImage(int maxTime, int maxNodes){
+	if(infeasible) {
+	    return false;
+	}
 	if(p.debug) {
 	    cout << ">> Step: " << *mgr << (fw ? " fw " : " bw ") << ", g=" << frontier.g()
 		 << " frontierNodes: " << frontier.nodes() << " [" << frontier.buckets() << "]" 
@@ -248,7 +260,7 @@ namespace symbolic {
     }
 
     bool UniformCostSearch::isSearchableWithNodes(int maxNodes) const{   
-	return frontier.expansionReady() && nextStepNodes() <= maxNodes;
+	return !infeasible && frontier.expansionReady() && nextStepNodes() <= maxNodes;
     }
 
 
