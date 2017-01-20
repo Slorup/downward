@@ -119,7 +119,7 @@ namespace pdbs {
     void PatternDatabaseSymbolic::terminate_creation (int max_time_ms, int max_step_time_ms,
 						      int max_nodes, 
 						      int global_limit_memory_MB) {
-      cout<<"calling terminate_creation, pattern_database_symbolic"<<endl;
+      //cout<<"calling terminate_creation, pattern_database_symbolic"<<endl;
 
 	if(!search) {
 	    return;

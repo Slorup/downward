@@ -331,7 +331,7 @@ namespace pdbs {
     else{//so symbolic*/
       //pdb_max_size=numeric_limits<double>::max();
       if(!last_sampler_too_big){
-	if(valid_pattern_counter!=0&&valid_pattern_counter%20==0&&valid_pattern_counter>last_valid_pattern_counter){
+	if(valid_pattern_counter!=0&&valid_pattern_counter%25==0&&valid_pattern_counter>last_valid_pattern_counter){
 	if(pdb_factory->name().find("symbolic")!=string::npos){
 	    min_target_size++;
 	    //In case max_target_size was making generation times too big
@@ -478,7 +478,15 @@ namespace pdbs {
 		double temp=utils::g_timer();
 		//cout<<"pattern_collection:"<<*pattern_collection<<endl;fflush(stdout);
 
+		if(utils::g_timer()>genetic_time_limit+avg_pdb_gen_time){//in case PDBs are getting very big, we want to get out before generating next pdb
+		    cout<<"breaking-1a out of GA Algortihm, current expected generation time:"<<utils::g_timer()+avg_pdb_gen_time<<" bigger than time_limit:"<<genetic_time_limit<<endl;
+		    break;
+		}
 		ZeroOnePDBs candidate (task_proxy, pattern_collection, *pdb_factory);
+		if(genetic_SS_timer->is_expired()||(double(utils::get_peak_memory_in_kb())/1024.0>memory_limit)){
+		    cout<<"breaking-1 out of GA Algortihm, current gen_time:"<<genetic_SS_timer<<" bigger than time_limit:"<<genetic_time_limit<<endl;
+		    break;
+		}
 		float pdb_gen_time=utils::g_timer()-temp;
 		if(utils::g_timer()-temp>max_gen_time){
 		  max_gen_time=utils::g_timer()-temp;
@@ -581,11 +589,14 @@ namespace pdbs {
 		    }
 		    else if(avg_pdb_gen_time>2.0*time_limit){
 		      last_sampler_too_big=true;
-		      max_target_size-=2;
-		      cout<<"time:,"<<utils::g_timer<<",reducing max_target_size,avg_pdb_gen_time:"<<avg_pdb_gen_time<<", is at least twice as big as time limit:,"<<time_limit<<endl;
-		      bin_pack_next=true;
+		      if(max_target_size>4){//Never reducing bellow 10^4
+			max_target_size-=2;
+			cout<<"time:,"<<utils::g_timer<<",reducing max_target_size,avg_pdb_gen_time:"<<avg_pdb_gen_time<<", is at least twice as big as time limit:,"<<time_limit<<endl;
+			bin_pack_next=true;
+		      }
 		    }
-		      min_target_size=min(max_target_size,min_target_size);
+		      min_target_size=min(max_target_size-2,min_target_size);
+		      min_target_size=max(min_target_size,0);//at least 0!
 		      cout<<"time:,"<<utils::g_timer()<<",time_limit:"<<time_limit<<",avg_pdb_gen_time:"<<avg_pdb_gen_time<<",reducing max_target_size to,"<<max_target_size<<",min_target_size:"<<min_target_size<<endl;
 
 		      //pdb_max_size=max(10000.0,pdb_max_size/10.0);
@@ -776,7 +787,7 @@ namespace pdbs {
 		vector<SS_state>::iterator SS_iter;
 
 		DEBUG_MSG(cout<<"SS_states_vector.size:"<<SS_states_vector.size()<<endl;fflush(stdout););
-		cout<<"SS_states_vector.size:"<<SS_states_vector.size()<<endl;fflush(stdout);
+		cout<<"time;,"<<utils::g_timer()<<",SS_states_vector.size:"<<SS_states_vector.size()<<endl;fflush(stdout);
 		    
 		current_heur_initial_value=candidate.get_value(initial_state);
 		total_online_samples++;
@@ -917,7 +928,7 @@ namespace pdbs {
 			    best_patterns.back().push_back(pattern_collection.at(i));
 			}
 		    }
-		    cout<<"calling terminate_creation from genetic_online"<<endl;
+		    //cout<<"calling terminate_creation from genetic_online"<<endl;
 		    double start_termination_time=utils::g_timer();
 		    best_pdb_collections.push_back(pdb_factory->terminate_creation(candidate.get_pattern_databases()));
 		    cout<<"termination_time:"<<utils::g_timer()-start_termination_time<<endl;
@@ -1367,8 +1378,13 @@ namespace pdbs {
 //		    mutate2();
 //		  }
 //		}
-//		else{
+//		elle{
+		if(rand()%2>0){  
 		  bin_packing();
+		}
+		else{
+		  bin_packing_no_rel_analysis();
+		}
 //		}
 		bin_packed_episode=true;
 		mutation_probability=((double) rand() / (RAND_MAX))/10.0;
@@ -2037,8 +2053,9 @@ namespace pdbs {
 	// test if the pattern respects the memory limit
 	double mem = 1;
 	for (size_t j = 0; j < pattern.size(); ++j) {
-	    double domain_size = g_variable_domain[pattern[j]];
-	    mem *= domain_size;
+	  //cout<<"g_variable_domain[pattern["<<j<<"]]:"<<g_variable_domain[pattern[j]]<<",mem:"<<mem<<endl;
+	  double domain_size = g_variable_domain[pattern[j]];
+	  mem *= domain_size;
 	}   
 	return mem;
     }
@@ -2229,8 +2246,14 @@ namespace pdbs {
 	  }
 	  cout<<"Whole pattern:"<<pattern<<flush<<endl;
 	  double overall_problem_size=get_pattern_size(pattern);
+	  if(overall_problem_size<0){//too big even for double!!!
+	    overall_problem_size=numeric_limits<double>::max();
+	  }
 	  cout<<"overall_problem_size:"<<overall_problem_size<<flush<<endl;
-	  max_target_size = log10 (overall_problem_size);
+	  //Some problems have such large sizes that even 
+	  //symbolic can not deal with them, limiting it
+	  //to 20 orders of magnitude for now
+	  max_target_size = min(20.0,log10 (overall_problem_size));
 	  initial_max_target_size=max_target_size;
 	  min_target_size=5;
 	  pdb_max_size=2*pow(10,min_target_size);
