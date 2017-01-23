@@ -492,7 +492,7 @@ namespace pdbs {
 		  max_gen_time=utils::g_timer()-temp;
 	  	  max_gen_size=overall_pdb_size;
 		}
-		cout<<"generated candidate[,"<<candidate_count+1<<",],time:,"<<utils::g_timer()<<",size:,"<<overall_pdb_size<<",generation_time:,"<<pdb_gen_time<<",episode:,"<<current_episode<<",finished:,"<<pdb_factory->is_finished()<<",bin_packed:,"<<bin_packed_episode<<endl;
+		//cout<<"generated candidate[,"<<candidate_count+1<<",],time:,"<<utils::g_timer()<<",size:,"<<overall_pdb_size<<",generation_time:,"<<pdb_gen_time<<",episode:,"<<current_episode<<",finished:,"<<pdb_factory->is_finished()<<",bin_packed:,"<<bin_packed_episode<<endl;
 		if(pdb_factory->is_solved()){
 		    problem_solved_while_pdb_gen=true;
 		    cout<<"Solution found while generating PDB candidate of type:"<<pdb_factory->name()<<", adding PDB and exiting generation at time"<<utils::g_timer()<<endl;
@@ -543,21 +543,23 @@ namespace pdbs {
 		    } else*/ 
 		    time_limit=pdb_factory->get_time_limit()/1000.0;
 		    if(valid_pattern_counter>10&&utils::g_timer()-last_time_collections_improved>min_improv_time_limit){
-		      if(utils::g_timer()-last_time_collections_improved>100.0&&current_episode>5){
-			pdb_factory->increase_computational_limits();
-			time_limit=pdb_factory->get_time_limit()/1000.0;
-			if(log10(last_improv_collection_size)<initial_max_target_size-2){//do not want to go back to perimeter size!!!
-			  max_target_size=log10(last_improv_collection_size)+1;
-			  min_target_size=log10(last_improv_collection_size)-1;
+		      if(pdb_factory->name().find("symbolic")!=string::npos){
+			if(utils::g_timer()-last_time_collections_improved>100.0&&current_episode>5){
+			  pdb_factory->increase_computational_limits();
+			  time_limit=pdb_factory->get_time_limit()/1000.0;
+			  if(log10(last_improv_collection_size)<initial_max_target_size-2){//do not want to go back to perimeter size!!!
+			    max_target_size=log10(last_improv_collection_size)+1;
+			    min_target_size=log10(last_improv_collection_size)-1;
+			  }
+			  cout<<"more than a 100 secs since we had improvment, increasing time limits but keeping size limits around last improvement"<<endl;
 			}
-			cout<<"more than a 100 secs since we had improvment, increasing time limits but keeping size limits around last improvement"<<endl;
-		      }
-		      else if(pdb_factory->name().find("symbolic")!=string::npos){
+			else{
 			pdb_factory->increase_computational_limits();
 			time_limit=pdb_factory->get_time_limit()/1000.0;
 			min_target_size+=1;
 			min_target_size=min(max_target_size,min_target_size);
 			bin_pack_next=true;
+			}
 		      }
 		      else{
 			time_limit*=1.5;
@@ -786,8 +788,7 @@ namespace pdbs {
 		double start_sampler_time=utils::g_timer();
 		vector<SS_state>::iterator SS_iter;
 
-		DEBUG_MSG(cout<<"SS_states_vector.size:"<<SS_states_vector.size()<<endl;fflush(stdout););
-		cout<<"time;,"<<utils::g_timer()<<",SS_states_vector.size:"<<SS_states_vector.size()<<endl;fflush(stdout);
+		DEBUG_MSG(cout<<"time;,"<<utils::g_timer()<<",SS_states_vector.size:"<<SS_states_vector.size()<<flush<<endl;);
 		    
 		current_heur_initial_value=candidate.get_value(initial_state);
 		total_online_samples++;
