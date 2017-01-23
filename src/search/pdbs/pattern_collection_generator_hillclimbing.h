@@ -31,9 +31,9 @@ class PDBFactory;
 // Implementation of the pattern generation algorithm by Haslum et al.
 class PatternCollectionGeneratorHillclimbing : public PatternCollectionGenerator {
     // maximum number of states for each pdb
-    const int pdb_max_size;
+    const double pdb_max_size;
     // maximum added size of all pdbs
-    const int collection_max_size;
+    double collection_max_size;
     const int num_samples;
     // minimal improvement required for hill climbing to continue search
     const int min_improvement;

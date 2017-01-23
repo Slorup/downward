@@ -32,14 +32,15 @@ namespace pdbs {
 struct HillClimbingTimeout : public exception {};
 
 PatternCollectionGeneratorHillclimbing::PatternCollectionGeneratorHillclimbing(const Options &opts)
-    : pdb_max_size(opts.get<int>("pdb_max_size")),
-      collection_max_size(opts.get<int>("collection_max_size")),
+    : pdb_max_size(opts.get<double>("pdb_max_size")),
+      collection_max_size(opts.get<double>("collection_max_size")),
       num_samples(opts.get<int>("num_samples")),
       min_improvement(opts.get<int>("min_improvement")),
       max_time(opts.get<double>("max_time")),
       num_rejected(0),
       hill_climbing_timer(0), 
       pdb_factory (opts.get<shared_ptr<PDBFactory>>("pdb_type")){
+	collection_max_size=max(collection_max_size,pdb_max_size*10);//keeping same ratio as the defaults
 }
 
 void PatternCollectionGeneratorHillclimbing::generate_candidate_patterns(
@@ -47,7 +48,7 @@ void PatternCollectionGeneratorHillclimbing::generate_candidate_patterns(
     PatternCollection &candidate_patterns) {
     const CausalGraph &causal_graph = task_proxy.get_causal_graph();
     const Pattern &pattern = pdb.get_pattern();
-    int pdb_size = pdb.get_size();
+    double pdb_size = pdb.get_size();
     for (int pattern_var : pattern) {
         /* Only consider variables used in preconditions for current
            variable from pattern. It would also make sense to consider
@@ -61,7 +62,7 @@ void PatternCollectionGeneratorHillclimbing::generate_candidate_patterns(
                        back_inserter(relevant_vars));
         for (int rel_var_id : relevant_vars) {
             VariableProxy rel_var = task_proxy.get_variables()[rel_var_id];
-            int rel_var_size = rel_var.get_domain_size();
+            double rel_var_size = rel_var.get_domain_size();
             if (utils::is_product_within_limit(pdb_size, rel_var_size,
                                                pdb_max_size)) {
                 Pattern new_pattern(pattern);
@@ -170,8 +171,8 @@ std::pair<int, int> PatternCollectionGeneratorHillclimbing::find_best_improving_
             best_pdb_index = i;
         }
         if (count > 0) {
-            cout << "pattern: " << candidate_pdbs[i]->get_pattern()
-                 << " - improvement: " << count << endl;
+            //cout << "pattern: " << candidate_pdbs[i]->get_pattern()
+            //     << " - improvement: " << count << endl;
         }
     }
 
@@ -347,12 +348,12 @@ PatternCollectionInformation PatternCollectionGeneratorHillclimbing::generate(sh
 
 
 void add_hillclimbing_options(OptionParser &parser) {
-    parser.add_option<int>(
+    parser.add_option<double>(
         "pdb_max_size",
         "maximal number of states per pattern database ",
         "2000000",
         Bounds("1", "infinity"));
-    parser.add_option<int>(
+    parser.add_option<double>(
         "collection_max_size",
         "maximal number of states in the pattern collection",
         "20000000",
