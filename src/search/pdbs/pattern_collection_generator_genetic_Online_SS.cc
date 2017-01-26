@@ -499,8 +499,25 @@ namespace pdbs {
 	  	  max_gen_size=overall_pdb_size;
 		}
 		if(current_episode%100==0){
-		  cout<<"generated candidate[,"<<candidate_count+1<<",],time:,"<<utils::g_timer()<<",size:,"<<overall_pdb_size<<",generation_time:,"<<pdb_gen_time<<",episode:,"<<current_episode<<",finished:,"<<pdb_factory->is_finished()<<",bin_packed:,"<<bin_packed_episode<<endl;
+		  cout<<"generated candidate[,"<<candidate_count+1<<",],time:,"<<utils::g_timer()<<",size:,"<<overall_pdb_size<<",generation_time:,"<<pdb_gen_time<<",episode:,"<<current_episode<<",finished:,"<<pdb_factory->is_finished()<<",bin_packed:,"<<bin_packed_episode<<",Peak Memory:"<<utils::get_peak_memory_in_kb()<<",current_memory:"<<utils::get_current_memory_in_kb()<<flush<<endl;
 		}
+
+		if(pdb_gen_time>10.0*time_limit){
+		  last_sampler_too_big=true;
+		  if (pdb_factory->name().find("symbolic") == std::string::npos) {
+		    max_target_size-=2;//symbolic much bigger, with explicit 2 orders of magnitude reduction already makes huge difference
+		    max_target_size=max(3,max_target_size);
+		    min_target_size=min(max_target_size-2,min_target_size);
+		    min_target_size=max(min_target_size,0);//at least 0!
+		    pdb_max_size=9*pow(10.0,(min_target_size+((max_target_size-min_target_size)/2)));
+		    cout<<"last pdb_gen_time is huge!, reducing max_target_size by 2 orders of magnitude,max_target_size:"<<max_target_size<<",min_target_size to"<<min_target_size<<",pdb_max_size:"<<pdb_max_size<<endl;
+		  }
+		  else{
+		    cout<<"last pdb_gen_time is huge!, reducing max_target_size to half:"<<max_target_size<<",min_target_size to 0"<<endl;
+		    max_target_size=max_target_size/2;
+		  }
+		}
+
 		if(pdb_factory->is_solved()){
 		    problem_solved_while_pdb_gen=true;
 		    cout<<"Solution found while generating PDB candidate of type:"<<pdb_factory->name()<<", adding PDB and exiting generation at time"<<utils::g_timer()<<endl;
@@ -552,7 +569,7 @@ namespace pdbs {
 		    if(pdb_factory->name().find("symbolic")!=string::npos){
 		      time_limit=pdb_factory->get_time_limit()/1000.0;
 		    }
-		    if(valid_pattern_counter>10&&utils::g_timer()-last_time_collections_improved>min_improv_time_limit){
+		    if(valid_pattern_counter>0&&utils::g_timer()-last_time_collections_improved>min_improv_time_limit){
 			if(utils::g_timer()-last_time_collections_improved>100.0&&current_episode>5){
 			  pdb_factory->increase_computational_limits();
 			  if(log10(last_improv_collection_size)<initial_max_target_size-2){//do not want to go back to perimeter size!!!
@@ -572,7 +589,13 @@ namespace pdbs {
 			}
 
 			min_target_size+=1;
-			min_target_size=min(max_target_size,min_target_size);
+			if(pdb_factory->name().find("symbolic")!=string::npos){
+			  min_target_size=min(max_target_size-3,min_target_size);
+			}
+			else{
+			  min_target_size=min(max_target_size-2,min_target_size);
+			}
+
 			bin_pack_next=true;
 			min_improv_time_limit*=1.5;
 			cout<<"increased min_improv_time_limit:"<<min_improv_time_limit<<",time_limit:"<<time_limit<<",min_target_size:"<<min_target_size<<",max_target_size:"<<max_target_size<<endl;
@@ -2293,7 +2316,7 @@ namespace pdbs {
 	result->set_dead_ends(pdb_factory->get_dead_ends());
 
 
-	cout <<"Finished,episodes:"<<current_episode<<",Pattern generation (Edelkamp) time: " << timer <<",Peak Memory:"<<utils::get_peak_memory_in_kb()<<endl;fflush(stdout);
+	cout <<"Finished,episodes:"<<current_episode<<",Pattern generation (Edelkamp) time: " << timer <<",Peak Memory:"<<utils::get_peak_memory_in_kb()<<",current_memory:"<<utils::get_current_memory_in_kb()<<flush<<endl;
 	return *result;
     }
 
