@@ -109,6 +109,8 @@ class PatternCollectionGeneratorGeneticSS : public PatternCollectionGenerator {
     double max_gen_size=0;
     bool bin_pack_next=false;
     bool perimeter_created=false;
+    bool reg_bin_pack_only=false;
+    bool rel_analysis_only=false;
 
     // Store best pattern collection over all episodes and its fitness value.
     vector<PatternCollection> best_patterns; //Alvaro: Eliminate best_patterns?

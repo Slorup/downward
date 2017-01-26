@@ -51,7 +51,9 @@ namespace pdbs {
 	  create_perimeter(opts.get<bool>("create_perimeter")), 
 	  perimeter_time_ms(opts.get<int>("perimeter_time_ms")),
 	perimeter_step_time_ms(opts.get<int>("perimeter_step_time_ms")),
-	perimeter_nodes(opts.get<int>("perimeter_nodes")) {
+	perimeter_nodes(opts.get<int>("perimeter_nodes")),
+	reg_bin_pack_only(opts.get<bool>("reg_bin_pack_only")),
+	rel_analysis_only(opts.get<bool>("rel_analysis_only")) {
 	
 	cout<<"hybrid_pdb_size:"<<hybrid_pdb_size<<endl;
 	cout<<"create_perimeter:"<<create_perimeter<<endl;
@@ -554,6 +556,7 @@ namespace pdbs {
 			    max_target_size=log10(last_improv_collection_size)+1;
 			    min_target_size=log10(last_improv_collection_size)-1;
 			  }
+			  time_limit*=2.0;
 			  cout<<"more than a 100 secs since we had improvment, increasing time limits but keeping size limits around last improvement"<<endl;
 			}
 			else{
@@ -1316,7 +1319,23 @@ namespace pdbs {
 	  last_improv_collection_size=get_pattern_size(pattern);
 	  perimeter_created=true;
 	} else{
-	  bin_packing();
+	  if(rel_analysis_only==true){
+	    cout<<"bin_packing with rel_analysis_only"<<endl;
+	    bin_packing_no_rel_analysis();
+	  }
+	  else if(reg_bin_pack_only==true){
+	    bin_packing();
+	    cout<<"bin_packing regular only"<<endl;
+	  }
+	  else{//doing mixed bin_packing
+	    cout<<"bin_packing, mixed regular and rel_analysis"<<endl;
+	    if(rand()%2>0){ 
+	      bin_packing();
+	    }
+	    else{
+	      bin_packing_no_rel_analysis();
+	    }
+	  }
 	}
 	vector<double> initial_fitness_values;
 	evaluate(initial_fitness_values);
@@ -1350,34 +1369,22 @@ namespace pdbs {
 		}
 		disjoint_patterns=!disjoint_patterns;
 		num_collections=1;
-		    
-//		  if(utils::g_timer()-last_time_collections_improved>50.0){
-//		  if(best_patterns.size()>2&&rand()%2==0){
-//		    vector<vector<bool> > pattern_coll_bool;
-//		    //size_t selected_coll=max(size_t(1),size_t(rand()%best_patterns.size()));//avoiding perimeter pdb, no point mutating that one
-//		    size_t selected_coll=best_patterns.size()-1;
-//		    vector<vector<int> > pattern_coll_int=best_patterns.at(selected_coll);
-//		    double current_pdb_size=0;
-//		    for(size_t i=0;i<best_patterns.back().size();i++){
-//		      current_pdb_size+=get_pattern_size(pattern_coll_int[i]);
-//		      vector<bool> pattern_bit;
-//		      transform_to_pattern_bitvector_form(pattern_bit,pattern_coll_int[i]);
-//		      pattern_coll_bool.push_back(pattern_bit);
-//		    }
-//		    pattern_collections.assign(1,pattern_coll_bool);
-//		    cout<<"no bin_packing, using existing selected pattern collection to mutate a bigger pdb:"<<endl;
-//		    pdb_max_size=current_pdb_size*10;
-//		    mutate2();
-//		  }
-//		}
-//		elle{
-		if(rand()%2>0){  
-		  bin_packing();
+		 
+	        if(rel_analysis_only==true){
+	            bin_packing_no_rel_analysis();
 		}
-		else{
-		  bin_packing_no_rel_analysis();
+                else if(reg_bin_pack_only==true){
+                    bin_packing();
+                }
+                else{//doing mixed bin_packing
+		  if(rand()%2>0){ 
+		    bin_packing();
+		  }
+		  else{
+		    bin_packing_no_rel_analysis();
+		  }
 		}
-//		}
+
 		bin_packed_episode=true;
 		mutation_probability=((double) rand() / (RAND_MAX))/10.0;
 	    }
@@ -2288,6 +2295,7 @@ namespace pdbs {
     }
 
     static shared_ptr<PatternCollectionGenerator> _parse(OptionParser &parser) {
+      cout<<"parsing options"<<endl;
 	parser.document_synopsis(
 	    "Genetic Algorithm Patterns",
 	    "The following paper describes the automated creation of pattern "
@@ -2424,6 +2432,12 @@ namespace pdbs {
     parser.add_option<int>("perimeter_time_ms", "maximum time for the perimeter", "250000");
     parser.add_option<int>("perimeter_step_time_ms", "ms for each step of the perimeter", "50000");
     parser.add_option<int>("perimeter_nodes", "number of BDD nodes in the perimeter frontier", "10000000");
+    parser.add_option<bool>("rel_analysis_only", 
+	"bin pack chooses randomly from related vars, first var picked at random",
+       	"false");
+    parser.add_option<bool>("reg_bin_pack_only", 
+	"bin pack randomly as normal",
+      	"false");
 
 	Options opts = parser.parse();
 	if (parser.dry_run())
