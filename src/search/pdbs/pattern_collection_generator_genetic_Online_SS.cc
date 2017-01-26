@@ -334,18 +334,21 @@ namespace pdbs {
     else{//so symbolic*/
       //pdb_max_size=numeric_limits<double>::max();
       if(!last_sampler_too_big){
-	if(valid_pattern_counter!=0&&valid_pattern_counter%25==0&&valid_pattern_counter>last_valid_pattern_counter){
-	if(pdb_factory->name().find("symbolic")!=string::npos){
+	if(valid_pattern_counter!=0&&valid_pattern_counter%10&&valid_pattern_counter>last_valid_pattern_counter){
 	    min_target_size++;
 	    //In case max_target_size was making generation times too big
 	    if(max_target_size<initial_max_target_size){
 	      max_target_size++;
 	      bin_pack_next=true;
 	    }
-	    min_target_size=min(min_target_size,max_target_size-3);//We want a minimum spread between max_target_size and min_target_size
+	    if(pdb_factory->name().find("symbolic")!=string::npos){
+	      min_target_size=min(min_target_size,max_target_size-3);//We want a minimum spread between max_target_size and min_target_size
+	    }
+	    else{
+	      min_target_size=min(min_target_size,max_target_size-2);//We want a minimum spread between max_target_size and min_target_size
+	    }
 	    max_target_size=max(max_target_size,min_target_size);
 	    cout<<"time:"<<utils::g_timer<<",current_episode:"<<current_episode<<",min_target_size raised to:,"<<min_target_size<<",max_size:,"<<max_target_size<<endl;
-	  }
 	  //else{
 	  //  pdb_max_size*=10;
 	  //  min_size=pdb_max_size/1000;
