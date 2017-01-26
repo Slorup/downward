@@ -513,8 +513,12 @@ namespace pdbs {
 		    cout<<"last pdb_gen_time is huge!, reducing max_target_size by 2 orders of magnitude,max_target_size:"<<max_target_size<<",min_target_size to"<<min_target_size<<",pdb_max_size:"<<pdb_max_size<<endl;
 		  }
 		  else{
-		    cout<<"last pdb_gen_time is huge!, reducing max_target_size to half:"<<max_target_size<<",min_target_size to 0"<<endl;
 		    max_target_size=max_target_size/2;
+		    max_target_size=max(3,max_target_size);
+		    min_target_size=min(max_target_size-3,min_target_size);
+		    min_target_size=max(min_target_size,0);//at least 0!
+		    pdb_max_size=9*pow(10.0,(min_target_size+((max_target_size-min_target_size)/2)));
+		    cout<<"last pdb_gen_time is huge!, halving max_target_size orders of magnitude,max_target_size:"<<max_target_size<<",min_target_size to"<<min_target_size<<",pdb_max_size:"<<pdb_max_size<<endl;
 		  }
 		}
 
