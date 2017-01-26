@@ -595,7 +595,7 @@ namespace pdbs {
 			bin_pack_next=true;
 		      }
 		    }
-		    min(max_target_size-2,min_target_size);
+		    min_target_size=min(max_target_size-2,min_target_size);
 		    min_target_size=max(min_target_size,0);//at least 0!
 
 		      //pdb_max_size=max(10000.0,pdb_max_size/10.0);
@@ -685,7 +685,7 @@ namespace pdbs {
 
 		    if(SS_states.size()<5000){
 			run_again=true;
-			cout<<"Running SS sampling again, SS states left less than 5K"<<endl;
+			//cout<<"Running SS sampling again, SS states left less than 5K"<<endl;
 		    }
 		    if(run_again){
 			SS_states.clear();
@@ -732,16 +732,16 @@ namespace pdbs {
 			}
 			overall_probe_time+=utils::g_timer()-start_probe_time;
 		    
-			pair<double,double> avg_and_dev=utils::avg_and_standard_deviation(probe_avgs);
-			cout<<"avg probe:"<<avg_and_dev.first<<endl;
-			cout<<"avg probe deviation:"<<avg_and_dev.second<<endl;
-			cout<<"SS_states.size:"<<SS_states.size()<<endl;
-			cout<<"Finished probing with threshold:"<<threshold<<endl;
+			//pair<double,double> avg_and_dev=utils::avg_and_standard_deviation(probe_avgs);
+			//cout<<"avg probe:"<<avg_and_dev.first<<endl;
+			//cout<<"avg probe deviation:"<<avg_and_dev.second<<endl;
+			//cout<<"SS_states.size:"<<SS_states.size()<<endl;
+			//cout<<"Finished probing with threshold:"<<threshold<<endl;
 			//last_sampled_best_heurs_count=best_heuristic.count_zero_one_pdbs();
-			cout<<"current_episode:"<<current_episode<<",best_heuristics_count:"<<best_pdb_collections.size()<<",new sampled_states batch"<<endl;fflush(stdout);
+			//cout<<"current_episode:"<<current_episode<<",best_heuristics_count:"<<best_pdb_collections.size()<<",new sampled_states batch"<<endl;
 			best_heuristic_values.clear();
 		  
-			cout<<"time:,"<<utils::g_timer()<<",starting sorting SS states,size:"<<SS_states.size()<<endl;
+			//cout<<"time:,"<<utils::g_timer()<<",starting sorting SS states,size:"<<SS_states.size()<<endl;
 			map<size_t,pair<int,double> >::iterator SS_iter_map;
 		
 			for(SS_iter_map=SS_states.begin();SS_iter_map!=SS_states.end();){
@@ -905,7 +905,7 @@ namespace pdbs {
 		    //else{
 		    //  cout<<"best_heuristic being set for the first time"<<endl;
 		    //}
-		    cout<<"time:,"<<utils::g_timer()<<",bin_packed:,"<<bin_packed_episode<<",adding1 best_heuristic,episode:,"<<current_episode<<",collection:,"<<collection_counter<<",new raised_ratio:,"<<float(raised_states)/float(sampled_states)<<",actual_states_ratio:,"<<float(raised_states)/float(sampled_states)<<",total_nodes:"<<total_SS_gen_nodes<<",pruned_states:"<<pruned_states<<",fitness:,"<<fitness<<",sampled_states:,"<<sampled_states<<",initial_value:,"<<current_heur_initial_value<<",skip_sampling:,"<<skip_sampling<<",best_heur_dead_ends:,"<<best_heur_dead_ends<<",best_heuristics count:"<<best_pdb_collections.size()<<",size:"<<overall_pdb_size<<",pdb_gen_time:"<<pdb_gen_time<<",episode:,"<<current_episode<<",finished:,"<<pdb_factory->is_finished()<<",bin_packed:,"<<bin_packed_episode<<endl;
+		    cout<<"time:,"<<utils::g_timer()<<",bin_packed:,"<<bin_packed_episode<<",adding1 best_heuristic,episode:,"<<current_episode<<",collection:,"<<collection_counter<<",new raised_ratio:,"<<float(raised_states)/float(sampled_states)<<",actual_states_ratio:,"<<float(raised_states)/float(sampled_states)<<",total_nodes:"<<total_SS_gen_nodes<<",pruned_states:"<<pruned_states<<",fitness:,"<<fitness<<",sampled_states:,"<<sampled_states<<",initial_value:,"<<current_heur_initial_value<<",skip_sampling:,"<<skip_sampling<<",best_heur_dead_ends:,"<<best_heur_dead_ends<<",best_heuristics count:"<<best_pdb_collections.size()<<",size:"<<overall_pdb_size<<",pdb_gen_time:"<<pdb_gen_time<<",episode:,"<<current_episode<<",finished:,"<<pdb_factory->is_finished()<<",bin_packed:,"<<bin_packed_episode<<"Peak memory:"<<utils::get_peak_memory_in_kb()<<flush<<endl;
 		    episodes_to_mutate=20;//Want to mutate around good episodes
 		    if(min_improvement_ratio<0.02&&current_episode>40&&float(raised_states)/float(sampled_states)>0.2){
 		      min_improvement_ratio=0.2;
@@ -981,6 +981,7 @@ namespace pdbs {
 		} else {
 		  if(raised_states>1)
 		    //cout<<"not_adding:,"<<utils::g_timer()<<",raised_states:,"<<raised_states<<",sampled_states:,"<<sampled_states<<",ratio:"<<float(raised_states)/float(sampled_states)<<endl;
+		    //cout<<"not_adding,time:,"<<utils::g_timer()<<",bin_packed:,"<<bin_packed_episode<<",episode:,"<<current_episode<<",collection:,"<<collection_counter<<",raised_ratio:,"<<float(raised_states)/float(sampled_states)<<",total_nodes:"<<total_SS_gen_nodes<<",pruned_states:"<<pruned_states<<",fitness:,"<<fitness<<",sampled_states:,"<<sampled_states<<",initial_value:,"<<current_heur_initial_value<<",skip_sampling:,"<<skip_sampling<<",size:"<<overall_pdb_size<<",pdb_gen_time:"<<pdb_gen_time<<",episode:,"<<current_episode<<",finished:,"<<pdb_factory->is_finished()<<"Peak memory:"<<utils::get_peak_memory_in_kb()<<flush<<endl;
 		  
 		    DEBUG_MSG(if(current_heuristic!=NULL){
 			cout<<"time:,"<<utils::g_timer()<<",bin_packed:,"<<bin_packed_episode<<",current_heuristic rejected,online_sampling time:,"<<sampler_time
@@ -1125,10 +1126,9 @@ namespace pdbs {
 	  std::normal_distribution<double> distribution((max_target_size+min_target_size)/2,max_target_size-min_target_size);
 	  //int temp=rand()%(max_target_size-min_target_size);
 	  int temp=distribution(generator);
-	  //cout<<"g_timer:"<<utils::g_timer<<",temp:"<<temp<<",max_target_size:"<<max_target_size<<",min_target_size:"<<min_target_size<<flush;
 	  pdb_max_size=9*pow(10,temp);
 	//}
-	//cout<<",Starting bin_packing, pdb_max_size:"<<pdb_max_size<<flush<<endl;
+	//cout<<",Starting bin_packing_no_rel, pdb_max_size:"<<pdb_max_size<<",g_timer:"<<utils::g_timer<<",temp:"<<temp<<",max_target_size:"<<max_target_size<<",min_target_size:"<<min_target_size<<flush;
 
 	TaskProxy task_proxy(*task);
 	VariablesProxy variables = task_proxy.get_variables();
