@@ -334,7 +334,7 @@ namespace pdbs {
     else{//so symbolic*/
       //pdb_max_size=numeric_limits<double>::max();
       if(!last_sampler_too_big){
-	if(valid_pattern_counter!=0&&valid_pattern_counter%10&&valid_pattern_counter>last_valid_pattern_counter){
+	if(valid_pattern_counter!=0&&valid_pattern_counter%10==0&&valid_pattern_counter>last_valid_pattern_counter){
 	    min_target_size++;
 	    //In case max_target_size was making generation times too big
 	    if(max_target_size<initial_max_target_size){
@@ -348,7 +348,7 @@ namespace pdbs {
 	      min_target_size=min(min_target_size,max_target_size-2);//We want a minimum spread between max_target_size and min_target_size
 	    }
 	    max_target_size=max(max_target_size,min_target_size);
-	    cout<<"time:"<<utils::g_timer<<",current_episode:"<<current_episode<<",min_target_size raised to:,"<<min_target_size<<",max_size:,"<<max_target_size<<endl;
+	    cout<<"time:"<<utils::g_timer<<",current_episode:"<<current_episode<<",increased min_target_size to:,"<<min_target_size<<",max_size:,"<<max_target_size<<endl;
 	  //else{
 	  //  pdb_max_size*=10;
 	  //  min_size=pdb_max_size/1000;
@@ -498,9 +498,9 @@ namespace pdbs {
 		  max_gen_time=utils::g_timer()-temp;
 	  	  max_gen_size=overall_pdb_size;
 		}
-		if(current_episode%100==0){
+		//if(current_episode%100==0){
 		  cout<<"generated candidate[,"<<candidate_count+1<<",],time:,"<<utils::g_timer()<<",size:,"<<overall_pdb_size<<",generation_time:,"<<pdb_gen_time<<",episode:,"<<current_episode<<",finished:,"<<pdb_factory->is_finished()<<",bin_packed:,"<<bin_packed_episode<<",Peak Memory:"<<utils::get_peak_memory_in_kb()<<",current_memory:"<<utils::get_current_memory_in_kb()<<flush<<endl;
-		}
+		////}
 
 		if(pdb_gen_time>10.0*time_limit){
 		  last_sampler_too_big=true;
@@ -570,26 +570,18 @@ namespace pdbs {
 		      // min_size=pdb_max_size/100;
 		      // cout<<"time:,"<<utils::g_timer()<<",increasing pdb_max_size to,"<<pdb_max_size<<",min_size:"<<min_size<<", avg_pdb_gen_time="<<avg_pdb_gen_time<<"<"<<time_limit<<endl; 
 		    } else*/ 
-		    if(pdb_factory->name().find("symbolic")!=string::npos){
-		      time_limit=pdb_factory->get_time_limit()/1000.0;
-		    }
+		    time_limit=pdb_factory->get_time_limit()/1000.0;
 		    if(valid_pattern_counter>0&&utils::g_timer()-last_time_collections_improved>min_improv_time_limit){
 			if(utils::g_timer()-last_time_collections_improved>100.0&&current_episode>5){
 			  pdb_factory->increase_computational_limits();
 			  if(log10(last_improv_collection_size)<initial_max_target_size-2){//do not want to go back to perimeter size!!!
 			    max_target_size=log10(last_improv_collection_size)+1;
-			    min_target_size=log10(last_improv_collection_size)-1;
 			  }
-			  time_limit*=2.0;
+			  time_limit=pdb_factory->get_time_limit()/1000.0;
 			  cout<<"more than a 100 secs since we had improvment, increasing time limits but keeping size limits around last improvement"<<endl;
 			}
 			else{
-			  if(pdb_factory->name().find("symbolic")!=string::npos){
-			    pdb_factory->increase_computational_limits();
-			  }
-			  else{
-			    time_limit*=2.0;
-			  }
+			  pdb_factory->increase_computational_limits();
 			}
 
 			min_target_size+=1;
@@ -1287,6 +1279,31 @@ namespace pdbs {
 
     void PatternCollectionGeneratorGeneticSS::genetic_algorithm(
 	shared_ptr<AbstractTask> task_) {
+	
+	task = task_;
+	TaskProxy task_proxy(*task);
+	VariablesProxy variables = task_proxy.get_variables();
+	while(true){
+	  float temp=utils::g_timer();
+          if(true){
+	    Pattern pattern;
+	    for(int i=0;i<17;i++){
+	      pattern.push_back(rand()%variables.size());
+	    }
+	    //Pattern pattern={1,2,3};
+	    PatternCollection pattern_collection;
+	    pattern_collection.push_back(pattern);
+	    cout<<"calling ZeroOnePDBs"<<flush<<endl;
+	    ZeroOnePDBs candidate (task_proxy, pattern_collection, *pdb_factory);
+	    cout<<"after calling ZeroOnePDBs"<<flush<<endl;
+	    cout<<"Peak Memory:"<<utils::get_peak_memory_in_kb()<<",current_memory:"<<utils::get_current_memory_in_kb()<<flush<<endl;
+	  }
+	  float pdb_gen_time=utils::g_timer()-temp;
+	  cout<<"generated candidate[,"<<candidate_count+1<<",],time:,"<<",gen_time:,"<<pdb_gen_time<<",Peak Memory:"<<utils::get_peak_memory_in_kb()<<",current_memory:"<<utils::get_current_memory_in_kb()<<flush<<endl;
+	  candidate_count++;
+	}
+
+
 	int time_to_clean_dom=1;
 	bin_packed_episode=true;
 	task = task_;
@@ -1302,7 +1319,7 @@ namespace pdbs {
 	  last_improv_collection_size=pow(10,6);
 	  
 	  pattern_collections.clear();
-	  TaskProxy task_proxy(*task);
+	  //TaskProxy task_proxy(*task);
 	  VariablesProxy variables = task_proxy.get_variables();
 	  Pattern pattern;
 	  for(size_t i=0;i<variables.size();i++){
@@ -2288,9 +2305,7 @@ namespace pdbs {
 	    max_target_size=8;
 	    cout<<"initial time_limit="<<time_limit<<endl;
 	  }
-	  else{//get time limit from pdb_factory
-	    time_limit=pdb_factory->get_time_limit()/1000.0;
-	  }
+	  time_limit=pdb_factory->get_time_limit()/1000.0;
 	  initial_max_target_size=max_target_size;
 	  min_target_size=5;
 	  pdb_max_size=2*pow(10,min_target_size);

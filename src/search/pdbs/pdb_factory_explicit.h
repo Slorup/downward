@@ -18,6 +18,7 @@ namespace pdbs {
 
     class PDBFactoryExplicit : public PDBFactory {
 	const bool dump;
+	int time_limit=100;
     protected:
 	virtual void dump_strategy_specific_options() const override;
 
@@ -36,6 +37,8 @@ namespace pdbs {
 
 
 	virtual std::string name() const override;
+	virtual void increase_computational_limits() override;
+	virtual int get_time_limit() override { return time_limit;}
 };
 }
 

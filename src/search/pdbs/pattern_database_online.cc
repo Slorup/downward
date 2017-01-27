@@ -401,7 +401,7 @@ int PatternDatabaseOnline::OnlineDistanceCalculator2(const State current_state,i
     if(helper_max_size==0){
       if(num_states<20000){//Too small to deserve online calculation
 	precalculated=true;
-	PatternDatabase pdb_database_helper1=PatternDatabase(task_proxy, pattern,false,operator_costs);
+	PatternDatabase pdb_database_helper1=PatternDatabase(task_proxy, pattern,false,0,operator_costs);
 	//cout<<"finished building helper1"<<endl;fflush(stdout);
 	candidate_pdbs_offline.push_back(pdb_database_helper1);
 	return candidate_pdbs_offline.back().compute_heuristic_id(state_index);
@@ -445,7 +445,7 @@ int PatternDatabaseOnline::OnlineDistanceCalculator2(const State current_state,i
 	      }
 	      if(candidate_subset_pattern.size()>1){
 		//cout<<"generating extra pdb_helper["<<subset_patterns.size()<<"],subset_par:"<<candidate_subset_pattern<<",pattern:"<<pattern<<",mem size:"<<get_pattern_size(candidate_subset_pattern)<<endl;fflush(stdout);
-		PatternDatabase pdb_database_helper1=PatternDatabase(task_proxy, candidate_subset_pattern,false,operator_costs);
+		PatternDatabase pdb_database_helper1=PatternDatabase(task_proxy, candidate_subset_pattern,false,0,operator_costs);
 		//cout<<"finished building helper1"<<endl;fflush(stdout);
 		candidate_pdbs_offline.push_back(pdb_database_helper1);
 		if(candidate_subset_pattern==pattern){
@@ -495,7 +495,7 @@ int PatternDatabaseOnline::OnlineDistanceCalculator2(const State current_state,i
 		//opts2.set<vector<int> >("pattern", candidate_subset_pattern);
 		//PDBHeuristic *pdb_heuristic_helper1=new PDBHeuristic(opts2);
 		
-		PatternDatabase pdb_database_helper1=PatternDatabase(task_proxy, candidate_subset_pattern,false,operator_costs);
+		PatternDatabase pdb_database_helper1=PatternDatabase(task_proxy, candidate_subset_pattern,false,0,operator_costs);
 		candidate_pdbs_offline.push_back(pdb_database_helper1);
 		set_transformer_subset(candidate_subset_pattern);
 		overall_extra_helper_gen_time+=utils::g_timer()-start_extra_helper_gen_time;

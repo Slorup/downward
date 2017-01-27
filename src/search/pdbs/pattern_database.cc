@@ -72,6 +72,7 @@ PatternDatabase::PatternDatabase(
     const TaskProxy &task_proxy,
     const Pattern &pattern,
     bool dump,
+    int time_limit,
     const vector<int> &operator_costs)
     : PatternDatabaseInterface (task_proxy, pattern, operator_costs) {
     verify_no_axioms(task_proxy);
@@ -97,7 +98,7 @@ PatternDatabase::PatternDatabase(
         }
     }
     //cout<<"calling create_pdb with num_states="<<num_states<<endl;fflush(stdout);dump=true;
-    create_pdb();
+    create_pdb(time_limit);
     if (dump)
         cout << "PDB construction time: " << timer << endl;
 }
@@ -189,12 +190,15 @@ void PatternDatabase::build_abstract_operators(
                  operators);
 }
 
-void PatternDatabase::create_pdb() {
+void PatternDatabase::create_pdb(int time_limit) {
+  double start_create_time=utils::g_timer();
     VariablesProxy vars = task_proxy.get_variables();
     vector<int> variable_to_index(vars.size(), -1);
+    bool interrupted=false;
     for (size_t i = 0; i < pattern.size(); ++i) {
         variable_to_index[pattern[i]] = i;
     }
+    //cout<<"time_limit(ms):"<<time_limit<<endl;
 
     // compute all abstract operators
     vector<AbstractOperator> operators;
@@ -238,7 +242,9 @@ void PatternDatabase::create_pdb() {
         }
     }
 
+    int unseen_value=1;
     // Dijkstra loop
+    //int counter=0;
     while (!pq.empty()) {
         pair<int, size_t> node = pq.pop();
         int distance = node.first;
@@ -246,6 +252,16 @@ void PatternDatabase::create_pdb() {
         if (distance > distances[state_index]) {
             continue;
         }
+	if(time_limit){
+	  if(distance>unseen_value){
+	    unseen_value=distance;
+	    if((utils::g_timer()-start_create_time)*1000>time_limit){
+	      cout<<"\t\tinterrupting explicit pdb generation,time taken:"<<utils::g_timer()-start_create_time<<",time_limit(ms):"<<time_limit<<",distance:"<<distance<<endl;
+	      interrupted=true;
+	      break;
+	    }
+	  }
+	}
 
         // regress abstract_state
         vector<const AbstractOperator *> applicable_operators;
@@ -258,6 +274,19 @@ void PatternDatabase::create_pdb() {
                 pq.push(alternative_cost, predecessor);
             }
         }
+	//counter++;
+    }
+
+    if(interrupted){
+      cout<<"\t\tnow marking all unseen states to unseen value of:"<<unseen_value<<endl;
+      for (auto& dist : distances){
+	if(dist>unseen_value){
+	  dist=unseen_value;
+	}
+      }
+    }
+    else{
+      cout<<"pdb took to fully generate:"<<(utils::g_timer()-start_create_time)*1000<<"ms"<<endl;
     }
 }
 

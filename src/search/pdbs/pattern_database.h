@@ -120,7 +120,7 @@ class PatternDatabase : public PatternDatabaseInterface {
       specify individual operator costs for each operator for action
       cost partitioning. If left empty, default operator costs are used.
     */
-    void create_pdb();
+    void create_pdb(int time_limit);
 
     /*
       Sets the pattern for the PDB and initializes hash_multipliers and
@@ -165,6 +165,7 @@ public:
         const TaskProxy &task_proxy,
         const Pattern &pattern,
         bool dump = false,
+	int time_limit = 0,
         const std::vector<int> &operator_costs = std::vector<int>());
     ~PatternDatabase() = default;
 

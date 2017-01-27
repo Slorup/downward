@@ -60,7 +60,7 @@ namespace pdbs {
 	  //std::cout<<"pattern:"; for (auto var : pattern){ std::cout<<var<<","; }
 	  //std::cout<<std::endl;
 	  //std::cout<<"opertator_costs.size:"<<operator_costs.size()<<std::endl;
-	  std::shared_ptr<PatternDatabaseInterface> result = std::make_shared<PatternDatabase> (task_proxy, pattern, false, operator_costs);
+	  std::shared_ptr<PatternDatabaseInterface> result = std::make_shared<PatternDatabase> (task_proxy, pattern, false, 0, operator_costs);
 	  //std::cout<<std::flush<<"finished creating PDB"<<std::endl;
 	  explicit_offline_pdb_collection.push_back(result);
         //cout<<"compute_after create,g_timer:"<<utils::g_timer()<<endl;
