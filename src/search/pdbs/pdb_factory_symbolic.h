@@ -67,6 +67,8 @@ class PDBFactorySymbolic : public PDBFactory, public symbolic::SymController {
 	(const PDBCollection & pdb_collection, 
 	 int min_max_time, int min_max_step_time, int min_max_nodes) override;
 
+    virtual void continue_creation (PatternDatabaseInterface & pdb) override;
+
 };
 }
 

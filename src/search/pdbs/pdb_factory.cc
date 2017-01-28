@@ -30,6 +30,8 @@ static options::PluginTypePlugin<PDBFactory> _type_plugin(
 	num_patterns_requested ++;
 	auto item = stored_pdbs.find(PDBKey(pattern, operator_costs));
 	if (item != stored_pdbs.end()) {
+	    continue_creation(*(item->second));
+
 	    return item->second;
 	    // if(!item->second.expired()){
 	    // 	return item->second.lock();
@@ -45,6 +47,27 @@ static options::PluginTypePlugin<PDBFactory> _type_plugin(
         //cout<<"compute_after stored,g_timer"<<utils::g_timer()<<endl;
 	
 	return result;
+    }
+
+
+    bool PDBFactory::release_memory_below_limit_mb(double memory_limit_mb) {
+	if(utils::check_current_memory_below_mb(memory_limit_mb)) {
+	    return true;
+	}
+
+	for( auto it = stored_pdbs.begin(); it != stored_pdbs.end(); ) {
+	    if(it->second.unique() ){
+		it = stored_pdbs.erase(it);
+		if(utils::check_current_memory_below_mb(memory_limit_mb)) {
+		    return true;
+		}
+	    } else{
+		++it;
+	    }
+	}
+
+	//We have released everything but we didn't manage to go below the memory limit
+	return false;
     }
 
 

@@ -35,7 +35,6 @@ namespace pdbs {
 	explicit PDBFactoryExplicit(const options::Options &options);
 	virtual ~PDBFactoryExplicit() override = default;
 
-
 	virtual std::string name() const override;
 	virtual void increase_computational_limits() override;
 	virtual int get_time_limit() override { return time_limit;}

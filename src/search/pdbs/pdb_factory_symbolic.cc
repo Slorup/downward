@@ -113,6 +113,14 @@ namespace pdbs {
 
 
 
+    void PDBFactorySymbolic::continue_creation (PatternDatabaseInterface & pdb) {
+	pdb.terminate_creation(precomputation_time_ms, precomputation_step_time_ms, 
+				precomputation_nodes, global_limit_memory_MB);
+    }
+
+
+
+
 
 void PDBFactorySymbolic::dump_strategy_specific_options() const {
     cout << " dump: " << (dump ? "true" : "false") << endl;

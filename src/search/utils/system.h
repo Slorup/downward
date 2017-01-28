@@ -46,6 +46,13 @@ NO_RETURN extern void exit_with(ExitCode returncode);
 
 int get_peak_memory_in_kb();
 int get_current_memory_in_kb();
+inline bool check_current_memory_below_kb(int limit_kb) {
+    return get_current_memory_in_kb() <= limit_kb;
+}
+inline bool check_current_memory_below_mb(int limit_mb) {
+    return get_current_memory_in_kb() <= limit_mb*1024;
+}
+
 const char *get_exit_code_message_reentrant(ExitCode exitcode);
 bool is_exit_code_error_reentrant(ExitCode exitcode);
 void register_event_handlers();

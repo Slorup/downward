@@ -258,8 +258,7 @@ namespace pdbs {
 	sort(pattern.begin(), pattern.end());
     }
 
-    bool PatternCollectionGeneratorGeneticSS::is_pattern_too_large(
-	const Pattern &pattern) const {
+    bool PatternCollectionGeneratorGeneticSS::is_pattern_too_large(const Pattern &pattern) const {
 	// Test if the pattern respects the memory limit.
 	TaskProxy task_proxy(*task);
 	VariablesProxy variables = task_proxy.get_variables();
@@ -468,7 +467,8 @@ namespace pdbs {
 		  cout<<"time:"<<utils::g_timer()<<",valid_pattern_counter:"<<valid_pattern_counter<<endl;
 		}
 		DEBUG_MSG(cout<<"pattern valid!,SS evaluating:"<<endl;);
-		if(genetic_SS_timer->is_expired()||(double(utils::get_peak_memory_in_kb())/1024.0>memory_limit)){
+		if(genetic_SS_timer->is_expired()||
+		   !pdb_factory->release_memory_below_limit_mb(memory_limit)) {
 		    if(double(utils::get_current_memory_in_kb())/1024.0>memory_limit){
 			cout<<"No more PDB generation, Current memory above 2 GB max:"<<utils::get_current_memory_in_kb()/1024.0<<endl;
 		    }
@@ -489,7 +489,8 @@ namespace pdbs {
 		    break;
 		}
 		ZeroOnePDBs candidate (task_proxy, pattern_collection, *pdb_factory);
-		if(genetic_SS_timer->is_expired()||(double(utils::get_peak_memory_in_kb())/1024.0>memory_limit)){
+		if(genetic_SS_timer->is_expired()||
+		   !pdb_factory->release_memory_below_limit_mb(memory_limit)) {
 		    cout<<"breaking-1 out of GA Algortihm, current gen_time:"<<genetic_SS_timer<<" bigger than time_limit:"<<genetic_time_limit<<endl;
 		    break;
 		}
@@ -1477,7 +1478,8 @@ namespace pdbs {
 	    evaluate(fitness_values);
 	    DEBUG_MSG(cout<<"time:"<<utils::g_timer()<<",evaluated finished"<<endl;);
 	    // We allow to select invalid pattern collections.
-	    if(genetic_SS_timer->is_expired()||(double(utils::get_peak_memory_in_kb())/1024>memory_limit)){
+	    if(genetic_SS_timer->is_expired() || 
+	       !pdb_factory->release_memory_below_limit_mb(memory_limit)){
 		avg_sampled_states=double(overall_sampled_states)/double(total_online_samples);
 		if (!recompute_max_additive_subsets) {
 		  clear_dominated_heuristics();

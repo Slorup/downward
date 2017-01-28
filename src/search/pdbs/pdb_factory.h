@@ -129,6 +129,12 @@ PDBFactory() : num_patterns_created(0), num_patterns_requested(0), num_patterns_
 	std::cout<<"calling default terminate_creation"<<std::endl;
 	return std::make_shared<PDBCollection>(pdb_collection);
     }
+
+    virtual void continue_creation (PatternDatabaseInterface & /*pdb*/) {
+    }
+
+
+    bool release_memory_below_limit_mb(double memory_limit_mb);
 };
 }
 
