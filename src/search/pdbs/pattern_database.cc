@@ -191,10 +191,10 @@ void PatternDatabase::build_abstract_operators(
 }
 
 void PatternDatabase::create_pdb(int time_limit) {
-  double start_create_time=utils::g_timer();
+  //cout<<"calling create_pdb_explicit"<<endl;
     VariablesProxy vars = task_proxy.get_variables();
     vector<int> variable_to_index(vars.size(), -1);
-    bool interrupted=false;
+    finished=true;
     for (size_t i = 0; i < pattern.size(); ++i) {
         variable_to_index[pattern[i]] = i;
     }
@@ -244,24 +244,45 @@ void PatternDatabase::create_pdb(int time_limit) {
 
     int unseen_value=1;
     // Dijkstra loop
-    //int counter=0;
+    int counter=0;
+    //cout<<"pq empty:"<<pq.empty()<<",time_limit:"<<time_limit<<endl;
+  
+    //Best to start counting from here, otherwise we never get to do anything with PDBs expensive to set up
+    //when using small time limits
+    double start_create_time=utils::g_timer();
     while (!pq.empty()) {
         pair<int, size_t> node = pq.pop();
         int distance = node.first;
+	//cout<<"\t\t distance:"<<distance<<endl;
         size_t state_index = node.second;
         if (distance > distances[state_index]) {
             continue;
         }
 	if(time_limit){
-	  if(distance>unseen_value){
-	    unseen_value=distance;
-	    if((utils::g_timer()-start_create_time)*1000>time_limit){
-	      cout<<"\t\tinterrupting explicit pdb generation,time taken:"<<utils::g_timer()-start_create_time<<",time_limit(ms):"<<time_limit<<",distance:"<<distance<<endl;
-	      interrupted=true;
-	      break;
+	  //for those cases where there are so many goal states we never went past distance==0
+	  if(distance==0){
+	    if(counter%10000==0){
+	      if((utils::g_timer()-start_create_time)*1000>4*time_limit){
+		//cout<<"\t\tinterrupting explicit pdb generation,time taken:"<<utils::g_timer()-start_create_time<<",time_limit(ms):"<<time_limit<<",distance:"<<distance<<",counter:"<<counter<<endl;
+		unseen_value=0;
+		finished=false;
+		break;
+	      }
 	    }
 	  }
+	  else if(distance>unseen_value){
+	    unseen_value=distance;
+	    if((utils::g_timer()-start_create_time)*1000>4*time_limit){
+	      //cout<<"\t\tinterrupting explicit pdb generation,time taken:"<<utils::g_timer()-start_create_time<<",time_limit(ms):"<<time_limit<<",distance:"<<distance<<endl;
+	      finished=false;
+	      break;
+	    }
+	    //else{
+	    //  cout<<"\t\tNot interrupting explicit pdb generation,time taken:"<<utils::g_timer()-start_create_time<<",time_limit(ms):"<<time_limit<<",distance:"<<distance<<endl;
+	    //}
+	  }
 	}
+
 
         // regress abstract_state
         vector<const AbstractOperator *> applicable_operators;
@@ -274,20 +295,21 @@ void PatternDatabase::create_pdb(int time_limit) {
                 pq.push(alternative_cost, predecessor);
             }
         }
-	//counter++;
+	counter++;
     }
 
-    if(interrupted){
-      cout<<"\t\tnow marking all unseen states to unseen value of:"<<unseen_value<<endl;
+    if(!finished){
+      //cout<<"\t\tnow marking all unseen states to unseen value of:"<<unseen_value<<endl;
       for (auto& dist : distances){
 	if(dist>unseen_value){
 	  dist=unseen_value;
 	}
       }
     }
-    else{
-      cout<<"pdb took to fully generate:"<<(utils::g_timer()-start_create_time)*1000<<"ms"<<endl;
-    }
+    //else{
+    //  cout<<"pdb took to fully generate:"<<(utils::g_timer()-start_create_time)*1000<<"ms"<<endl;
+    //}
+    //cout<<"pdb finished:"<<finished<<endl;
 }
 
 bool PatternDatabase::is_goal_state(

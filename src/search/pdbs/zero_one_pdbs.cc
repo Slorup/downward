@@ -17,26 +17,25 @@ using namespace std;
 namespace pdbs {
 ZeroOnePDBs::ZeroOnePDBs(TaskProxy task_proxy, const PatternCollection &patterns, 
 			 PDBFactory & pdb_factory) {
-  cout<<"ZeroOne calling time:"<<utils::g_timer()<<flush<<endl;
+  //cout<<"ZeroOne calling time:"<<utils::g_timer()<<flush<<endl;
   //float before_op_time=utils::g_timer();
     vector<int> operator_costs;
     OperatorsProxy operators = task_proxy.get_operators();
-    cout<<"after operators"<<flush<<endl;
     operator_costs.reserve(operators.size());
     for (OperatorProxy op : operators)
         operator_costs.push_back(op.get_cost());
-    cout<<"operator_costs.size:"<<operator_costs.size()<<flush<<endl;
+    //cout<<"operator_costs.size:"<<operator_costs.size()<<flush<<endl;
   //cout<<"ZeroOne calling time:"<<utils::g_timer()-before_op_time<<endl;
 
     pattern_databases.reserve(patterns.size());
     for (const Pattern &pattern : patterns) {
 	if(pattern.empty()) continue;
-	float start_gen_time=utils::g_timer();
+	//float start_gen_time=utils::g_timer();
 	//cout<<"start_gen_time:"<<start_gen_time<<endl;
-	cout<<"\tcreating pdb with pattern:"<<pattern<<flush<<endl;
+	//cout<<"\tcreating pdb with pattern:"<<pattern<<flush<<endl;
 	shared_ptr<PatternDatabaseInterface> pdb = pdb_factory.compute_pdb(task_proxy, pattern, 
 									   operator_costs);
-	cout<<"compute_pdb_time:"<<utils::g_timer()-start_gen_time<<endl;
+	//cout<<"compute_pdb_time:"<<utils::g_timer()-start_gen_time<<endl;
 
         pattern_databases.push_back(pdb);
 	

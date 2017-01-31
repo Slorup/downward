@@ -24,7 +24,10 @@ PDBFactoryExplicit::PDBFactoryExplicit() :
 PDBFactoryExplicit::create_pdb(const TaskProxy & task, 
 			       const Pattern &pattern, 
 			       const std::vector<int> &operator_costs) {
-	return make_shared<PatternDatabase> (task, pattern, dump, time_limit, operator_costs);
+	auto new_pdb= make_shared<PatternDatabase> (task, pattern, dump, time_limit, operator_costs);
+	finished=new_pdb->is_finished();
+	//cout<<"pdb was finished:"<<finished<<endl;
+	return new_pdb;
 }
 
 
@@ -39,14 +42,12 @@ string PDBFactoryExplicit::name() const {
 
 
 static shared_ptr<PDBFactory>_parse(options::OptionParser &parser) {
-  cout<<"hola"<<endl;
     parser.add_option<bool> ("dump", "If set to true, prints the construction time.", "false");
     parser.add_option<double> ("time_limit", "If populated,stop construction on first node past boundary and time limit", "100");
     options::Options options = parser.parse();
     parser.document_synopsis(
         "PDB Factory Explicit",
         "Explicit-search PDBS");
-  cout<<"adios"<<endl;
     if (parser.dry_run())
         return nullptr;
     else

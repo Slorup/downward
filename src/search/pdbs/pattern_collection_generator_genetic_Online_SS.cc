@@ -59,6 +59,8 @@ namespace pdbs {
 	cout<<"create_perimeter:"<<create_perimeter<<endl;
 	cout<<"initial pdb type:"<<pdb_factory->name()<<endl;
 	cout<<"initial time_limit per pdb:"<<time_limit<<endl;
+	cout<<"reg_bin_pack_only:"<<reg_bin_pack_only<<endl;
+	cout<<"rel_analysis_only:"<<rel_analysis_only<<endl;
 	num_collections=1;
 	result=make_shared<PatternCollectionInformation>(task, make_shared<PatternCollection>());
        
@@ -333,7 +335,7 @@ namespace pdbs {
     else{//so symbolic*/
       //pdb_max_size=numeric_limits<double>::max();
       if(!last_sampler_too_big){
-	if(valid_pattern_counter!=0&&valid_pattern_counter%10==0&&valid_pattern_counter>last_valid_pattern_counter){
+	if(valid_pattern_counter!=0&&valid_pattern_counter%10==0&&valid_pattern_counter>last_valid_pattern_counter&&(!size_targets_fixed)){
 	    min_target_size++;
 	    //In case max_target_size was making generation times too big
 	    if(max_target_size<initial_max_target_size){
@@ -499,11 +501,11 @@ namespace pdbs {
 		  max_gen_time=utils::g_timer()-temp;
 	  	  max_gen_size=overall_pdb_size;
 		}
-		//if(current_episode%100==0){
+		if(current_episode%100==0){
 		  cout<<"generated candidate[,"<<candidate_count+1<<",],time:,"<<utils::g_timer()<<",size:,"<<overall_pdb_size<<",generation_time:,"<<pdb_gen_time<<",episode:,"<<current_episode<<",finished:,"<<pdb_factory->is_finished()<<",bin_packed:,"<<bin_packed_episode<<",Peak Memory:"<<utils::get_peak_memory_in_kb()<<",current_memory:"<<utils::get_current_memory_in_kb()<<flush<<endl;
-		////}
+		}
 
-		if(pdb_gen_time>10.0*time_limit){
+		if(pdb_gen_time>100.0*time_limit){
 		  last_sampler_too_big=true;
 		  if (pdb_factory->name().find("symbolic") == std::string::npos) {
 		    max_target_size-=2;//symbolic much bigger, with explicit 2 orders of magnitude reduction already makes huge difference
@@ -511,7 +513,7 @@ namespace pdbs {
 		    min_target_size=min(max_target_size-2,min_target_size);
 		    min_target_size=max(min_target_size,0);//at least 0!
 		    pdb_max_size=9*pow(10.0,(min_target_size+((max_target_size-min_target_size)/2)));
-		    cout<<"last pdb_gen_time is huge!, reducing max_target_size by 2 orders of magnitude,max_target_size:"<<max_target_size<<",min_target_size to"<<min_target_size<<",pdb_max_size:"<<pdb_max_size<<endl;
+		    cout<<"last pdb_gen_time is huge!, reducing max_target_size by 2 orders of magnitude,max_target_size:"<<max_target_size<<",min_target_size to"<<min_target_size<<",pdb_max_size:"<<pdb_max_size<<",pdb_gen_time:"<<pdb_gen_time<<",time_limit:"<<time_limit<<endl;
 		  }
 		  else{
 		    max_target_size=max_target_size/2;
@@ -519,7 +521,7 @@ namespace pdbs {
 		    min_target_size=min(max_target_size-3,min_target_size);
 		    min_target_size=max(min_target_size,0);//at least 0!
 		    pdb_max_size=9*pow(10.0,(min_target_size+((max_target_size-min_target_size)/2)));
-		    cout<<"last pdb_gen_time is huge!, halving max_target_size orders of magnitude,max_target_size:"<<max_target_size<<",min_target_size to"<<min_target_size<<",pdb_max_size:"<<pdb_max_size<<endl;
+		    cout<<"last pdb_gen_time is huge!, halving max_target_size orders of magnitude,max_target_size:"<<max_target_size<<",min_target_size to"<<min_target_size<<",pdb_max_size:"<<pdb_max_size<<",pdb_gen_time:"<<pdb_gen_time<<",time_limit:"<<time_limit<<endl;
 		  }
 		}
 
@@ -573,16 +575,26 @@ namespace pdbs {
 		    } else*/ 
 		    time_limit=pdb_factory->get_time_limit()/1000.0;
 		    if(valid_pattern_counter>0&&utils::g_timer()-last_time_collections_improved>min_improv_time_limit){
-			if(utils::g_timer()-last_time_collections_improved>100.0&&current_episode>5){
+		      run_SS_again=true;
+		      cout<<"running SS again, too long since last improvement"<<endl;
+			if(utils::g_timer()-real_last_time_collections_improved>90.0&&current_episode>5){
+			  size_targets_fixed=true;
 			  pdb_factory->increase_computational_limits();
 			  if(log10(last_improv_collection_size)<initial_max_target_size-2){//do not want to go back to perimeter size!!!
-			    max_target_size=log10(last_improv_collection_size)+1;
+			    if(utils::g_timer()-real_last_time_collections_improved>180.0&&current_episode>5){
+			      max_target_size=log10(last_improv_collection_size)+2;
+			      cout<<"more than a 180 secs since we had improvement, increasing time limits but keeping size limits around last improvement"<<endl;
+			    }
+			    else{
+			      max_target_size=log10(last_improv_collection_size)+1;
+			      cout<<"more than a 90 secs since we had improvement, increasing time limits but keeping size limits around last improvement"<<endl;
+			    }
 			  }
 			  time_limit=pdb_factory->get_time_limit()/1000.0;
-			  cout<<"more than a 100 secs since we had improvment, increasing time limits but keeping size limits around last improvement"<<endl;
 			}
 			else{
 			  pdb_factory->increase_computational_limits();
+			  last_sampler_too_big=false;
 			}
 
 			min_target_size+=1;
@@ -596,11 +608,10 @@ namespace pdbs {
 			bin_pack_next=true;
 			min_improv_time_limit*=1.5;
 			cout<<"increased min_improv_time_limit:"<<min_improv_time_limit<<",time_limit:"<<time_limit<<",min_target_size:"<<min_target_size<<",max_target_size:"<<max_target_size<<endl;
-			last_sampler_too_big=false;
 			cout<<"time:,"<<utils::g_timer()<<",increasing min_improv_time_limit to,"<<min_improv_time_limit<<",pdb_max_size:"<<pdb_max_size<<",max_target_size:"<<max_target_size<<",min_target_size:"<<min_target_size<<", too long since last improvement found"<<endl; 
 			last_time_collections_improved=utils::g_timer();
 		    }
-		    else if(avg_pdb_gen_time>10.0*time_limit){
+		    else if(avg_pdb_gen_time>100.0*time_limit){
 		      last_sampler_too_big=true;
 		      if (pdb_factory->name().find("symbolic") == std::string::npos) {
 			max_target_size-=2;//symbolic much bigger, with explicit 2 orders of magnitude reduction already makes huge difference
@@ -611,13 +622,13 @@ namespace pdbs {
 		      }
 		      min_target_size=0;
 		      bin_pack_next=true;
-		      cout<<"avg_pdb_gen_time is huge!, reducing max_target_size to half:"<<max_target_size<<",min_target_size to 0"<<endl;
+		      cout<<"avg_pdb_gen_time is huge!, reducing max_target_size to half:"<<max_target_size<<",min_target_size to :"<<min_target_size<<",pdb_max_size:"<<pdb_max_size<<",pdb_gen_time:"<<avg_pdb_gen_time<<",time_limit:"<<time_limit<<endl;
 		    }
-		    else if(avg_pdb_gen_time>2.0*time_limit){
+		    else if(avg_pdb_gen_time>10.0*time_limit){
 		      last_sampler_too_big=true;
 		      if(max_target_size>4){//Never reducing bellow 10^4
 			max_target_size-=2;
-			cout<<"time:,"<<utils::g_timer<<",reducing max_target_size,avg_pdb_gen_time:"<<avg_pdb_gen_time<<", is at least twice as big as time limit:,"<<time_limit<<endl;
+			cout<<"time:,"<<utils::g_timer<<",reducing max_target_size,avg_pdb_gen_time:"<<avg_pdb_gen_time<<", is at least ten as big as time limit:,"<<time_limit<<endl;
 			bin_pack_next=true;
 		      }
 		    }
@@ -656,7 +667,6 @@ namespace pdbs {
 
 		const State &initial_state = task_proxy.get_initial_state();
 		//DEBUG_MSG(cout<<"\tcurrent_episode:"<<current_episode<<",pdb_max_size:"<<pdb_max_size<<",candidate initial h:"<<candidate.get_value(initial_state)<<endl;fflush(stdout););
-		bool run_again=false;
 		if(best_pdb_collections.size()==0||create_perimeter){
 		    cout<<"no initial heuristic yet"<<endl;fflush(stdout);
 		    fitness = 1.0;//best_heuristic not populated yet
@@ -703,17 +713,17 @@ namespace pdbs {
 		    if(best_initial_value<get_best_value(initial_state)){
 			best_initial_value=get_best_value(initial_state);
 			cout<<"timer:,"<<utils::g_timer()<<",best heuristic initial value raised to:"<<best_initial_value<<endl;
-			run_again=true;
+			run_SS_again=true;
 		    } else if(pruned_states>total_SS_gen_nodes/4){
-			run_again=true;
-			cout<<"timer:,"<<utils::g_timer()<<",run_again, ratio:"<<total_SS_gen_nodes/pruned_states<<endl;
+			run_SS_again=true;
+			cout<<"timer:,"<<utils::g_timer()<<",run_SS_again, ratio:"<<total_SS_gen_nodes/pruned_states<<endl;
 		    }
 
 		    if(SS_states.size()<5000){
-			run_again=true;
+			run_SS_again=true;
 			//cout<<"Running SS sampling again, SS states left less than 5K"<<endl;
 		    }
-		    if(run_again){
+		    if(run_SS_again){
 			SS_states.clear();
 			SS_states_vector.clear();
 			double start_probe_time=utils::g_timer();
@@ -828,14 +838,9 @@ namespace pdbs {
 				break;
 			    }
 			}
-			if(sampled_states>0){
-			    if(float(raised_states)/float(sampled_states)>min_improvement_ratio){
-				break;
-			    }
-			}
 		    }
 		  
-		    //int best_h=get_best_value(unique_samples.at(SS_iter->id));
+		    //int best_h=get_best_value(unique_samples.at(SS_iter->id).first);
 		    int best_h=unique_samples.at(SS_iter->id).second;
 		    if(best_h==numeric_limits<int>::max()){
 			best_heur_dead_ends++;
@@ -863,8 +868,11 @@ namespace pdbs {
 		    if(candidate_h==numeric_limits<int>::max()){
 			raised_states++;
 			pruned_states+=SS_iter->weight;
-			//cout<<"sampled_state:,"<<sampled_states<<",out of "<<SS_states.size()<<"is now pruned by dead_end, weight:"<<SS_iter->weight<<",current_total:"<<total_SS_gen_nodes<<endl;
+			cout<<"sampled_state:,"<<sampled_states<<",out of "<<SS_states.size()<<"is now pruned by dead_end, weight:"<<SS_iter->weight<<",current_total:"<<total_SS_gen_nodes<<",best_h:"<<best_h<<endl;
 			SS_iter++;
+			if(float(raised_states)/float(sampled_states)>min_improvement_ratio){
+			  break;
+			}
 			continue;
 		    }
 
@@ -881,12 +889,16 @@ namespace pdbs {
 			if(candidate_h>best_h){
 			    pruned_states+=SS_iter->weight;
 			    raised_states++;
+			    if(float(raised_states)/float(sampled_states)>min_improvement_ratio){
+			      break;
+			    }
 			    //cout<<"id:,"<<SS_iter->id<<",candidate_h:"<<candidate_h<<",best_h:"<<best_h<<endl;
 			    //cout<<"sampled_state:,"<<sampled_states<<",out of "<<SS_states.size()<<"is now pruned by higher h, weight:"<<SS_iter->weight<<",current_total:"<<total_SS_gen_nodes<<endl;
+			    cout<<"\tsampled_state:,"<<sampled_states<<",out of "<<SS_states.size()<<"is now pruned by candidate_h:"<<candidate_h<<",best_h:"<<best_h<<",current_total:"<<total_SS_gen_nodes<<endl;
 			}
-			else{
+			//else{
 			  //cout<<"\tstored best_h is above candidate_h:"<<candidate_h<<",best_h:"<<best_h<<endl;
-			}
+			//}
 		    //}
 		    SS_iter++;
 		}
@@ -933,10 +945,11 @@ namespace pdbs {
 		    //}
 		    cout<<"time:,"<<utils::g_timer()<<",bin_packed:,"<<bin_packed_episode<<",adding1 best_heuristic,episode:,"<<current_episode<<",collection:,"<<collection_counter<<",new raised_ratio:,"<<float(raised_states)/float(sampled_states)<<",actual_states_ratio:,"<<float(raised_states)/float(sampled_states)<<",total_nodes:"<<total_SS_gen_nodes<<",pruned_states:"<<pruned_states<<",fitness:,"<<fitness<<",sampled_states:,"<<sampled_states<<",initial_value:,"<<current_heur_initial_value<<",skip_sampling:,"<<skip_sampling<<",best_heur_dead_ends:,"<<best_heur_dead_ends<<",best_heuristics count:"<<best_pdb_collections.size()<<",size:"<<overall_pdb_size<<",pdb_gen_time:"<<pdb_gen_time<<",episode:,"<<current_episode<<",finished:,"<<pdb_factory->is_finished()<<",bin_packed:,"<<bin_packed_episode<<"Peak memory:"<<utils::get_peak_memory_in_kb()<<flush<<endl;
 		    episodes_to_mutate=20;//Want to mutate around good episodes
-		    if(min_improvement_ratio<0.02&&current_episode>40&&float(raised_states)/float(sampled_states)>0.2){
-		      min_improvement_ratio=0.2;
-		      cout<<"updated min_improv_ratio, was low because of perimeter but it seems perimeter was not that good to start with"<<endl;
-		    }
+		    run_SS_again=true;
+		    //if(min_improvement_ratio<0.02&&current_episode>40&&float(raised_states)/float(sampled_states)>0.2){
+		    //  min_improvement_ratio=0.2;
+		    //  cout<<"updated min_improv_ratio, was low because of perimeter but it seems perimeter was not that good to start with"<<endl;
+		    //}
 		    candidate.set_fitness(fitness);
 		    double start_adding_best_time=utils::g_timer();
 
@@ -978,9 +991,11 @@ namespace pdbs {
 		      perimeter_created=false;
 		    }
 		    else{
+		      real_last_time_collections_improved=utils::g_timer();
 		      last_time_collections_improved=utils::g_timer();
 		      last_improv_collection_size=overall_pdb_size;
-		      cout<<"last_improv_collection_size:"<<last_improv_collection_size<<endl;
+		      size_targets_fixed=false;//found improvement, free size targets
+		      cout<<"time:"<<utils::g_timer<<",last_improv_collection_size:"<<last_improv_collection_size<<endl;
 		    }
 
 		    //Not true anymore since using online PDBs
@@ -1005,7 +1020,11 @@ namespace pdbs {
 		    DEBUG_MSG(cout<<"overall_pdb_gen_time:"<<overall_pdb_gen_time<<endl;);
 		    best_fitness_was_duplicate=false;
 		} else {
-		  if(raised_states>1)
+		  if(bin_packed_episode){
+		    episodes_to_mutate=1;//No mutations if no improvement on last bin pack
+		  }
+		  run_SS_again=false;
+		  //if(raised_states>1)
 		    //cout<<"not_adding:,"<<utils::g_timer()<<",raised_states:,"<<raised_states<<",sampled_states:,"<<sampled_states<<",ratio:"<<float(raised_states)/float(sampled_states)<<endl;
 		    //cout<<"not_adding,time:,"<<utils::g_timer()<<",bin_packed:,"<<bin_packed_episode<<",episode:,"<<current_episode<<",collection:,"<<collection_counter<<",raised_ratio:,"<<float(raised_states)/float(sampled_states)<<",total_nodes:"<<total_SS_gen_nodes<<",pruned_states:"<<pruned_states<<",fitness:,"<<fitness<<",sampled_states:,"<<sampled_states<<",initial_value:,"<<current_heur_initial_value<<",skip_sampling:,"<<skip_sampling<<",size:"<<overall_pdb_size<<",pdb_gen_time:"<<pdb_gen_time<<",episode:,"<<current_episode<<",finished:,"<<pdb_factory->is_finished()<<"Peak memory:"<<utils::get_peak_memory_in_kb()<<flush<<endl;
 		  
@@ -1023,6 +1042,8 @@ namespace pdbs {
     }
 
     void PatternCollectionGeneratorGeneticSS::bin_packing() {
+      
+      bin_packing_reg_count++;
 	DEBUG_MSG(cout<<"Starting bin_packing, pdb_max_size:"<<pdb_max_size<<endl;);
 	
 	//if(pdb_factory->name().find("symbolic")!=string::npos){
@@ -1144,6 +1165,7 @@ namespace pdbs {
 
 
     void PatternCollectionGeneratorGeneticSS::bin_packing_no_rel_analysis() {
+      bin_packing_rel_count++;
 	DEBUG_MSG(cout<<"Starting bin_packing_no_rel, pdb_max_size:"<<pdb_max_size<<endl;);
 	//cout<<"g_timer:"<<utils::g_timer()<<",Starting bin_packing_no_rel_analysis, pdb_max_size:"<<pdb_max_size<<endl;
 	
@@ -1284,12 +1306,13 @@ namespace pdbs {
 	task = task_;
 	TaskProxy task_proxy(*task);
 	VariablesProxy variables = task_proxy.get_variables();
-	while(true){
+	/*while(true){
 	  float temp=utils::g_timer();
           if(true){
 	    Pattern pattern;
-	    for(int i=0;i<17;i++){
-	      pattern.push_back(rand()%variables.size());
+	    for(int i=0;i<10;i++){
+	      //pattern.push_back(rand()%variables.size());
+	      pattern.push_back(i);
 	    }
 	    //Pattern pattern={1,2,3};
 	    PatternCollection pattern_collection;
@@ -1302,7 +1325,7 @@ namespace pdbs {
 	  float pdb_gen_time=utils::g_timer()-temp;
 	  cout<<"generated candidate[,"<<candidate_count+1<<",],time:,"<<",gen_time:,"<<pdb_gen_time<<",Peak Memory:"<<utils::get_peak_memory_in_kb()<<",current_memory:"<<utils::get_current_memory_in_kb()<<flush<<endl;
 	  candidate_count++;
-	}
+	}*/
 
 
 	int time_to_clean_dom=1;
@@ -1313,7 +1336,8 @@ namespace pdbs {
 	    
        	if(create_perimeter){
 	  cout<<"creating_perimeter"<<endl;
-	  min_improvement_ratio=0.01;//we want any heuristic improving perimenter
+	  //min_improvement_ratio=0.01;//we want any heuristic improving perimenter
+	  min_improvement_ratio=0.00;//we want any heuristic improving perimenter
 	  
 	  //do not want to start with 20,000 elements if cant find improvement on perimeter
 	  //on first 50 secs, 10 mill should be a more reasonable start
@@ -1345,7 +1369,7 @@ namespace pdbs {
 	    problem_solved_while_pdb_gen=true;
 	    cout<<"Solution found while generating Perimeter PDB candidate of type:"<<pdb_factory->name()<<", adding PDB and exiting generation at time"<<utils::g_timer()<<endl;
 
-	    cout<<"final episode:,"<<current_episode<<",time:,"<<utils::g_timer()<<",overall_pdb_gen_time:,"<<overall_pdb_gen_time<<",online_samples:,"<<total_online_samples<<",overall_sampling_time:,"<<overall_sampling_time<<",avg samp time:,"<<double(overall_sampling_time)/double((total_online_samples == 0) ? 1 : total_online_samples)<<",avg_sampled_states:,"<<avg_sampled_states<<",overall_probe_time:,"<<overall_probe_time<<",candidate_count:,"<<candidate_count<<",unique_samples.size:,"<<unique_samples.size()<<",best_heuristics count:,"<<best_pdb_collections.size()<<",overall_dominance_prunning_time:,"<<overall_dominance_prunning_time<<endl;
+	    cout<<"final episode:,"<<current_episode<<",time:,"<<utils::g_timer()<<",overall_pdb_gen_time:,"<<overall_pdb_gen_time<<",online_samples:,"<<total_online_samples<<",overall_sampling_time:,"<<overall_sampling_time<<",avg samp time:,"<<double(overall_sampling_time)/double((total_online_samples == 0) ? 1 : total_online_samples)<<",avg_sampled_states:,"<<avg_sampled_states<<",overall_probe_time:,"<<overall_probe_time<<",candidate_count:,"<<candidate_count<<",unique_samples.size:,"<<unique_samples.size()<<",best_heuristics count:,"<<best_pdb_collections.size()<<",overall_dominance_prunning_time:,"<<overall_dominance_prunning_time<<",bin_pack_reg_count:,"<<bin_packing_reg_count<<",bin_packing_rel_count:"<<bin_packing_rel_count<<endl;
 	    best_pdb_added=true;
 	    float start_time_dom=utils::g_timer();
 	    if(recompute_max_additive_subsets){
@@ -1435,6 +1459,7 @@ namespace pdbs {
 
 		bin_packed_episode=true;
 		mutation_probability=((double) rand() / (RAND_MAX))/10.0;
+		//cout<<"bin_packed_episode:"<<current_episode<<",mutation_probability:"<<mutation_probability<<endl;
 	    }
 	    else{
 	      //cout<<"calling mutate2, current_episode:"<<i<<endl;
@@ -1558,6 +1583,7 @@ namespace pdbs {
 	    initial_h=max(1,initial_h);
 	    //initial_h=temp_lmcut_heuristic.compute_heuristic(initial_state);
 	    //cout<<"prev_heur_initial_value:"<<initial_value<<endl;
+	    //cout<<"\tprobe_best_only,initial_h:"<<initial_h<<endl;
 	}
 	else{
 	    cout<<"cant call probe_best_only if best_heuristic is empty,DEBUG ME!!!"<<endl;
@@ -1789,6 +1815,11 @@ namespace pdbs {
 		h=get_best_value(child);
 		//h=temp_lmcut_heuristic.compute_heuristic(child);
 		if(h==numeric_limits<int>::max()){
+		  pair<map<size_t,pair<State,int> >::iterator,bool> ret;
+		  ret=unique_samples.insert(make_pair(child_hash,make_pair(child,h)));
+		  if(!ret.second){//keep max h value stored, so we do not need to recalculate
+		    ret.first->second.second=max(h,ret.first->second.second);
+		  }
 		    continue;
 		    //cout<<"prev_h_deade_end_found"<<endl;
 		}
@@ -1831,12 +1862,12 @@ namespace pdbs {
       
 		//add to the collector
 	
-		unique_samples.insert(make_pair(child_hash,make_pair(child,0)));
-		//pair<map<size_t,pair<State,int> >::iterator,bool> ret;
+		pair<map<size_t,pair<State,int> >::iterator,bool> ret;
+		ret=unique_samples.insert(make_pair(child_hash,make_pair(child,h)));
 		//ret=unique_samples.insert(make_pair(child_hash,make_pair(child,5)));
-		//if(!ret.second){
-		//  ret.first->second.first=State(child);
-		//}
+		if(!ret.second){//keep max h value stored, so we do not need to recalculate
+		  ret.first->second.second=max(h,ret.first->second.second);
+		}
 		//visited_states.insert(child.hash());
 		if ( h + g_real + op.get_cost()  <= threshold) {
 		    //Keep a record of all sampled states and their maximum weights and minimum depths

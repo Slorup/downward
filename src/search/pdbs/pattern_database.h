@@ -34,6 +34,7 @@ class AbstractOperator {
       abstract state number.
     */
     std::size_t hash_effect;
+    /* was this pdb interrupted */
 public:
     /*
       Abstract operators are built from concrete operators. The
@@ -77,6 +78,7 @@ class PatternDatabase : public PatternDatabaseInterface {
 
     // size of the PDB
     std::size_t num_states;
+    bool finished;
 
     /*
       final h-values for abstract-states.
@@ -141,6 +143,7 @@ class PatternDatabase : public PatternDatabaseInterface {
     bool is_goal_state(
         const std::size_t state_index,
         const std::vector<std::pair<int, int>> &abstract_goals) const;
+    
 
     /*
       The given concrete state is used to calculate the index of the
@@ -188,6 +191,9 @@ public:
     */
     virtual double compute_mean_finite_h() const override;
     int compute_heuristic_id(size_t state_id);
+    virtual bool is_finished() const override { 
+	return finished;
+    }
 };
 }
 

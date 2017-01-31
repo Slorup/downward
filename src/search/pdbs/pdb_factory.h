@@ -126,11 +126,12 @@ PDBFactory() : num_patterns_created(0), num_patterns_requested(0), num_patterns_
 							       int /*min_max_step_time*/ = 0, 
 							       int /*min_max_nodes*/ = 0) {
 	//By default we just make a copy
-	std::cout<<"calling default terminate_creation"<<std::endl;
+	//std::cout<<"calling default terminate_creation"<<std::endl;
 	return std::make_shared<PDBCollection>(pdb_collection);
     }
 
     virtual void continue_creation (PatternDatabaseInterface & /*pdb*/) {
+      std::cout<<"Need to implement continue creation for this method!"<<std::endl;exit(0);
     }
 
 

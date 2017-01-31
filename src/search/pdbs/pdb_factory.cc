@@ -29,10 +29,23 @@ static options::PluginTypePlugin<PDBFactory> _type_plugin(
 	assert(!pattern.empty ());
 	num_patterns_requested ++;
 	auto item = stored_pdbs.find(PDBKey(pattern, operator_costs));
+	//HACK UNTIL EXPLICIT CONTINUE IS CODED
+	//FIX SOON!
 	if (item != stored_pdbs.end()) {
+	  if(name().find("explicit")!=string::npos){
+	    if(is_finished()==true){
+	      //cout<<"finished explicit pdb, no need to continue"<<endl;
+	      return item->second;
+	    }
+	    //else{
+	      //cout<<"re-doing unfinished explicit pdb, no continue yet"<<endl;
+	    //}
+	  }
+	  else{
+	    //cout<<"pdb_type:"<<name()<<",finished:"<<is_finished()<<endl;
 	    continue_creation(*(item->second));
-
 	    return item->second;
+	  }
 	    // if(!item->second.expired()){
 	    // 	return item->second.lock();
 	    // } else {
