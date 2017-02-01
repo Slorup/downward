@@ -91,6 +91,10 @@ class PatternCollectionGeneratorGeneticSS : public PatternCollectionGenerator {
     float real_last_time_collections_improved=0;
     double last_improv_collection_size=20000;
     bool size_targets_fixed=false;
+    float reward_bin_rel=1.0;
+    float reward_bin_reg=1.0;
+    float bin_rel_calls=0;
+    float bin_reg_calls=0;
 
     std::shared_ptr<AbstractTask> task;
     /* Specifies whether patterns in each pattern collection need to be disjoint

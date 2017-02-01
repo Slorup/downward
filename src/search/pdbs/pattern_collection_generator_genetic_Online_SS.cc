@@ -868,7 +868,7 @@ namespace pdbs {
 		    if(candidate_h==numeric_limits<int>::max()){
 			raised_states++;
 			pruned_states+=SS_iter->weight;
-			cout<<"sampled_state:,"<<sampled_states<<",out of "<<SS_states.size()<<"is now pruned by dead_end, weight:"<<SS_iter->weight<<",current_total:"<<total_SS_gen_nodes<<",best_h:"<<best_h<<endl;
+			//cout<<"sampled_state:,"<<sampled_states<<",out of "<<SS_states.size()<<"is now pruned by dead_end, weight:"<<SS_iter->weight<<",current_total:"<<total_SS_gen_nodes<<",best_h:"<<best_h<<endl;
 			SS_iter++;
 			if(float(raised_states)/float(sampled_states)>min_improvement_ratio){
 			  break;
@@ -894,7 +894,7 @@ namespace pdbs {
 			    }
 			    //cout<<"id:,"<<SS_iter->id<<",candidate_h:"<<candidate_h<<",best_h:"<<best_h<<endl;
 			    //cout<<"sampled_state:,"<<sampled_states<<",out of "<<SS_states.size()<<"is now pruned by higher h, weight:"<<SS_iter->weight<<",current_total:"<<total_SS_gen_nodes<<endl;
-			    cout<<"\tsampled_state:,"<<sampled_states<<",out of "<<SS_states.size()<<"is now pruned by candidate_h:"<<candidate_h<<",best_h:"<<best_h<<",current_total:"<<total_SS_gen_nodes<<endl;
+			    //cout<<"\tsampled_state:,"<<sampled_states<<",out of "<<SS_states.size()<<"is now pruned by candidate_h:"<<candidate_h<<",best_h:"<<best_h<<",current_total:"<<total_SS_gen_nodes<<endl;
 			}
 			//else{
 			  //cout<<"\tstored best_h is above candidate_h:"<<candidate_h<<",best_h:"<<best_h<<endl;
@@ -1449,10 +1449,23 @@ namespace pdbs {
                     bin_packing();
                 }
                 else{//doing mixed bin_packing
+		  //reward_bin_rel=avg_reward_rel+sqrt(2*log(n_rel)/n_total);
+		  //reward_bin_reg=avg_reward_reg+sqrt(2*log(n_reg)/n_total);
+		  //if(reward_bin_rel>reward_bin_reg){
+		  //  bin_rel_calls++;
+		  //  bin_packing();
+		  //}
+		  //if(reward_bin_rel<reward_bin_reg){
+		  //  bin_reg_calls++;
+		  //  bin_packing_no_rel_analysis();
+		  //}
+		  //else 
 		  if(rand()%2>0){ 
+		    bin_rel_calls++;
 		    bin_packing();
 		  }
 		  else{
+		    bin_reg_calls++;
 		    bin_packing_no_rel_analysis();
 		  }
 		}
