@@ -85,7 +85,7 @@ class PatternCollectionGeneratorGeneticSS : public PatternCollectionGenerator {
     double last_pdb_max_size=50000;
     double last_pdb_min_size=0;
     bool last_sampler_too_big=false;
-    float min_improvement_ratio=0.00;
+    float min_improvement_ratio=0.20;
     long candidate_count=0;
     float last_time_collections_improved=0;
     float real_last_time_collections_improved=0;
