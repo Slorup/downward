@@ -91,10 +91,6 @@ class PatternCollectionGeneratorGeneticSS : public PatternCollectionGenerator {
     float real_last_time_collections_improved=0;
     double last_improv_collection_size=20000;
     bool size_targets_fixed=false;
-    float reward_bin_rel=1.0;
-    float reward_bin_reg=1.0;
-    float bin_rel_calls=0;
-    float bin_reg_calls=0;
 
     std::shared_ptr<AbstractTask> task;
     /* Specifies whether patterns in each pattern collection need to be disjoint
@@ -117,6 +113,17 @@ class PatternCollectionGeneratorGeneticSS : public PatternCollectionGenerator {
     bool perimeter_created=false;
     bool reg_bin_pack_only=false;
     bool rel_analysis_only=false;
+    double bin_rel_calls=1;
+    double bin_reg_calls=1;
+    double bin_total_calls=1;
+    bool bin_reg_packed=false;
+    bool bin_rel_packed=false;
+    double reward_bin_rel=1.0;
+    double reward_bin_reg=1.0;
+    double avg_reward_rel=10.0;
+    double avg_reward_reg=10.0;
+
+
 
     // Store best pattern collection over all episodes and its fitness value.
     vector<PatternCollection> best_patterns; //Alvaro: Eliminate best_patterns?

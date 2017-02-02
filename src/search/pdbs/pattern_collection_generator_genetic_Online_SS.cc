@@ -943,9 +943,19 @@ namespace pdbs {
 		    //else{
 		    //  cout<<"best_heuristic being set for the first time"<<endl;
 		    //}
-		    cout<<"time:,"<<utils::g_timer()<<",bin_packed:,"<<bin_packed_episode<<",adding1 best_heuristic,episode:,"<<current_episode<<",collection:,"<<collection_counter<<",new raised_ratio:,"<<float(raised_states)/float(sampled_states)<<",actual_states_ratio:,"<<float(raised_states)/float(sampled_states)<<",total_nodes:"<<total_SS_gen_nodes<<",pruned_states:"<<pruned_states<<",fitness:,"<<fitness<<",sampled_states:,"<<sampled_states<<",initial_value:,"<<current_heur_initial_value<<",skip_sampling:,"<<skip_sampling<<",best_heur_dead_ends:,"<<best_heur_dead_ends<<",best_heuristics count:"<<best_pdb_collections.size()<<",size:"<<overall_pdb_size<<",pdb_gen_time:"<<pdb_gen_time<<",episode:,"<<current_episode<<",finished:,"<<pdb_factory->is_finished()<<",bin_packed:,"<<bin_packed_episode<<"Peak memory:"<<utils::get_peak_memory_in_kb()<<flush<<endl;
+		    cout<<"time:,"<<utils::g_timer()<<",bin_packed:,"<<bin_packed_episode<<",adding1 best_heuristic,episode:,"<<current_episode<<",collection:,"<<collection_counter<<",new raised_ratio:,"<<float(raised_states)/float(sampled_states)<<",actual_states_ratio:,"<<float(raised_states)/float(sampled_states)<<",total_nodes:"<<total_SS_gen_nodes<<",pruned_states:"<<pruned_states<<",fitness:,"<<fitness<<",sampled_states:,"<<sampled_states<<",initial_value:,"<<current_heur_initial_value<<",skip_sampling:,"<<skip_sampling<<",best_heur_dead_ends:,"<<best_heur_dead_ends<<",best_heuristics count:"<<best_pdb_collections.size()<<",size:"<<overall_pdb_size<<",pdb_gen_time:"<<pdb_gen_time<<",episode:,"<<current_episode<<",finished:,"<<pdb_factory->is_finished()<<",bin_packed:,"<<bin_packed_episode<<",bin_reg_packed:,"<<bin_reg_packed<<",bin_rel_packed:,"<<bin_rel_packed<<",Peak memory:,"<<utils::get_peak_memory_in_kb()<<flush<<endl;
 		    episodes_to_mutate=20;//Want to mutate around good episodes
 		    run_SS_again=true;
+		    //Noting which bin packing is working best
+		    if(bin_packed_episode){
+		      if(bin_reg_packed){
+			avg_reward_reg+=1.0;
+		      }
+		      else if(bin_rel_packed){
+			avg_reward_rel+=1.0;
+		      }
+		    }
+
 		    //if(min_improvement_ratio<0.02&&current_episode>40&&float(raised_states)/float(sampled_states)>0.2){
 		    //  min_improvement_ratio=0.2;
 		    //  cout<<"updated min_improv_ratio, was low because of perimeter but it seems perimeter was not that good to start with"<<endl;
@@ -1023,6 +1033,13 @@ namespace pdbs {
 		  if(bin_packed_episode){
 		    episodes_to_mutate=1;//No mutations if no improvement on last bin pack
 		  }
+		  //even if not added, this pattern was competitive, so we reward its choice
+		  //if(bin_reg_packed){
+		  //  avg_reward_reg++;
+		 // }
+		 // else if(bin_rel_packed){
+		 //   avg_reward_rel++;
+		 // }
 		  run_SS_again=false;
 		  //if(raised_states>1)
 		    //cout<<"not_adding:,"<<utils::g_timer()<<",raised_states:,"<<raised_states<<",sampled_states:,"<<sampled_states<<",ratio:"<<float(raised_states)/float(sampled_states)<<endl;
@@ -1449,25 +1466,37 @@ namespace pdbs {
                     bin_packing();
                 }
                 else{//doing mixed bin_packing
-		  //reward_bin_rel=avg_reward_rel+sqrt(2*log(n_rel)/n_total);
-		  //reward_bin_reg=avg_reward_reg+sqrt(2*log(n_reg)/n_total);
-		  //if(reward_bin_rel>reward_bin_reg){
-		  //  bin_rel_calls++;
-		  //  bin_packing();
-		  //}
-		  //if(reward_bin_rel<reward_bin_reg){
-		  //  bin_reg_calls++;
-		  //  bin_packing_no_rel_analysis();
-		  //}
-		  //else 
-		  if(rand()%2>0){ 
+		  bin_reg_packed=false;
+		  bin_rel_packed=false;
+		  reward_bin_rel=(avg_reward_rel/bin_rel_calls)+sqrt(2*log(bin_rel_calls)/bin_total_calls);
+		  reward_bin_reg=(avg_reward_reg/bin_reg_calls)+sqrt(2*log(bin_reg_calls)/bin_total_calls);
+		  if(reward_bin_rel>reward_bin_reg){
+		    cout<<"using rel_bin_pack, reward_bin_rel="<<reward_bin_rel<<",reward_bin_reg:"<<reward_bin_reg;
+		    cout<<",bin_total_calls:"<<bin_total_calls<<",bin_reg_calls:"<<bin_reg_calls<<",bin_rel_calls:"<<bin_rel_calls<<endl;
+		    bin_rel_calls++;
+		    bin_packing();
+		    bin_rel_packed=true;
+		  }
+		  else if(reward_bin_rel<reward_bin_reg){
+		    cout<<"using reg_bin_pack, reward_bin_rel="<<reward_bin_rel<<",reward_bin_reg:"<<reward_bin_reg;
+		    cout<<",bin_total_calls:"<<bin_total_calls<<",bin_reg_calls:"<<bin_reg_calls<<",bin_rel_calls:"<<bin_rel_calls<<endl;
+		    bin_reg_calls++;
+		    bin_packing_no_rel_analysis();
+		    bin_reg_packed=true;
+		  }
+		  else if(rand()%2>0){ 
+		    cout<<"using random rel_bin_pack, reward_bin_rel="<<reward_bin_rel<<"==reward_bin_reg:"<<reward_bin_reg;
+		    cout<<",bin_total_calls:"<<bin_total_calls<<",bin_reg_calls:"<<bin_reg_calls<<",bin_rel_calls:"<<bin_rel_calls<<endl;
 		    bin_rel_calls++;
 		    bin_packing();
 		  }
 		  else{
+		    cout<<"using random reg_bin_pack, reward_bin_rel="<<reward_bin_rel<<"==reward_bin_reg:"<<reward_bin_reg<<endl;
+		    cout<<",bin_total_calls:"<<bin_total_calls<<",bin_reg_calls:"<<bin_reg_calls<<",bin_rel_calls:"<<bin_rel_calls<<endl;
 		    bin_reg_calls++;
 		    bin_packing_no_rel_analysis();
 		  }
+		  bin_total_calls++;
 		}
 
 		bin_packed_episode=true;
@@ -1523,7 +1552,7 @@ namespace pdbs {
 		  clear_dominated_heuristics();
 		}
 		//cout<<"final episode:,"<<current_episode<<",g_time:,"<<utils::g_timer()<<",genetic_SS_timer:"<<genetic_SS_timer<<",overall_pdb_gen_time:,"<<overall_pdb_gen_time<<",overall_pdb_helper_time:,"<<overall_pdb_helper_gen_time<<",online_samples:,"<<total_online_samples<<",overall_sampling_time:,"<<overall_online_samp_time<<",avg samp time:,"<<double(overall_online_samp_time)/double((total_online_samples == 0) ? 1 : total_online_samples)<<",overall_backward_sampling_time:,"<<overall_backward_sampling_timer<<",avg_sampled_states:,"<<avg_sampled_states<<endl;
-		cout<<"final episode:,"<<current_episode<<",time:,"<<utils::g_timer()<<",overall_pdb_gen_time:,"<<overall_pdb_gen_time<<",online_samples:,"<<total_online_samples<<",overall_sampling_time:,"<<overall_sampling_time<<",avg samp time:,"<<double(overall_sampling_time)/double((total_online_samples == 0) ? 1 : total_online_samples)<<",avg_sampled_states:,"<<avg_sampled_states<<",overall_probe_time:,"<<overall_probe_time<<",candidate_count:,"<<candidate_count<<",unique_samples.size:,"<<unique_samples.size()<<",best_heuristics count:,"<<best_pdb_collections.size()<<",overall_dominance_prunning_time:,"<<overall_dominance_prunning_time<<endl;
+		cout<<"final episode:,"<<current_episode<<",time:,"<<utils::g_timer()<<",overall_pdb_gen_time:,"<<overall_pdb_gen_time<<",online_samples:,"<<total_online_samples<<",overall_sampling_time:,"<<overall_sampling_time<<",avg samp time:,"<<double(overall_sampling_time)/double((total_online_samples == 0) ? 1 : total_online_samples)<<",avg_sampled_states:,"<<avg_sampled_states<<",overall_probe_time:,"<<overall_probe_time<<",candidate_count:,"<<candidate_count<<",unique_samples.size:,"<<unique_samples.size()<<",best_heuristics count:,"<<best_pdb_collections.size()<<",overall_dominance_prunning_time:,"<<overall_dominance_prunning_time<<",bin_total_calls:"<<bin_total_calls<<",bin_reg_wins:"<<avg_reward_reg<<",bin_rel_wins:,"<<avg_reward_rel<<endl;
 		std::shared_ptr<PDBCollection> best_pdb_collections_print=result->get_pdbs();
 		int counter=0;
 		for(auto pdb : *best_pdb_collections_print){
