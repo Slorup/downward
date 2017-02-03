@@ -46,6 +46,7 @@ class PatternCollectionGeneratorGeneticSS : public PatternCollectionGenerator {
     utils::CountdownTimer *genetic_SS_timer;
     vector<SS_state> SS_states_vector;
     map<size_t,pair<int,double> > SS_states;
+    map<size_t,pair<int,double> > SS_states_copy;
     // Maximum number of states for each pdb
     int modifier=1;
     double pdb_max_size;
@@ -85,7 +86,7 @@ class PatternCollectionGeneratorGeneticSS : public PatternCollectionGenerator {
     double last_pdb_max_size=50000;
     double last_pdb_min_size=0;
     bool last_sampler_too_big=false;
-    float min_improvement_ratio=0.20;
+    float min_improvement_ratio=0.00;
     long candidate_count=0;
     float last_time_collections_improved=0;
     float real_last_time_collections_improved=0;
@@ -122,6 +123,8 @@ class PatternCollectionGeneratorGeneticSS : public PatternCollectionGenerator {
     double reward_bin_reg=1.0;
     double avg_reward_rel=10.0;
     double avg_reward_reg=10.0;
+    double node_gen_and_exp_cost=0;
+    double saved_time=0;
 
 
 

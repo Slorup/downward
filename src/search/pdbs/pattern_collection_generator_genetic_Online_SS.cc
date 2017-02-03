@@ -54,6 +54,7 @@ namespace pdbs {
 	perimeter_nodes(opts.get<int>("perimeter_nodes")),
 	reg_bin_pack_only(opts.get<bool>("reg_bin_pack_only")),
 	rel_analysis_only(opts.get<bool>("rel_analysis_only")) {
+    
 	
 	cout<<"hybrid_pdb_size:"<<hybrid_pdb_size<<endl;
 	cout<<"create_perimeter:"<<create_perimeter<<endl;
@@ -719,53 +720,82 @@ namespace pdbs {
 			cout<<"timer:,"<<utils::g_timer()<<",run_SS_again, ratio:"<<total_SS_gen_nodes/pruned_states<<endl;
 		    }
 
-		    if(SS_states.size()<5000){
+		    if(SS_states.size()<100){
 			run_SS_again=true;
-			//cout<<"Running SS sampling again, SS states left less than 5K"<<endl;
+			cout<<"Running SS sampling again, SS tree is almost empty"<<endl;
 		    }
 		    if(run_SS_again){
 			SS_states.clear();
 			SS_states_vector.clear();
 			double start_probe_time=utils::g_timer();
 			threshold=max(best_initial_value,max(1,threshold));
+			int last_threshold=0;
+			int repetition=0;
 			//threshold=44;
-			for (int repetition=0;repetition<10;repetition++){
+			cout<<"initial threshold:"<<threshold<<endl;
+			if(threshold==best_initial_value){
+			  for (int prob_index=0;prob_index<2000;prob_index++){
+			    SS_states.clear();SS_states_vector.clear();
+			    for(size_t j=1;j<20;j++){
+			      probe_best_only();
+			      if(SS_states.size()>500){
+				break;
+			      }
+			    }
+			    if(SS_states.size()>500){
+			      cout<<"best initial threshold raised to:"<<threshold<<",probe states:"<<SS_states.size()<<endl;
+			      SS_states.clear();SS_states_vector.clear();
+			      break;
+			    }
+			    threshold=max(threshold+1,int(threshold*1.2));
+			    cout<<"next_threshold:"<<threshold<<endl;
+			  }
+			}
+
+			for (repetition=0;repetition<10;repetition++){
 			    vector<double> probe_data;
-			    for (int prob_index=0;prob_index<50;prob_index++){
+			    for (int prob_index=0;prob_index<1000;prob_index++){
 				probe_data.push_back(probe_best_only());
 				if(utils::g_timer()-start_probe_time>10.0){
 				    cout<<"exceeded 10 seconds limit for probes, number of repetitions completed:"<<repetition<<endl;
 				    break;
 				} else if(SS_states.size()>20000){
-				    cout<<"exceeded 20K max SS_states sampled,current size:"<<SS_states.size()<<endl;
+				    cout<<"exceeded 20K max SS_states sampled,current size:"<<SS_states.size()<<",probe:"<<prob_index<<",threshold:"<<threshold<<endl;
 				    break;
 				}
 			    }
+			    cout<<"\trepetition:"<<repetition<<",threshold:"<<threshold<<",SS_states:"<<SS_states.size()<<endl;
 			    pair<double,double> avg_and_dev=utils::avg_and_standard_deviation(probe_data);
 			    //cout<<scientific<<"repetition:"<<repetition<<",probe data average:"<<avg_and_dev.first<<endl;
 			    //cout<<scientific<<"repetition:"<<repetition<<",probe data standard deviation:"<<avg_and_dev.second<<endl;
 			    probe_avgs.push_back(avg_and_dev.first);
 		      
 			    if(utils::g_timer()-start_probe_time>10.0){
-				cout<<"exceeded 10 seconds limit for probes, number of repetions completed:"<<repetition<<endl;
+				cout<<"exceeded 10 seconds limit for probes, number of repetions completed:"<<repetition<<",threshold:"<<threshold<<endl;
 				break;
 			    } else if(SS_states.size()>20000){
-				cout<<"exceeded 20K max SS_states sampled,current size:"<<SS_states.size()<<endl;
+				cout<<"exceeded 20K max SS_states sampled,current size:"<<SS_states.size()<<",threshold:"<<threshold<<endl;
 				break;
 			    } else if(avg_and_dev.first>pow(10,100)){
-				cout<<"avg probe:"<<avg_and_dev.first<<" past 10^100 nodes, not going further, gets very unprecise"<<endl;
+				cout<<"avg probe:"<<avg_and_dev.first<<" past 10^100 nodes, not going further, gets very unprecise"<<",threshold:"<<threshold<<endl;
 				break;
 			    }
-			    //do not want to go too far, rule of thumb do not increase threshold pass 4 times the initial perimeter distance if it is being used
-			    if(initial_perimeter_threshold>0){
-			      if(threshold<4*initial_perimeter_threshold)
-				threshold=threshold*2;
-			    }
-			    else{
-			      threshold=threshold*2;
-			    }
 
+			    SS_states_copy=SS_states;
+			    last_threshold=threshold;
+			    threshold=max(threshold+1,int(threshold*1.2));
+			    SS_states.clear();
+			    SS_states_vector.clear();
 			}
+
+			if(repetition>0){
+			  if(SS_states.size()<20000){
+			    cout<<"final SS_states:"<<SS_states.size()<<",for threshold:,"<<last_threshold<<endl;
+			    threshold=last_threshold;
+			    SS_states=SS_states_copy;
+			  }
+			}
+			SS_states_copy.clear();
 			overall_probe_time+=utils::g_timer()-start_probe_time;
 		    
 			//pair<double,double> avg_and_dev=utils::avg_and_standard_deviation(probe_avgs);
@@ -819,12 +849,14 @@ namespace pdbs {
 		    
 		current_heur_initial_value=candidate.get_value(initial_state);
 		total_online_samples++;
+		total_SS_gen_nodes=0;
 		for(SS_iter=SS_states_vector.begin();SS_iter!=SS_states_vector.end();){
 		    //cout<<"time:,"<<utils::g_timer<<",working on state:"<<sampled_states<<endl;
 		    if(unique_samples.find(SS_iter->id)==unique_samples.end()){
 			cout<<"state not in unique_samples!!!"<<endl;exit(22);
 		    }
-		    if(sampled_states%100==0){
+
+		    if(sampled_states%1000==0){
 			if(pruned_states==0){
 			    if(utils::g_timer()-start_sampler_time>0.2){
 				//cout<<"\tcurrent_episode:"<<current_episode<<",exiting candidate vs best_heuristic SS_states comparison, 0.2 secs iterating without a single better h value"<<endl;
@@ -856,7 +888,6 @@ namespace pdbs {
 			continue;
 		    }
 		    sampled_states++;
-		    overall_sampled_states++;
 		    total_SS_gen_nodes+=SS_iter->weight;
 		    //cout<<"sampled_state:"<<sampled_states<<",new_f="<<current_heuristic->get_heuristic()+SS_iter->g<<",old f:"<<best_heuristic->get_heuristic()+SS_iter->g<<",g:"<<SS_iter->g<<",weight:"<<SS_iter->weight<<",sampling_threshold:"<<sampling_threshold<<endl;
 		    int candidate_h=candidate.get_value(unique_samples.at(SS_iter->id).first);
@@ -870,9 +901,9 @@ namespace pdbs {
 			pruned_states+=SS_iter->weight;
 			//cout<<"sampled_state:,"<<sampled_states<<",out of "<<SS_states.size()<<"is now pruned by dead_end, weight:"<<SS_iter->weight<<",current_total:"<<total_SS_gen_nodes<<",best_h:"<<best_h<<endl;
 			SS_iter++;
-			if(float(raised_states)/float(sampled_states)>min_improvement_ratio){
-			  break;
-			}
+			//if(float(raised_states)/float(sampled_states)>min_improvement_ratio){
+			//  break;
+			//}
 			continue;
 		    }
 
@@ -889,9 +920,9 @@ namespace pdbs {
 			if(candidate_h>best_h){
 			    pruned_states+=SS_iter->weight;
 			    raised_states++;
-			    if(float(raised_states)/float(sampled_states)>min_improvement_ratio){
-			      break;
-			    }
+			    //if(float(raised_states)/float(sampled_states)>min_improvement_ratio){
+			     // break;
+			    //}
 			    //cout<<"id:,"<<SS_iter->id<<",candidate_h:"<<candidate_h<<",best_h:"<<best_h<<endl;
 			    //cout<<"sampled_state:,"<<sampled_states<<",out of "<<SS_states.size()<<"is now pruned by higher h, weight:"<<SS_iter->weight<<",current_total:"<<total_SS_gen_nodes<<endl;
 			    //cout<<"\tsampled_state:,"<<sampled_states<<",out of "<<SS_states.size()<<"is now pruned by candidate_h:"<<candidate_h<<",best_h:"<<best_h<<",current_total:"<<total_SS_gen_nodes<<endl;
@@ -902,8 +933,38 @@ namespace pdbs {
 		    //}
 		    SS_iter++;
 		}
+		overall_sampled_states+=sampled_states;
 		DEBUG_MSG(cout<<"episode:"<<current_episode<<",finished sampling,sampled_states:"<<sampled_states<<",raised_states:"<<raised_states<<",pruned_states:"<<pruned_states<<endl;fflush(stdout););
 		sampler_time=utils::g_timer()-start_sampler_time;
+		double heur_time_cost=0;
+
+		if(raised_states>0){
+		  utils::Timer heur_timer;
+		  int counter_temp=0;
+		  for (auto sample=unique_samples.begin();sample!=unique_samples.end();sample++){
+		    candidate.get_value(sample->second.first);
+		    if(counter_temp>20000){
+		      break;
+		    }
+		    counter_temp++;
+		  }
+		  heur_time_cost=heur_timer.stop()/SS_states_vector.size();
+		  saved_time=total_SS_gen_nodes*(node_gen_and_exp_cost+heur_time_cost*best_pdb_collections.size())-(total_SS_gen_nodes-pruned_states)*(node_gen_and_exp_cost+heur_time_cost*(best_pdb_collections.size()+1));
+		  //cout<<"ratio:"<<float(raised_states)/float(sampled_states)<<",node_gen_and_exp_cost:"<<node_gen_and_exp_cost<<",sampling_time:"<<sampler_time<<",heur_time_cost"<<heur_time_cost<<",best_prev_time:"<<total_SS_gen_nodes*(node_gen_and_exp_cost+best_pdb_collections.size()*heur_time_cost)<<",new_time:"<<(total_SS_gen_nodes-pruned_states)*(node_gen_and_exp_cost+heur_time_cost*(best_pdb_collections.size()+1))<<",saved_time:"<<saved_time<<"total_SS_gen_nodes:"<<total_SS_gen_nodes<<",new_nodes:"<<total_SS_gen_nodes-pruned_states<<",initial_h:"<<candidate.get_value(initial_state)<<endl;
+		}
+		else{
+		  saved_time=0;
+		}
+		//if(saved_time<0){
+		//  if(abs(saved_time)/((total_SS_gen_nodes-pruned_states)*(node_gen_and_exp_cost+heur_time_cost*best_pdb_collections.size()))<0.1){
+		//    saved_time=0.00000001;//make positive
+		//  }
+		//};
+
+
+
+
+
 		overall_sampling_time+=sampler_time;
 	    DEBUG_MSG(cout<<"sampler_time:"<<sampler_time<<",last_sampler_too_big:"<<last_sampler_too_big<<endl;);
 	      
@@ -930,7 +991,7 @@ namespace pdbs {
 	      //cout<<"g_timer:,"<<utils::g_timer()<<",current_episode:,"<<current_episode<<",pdb_max_size:,"<<pdb_max_size<<",candidate initial h:,"<<candidate->get_value(initial_state)<<",sampled_states:,"<<sampled_states<<",raised_states:,"<<raised_states<<",ratio:,"<<float(raised_states)/float(sampled_states)<<",overall_pdb_size:,"<<overall_pdb_size<<endl;
 		//fitness_values.push_back(fitness);
 
-		if(float(raised_states)/float(sampled_states)>min_improvement_ratio||(best_pdb_collections.size()==0)) {
+		if((float(raised_states)/float(sampled_states)>min_improvement_ratio&&saved_time>0)||(best_pdb_collections.size()==0)) {
 
 		    best_fitness = fitness;
 		    //if(current_episode>0){
@@ -1471,28 +1532,28 @@ namespace pdbs {
 		  reward_bin_rel=(avg_reward_rel/bin_rel_calls)+sqrt(2*log(bin_rel_calls)/bin_total_calls);
 		  reward_bin_reg=(avg_reward_reg/bin_reg_calls)+sqrt(2*log(bin_reg_calls)/bin_total_calls);
 		  if(reward_bin_rel>reward_bin_reg){
-		    cout<<"using rel_bin_pack, reward_bin_rel="<<reward_bin_rel<<",reward_bin_reg:"<<reward_bin_reg;
-		    cout<<",bin_total_calls:"<<bin_total_calls<<",bin_reg_calls:"<<bin_reg_calls<<",bin_rel_calls:"<<bin_rel_calls<<endl;
+		    //cout<<"using rel_bin_pack, reward_bin_rel="<<reward_bin_rel<<",reward_bin_reg:"<<reward_bin_reg;
+		    //cout<<",bin_total_calls:"<<bin_total_calls<<",bin_reg_calls:"<<bin_reg_calls<<",bin_rel_calls:"<<bin_rel_calls<<endl;
 		    bin_rel_calls++;
 		    bin_packing();
 		    bin_rel_packed=true;
 		  }
 		  else if(reward_bin_rel<reward_bin_reg){
-		    cout<<"using reg_bin_pack, reward_bin_rel="<<reward_bin_rel<<",reward_bin_reg:"<<reward_bin_reg;
-		    cout<<",bin_total_calls:"<<bin_total_calls<<",bin_reg_calls:"<<bin_reg_calls<<",bin_rel_calls:"<<bin_rel_calls<<endl;
+		    //cout<<"using reg_bin_pack, reward_bin_rel="<<reward_bin_rel<<",reward_bin_reg:"<<reward_bin_reg;
+		    //cout<<",bin_total_calls:"<<bin_total_calls<<",bin_reg_calls:"<<bin_reg_calls<<",bin_rel_calls:"<<bin_rel_calls<<endl;
 		    bin_reg_calls++;
 		    bin_packing_no_rel_analysis();
 		    bin_reg_packed=true;
 		  }
 		  else if(rand()%2>0){ 
-		    cout<<"using random rel_bin_pack, reward_bin_rel="<<reward_bin_rel<<"==reward_bin_reg:"<<reward_bin_reg;
-		    cout<<",bin_total_calls:"<<bin_total_calls<<",bin_reg_calls:"<<bin_reg_calls<<",bin_rel_calls:"<<bin_rel_calls<<endl;
+		    //cout<<"using random rel_bin_pack, reward_bin_rel="<<reward_bin_rel<<"==reward_bin_reg:"<<reward_bin_reg;
+		    //cout<<",bin_total_calls:"<<bin_total_calls<<",bin_reg_calls:"<<bin_reg_calls<<",bin_rel_calls:"<<bin_rel_calls<<endl;
 		    bin_rel_calls++;
 		    bin_packing();
 		  }
 		  else{
-		    cout<<"using random reg_bin_pack, reward_bin_rel="<<reward_bin_rel<<"==reward_bin_reg:"<<reward_bin_reg<<endl;
-		    cout<<",bin_total_calls:"<<bin_total_calls<<",bin_reg_calls:"<<bin_reg_calls<<",bin_rel_calls:"<<bin_rel_calls<<endl;
+		    //cout<<"using random reg_bin_pack, reward_bin_rel="<<reward_bin_rel<<"==reward_bin_reg:"<<reward_bin_reg<<endl;
+		    //cout<<",bin_total_calls:"<<bin_total_calls<<",bin_reg_calls:"<<bin_reg_calls<<",bin_rel_calls:"<<bin_rel_calls<<endl;
 		    bin_reg_calls++;
 		    bin_packing_no_rel_analysis();
 		  }
@@ -2390,6 +2451,34 @@ namespace pdbs {
 	//    pdb_max_size=2*pow(10,4);
 	//}
 	
+	  cout<<"starting timings"<<flush<<endl;
+	  utils::Timer node_gen_and_exp_timings;
+	  int node_counter=0;
+	  State succ_state = task_proxy.get_initial_state();
+	  vector<State> succ_states;
+	  set<State> visited_states;
+	  while(node_gen_and_exp_timings()<1.0){
+	    node_counter++;
+	    applicable_ops.clear();
+	    g_successor_generator->generate_applicable_ops(succ_state, applicable_ops);
+	    for(auto op : applicable_ops){
+	      succ_states.push_back(succ_state.get_successor(op));
+	    }
+	    //const OperatorProxy &op = applicable_ops[rand()%applicable_ops.size()];//choose operator at random
+	    if(applicable_ops.size()==0){//dead_end,go back to initial state
+	      succ_state = task_proxy.get_initial_state();
+	      node_counter--;
+	      continue;
+	    }
+	    else{
+	      //cout<<"\t\tapplicable_ops:"<<applicable_ops.size()<<endl;
+	      succ_state = succ_state.get_successor(applicable_ops[rand()%applicable_ops.size()]);
+	      visited_states.insert(succ_state);
+	    }
+	  }
+	  visited_states.clear();
+	  node_gen_and_exp_cost=node_gen_and_exp_timings.stop()/double(node_counter);
+	  cout<<"node gen_and_exp_cost:"<<node_gen_and_exp_cost<<",node_counter:"<<node_counter<<endl;
 	cout<<"Setting num_collections to 1 no matter the input,peak memory:"<<utils::get_peak_memory_in_kb()<<endl; // ???????
 	genetic_algorithm(task);
 	DEBUG_MSG(cout<<"genetic_algorithm is finished"<<endl;);
