@@ -53,7 +53,8 @@ namespace pdbs {
 	perimeter_step_time_ms(opts.get<int>("perimeter_step_time_ms")),
 	perimeter_nodes(opts.get<int>("perimeter_nodes")),
 	reg_bin_pack_only(opts.get<bool>("reg_bin_pack_only")),
-	rel_analysis_only(opts.get<bool>("rel_analysis_only")) {
+	rel_analysis_only(opts.get<bool>("rel_analysis_only")),
+	single_pattern_only(opts.get<bool>("single_pattern_only")) {
     
 	
 	cout<<"hybrid_pdb_size:"<<hybrid_pdb_size<<endl;
@@ -62,6 +63,7 @@ namespace pdbs {
 	cout<<"initial time_limit per pdb:"<<time_limit<<endl;
 	cout<<"reg_bin_pack_only:"<<reg_bin_pack_only<<endl;
 	cout<<"rel_analysis_only:"<<rel_analysis_only<<endl;
+	cout<<"single_pattern_only:"<<single_pattern_only<<endl;
 	num_collections=1;
 	result=make_shared<PatternCollectionInformation>(task, make_shared<PatternCollection>());
        
@@ -1205,6 +1207,10 @@ namespace pdbs {
 			pattern.clear();
 			pattern.resize(variables.size(), false);
 			current_size = 1;
+			//TRYING ONLY ONE PATTERN
+			if(single_pattern_only){
+			  break;
+			}
 		    }
 		  }
 		}
@@ -1470,11 +1476,11 @@ namespace pdbs {
 	  perimeter_created=true;
 	} else{
 	  if(rel_analysis_only==true){
+	    bin_packing();
 	    cout<<"bin_packing with rel_analysis_only"<<endl;
-	    bin_packing_no_rel_analysis();
 	  }
 	  else if(reg_bin_pack_only==true){
-	    bin_packing();
+	    bin_packing_no_rel_analysis();
 	    cout<<"bin_packing regular only"<<endl;
 	  }
 	  else{//doing mixed bin_packing
@@ -1521,10 +1527,10 @@ namespace pdbs {
 		num_collections=1;
 		 
 	        if(rel_analysis_only==true){
-	            bin_packing_no_rel_analysis();
+                    bin_packing();
 		}
                 else if(reg_bin_pack_only==true){
-                    bin_packing();
+	            bin_packing_no_rel_analysis();
                 }
                 else{//doing mixed bin_packing
 		  bin_reg_packed=false;
@@ -2636,6 +2642,10 @@ namespace pdbs {
     parser.add_option<bool>(
         "create_perimeter",
         "whether to start with a perimeter",
+        "false");
+    parser.add_option<bool>(
+        "single_pattern_only",
+        "single pattern to test full costs",
         "false");
 
     parser.add_option<int>("perimeter_time_ms", "maximum time for the perimeter", "250000");
