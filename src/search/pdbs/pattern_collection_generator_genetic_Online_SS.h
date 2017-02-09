@@ -10,6 +10,7 @@
 #include "../ss/ss_search.h"
 #include "../global_state.h"
 #include "group_zero_one_pdbs.h"
+#include "../heuristics/lm_cut_heuristic.h"
 
 
 class AbstractTask;
@@ -115,6 +116,8 @@ class PatternCollectionGeneratorGeneticSS : public PatternCollectionGenerator {
     bool reg_bin_pack_only=false;
     bool rel_analysis_only=false;
     bool single_pattern_only=false;
+    bool use_lmcut=false;
+    bool ucb=true;
     double bin_rel_calls=1;
     double bin_reg_calls=1;
     double bin_total_calls=1;
@@ -251,6 +254,7 @@ public:
     void clear_dominated_heuristics();
     int get_best_value_zero_one(State current_state);
     int get_best_value(State current_state);
+    std::unique_ptr<lm_cut_heuristic::LandmarkCutHeuristic> lmcut;
 };
 ostream& operator<<(ostream& os, const vector<bool>& v);
 template<class T>

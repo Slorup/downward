@@ -54,7 +54,9 @@ namespace pdbs {
 	perimeter_nodes(opts.get<int>("perimeter_nodes")),
 	reg_bin_pack_only(opts.get<bool>("reg_bin_pack_only")),
 	rel_analysis_only(opts.get<bool>("rel_analysis_only")),
-	single_pattern_only(opts.get<bool>("single_pattern_only")) {
+	single_pattern_only(opts.get<bool>("single_pattern_only")),
+	use_lmcut(opts.get<bool>("use_lmcut")),
+	ucb(opts.get<bool>("ucb")) {
     
 	
 	cout<<"hybrid_pdb_size:"<<hybrid_pdb_size<<endl;
@@ -64,6 +66,7 @@ namespace pdbs {
 	cout<<"reg_bin_pack_only:"<<reg_bin_pack_only<<endl;
 	cout<<"rel_analysis_only:"<<rel_analysis_only<<endl;
 	cout<<"single_pattern_only:"<<single_pattern_only<<endl;
+	cout<<"ucb:"<<ucb<<endl;
 	num_collections=1;
 	result=make_shared<PatternCollectionInformation>(task, make_shared<PatternCollection>());
        
@@ -1418,8 +1421,11 @@ namespace pdbs {
 	best_fitness = -1;
 	//best_patterns = nullptr;
 	    
-       	if(create_perimeter){
-	  cout<<"creating_perimeter"<<endl;
+       	if(use_lmcut){
+	  cout<<"seeding with use_lmcut"<<endl;
+	}
+	else if(create_perimeter){
+	  cout<<"seeding with creating_perimeter"<<endl;
 	  //min_improvement_ratio=0.01;//we want any heuristic improving perimenter
 	  min_improvement_ratio=0.00;//we want any heuristic improving perimenter
 	  
@@ -1533,23 +1539,25 @@ namespace pdbs {
 	            bin_packing_no_rel_analysis();
                 }
                 else{//doing mixed bin_packing
-		  bin_reg_packed=false;
-		  bin_rel_packed=false;
-		  reward_bin_rel=(avg_reward_rel/bin_rel_calls)+sqrt(2*log(bin_rel_calls)/bin_total_calls);
-		  reward_bin_reg=(avg_reward_reg/bin_reg_calls)+sqrt(2*log(bin_reg_calls)/bin_total_calls);
-		  if(reward_bin_rel>reward_bin_reg){
-		    //cout<<"using rel_bin_pack, reward_bin_rel="<<reward_bin_rel<<",reward_bin_reg:"<<reward_bin_reg;
-		    //cout<<",bin_total_calls:"<<bin_total_calls<<",bin_reg_calls:"<<bin_reg_calls<<",bin_rel_calls:"<<bin_rel_calls<<endl;
-		    bin_rel_calls++;
-		    bin_packing();
-		    bin_rel_packed=true;
-		  }
-		  else if(reward_bin_rel<reward_bin_reg){
-		    //cout<<"using reg_bin_pack, reward_bin_rel="<<reward_bin_rel<<",reward_bin_reg:"<<reward_bin_reg;
-		    //cout<<",bin_total_calls:"<<bin_total_calls<<",bin_reg_calls:"<<bin_reg_calls<<",bin_rel_calls:"<<bin_rel_calls<<endl;
-		    bin_reg_calls++;
+		  if(ucb){
+		    bin_reg_packed=false;
+		    bin_rel_packed=false;
+		    reward_bin_rel=(avg_reward_rel/bin_rel_calls)+sqrt(2*log(bin_rel_calls)/bin_total_calls);
+		    reward_bin_reg=(avg_reward_reg/bin_reg_calls)+sqrt(2*log(bin_reg_calls)/bin_total_calls);
+		    if(reward_bin_rel>reward_bin_reg){
+		      //cout<<"using rel_bin_pack, reward_bin_rel="<<reward_bin_rel<<",reward_bin_reg:"<<reward_bin_reg;
+		      //cout<<",bin_total_calls:"<<bin_total_calls<<",bin_reg_calls:"<<bin_reg_calls<<",bin_rel_calls:"<<bin_rel_calls<<endl;
+		      bin_rel_calls++;
+		      bin_packing();
+		      bin_rel_packed=true;
+		    }
+		    else if(reward_bin_rel<reward_bin_reg){
+		      //cout<<"using reg_bin_pack, reward_bin_rel="<<reward_bin_rel<<",reward_bin_reg:"<<reward_bin_reg;
+		      //cout<<",bin_total_calls:"<<bin_total_calls<<",bin_reg_calls:"<<bin_reg_calls<<",bin_rel_calls:"<<bin_rel_calls<<endl;
+		      bin_reg_calls++;
 		    bin_packing_no_rel_analysis();
 		    bin_reg_packed=true;
+		    }
 		  }
 		  else if(rand()%2>0){ 
 		    //cout<<"using random rel_bin_pack, reward_bin_rel="<<reward_bin_rel<<"==reward_bin_reg:"<<reward_bin_reg;
@@ -2452,6 +2460,17 @@ namespace pdbs {
 	  min_target_size=5;
 	  pdb_max_size=2*pow(10,min_target_size);
 	  cout<<"initial_max_target_size:"<<max_target_size<<",initial_min_target_size:"<<min_target_size<<",time_limit(per pattern):"<<time_limit<<endl;
+	  Options temp_options2;
+	  temp_options2.set<int>(
+	      "cost_type", NORMAL);
+	  temp_options2.set<bool>(
+	      "cache_estimates", false);
+	  if(use_lmcut){
+	    lmcut = utils::make_unique_ptr<lm_cut_heuristic::LandmarkCutHeuristic>(temp_options2);
+	    lmcut->initialize();
+	    cout<<"initial_h:"<<lmcut->compute_heuristic(task_proxy.get_initial_state())<<endl;
+	  }
+	  
 	//}
 	//else{
 	//    pdb_max_size=2*pow(10,4);
@@ -2657,6 +2676,12 @@ namespace pdbs {
     parser.add_option<bool>("reg_bin_pack_only", 
 	"bin pack randomly as normal",
       	"false");
+    parser.add_option<bool>("use_lmcut", 
+	"Complement lmcut as initial heuristic, note if lmcut is dominated by PDBs, it will be removed",
+      	"false");
+    parser.add_option<bool>("ucb", 
+	"Whether to use bandint algorithm or not",
+      	"true");
 
 	Options opts = parser.parse();
 	if (parser.dry_run())
