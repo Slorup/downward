@@ -117,7 +117,7 @@ class PatternCollectionGeneratorGeneticSS : public PatternCollectionGenerator {
     bool rel_analysis_only=false;
     bool single_pattern_only=false;
     bool use_lmcut=false;
-    bool ucb=true;
+    bool use_ucb=true;
     double bin_rel_calls=1;
     double bin_reg_calls=1;
     double bin_total_calls=1;

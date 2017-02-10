@@ -56,7 +56,7 @@ namespace pdbs {
 	rel_analysis_only(opts.get<bool>("rel_analysis_only")),
 	single_pattern_only(opts.get<bool>("single_pattern_only")),
 	use_lmcut(opts.get<bool>("use_lmcut")),
-	ucb(opts.get<bool>("ucb")) {
+	use_ucb(opts.get<bool>("use_ucb")) {
     
 	
 	cout<<"hybrid_pdb_size:"<<hybrid_pdb_size<<endl;
@@ -66,7 +66,7 @@ namespace pdbs {
 	cout<<"reg_bin_pack_only:"<<reg_bin_pack_only<<endl;
 	cout<<"rel_analysis_only:"<<rel_analysis_only<<endl;
 	cout<<"single_pattern_only:"<<single_pattern_only<<endl;
-	cout<<"ucb:"<<ucb<<endl;
+	cout<<"use_ucb:"<<use_ucb<<endl;
 	num_collections=1;
 	result=make_shared<PatternCollectionInformation>(task, make_shared<PatternCollection>());
        
@@ -753,7 +753,7 @@ namespace pdbs {
 			      break;
 			    }
 			    threshold=max(threshold+1,int(threshold*1.2));
-			    cout<<"next_threshold:"<<threshold<<endl;
+			    //cout<<"next_threshold:"<<threshold<<endl;
 			  }
 			}
 
@@ -940,6 +940,7 @@ namespace pdbs {
 		}
 		overall_sampled_states+=sampled_states;
 		DEBUG_MSG(cout<<"episode:"<<current_episode<<",finished sampling,sampled_states:"<<sampled_states<<",raised_states:"<<raised_states<<",pruned_states:"<<pruned_states<<endl;fflush(stdout););
+		cout<<"episode:"<<current_episode<<",finished sampling,sampled_states:"<<sampled_states<<",raised_states:"<<raised_states<<",pruned_states:"<<pruned_states<<endl;
 		sampler_time=utils::g_timer()-start_sampler_time;
 		double heur_time_cost=0;
 
@@ -955,7 +956,7 @@ namespace pdbs {
 		  }
 		  heur_time_cost=heur_timer.stop()/SS_states_vector.size();
 		  saved_time=total_SS_gen_nodes*(node_gen_and_exp_cost+heur_time_cost*best_pdb_collections.size())-(total_SS_gen_nodes-pruned_states)*(node_gen_and_exp_cost+heur_time_cost*(best_pdb_collections.size()+1));
-		  //cout<<"ratio:"<<float(raised_states)/float(sampled_states)<<",node_gen_and_exp_cost:"<<node_gen_and_exp_cost<<",sampling_time:"<<sampler_time<<",heur_time_cost"<<heur_time_cost<<",best_prev_time:"<<total_SS_gen_nodes*(node_gen_and_exp_cost+best_pdb_collections.size()*heur_time_cost)<<",new_time:"<<(total_SS_gen_nodes-pruned_states)*(node_gen_and_exp_cost+heur_time_cost*(best_pdb_collections.size()+1))<<",saved_time:"<<saved_time<<"total_SS_gen_nodes:"<<total_SS_gen_nodes<<",new_nodes:"<<total_SS_gen_nodes-pruned_states<<",initial_h:"<<candidate.get_value(initial_state)<<endl;
+		  cout<<"ratio:"<<float(raised_states)/float(sampled_states)<<",node_gen_and_exp_cost:"<<node_gen_and_exp_cost<<",sampling_time:"<<sampler_time<<",heur_time_cost"<<heur_time_cost<<",best_prev_time:"<<total_SS_gen_nodes*(node_gen_and_exp_cost+best_pdb_collections.size()*heur_time_cost)<<",new_time:"<<(total_SS_gen_nodes-pruned_states)*(node_gen_and_exp_cost+heur_time_cost*(best_pdb_collections.size()+1))<<",saved_time:"<<saved_time<<"total_SS_gen_nodes:"<<total_SS_gen_nodes<<",new_nodes:"<<total_SS_gen_nodes-pruned_states<<",initial_h:"<<candidate.get_value(initial_state)<<endl;
 		}
 		else{
 		  saved_time=0;
@@ -1421,10 +1422,7 @@ namespace pdbs {
 	best_fitness = -1;
 	//best_patterns = nullptr;
 	    
-       	if(use_lmcut){
-	  cout<<"seeding with use_lmcut"<<endl;
-	}
-	else if(create_perimeter){
+	if(create_perimeter){
 	  cout<<"seeding with creating_perimeter"<<endl;
 	  //min_improvement_ratio=0.01;//we want any heuristic improving perimenter
 	  min_improvement_ratio=0.00;//we want any heuristic improving perimenter
@@ -1522,6 +1520,7 @@ namespace pdbs {
 	    }
 	    else if((i%episodes_to_mutate==0&&i>0)||bin_pack_next){
 	      bin_pack_next=false;
+	      cout<<"time to bin_pack"<<endl;
 	      if(utils::g_timer()>time_to_clean_dom){
 		    cout<<"time:"<<utils::g_timer()<<",time to clear dominated heuristics every 100 secs"<<endl;
 		    clear_dominated_heuristics();
@@ -1539,7 +1538,8 @@ namespace pdbs {
 	            bin_packing_no_rel_analysis();
                 }
                 else{//doing mixed bin_packing
-		  if(ucb){
+		  if(use_ucb){
+		    //cout<<"use_ucb"<<endl;
 		    bin_reg_packed=false;
 		    bin_rel_packed=false;
 		    reward_bin_rel=(avg_reward_rel/bin_rel_calls)+sqrt(2*log(bin_rel_calls)/bin_total_calls);
@@ -1558,6 +1558,18 @@ namespace pdbs {
 		    bin_packing_no_rel_analysis();
 		    bin_reg_packed=true;
 		    }
+		    else if(rand()%2>0){ 
+		      //cout<<"using random rel_bin_pack, reward_bin_rel="<<reward_bin_rel<<"==reward_bin_reg:"<<reward_bin_reg;
+		      //cout<<",bin_total_calls:"<<bin_total_calls<<",bin_reg_calls:"<<bin_reg_calls<<",bin_rel_calls:"<<bin_rel_calls<<endl;
+		      bin_rel_calls++;
+		      bin_packing();
+		    }
+		    else{
+		      //cout<<"using random reg_bin_pack, reward_bin_rel="<<reward_bin_rel<<"==reward_bin_reg:"<<reward_bin_reg<<endl;
+		      //cout<<",bin_total_calls:"<<bin_total_calls<<",bin_reg_calls:"<<bin_reg_calls<<",bin_rel_calls:"<<bin_rel_calls<<endl;
+		      bin_reg_calls++;
+		      bin_packing_no_rel_analysis();
+		    }
 		  }
 		  else if(rand()%2>0){ 
 		    //cout<<"using random rel_bin_pack, reward_bin_rel="<<reward_bin_rel<<"==reward_bin_reg:"<<reward_bin_reg;
@@ -1571,8 +1583,8 @@ namespace pdbs {
 		    bin_reg_calls++;
 		    bin_packing_no_rel_analysis();
 		  }
-		  bin_total_calls++;
 		}
+		bin_total_calls++;
 
 		bin_packed_episode=true;
 		mutation_probability=((double) rand() / (RAND_MAX))/10.0;
@@ -1698,6 +1710,9 @@ namespace pdbs {
 	    initial_h=get_best_value(initial_state);
 	    //initial_h needs to be at least 1
 	    initial_h=max(1,initial_h);
+	    if(use_lmcut){
+	      initial_h=max(initial_h,lmcut->compute_heuristic(initial_state));
+	    }
 	    //initial_h=temp_lmcut_heuristic.compute_heuristic(initial_state);
 	    //cout<<"prev_heur_initial_value:"<<initial_value<<endl;
 	    //cout<<"\tprobe_best_only,initial_h:"<<initial_h<<endl;
@@ -1930,6 +1945,10 @@ namespace pdbs {
 //                  	vector<int> F_culprit;
 			    
 		h=get_best_value(child);
+		//If use_lmcut, only add pattern if it improves upon lmcut
+		if(use_lmcut){
+		  h=max(h,lmcut->compute_heuristic(child));
+		}
 		//h=temp_lmcut_heuristic.compute_heuristic(child);
 		if(h==numeric_limits<int>::max()){
 		  pair<map<size_t,pair<State,int> >::iterator,bool> ret;
@@ -2321,6 +2340,7 @@ namespace pdbs {
 	vector<int> current_best_h_values;
 	int h=0;
 	int h_temp=0;
+
 	for(map<size_t,pair<State,int> >::iterator it=unique_samples.begin(); it!=unique_samples.end();it++){
 	    //cout<<"before evaluate state_id:"<<it->get_id()<<endl;fflush(stdout);
 	    //cout<<"State:";it->dump_inline();cout<<endl;fflush(stdout);
@@ -2399,6 +2419,31 @@ namespace pdbs {
       best_pdb_collections.at(i).reset();
     }
   }
+
+  //Lines bellow are future work
+  //for when we remove lmcut if not helping	
+  /*if(use_lmcut){
+    bool dominated_heur=true;
+    int j=0;
+    int h=0;
+    for(map<size_t,pair<State,int> >::iterator it=unique_samples.begin(); it!=unique_samples.end();it++){
+      if(current_best_h_values[j]==INT_MAX){
+	j++;
+	continue;
+      }
+      h=lmcut->compute_heuristic(it->second.first);
+      if(h>current_best_h_values[j]){
+	dominated_heur=false;
+	break;
+	cout<<"lmcut is still undominated"<<endl;
+      }
+    }
+    if(dominated_heur){
+      use_lmcut=false;
+      cout<<"stop using lmcut"<<endl;exit(0);
+    }
+  }*/
+
   cout<<"best_pdb_collections size:"<<best_pdb_collections.size();
   best_pdb_collections=cleaned_best_pdb_collections;
   cout<<",cleaned_best_pdb_collections:"<<cleaned_best_pdb_collections.size()<<","<<best_pdb_collections.size()<<",time:"<<utils::g_timer()-start_time<<endl;
@@ -2468,7 +2513,7 @@ namespace pdbs {
 	  if(use_lmcut){
 	    lmcut = utils::make_unique_ptr<lm_cut_heuristic::LandmarkCutHeuristic>(temp_options2);
 	    lmcut->initialize();
-	    cout<<"initial_h:"<<lmcut->compute_heuristic(task_proxy.get_initial_state())<<endl;
+	    cout<<"initial_lmcut_h:"<<lmcut->compute_heuristic(task_proxy.get_initial_state())<<endl;
 	  }
 	  
 	//}
@@ -2679,7 +2724,7 @@ namespace pdbs {
     parser.add_option<bool>("use_lmcut", 
 	"Complement lmcut as initial heuristic, note if lmcut is dominated by PDBs, it will be removed",
       	"false");
-    parser.add_option<bool>("ucb", 
+    parser.add_option<bool>("use_ucb", 
 	"Whether to use bandint algorithm or not",
       	"true");
 
