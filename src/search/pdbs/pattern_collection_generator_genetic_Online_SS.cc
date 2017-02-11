@@ -493,7 +493,7 @@ namespace pdbs {
 		//cout<<"pattern_collection:"<<*pattern_collection<<endl;fflush(stdout);
 
 		if(utils::g_timer()>genetic_time_limit+avg_pdb_gen_time){//in case PDBs are getting very big, we want to get out before generating next pdb
-		    cout<<"breaking-1a out of GA Algortihm, current expected generation time:"<<utils::g_timer()+avg_pdb_gen_time<<" bigger than time_limit:"<<genetic_time_limit<<endl;
+		    DEBUG_MSG(cout<<"breaking-1a out of GA Algortihm, current expected generation time:"<<utils::g_timer()+avg_pdb_gen_time<<" bigger than time_limit:"<<genetic_time_limit<<endl;);
 		    break;
 		}
 		ZeroOnePDBs candidate (task_proxy, pattern_collection, *pdb_factory);
@@ -769,7 +769,7 @@ namespace pdbs {
 				    break;
 				}
 			    }
-			    cout<<"\trepetition:"<<repetition<<",threshold:"<<threshold<<",SS_states:"<<SS_states.size()<<endl;
+			    //cout<<"\trepetition:"<<repetition<<",threshold:"<<threshold<<",SS_states:"<<SS_states.size()<<endl;
 			    pair<double,double> avg_and_dev=utils::avg_and_standard_deviation(probe_data);
 			    //cout<<scientific<<"repetition:"<<repetition<<",probe data average:"<<avg_and_dev.first<<endl;
 			    //cout<<scientific<<"repetition:"<<repetition<<",probe data standard deviation:"<<avg_and_dev.second<<endl;
@@ -940,7 +940,6 @@ namespace pdbs {
 		}
 		overall_sampled_states+=sampled_states;
 		DEBUG_MSG(cout<<"episode:"<<current_episode<<",finished sampling,sampled_states:"<<sampled_states<<",raised_states:"<<raised_states<<",pruned_states:"<<pruned_states<<endl;fflush(stdout););
-		cout<<"episode:"<<current_episode<<",finished sampling,sampled_states:"<<sampled_states<<",raised_states:"<<raised_states<<",pruned_states:"<<pruned_states<<endl;
 		sampler_time=utils::g_timer()-start_sampler_time;
 		double heur_time_cost=0;
 
@@ -1520,7 +1519,7 @@ namespace pdbs {
 	    }
 	    else if((i%episodes_to_mutate==0&&i>0)||bin_pack_next){
 	      bin_pack_next=false;
-	      cout<<"time to bin_pack"<<endl;
+	      DEBUG_MSG(cout<<"time to bin_pack"<<endl;);
 	      if(utils::g_timer()>time_to_clean_dom){
 		    cout<<"time:"<<utils::g_timer()<<",time to clear dominated heuristics every 100 secs"<<endl;
 		    clear_dominated_heuristics();
