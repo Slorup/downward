@@ -343,6 +343,7 @@ namespace pdbs {
       if(!last_sampler_too_big){
 	if(valid_pattern_counter!=0&&valid_pattern_counter%10==0&&valid_pattern_counter>last_valid_pattern_counter&&(!size_targets_fixed)){
 	    min_target_size++;
+	    int new_min_target_size=min_target_size;
 	    //In case max_target_size was making generation times too big
 	    if(max_target_size<initial_max_target_size){
 	      max_target_size++;
@@ -355,7 +356,9 @@ namespace pdbs {
 	      min_target_size=min(min_target_size,max_target_size-2);//We want a minimum spread between max_target_size and min_target_size
 	    }
 	    max_target_size=max(max_target_size,min_target_size);
-	    cout<<"time:"<<utils::g_timer<<",current_episode:"<<current_episode<<",increased min_target_size to:,"<<min_target_size<<",max_size:,"<<max_target_size<<endl;
+	    if(new_min_target_size==min_target_size){
+	      cout<<"time:"<<utils::g_timer<<",current_episode:"<<current_episode<<",increased min_target_size to:,"<<min_target_size<<",max_size:,"<<max_target_size<<endl;
+	    }
 	  //else{
 	  //  pdb_max_size*=10;
 	  //  min_size=pdb_max_size/1000;
@@ -955,7 +958,7 @@ namespace pdbs {
 		  }
 		  heur_time_cost=heur_timer.stop()/SS_states_vector.size();
 		  saved_time=total_SS_gen_nodes*(node_gen_and_exp_cost+heur_time_cost*best_pdb_collections.size())-(total_SS_gen_nodes-pruned_states)*(node_gen_and_exp_cost+heur_time_cost*(best_pdb_collections.size()+1));
-		  cout<<"ratio:"<<float(raised_states)/float(sampled_states)<<",node_gen_and_exp_cost:"<<node_gen_and_exp_cost<<",sampling_time:"<<sampler_time<<",heur_time_cost"<<heur_time_cost<<",best_prev_time:"<<total_SS_gen_nodes*(node_gen_and_exp_cost+best_pdb_collections.size()*heur_time_cost)<<",new_time:"<<(total_SS_gen_nodes-pruned_states)*(node_gen_and_exp_cost+heur_time_cost*(best_pdb_collections.size()+1))<<",saved_time:"<<saved_time<<"total_SS_gen_nodes:"<<total_SS_gen_nodes<<",new_nodes:"<<total_SS_gen_nodes-pruned_states<<",initial_h:"<<candidate.get_value(initial_state)<<endl;
+		  //cout<<"ratio:"<<float(raised_states)/float(sampled_states)<<",node_gen_and_exp_cost:"<<node_gen_and_exp_cost<<",sampling_time:"<<sampler_time<<",heur_time_cost"<<heur_time_cost<<",best_prev_time:"<<total_SS_gen_nodes*(node_gen_and_exp_cost+best_pdb_collections.size()*heur_time_cost)<<",new_time:"<<(total_SS_gen_nodes-pruned_states)*(node_gen_and_exp_cost+heur_time_cost*(best_pdb_collections.size()+1))<<",saved_time:"<<saved_time<<"total_SS_gen_nodes:"<<total_SS_gen_nodes<<",new_nodes:"<<total_SS_gen_nodes-pruned_states<<",initial_h:"<<candidate.get_value(initial_state)<<endl;
 		}
 		else{
 		  saved_time=0;
