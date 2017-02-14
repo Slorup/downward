@@ -56,7 +56,8 @@ namespace pdbs {
 	rel_analysis_only(opts.get<bool>("rel_analysis_only")),
 	single_pattern_only(opts.get<bool>("single_pattern_only")),
 	use_lmcut(opts.get<bool>("use_lmcut")),
-	use_ucb(opts.get<bool>("use_ucb")) {
+	use_ucb(opts.get<bool>("use_ucb")) ,
+	size_selection(opts.get<bool>("size_selection")) {
     
 	
 	cout<<"hybrid_pdb_size:"<<hybrid_pdb_size<<endl;
@@ -67,6 +68,7 @@ namespace pdbs {
 	cout<<"rel_analysis_only:"<<rel_analysis_only<<endl;
 	cout<<"single_pattern_only:"<<single_pattern_only<<endl;
 	cout<<"use_ucb:"<<use_ucb<<endl;
+	cout<<"size_selection:"<<size_selection<<endl;
 	num_collections=1;
 	result=make_shared<PatternCollectionInformation>(task, make_shared<PatternCollection>());
        
@@ -1022,7 +1024,7 @@ namespace pdbs {
 	      //cout<<"g_timer:,"<<utils::g_timer()<<",current_episode:,"<<current_episode<<",pdb_max_size:,"<<pdb_max_size<<",candidate initial h:,"<<candidate->get_value(initial_state)<<",sampled_states:,"<<sampled_states<<",raised_states:,"<<raised_states<<",ratio:,"<<float(raised_states)/float(sampled_states)<<",overall_pdb_size:,"<<overall_pdb_size<<endl;
 		//fitness_values.push_back(fitness);
 
-		if((float(raised_states)/float(sampled_states)>min_improvement_ratio&&saved_time>0)||(best_pdb_collections.size()==0)) {
+		if((float(raised_states)/float(sampled_states)>min_improvement_ratio&&(size_selection||saved_time>0))||(best_pdb_collections.size()==0)) {
 
 		    best_fitness = fitness;
 		    //if(current_episode>0){
@@ -2752,6 +2754,9 @@ namespace pdbs {
     parser.add_option<bool>("use_ucb", 
 	"Whether to use bandint algorithm or not",
       	"true");
+    parser.add_option<bool>("size_selection", 
+	"Whether to use size or time as fitness function",
+      	"false");
 
 	Options opts = parser.parse();
 	if (parser.dry_run())

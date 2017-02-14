@@ -130,6 +130,8 @@ class PatternCollectionGeneratorGeneticSS : public PatternCollectionGenerator {
     double node_gen_and_exp_cost=0;
     double saved_time=0;
     double lmcut_TPN=0;
+    //Size selection instead of time selection by SS
+    bool size_selection=false;
 
 
 
