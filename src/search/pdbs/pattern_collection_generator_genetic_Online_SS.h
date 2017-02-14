@@ -129,6 +129,7 @@ class PatternCollectionGeneratorGeneticSS : public PatternCollectionGenerator {
     double avg_reward_reg=10.0;
     double node_gen_and_exp_cost=0;
     double saved_time=0;
+    double lmcut_TPN=0;
 
 
 

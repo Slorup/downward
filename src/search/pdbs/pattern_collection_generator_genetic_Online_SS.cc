@@ -817,6 +817,23 @@ namespace pdbs {
 		  
 			//cout<<"time:,"<<utils::g_timer()<<",starting sorting SS states,size:"<<SS_states.size()<<endl;
 			map<size_t,pair<int,double> >::iterator SS_iter_map;
+			
+			cout<<"use_lmcut:"<<use_lmcut<<",lmcut_TPN:"<<lmcut_TPN<<",SS_iter_map_size:"<<SS_states.size()<<endl;
+			if(use_lmcut&&lmcut_TPN==0){
+			  utils::Timer lmcut_timer;
+			  int counter_lmcut=0;
+			  for(SS_iter_map=SS_states.begin();SS_iter_map!=SS_states.end();SS_iter_map++){
+			    counter_lmcut++;
+			    lmcut->compute_heuristic(unique_samples.at(SS_iter_map->first).first);
+			    if(counter_lmcut%100==0){
+			      if(lmcut_timer()>1.0){
+				break;
+			      }
+			    }
+			  }
+			  lmcut_TPN=lmcut_timer.stop()/double(counter_lmcut);
+			  cout<<"lmcut tpn:"<<lmcut_TPN<<",counter_lmcut:"<<counter_lmcut<<",lmcut_timer:"<<lmcut_timer()<<endl;
+			}
 		
 			for(SS_iter_map=SS_states.begin();SS_iter_map!=SS_states.end();){
 			    //cout<<",SS_iter_map->first:"<<SS_iter_map->first<<endl;
@@ -840,6 +857,7 @@ namespace pdbs {
 			    SS_states_vector.push_back(temp);
 			    SS_iter_map++;
 			}
+		  
 			//sort(SS_states_vector.begin(),SS_states_vector.end(),compare_SS_states);
 			g_rng()->shuffle(SS_states_vector);
 		    }
@@ -957,7 +975,12 @@ namespace pdbs {
 		    counter_temp++;
 		  }
 		  heur_time_cost=heur_timer.stop()/SS_states_vector.size();
-		  saved_time=total_SS_gen_nodes*(node_gen_and_exp_cost+heur_time_cost*best_pdb_collections.size())-(total_SS_gen_nodes-pruned_states)*(node_gen_and_exp_cost+heur_time_cost*(best_pdb_collections.size()+1));
+		  if(use_lmcut){
+		    saved_time=total_SS_gen_nodes*(node_gen_and_exp_cost+lmcut_TPN+heur_time_cost*best_pdb_collections.size())-(total_SS_gen_nodes-pruned_states)*(node_gen_and_exp_cost+lmcut_TPN+heur_time_cost*(best_pdb_collections.size()+1));
+		  }
+		  else{
+		    saved_time=total_SS_gen_nodes*(node_gen_and_exp_cost+heur_time_cost*best_pdb_collections.size())-(total_SS_gen_nodes-pruned_states)*(node_gen_and_exp_cost+heur_time_cost*(best_pdb_collections.size()+1));
+		  }
 		  //cout<<"ratio:"<<float(raised_states)/float(sampled_states)<<",node_gen_and_exp_cost:"<<node_gen_and_exp_cost<<",sampling_time:"<<sampler_time<<",heur_time_cost"<<heur_time_cost<<",best_prev_time:"<<total_SS_gen_nodes*(node_gen_and_exp_cost+best_pdb_collections.size()*heur_time_cost)<<",new_time:"<<(total_SS_gen_nodes-pruned_states)*(node_gen_and_exp_cost+heur_time_cost*(best_pdb_collections.size()+1))<<",saved_time:"<<saved_time<<"total_SS_gen_nodes:"<<total_SS_gen_nodes<<",new_nodes:"<<total_SS_gen_nodes-pruned_states<<",initial_h:"<<candidate.get_value(initial_state)<<endl;
 		}
 		else{
