@@ -132,6 +132,10 @@ class PatternCollectionGeneratorGeneticSS : public PatternCollectionGenerator {
     double lmcut_TPN=0;
     //Size selection instead of time selection by SS
     bool size_selection=false;
+    bool use_SS_fitness=false;
+    bool use_avg_h_value=true;
+    float best_avg_h=0;
+    bool use_ipdb_walk=false;
 
 
 

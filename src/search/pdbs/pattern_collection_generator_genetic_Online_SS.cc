@@ -716,7 +716,7 @@ namespace pdbs {
 		    threshold=candidate.get_value(initial_state);
 		    continue;
 		    //best_patterns = best_pattern_collection;
-		} else{
+		} else if(use_SS_fitness){
 		    //cout<<"current best_heuristics_count:"<<best_heuristic.count_zero_one_pdbs()<<endl;//fflush(stdout);
 		    //cout<<"\tbest_heuristic initial h:"<<best_heuristic.get_value(initial_state)<<endl;fflush(stdout);
 		    best_heur_dead_ends=0;
@@ -864,138 +864,150 @@ namespace pdbs {
 			g_rng()->shuffle(SS_states_vector);
 		    }
 		    DEBUG_MSG(cout<<"time:,"<<utils::g_timer()<<",finished randomzing SS states vector,size:"<<SS_states.size()<<",best_heur_dead_ends"<<best_heur_dead_ends<<endl;);
-		}
-		pruned_states=0;
-		fitness=0;
-		sampled_states=0;
-		raised_states=0;
-		g_rng()->shuffle(SS_states_vector);
-		double start_sampler_time=utils::g_timer();
-		vector<SS_state>::iterator SS_iter;
+		  pruned_states=0;
+		  fitness=0;
+		  sampled_states=0;
+		  raised_states=0;
+		  g_rng()->shuffle(SS_states_vector);
+		  double start_sampler_time=utils::g_timer();
+		  vector<SS_state>::iterator SS_iter;
 
-		DEBUG_MSG(cout<<"time;,"<<utils::g_timer()<<",SS_states_vector.size:"<<SS_states_vector.size()<<flush<<endl;);
+		  DEBUG_MSG(cout<<"time;,"<<utils::g_timer()<<",SS_states_vector.size:"<<SS_states_vector.size()<<flush<<endl;);
+		      
+		  current_heur_initial_value=candidate.get_value(initial_state);
+		  total_online_samples++;
+		  total_SS_gen_nodes=0;
+		  for(SS_iter=SS_states_vector.begin();SS_iter!=SS_states_vector.end();){
+		      //cout<<"time:,"<<utils::g_timer<<",working on state:"<<sampled_states<<endl;
+		      if(unique_samples.find(SS_iter->id)==unique_samples.end()){
+			  cout<<"state not in unique_samples!!!"<<endl;exit(22);
+		      }
+
+		      if(sampled_states%1000==0){
+			  if(pruned_states==0){
+			      if(utils::g_timer()-start_sampler_time>0.2){
+				  //cout<<"\tcurrent_episode:"<<current_episode<<",exiting candidate vs best_heuristic SS_states comparison, 0.2 secs iterating without a single better h value"<<endl;
+				  break;
+			      }
+			  }
+			  else if(pruned_states>0){
+			      if(utils::g_timer()-start_sampler_time>0.5){
+				cout<<"\t exiting candidate vs best_heuristic SS_states comparison, spent max 0.5 secs,sampled states:"<<sampled_states<<endl;
+				  //cout<<"\t exiting candidate vs best_heuristic SS_states comparison, spent max 0.5 secs"<<endl;
+				  break;
+			      }
+			  }
+		      }
 		    
-		current_heur_initial_value=candidate.get_value(initial_state);
-		total_online_samples++;
-		total_SS_gen_nodes=0;
-		for(SS_iter=SS_states_vector.begin();SS_iter!=SS_states_vector.end();){
-		    //cout<<"time:,"<<utils::g_timer<<",working on state:"<<sampled_states<<endl;
-		    if(unique_samples.find(SS_iter->id)==unique_samples.end()){
-			cout<<"state not in unique_samples!!!"<<endl;exit(22);
-		    }
+		      //int best_h=get_best_value(unique_samples.at(SS_iter->id).first);
+		      int best_h=unique_samples.at(SS_iter->id).second;
+		      if(best_h==numeric_limits<int>::max()){
+			  best_heur_dead_ends++;
+			  SS_states.erase(SS_iter->id);
+			  SS_iter=SS_states_vector.erase(SS_iter);
+			  //cout<<"\tstate is already known dead_end, removing"<<endl;
+			  continue;
+		      }
+		      else if(best_h+SS_iter->g>sampling_threshold){
+			  SS_states.erase(SS_iter->id);
+			  SS_iter=SS_states_vector.erase(SS_iter);
+			  //cout<<"\tstored best_h is above prunning threshold,f:"<<best_h+SS_iter->g<< ",threshold:"<<sampling_threshold<<endl;
+			  continue;
+		      }
+		      sampled_states++;
+		      total_SS_gen_nodes+=SS_iter->weight;
+		      //cout<<"sampled_state:"<<sampled_states<<",new_f="<<current_heuristic->get_heuristic()+SS_iter->g<<",old f:"<<best_heuristic->get_heuristic()+SS_iter->g<<",g:"<<SS_iter->g<<",weight:"<<SS_iter->weight<<",sampling_threshold:"<<sampling_threshold<<endl;
+		      int candidate_h=candidate.get_value(unique_samples.at(SS_iter->id).first);
+		      //cout<<"candidate_h:"<<candidate_h<<",best_h:"<<best_h<<endl;
+		      /*if(candidate_h<candidate_explicit.get_value(unique_samples.at(SS_iter->id))){
+			cout<<"candidate_h:"<<candidate_h<<",candidate_explicit:"<<candidate_explicit.get_value(unique_samples.at(SS_iter->id))<<endl;
+			exit(0);
+			}*/
+		      if(candidate_h==numeric_limits<int>::max()){
+			  raised_states++;
+			  pruned_states+=SS_iter->weight;
+			  //cout<<"sampled_state:,"<<sampled_states<<",out of "<<SS_states.size()<<"is now pruned by dead_end, weight:"<<SS_iter->weight<<",current_total:"<<total_SS_gen_nodes<<",best_h:"<<best_h<<endl;
+			  SS_iter++;
+			  //if(float(raised_states)/float(sampled_states)>min_improvement_ratio){
+			  //  break;
+			  //}
+			  continue;
+		      }
 
-		    if(sampled_states%1000==0){
-			if(pruned_states==0){
-			    if(utils::g_timer()-start_sampler_time>0.2){
-				//cout<<"\tcurrent_episode:"<<current_episode<<",exiting candidate vs best_heuristic SS_states comparison, 0.2 secs iterating without a single better h value"<<endl;
-				break;
-			    }
-			}
-			else if(pruned_states>0){
-			    if(utils::g_timer()-start_sampler_time>0.5){
-			      cout<<"\t exiting candidate vs best_heuristic SS_states comparison, spent max 0.5 secs,sampled states:"<<sampled_states<<endl;
-				//cout<<"\t exiting candidate vs best_heuristic SS_states comparison, spent max 0.5 secs"<<endl;
-				break;
-			    }
-			}
-		    }
-		  
-		    //int best_h=get_best_value(unique_samples.at(SS_iter->id).first);
-		    int best_h=unique_samples.at(SS_iter->id).second;
-		    if(best_h==numeric_limits<int>::max()){
-			best_heur_dead_ends++;
-			SS_states.erase(SS_iter->id);
-			SS_iter=SS_states_vector.erase(SS_iter);
-			//cout<<"\tstate is already known dead_end, removing"<<endl;
-			continue;
-		    }
-		    else if(best_h+SS_iter->g>sampling_threshold){
-			SS_states.erase(SS_iter->id);
-			SS_iter=SS_states_vector.erase(SS_iter);
-			//cout<<"\tstored best_h is above prunning threshold,f:"<<best_h+SS_iter->g<< ",threshold:"<<sampling_threshold<<endl;
-			continue;
-		    }
-		    sampled_states++;
-		    total_SS_gen_nodes+=SS_iter->weight;
-		    //cout<<"sampled_state:"<<sampled_states<<",new_f="<<current_heuristic->get_heuristic()+SS_iter->g<<",old f:"<<best_heuristic->get_heuristic()+SS_iter->g<<",g:"<<SS_iter->g<<",weight:"<<SS_iter->weight<<",sampling_threshold:"<<sampling_threshold<<endl;
-		    int candidate_h=candidate.get_value(unique_samples.at(SS_iter->id).first);
-		    //cout<<"candidate_h:"<<candidate_h<<",best_h:"<<best_h<<endl;
-		    /*if(candidate_h<candidate_explicit.get_value(unique_samples.at(SS_iter->id))){
-		      cout<<"candidate_h:"<<candidate_h<<",candidate_explicit:"<<candidate_explicit.get_value(unique_samples.at(SS_iter->id))<<endl;
-		      exit(0);
-		      }*/
-		    if(candidate_h==numeric_limits<int>::max()){
-			raised_states++;
-			pruned_states+=SS_iter->weight;
-			//cout<<"sampled_state:,"<<sampled_states<<",out of "<<SS_states.size()<<"is now pruned by dead_end, weight:"<<SS_iter->weight<<",current_total:"<<total_SS_gen_nodes<<",best_h:"<<best_h<<endl;
-			SS_iter++;
-			//if(float(raised_states)/float(sampled_states)>min_improvement_ratio){
-			//  break;
-			//}
-			continue;
-		    }
+		      fitness+=candidate_h;
 
-		    fitness+=candidate_h;
-
-		    /*  if(candidate_h+SS_iter->g>sampling_threshold){
-			pruned_states+=SS_iter->weight;
-			raised_states++;
-			//cout<<"id:,"<<SS_iter->id<<",sampled_state:,"<<sampled_states<<",out of "<<SS_states.size()<<"is now pruned by higher F, weight:"<<SS_iter->weight<<",current_total:"<<total_SS_gen_nodes<<endl;
-			//cout<<"h1="<<current_heuristic->get_heuristic()<<"+g="<<SS_iter->g<<",f:"<<current_heuristic->get_heuristic()+SS_iter->g<<",sampling_threshold:"<<sampling_threshold<<endl;
-			//cout<<"h2="<<best_heuristic->get_heuristic()<<"+g="<<SS_iter->g<<",f:"<<best_heuristic->get_heuristic()+SS_iter->g<<",sampling_threshold:"<<sampling_threshold<<endl;
-		    }
-		    else {*/
-			if(candidate_h>best_h){
-			    pruned_states+=SS_iter->weight;
-			    raised_states++;
-			    //if(float(raised_states)/float(sampled_states)>min_improvement_ratio){
-			     // break;
-			    //}
-			    //cout<<"id:,"<<SS_iter->id<<",candidate_h:"<<candidate_h<<",best_h:"<<best_h<<endl;
-			    //cout<<"sampled_state:,"<<sampled_states<<",out of "<<SS_states.size()<<"is now pruned by higher h, weight:"<<SS_iter->weight<<",current_total:"<<total_SS_gen_nodes<<endl;
-			    //cout<<"\tsampled_state:,"<<sampled_states<<",out of "<<SS_states.size()<<"is now pruned by candidate_h:"<<candidate_h<<",best_h:"<<best_h<<",current_total:"<<total_SS_gen_nodes<<endl;
-			}
-			//else{
-			  //cout<<"\tstored best_h is above candidate_h:"<<candidate_h<<",best_h:"<<best_h<<endl;
-			//}
-		    //}
-		    SS_iter++;
-		}
-		overall_sampled_states+=sampled_states;
-		DEBUG_MSG(cout<<"episode:"<<current_episode<<",finished sampling,sampled_states:"<<sampled_states<<",raised_states:"<<raised_states<<",pruned_states:"<<pruned_states<<endl;fflush(stdout););
-		sampler_time=utils::g_timer()-start_sampler_time;
-		double heur_time_cost=0;
-
-		if(raised_states>0){
-		  utils::Timer heur_timer;
-		  int counter_temp=0;
-		  for (auto sample=unique_samples.begin();sample!=unique_samples.end();sample++){
-		    candidate.get_value(sample->second.first);
-		    if(counter_temp>20000){
-		      break;
-		    }
-		    counter_temp++;
+		      /*  if(candidate_h+SS_iter->g>sampling_threshold){
+			  pruned_states+=SS_iter->weight;
+			  raised_states++;
+			  //cout<<"id:,"<<SS_iter->id<<",sampled_state:,"<<sampled_states<<",out of "<<SS_states.size()<<"is now pruned by higher F, weight:"<<SS_iter->weight<<",current_total:"<<total_SS_gen_nodes<<endl;
+			  //cout<<"h1="<<current_heuristic->get_heuristic()<<"+g="<<SS_iter->g<<",f:"<<current_heuristic->get_heuristic()+SS_iter->g<<",sampling_threshold:"<<sampling_threshold<<endl;
+			  //cout<<"h2="<<best_heuristic->get_heuristic()<<"+g="<<SS_iter->g<<",f:"<<best_heuristic->get_heuristic()+SS_iter->g<<",sampling_threshold:"<<sampling_threshold<<endl;
+		      }
+		      else {*/
+			  if(candidate_h>best_h){
+			      pruned_states+=SS_iter->weight;
+			      raised_states++;
+			      //if(float(raised_states)/float(sampled_states)>min_improvement_ratio){
+			       // break;
+			      //}
+			      //cout<<"id:,"<<SS_iter->id<<",candidate_h:"<<candidate_h<<",best_h:"<<best_h<<endl;
+			      //cout<<"sampled_state:,"<<sampled_states<<",out of "<<SS_states.size()<<"is now pruned by higher h, weight:"<<SS_iter->weight<<",current_total:"<<total_SS_gen_nodes<<endl;
+			      //cout<<"\tsampled_state:,"<<sampled_states<<",out of "<<SS_states.size()<<"is now pruned by candidate_h:"<<candidate_h<<",best_h:"<<best_h<<",current_total:"<<total_SS_gen_nodes<<endl;
+			  }
+			  //else{
+			    //cout<<"\tstored best_h is above candidate_h:"<<candidate_h<<",best_h:"<<best_h<<endl;
+			  //}
+		      //}
+		      SS_iter++;
 		  }
-		  heur_time_cost=heur_timer.stop()/SS_states_vector.size();
-		  if(use_lmcut){
-		    saved_time=total_SS_gen_nodes*(node_gen_and_exp_cost+lmcut_TPN+heur_time_cost*best_pdb_collections.size())-(total_SS_gen_nodes-pruned_states)*(node_gen_and_exp_cost+lmcut_TPN+heur_time_cost*(best_pdb_collections.size()+1));
+		  overall_sampled_states+=sampled_states;
+		  DEBUG_MSG(cout<<"episode:"<<current_episode<<",finished sampling,sampled_states:"<<sampled_states<<",raised_states:"<<raised_states<<",pruned_states:"<<pruned_states<<endl;fflush(stdout););
+		  sampler_time=utils::g_timer()-start_sampler_time;
+		  double heur_time_cost=0;
+
+		  if(raised_states>0){
+		    utils::Timer heur_timer;
+		    int counter_temp=0;
+		    for (auto sample=unique_samples.begin();sample!=unique_samples.end();sample++){
+		      candidate.get_value(sample->second.first);
+		      if(counter_temp>20000){
+			break;
+		      }
+		      counter_temp++;
+		    }
+		    heur_time_cost=heur_timer.stop()/SS_states_vector.size();
+		    if(use_lmcut){
+		      saved_time=total_SS_gen_nodes*(node_gen_and_exp_cost+lmcut_TPN+heur_time_cost*best_pdb_collections.size())-(total_SS_gen_nodes-pruned_states)*(node_gen_and_exp_cost+lmcut_TPN+heur_time_cost*(best_pdb_collections.size()+1));
+		    }
+		    else{
+		      saved_time=total_SS_gen_nodes*(node_gen_and_exp_cost+heur_time_cost*best_pdb_collections.size())-(total_SS_gen_nodes-pruned_states)*(node_gen_and_exp_cost+heur_time_cost*(best_pdb_collections.size()+1));
+		    }
+		    //cout<<"ratio:"<<float(raised_states)/float(sampled_states)<<",node_gen_and_exp_cost:"<<node_gen_and_exp_cost<<",sampling_time:"<<sampler_time<<",heur_time_cost"<<heur_time_cost<<",best_prev_time:"<<total_SS_gen_nodes*(node_gen_and_exp_cost+best_pdb_collections.size()*heur_time_cost)<<",new_time:"<<(total_SS_gen_nodes-pruned_states)*(node_gen_and_exp_cost+heur_time_cost*(best_pdb_collections.size()+1))<<",saved_time:"<<saved_time<<"total_SS_gen_nodes:"<<total_SS_gen_nodes<<",new_nodes:"<<total_SS_gen_nodes-pruned_states<<",initial_h:"<<candidate.get_value(initial_state)<<endl;
 		  }
 		  else{
-		    saved_time=total_SS_gen_nodes*(node_gen_and_exp_cost+heur_time_cost*best_pdb_collections.size())-(total_SS_gen_nodes-pruned_states)*(node_gen_and_exp_cost+heur_time_cost*(best_pdb_collections.size()+1));
+		    saved_time=0;
 		  }
-		  //cout<<"ratio:"<<float(raised_states)/float(sampled_states)<<",node_gen_and_exp_cost:"<<node_gen_and_exp_cost<<",sampling_time:"<<sampler_time<<",heur_time_cost"<<heur_time_cost<<",best_prev_time:"<<total_SS_gen_nodes*(node_gen_and_exp_cost+best_pdb_collections.size()*heur_time_cost)<<",new_time:"<<(total_SS_gen_nodes-pruned_states)*(node_gen_and_exp_cost+heur_time_cost*(best_pdb_collections.size()+1))<<",saved_time:"<<saved_time<<"total_SS_gen_nodes:"<<total_SS_gen_nodes<<",new_nodes:"<<total_SS_gen_nodes-pruned_states<<",initial_h:"<<candidate.get_value(initial_state)<<endl;
+		} else if(use_avg_h_value){
+		  float candidate_avg_h=candidate.compute_approx_mean_finite_h();
+		  //current_heur_initial_value=candidate.get_value(initial_state);
+		  //cout<<"candidate_avg_h:"<<candidate_avg_h<<",current_heur_initial_value:"<<current_heur_initial_value<<endl;
+		  //HACK, need to get experiments quickly
+		  //if avg_h increases then we set raised_states to 1
+		  //and saved_time to 1 so that our code will treat it as if
+		  //SS determined it to be a good heuristic
+		  if(candidate_avg_h>best_avg_h){
+		    cout<<"raised avg_h to:"<<candidate_avg_h<<endl;
+		    best_avg_h=candidate_avg_h;
+		    raised_states=1;
+		    saved_time=1;
+		  }
+		  else{
+		    raised_states=0;
+		    saved_time=0;
+		  }
 		}
-		else{
-		  saved_time=0;
-		}
-		//if(saved_time<0){
-		//  if(abs(saved_time)/((total_SS_gen_nodes-pruned_states)*(node_gen_and_exp_cost+heur_time_cost*best_pdb_collections.size()))<0.1){
-		//    saved_time=0.00000001;//make positive
-		//  }
-		//};
 
-
-
+		
 
 
 		overall_sampling_time+=sampler_time;
@@ -2354,6 +2366,10 @@ namespace pdbs {
     void PatternCollectionGeneratorGeneticSS::clear_dominated_heuristics(){
 	if(best_pdb_collections.size()<2){
 	    return;
+	}
+	if(use_SS_fitness==false){
+	  //We only do domination check when we have SS states to compare against
+	  return;
 	}
 
 	double start_time=utils::g_timer();

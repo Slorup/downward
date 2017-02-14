@@ -72,6 +72,7 @@ namespace pdbs {
 	    //cout<<"time after serch.getHeuristic(false):"<<time()<<endl;
 	    if(finished) { 
 		dead_ends += search->notClosed(); 
+		compute_mean_finite_h();
 		search.reset();
 	    }
 	}
