@@ -72,7 +72,13 @@ namespace pdbs {
 	    //cout<<"time after serch.getHeuristic(false):"<<time()<<endl;
 	    if(finished) { 
 		dead_ends += search->notClosed(); 
-		compute_mean_finite_h();
+		//SANTIAGO
+		//compute_mean_fininte_h COMMMENTED
+		//THIS IS EXPENSIVE SO ONLY USE
+		//IF WE NEED THE AVG_H_VALUE
+		//E.G. COMPARISON PURPOSES
+		//OF FITNESS FUNCTIONS
+		//compute_mean_finite_h();
 		search.reset();
 	    }
 	}

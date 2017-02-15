@@ -30,6 +30,8 @@
 #include "pattern_database_interface.h"
 #include "../utils/debug_macros.h"
 #include <random>
+#include "../sampling.h"
+#include "../task_tools.h"
 
 
     
@@ -1006,6 +1008,44 @@ namespace pdbs {
 		    saved_time=0;
 		  }
 		}
+		else if(use_ipdb_walk){
+		  //sample on demmand
+		  if(samples.size()==0){
+		    sample_states(task_proxy, samples, average_operator_cost);
+		    DEBUG_MSG(cout<<"adding to samples, unique_size prior:"<<unique_samples.size()<<",sampled_states:"<<samples.size()<<endl;);
+		    for(auto state : samples){
+		      size_t state_id = state.hash();
+		      unique_samples.insert(make_pair(state_id,make_pair(state,get_best_value(state))));
+		    }
+		  }
+		  bool improvement=false;
+		  for(auto state : samples){
+		    if(get_best_value(state)==numeric_limits<int>::max()){
+		      continue;
+		    }
+		    int candidate_h=candidate.get_value(state);
+		    if(candidate_h==numeric_limits<int>::max()){
+		      cout<<"\timprovement found, new dead_end"<<endl;
+		      improvement=true;
+		      break;
+		    }
+		    else if(candidate_h>get_best_value(state)){
+		      cout<<"\t\t improvement found, h value increased from "<< get_best_value(state) <<" to "<<candidate_h<<endl;
+		      improvement=true;
+		      break;
+		    }
+		  }
+
+		  if(improvement){
+		    samples.clear();//we redo sample each time we find improvement
+		    raised_states=1;
+		    saved_time=1;
+		  }
+		}
+                else{
+		    raised_states=0;
+		    saved_time=0;
+		}
 
 		
 
@@ -1709,7 +1749,7 @@ namespace pdbs {
   
 	//set<int> visited_states;//for cutting off zero-cost operator loops
 	TaskProxy task_proxy(*task);
-	SuccessorGenerator successor_generator(task);
+	//SuccessorGenerator successor_generator(task);
 	const State &initial_state = task_proxy.get_initial_state();
 
 	Options temp_options2;
@@ -1770,7 +1810,7 @@ namespace pdbs {
         
 
 	vector<OperatorProxy> applicable_ops; 
-	successor_generator.generate_applicable_ops(initial_state,applicable_ops); //count nodes generated
+	successor_generator->generate_applicable_ops(initial_state,applicable_ops); //count nodes generated
 	//cout<<"before amount_initial"<<endl;fflush(stdout);
         double amount_initial = (double)applicable_ops.size();
         //Need to initialize child state before using	
@@ -1919,7 +1959,7 @@ namespace pdbs {
 	    }
 
 	    State* current_state=&(it->second.first);
-	    successor_generator.generate_applicable_ops(*current_state,applicable_ops); //count nodes generated
+	    successor_generator->generate_applicable_ops(*current_state,applicable_ops); //count nodes generated
 
 	    // std::pair<std::map<Node2, double>::iterator, bool> ret;
 	    // std::map<Node2, double>::iterator it;
@@ -2027,7 +2067,7 @@ namespace pdbs {
 
 		vector<OperatorProxy> applicable_ops2; 
 		//cout<<"S:"<<endl;global_state_2.dump_inline();fflush(stdout);
-		successor_generator.generate_applicable_ops(child,applicable_ops2); //count nodes generated
+		successor_generator->generate_applicable_ops(child,applicable_ops2); //count nodes generated
              
 		int amount = applicable_ops2.size();
                 
@@ -2367,7 +2407,7 @@ namespace pdbs {
 	if(best_pdb_collections.size()<2){
 	    return;
 	}
-	if(use_SS_fitness==false){
+	if(use_SS_fitness==false&&use_ipdb_walk==false){
 	  //We only do domination check when we have SS states to compare against
 	  return;
 	}
@@ -2510,9 +2550,12 @@ namespace pdbs {
 
 	TaskProxy task_proxy(*task);
 	const State &initial_state = task_proxy.get_initial_state();
-	SuccessorGenerator successor_generator(task);
+	successor_generator=utils::make_unique_ptr<SuccessorGenerator>(task);
+	if(use_ipdb_walk){
+	  average_operator_cost=get_average_operator_cost(task_proxy);
+	}
 	vector<OperatorProxy> applicable_ops; 
-	successor_generator.generate_applicable_ops(initial_state,applicable_ops); //count nodes generated
+	successor_generator->generate_applicable_ops(initial_state,applicable_ops); //count nodes generated
 	if(applicable_ops.size()==0){
 	  cout<<"Initial state is dead_end,probably unsolvable in preprocessor,";
 	  exit(1);
@@ -2558,6 +2601,7 @@ namespace pdbs {
 	    lmcut->initialize();
 	    cout<<"initial_lmcut_h:"<<lmcut->compute_heuristic(task_proxy.get_initial_state())<<endl;
 	  }
+	    
 	  
 	//}
 	//else{
@@ -2573,7 +2617,7 @@ namespace pdbs {
 	  while(node_gen_and_exp_timings()<1.0){
 	    node_counter++;
 	    applicable_ops.clear();
-	    g_successor_generator->generate_applicable_ops(succ_state, applicable_ops);
+	    successor_generator->generate_applicable_ops(succ_state, applicable_ops);
 	    for(auto op : applicable_ops){
 	      succ_states.push_back(succ_state.get_successor(op));
 	    }
@@ -2615,6 +2659,26 @@ namespace pdbs {
 	cout <<"Finished,episodes:"<<current_episode<<",Pattern generation (Edelkamp) time: " << timer <<",Peak Memory:"<<utils::get_peak_memory_in_kb()<<",current_memory:"<<utils::get_current_memory_in_kb()<<flush<<endl;
 	return *result;
     }
+    void PatternCollectionGeneratorGeneticSS::sample_states(
+    TaskProxy task_proxy, vector<State> &samples, double average_operator_cost) {
+      const State &initial_state = task_proxy.get_initial_state();
+      int num_samples=20000;
+      samples.clear();
+    int init_h = get_best_value(initial_state);
+
+    //try {
+        samples = sample_states_with_random_walks(
+            task_proxy, *successor_generator, num_samples, init_h,
+            average_operator_cost,
+            [this](const State &state) {
+                return result->is_dead_end(state);
+            },
+            genetic_SS_timer);
+    //} catch (SamplingTimeout &) {
+    //    throw HillClimbingTimeout();
+    //}
+}
+
 
     static shared_ptr<PatternCollectionGenerator> _parse(OptionParser &parser) {
       cout<<"parsing options"<<endl;

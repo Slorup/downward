@@ -14,6 +14,7 @@
 
 
 class AbstractTask;
+class IncrementalCanonicalPDBs;
 
 namespace options {
 class Options;
@@ -133,9 +134,9 @@ class PatternCollectionGeneratorGeneticSS : public PatternCollectionGenerator {
     //Size selection instead of time selection by SS
     bool size_selection=false;
     bool use_SS_fitness=false;
-    bool use_avg_h_value=true;
+    bool use_avg_h_value=false;
     float best_avg_h=0;
-    bool use_ipdb_walk=false;
+    bool use_ipdb_walk=true;
 
 
 
@@ -154,7 +155,7 @@ class PatternCollectionGeneratorGeneticSS : public PatternCollectionGenerator {
     //GroupZeroOnePDBs best_heuristic;
     ZeroOnePDBs *current_heuristic;
     //ZeroOnePDBsHeuristic *current_heuristic;
-    double average_operator_cost;
+    double average_operator_cost=0;
     int num_samples;
     vector<State> samples;
 
@@ -165,6 +166,7 @@ class PatternCollectionGeneratorGeneticSS : public PatternCollectionGenerator {
     set<vector<int> > chosen_patterns;
     bool problem_solved_while_pdb_gen=false;
     bool run_SS_again=false;
+    std::unique_ptr<SuccessorGenerator> successor_generator;
     //PDBHeuristicOnline *current_heuristic,
 
     /*
@@ -233,6 +235,7 @@ class PatternCollectionGeneratorGeneticSS : public PatternCollectionGenerator {
     void bin_packing_no_rel_analysis();
     int bin_packing_reg_count=0;
     int bin_packing_rel_count=0;
+    //std::unique_ptr<IncrementalCanonicalPDBs> current_pdbs;
 
     /*
       Main genetic algorithm loop. All pattern collections are initialized with
@@ -244,6 +247,8 @@ class PatternCollectionGeneratorGeneticSS : public PatternCollectionGenerator {
     void genetic_algorithm(std::shared_ptr<AbstractTask> task);
     double probe_best_only();
     double get_pattern_size(Pattern pattern);
+    void sample_states(
+    TaskProxy task_proxy, vector<State> &samples, double average_operator_cost);
 public:
     PatternCollectionGeneratorGeneticSS(const options::Options &opts);
     virtual ~PatternCollectionGeneratorGeneticSS() = default;

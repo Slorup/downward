@@ -61,6 +61,7 @@ public:
     const symbolic::Bucket & get_dead_ends() const{
 	return dead_ends;
     }
+    bool is_dead_end(const State &state) const ;
 };
 }
 

@@ -292,4 +292,18 @@ int PatternCollectionInformation::get_value(const State &state) const {
     }
     return max_h;
 }
+bool PatternCollectionInformation::is_dead_end(const State &state) const {
+    if(!max_additive_subsets){
+      return false;
+    }
+    for (const auto &subset : *max_additive_subsets) {
+      for (const shared_ptr<PatternDatabaseInterface> &pdb : subset) {
+	int h = pdb->get_value(state);
+	if (h == numeric_limits<int>::max()) {
+	  return true;
+	}
+      }
+    }
+    return false;
+}
 }
