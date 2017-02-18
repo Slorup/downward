@@ -1089,7 +1089,7 @@ namespace pdbs {
 		    //else{
 		    //  cout<<"best_heuristic being set for the first time"<<endl;
 		    //}
-		    cout<<"time:,"<<utils::g_timer()<<",bin_packed:,"<<bin_packed_episode<<",adding1 best_heuristic,episode:,"<<current_episode<<",collection:,"<<collection_counter<<",new raised_ratio:,"<<float(raised_states)/float(sampled_states)<<",actual_states_ratio:,"<<float(raised_states)/float(sampled_states)<<",total_nodes:"<<total_SS_gen_nodes<<",pruned_states:"<<pruned_states<<",fitness:,"<<fitness<<",sampled_states:,"<<sampled_states<<",initial_value:,"<<current_heur_initial_value<<",skip_sampling:,"<<skip_sampling<<",best_heur_dead_ends:,"<<best_heur_dead_ends<<",best_heuristics count:"<<best_pdb_collections.size()<<",size:"<<overall_pdb_size<<",pdb_gen_time:"<<pdb_gen_time<<",episode:,"<<current_episode<<",finished:,"<<pdb_factory->is_finished()<<",bin_packed:,"<<bin_packed_episode<<",bin_reg_packed:,"<<bin_reg_packed<<",bin_rel_packed:,"<<bin_rel_packed<<",Peak memory:,"<<utils::get_peak_memory_in_kb()<<flush<<endl;
+		    cout<<"time:,"<<utils::g_timer()<<",bin_packed:,"<<bin_packed_episode<<",adding1 best_heuristic,episode:,"<<current_episode<<",collection:,"<<collection_counter<<",new raised_ratio:,"<<float(raised_states)/float(sampled_states)<<",actual_states_ratio:,"<<float(raised_states)/float(sampled_states)<<",total_nodes:"<<total_SS_gen_nodes<<",pruned_states:"<<pruned_states<<",fitness:,"<<fitness<<",sampled_states:,"<<sampled_states<<",initial_value:,"<<current_heur_initial_value<<",skip_sampling:,"<<skip_sampling<<",best_heur_dead_ends:,"<<best_heur_dead_ends<<",best_heuristics count:"<<best_pdb_collections.size()<<",size:"<<overall_pdb_size<<",pdb_gen_time:"<<pdb_gen_time<<",episode:,"<<current_episode<<",finished:,"<<pdb_factory->is_finished()<<",bin_packed:,"<<bin_packed_episode<<",bin_reg_packed:,"<<bin_reg_packed<<",bin_rel_packed:,"<<bin_rel_packed<<",Peak memory:,"<<utils::get_peak_memory_in_kb()<<",saved_time:,"<<saved_time<<flush<<endl;
 		    episodes_to_mutate=20;//Want to mutate around good episodes
 		    run_SS_again=true;
 		    //Noting which bin packing is working best
@@ -1211,9 +1211,10 @@ namespace pdbs {
 	
 	//if(pdb_factory->name().find("symbolic")!=string::npos){
 	  std::default_random_engine generator;
-	  std::normal_distribution<double> distribution((max_target_size+min_target_size)/2,max_target_size-min_target_size);
-	  //int temp=rand()%(max_target_size-min_target_size);
+	  std::normal_distribution<double> distribution((max_target_size+min_target_size)/2,max_target_size-min_target_size+1);
 	  int temp=distribution(generator);
+	  //int temp=rand()%(max_target_size-min_target_size);temp+=min_target_size;
+	  //pdb_max_size=pow(10,7);
 	  pdb_max_size=9*pow(10,temp);
 	  //cout<<"bin_packing,g_timer:"<<utils::g_timer<<",temp:"<<temp<<",max_target_size:"<<max_target_size<<",min_target_size:"<<min_target_size<<",pdb_max_size:"<<pdb_max_size<<flush;
 	//}
@@ -1338,9 +1339,10 @@ namespace pdbs {
 	
 	//if(pdb_factory->name().find("symbolic")!=string::npos){
 	  std::default_random_engine generator;
-	  std::normal_distribution<double> distribution((max_target_size+min_target_size)/2,max_target_size-min_target_size);
-	  //int temp=rand()%(max_target_size-min_target_size);
+	  std::normal_distribution<double> distribution((max_target_size+min_target_size)/2,max_target_size-min_target_size+1);
 	  int temp=distribution(generator);
+	  //pdb_max_size=pow(10,7);
+	  //int temp=rand()%(max_target_size-min_target_size);temp+=min_target_size;
 	  pdb_max_size=9*pow(10,temp);
 	//}
 	//cout<<",Starting bin_packing_no_rel, pdb_max_size:"<<pdb_max_size<<",g_timer:"<<utils::g_timer<<",temp:"<<temp<<",max_target_size:"<<max_target_size<<",min_target_size:"<<min_target_size<<flush;
@@ -2583,7 +2585,7 @@ namespace pdbs {
 	  max_target_size = min(20.0,log10 (overall_problem_size));
 	  //if no symbolic, limiting max_target_size to 900 mill elements
 	  if(pdb_factory->name().find("symbolic")==string::npos){
-	    max_target_size=8;
+	    max_target_size=7;
 	    cout<<"initial time_limit="<<time_limit<<endl;
 	  }
 	  time_limit=pdb_factory->get_time_limit()/1000.0;
