@@ -59,9 +59,9 @@ namespace pdbs {
 	single_pattern_only(opts.get<bool>("single_pattern_only")),
 	use_lmcut(opts.get<bool>("use_lmcut")),
 	use_ucb(opts.get<bool>("use_ucb")) ,
-	size_selection(opts.get<bool>("size_selection")) {
+	size_selection(opts.get<bool>("size_selection")),
+	sampling_method(opts.get<string>("sampling_method")) {
     
-	
 	cout<<"hybrid_pdb_size:"<<hybrid_pdb_size<<endl;
 	cout<<"create_perimeter:"<<create_perimeter<<endl;
 	cout<<"initial pdb type:"<<pdb_factory->name()<<endl;
@@ -71,8 +71,34 @@ namespace pdbs {
 	cout<<"single_pattern_only:"<<single_pattern_only<<endl;
 	cout<<"use_ucb:"<<use_ucb<<endl;
 	cout<<"size_selection:"<<size_selection<<endl;
+	cout<<"sampling_method:"<<sampling_method<<endl;
 	num_collections=1;
 	result=make_shared<PatternCollectionInformation>(task, make_shared<PatternCollection>());
+	
+	//Should do a switch here, in a hurry as usual!
+	if(sampling_method.find("use_avg_h")!=string::npos){
+	  use_avg_h_value=true;
+	  use_ipdb_walk=false;
+	  use_SS_fitness=false;
+	}
+	else if(sampling_method.find("use_ipdb_walk")!=string::npos){
+	  use_ipdb_walk=true;
+	  use_SS_fitness=false;
+	  use_avg_h_value=false;
+	}
+	else if(sampling_method.find("use_SS")!=string::npos){
+	  use_ipdb_walk=true;
+	  use_SS_fitness=false;
+	  use_ipdb_walk=false;
+	}
+	else{
+	  use_SS_fitness=true;
+	  use_ipdb_walk=false;
+	  use_avg_h_value=false;
+	}
+	cout<<"sampling method,SS:"<<use_SS_fitness<<",ipdb_walk:"<<use_ipdb_walk<<",avg_h:"<<use_avg_h_value<<endl;
+
+
        
 	if(recompute_max_additive_subsets)
 	  cout<<"recompute_max_additive_subsets is on"<<endl;
@@ -2666,9 +2692,10 @@ namespace pdbs {
       const State &initial_state = task_proxy.get_initial_state();
       int num_samples=20000;
       samples.clear();
+      float start_time=utils::g_timer();
     int init_h = get_best_value(initial_state);
 
-    //try {
+    try {
         samples = sample_states_with_random_walks(
             task_proxy, *successor_generator, num_samples, init_h,
             average_operator_cost,
@@ -2676,9 +2703,10 @@ namespace pdbs {
                 return result->is_dead_end(state);
             },
             genetic_SS_timer);
-    //} catch (SamplingTimeout &) {
-    //    throw HillClimbingTimeout();
-    //}
+    } catch (SamplingTimeout &) {
+      cout<<"We are finished,sampling_timeout in random_walk,random_walk_time:"<<utils::g_timer()-start_time<<endl;
+      return;
+    }
 }
 
 
@@ -2838,7 +2866,10 @@ namespace pdbs {
       	"true");
     parser.add_option<bool>("size_selection", 
 	"Whether to use size or time as fitness function",
-      	"false");
+      	"true");
+    parser.add_option<string>("sampling_method", 
+	"Whether to use_SS (time prediction),use_avg_h(not complementary size prediction) or use_ipdb_walk (complementary size prediction) as a sampling method",
+      	"use_SS");
 
 	Options opts = parser.parse();
 	if (parser.dry_run())
