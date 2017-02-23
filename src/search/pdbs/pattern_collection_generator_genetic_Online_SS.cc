@@ -377,6 +377,7 @@ namespace pdbs {
 	    //In case max_target_size was making generation times too big
 	    if(max_target_size<initial_max_target_size){
 	      max_target_size++;
+	      cout<<"max_target_size raised back to:"<<max_target_size<<",initial_max_target_size:"<<initial_max_target_size<<endl;
 	      bin_pack_next=true;
 	    }
 	    if(pdb_factory->name().find("symbolic")!=string::npos){
@@ -616,7 +617,7 @@ namespace pdbs {
 		    if(valid_pattern_counter>0&&utils::g_timer()-last_time_collections_improved>min_improv_time_limit){
 		      run_SS_again=true;
 		      cout<<"running SS again, too long since last improvement"<<endl;
-			if(utils::g_timer()-real_last_time_collections_improved>90.0&&current_episode>5){
+			/*if(utils::g_timer()-real_last_time_collections_improved>90.0&&current_episode>5){
 			  size_targets_fixed=true;
 			  pdb_factory->increase_computational_limits();
 			  if(log10(last_improv_collection_size)<initial_max_target_size-2){//do not want to go back to perimeter size!!!
@@ -631,10 +632,10 @@ namespace pdbs {
 			  }
 			  time_limit=pdb_factory->get_time_limit()/1000.0;
 			}
-			else{
+			else{*/
 			  pdb_factory->increase_computational_limits();
 			  last_sampler_too_big=false;
-			}
+			//}
 
 			min_target_size+=1;
 			if(pdb_factory->name().find("symbolic")!=string::npos){
