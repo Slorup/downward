@@ -61,6 +61,9 @@ int ZeroOnePDBs::get_value(const State &state) const {
     */
     int h_val = 0;
     //int counter=0;
+    if(pattern_databases.size()==0){//Reg bin pack can create patterns with no goal vars
+      return 0;
+    }
     for (const shared_ptr<PatternDatabaseInterface> &pdb : pattern_databases) {
       //cout<<"\t pdb:"<<counter;fflush(stdout);
         int pdb_value = pdb->get_value(state);

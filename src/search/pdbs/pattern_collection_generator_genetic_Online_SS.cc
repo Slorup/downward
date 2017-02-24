@@ -98,7 +98,6 @@ namespace pdbs {
 	}
 	cout<<"sampling method,SS:"<<use_SS_fitness<<",ipdb_walk:"<<use_ipdb_walk<<",avg_h:"<<use_avg_h_value<<endl;
 
-
        
 	if(recompute_max_additive_subsets)
 	  cout<<"recompute_max_additive_subsets is on"<<endl;
@@ -1234,16 +1233,20 @@ namespace pdbs {
     void PatternCollectionGeneratorGeneticSS::bin_packing() {
       
       bin_packing_reg_count++;
-	DEBUG_MSG(cout<<"Starting bin_packing, pdb_max_size:"<<pdb_max_size<<endl;);
+	DEBUG_MSG(cout<<"Starting Rel_bin_packing, pdb_max_size:"<<pdb_max_size<<endl;);
 	
 	//if(pdb_factory->name().find("symbolic")!=string::npos){
-	  std::default_random_engine generator;
-	  std::normal_distribution<double> distribution((max_target_size+min_target_size)/2,max_target_size-min_target_size+1);
+	  //std::default_random_engine generator;
+	  std::normal_distribution<double> distribution((max_target_size+min_target_size)/2,(max_target_size-min_target_size)/2);
 	  int temp=distribution(generator);
 	  //int temp=rand()%(max_target_size-min_target_size);temp+=min_target_size;
 	  //pdb_max_size=pow(10,7);
+	  
+	  //Limited to between min_size and max_size
 	  pdb_max_size=9*pow(10,temp);
-	  //cout<<"bin_packing,g_timer:"<<utils::g_timer<<",temp:"<<temp<<",max_target_size:"<<max_target_size<<",min_target_size:"<<min_target_size<<",pdb_max_size:"<<pdb_max_size<<flush;
+	  pdb_max_size=min(pdb_max_size,pow(10,initial_max_target_size));
+	  pdb_max_size=max(pdb_max_size,pow(10,min_target_size));
+	  //cout<<"Rel_bin_packing,g_timer:"<<utils::g_timer<<",temp:,"<<temp<<",max_target_size:"<<max_target_size<<",min_target_size:"<<min_target_size<<",pdb_max_size:"<<pdb_max_size<<flush<<endl;
 	//}
 
 	TaskProxy task_proxy(*task);
@@ -1261,7 +1264,19 @@ namespace pdbs {
 		remaining_vars.insert(i);
 	      }
 	  }
-	  //cout<<"remaining_vars:";for (auto var : remaining_vars) cout<<var<<",";cout<<endl;
+	  //cout<<"\tremaining_vars:";for (auto var : remaining_vars) cout<<var<<",";cout<<endl;
+	  
+	  vector<int> vars_to_check;
+	  
+	  set<int> remaining_goal_vars;
+	  for (FactProxy goal : task_proxy.get_goals()) {
+	    //int , l_id=goal.get_variable().get_id();
+	    double next_var_size = goal.get_variable().get_domain_size();
+	    if (next_var_size <= pdb_max_size){
+	      remaining_goal_vars.insert(goal.get_variable().get_id());
+	    }
+	  }
+	  //cout<<"\tremaining_goal_vars:";for (auto var : remaining_goal_vars) cout<<var<<",";cout<<endl;
 
 	  vector<vector<bool>> pattern_collection;
 	  vector<bool> pattern(variables.size(), false);
@@ -1301,6 +1316,7 @@ namespace pdbs {
 		      current_size *= next_var_size;
 		      pattern[var_id] = true;
 		      remaining_vars.erase(var_id);
+		      remaining_goal_vars.erase(var_id);
 		      //cout<<"added to pattern var_id:"<<var_id<<",current_size:"<<current_size<<",pdb_max_size:"<<pdb_max_size<<",new_pattern:"<<candidate_pattern<<",remaining vars:"<<remaining_vars.size()<<endl;
 		      break;
 		    }
@@ -1326,11 +1342,22 @@ namespace pdbs {
 		  }
 		}
 		else{//choose a remaining var at random, nothing selected yet for this pattern
-		  auto temp_it=remaining_vars.begin();
-		  advance(temp_it,rand()%remaining_vars.size());
+		  if(remaining_goal_vars.empty()){
+		    //no more goal vars, so no more patterns, as we can not start it with a goal variable
+		    break;
+		  }
+		  auto temp_it=remaining_goal_vars.begin();
+		  advance(temp_it,rand()%remaining_goal_vars.size());
 		  var_id=*temp_it;
-		  remaining_vars.erase(temp_it);
-		  //cout<<"first var for pattern:"<<var_id<<",remaining vars:"<<remaining_vars.size()<<endl;
+		  remaining_goal_vars.erase(temp_it);
+		  remaining_vars.erase(var_id);
+		  
+		  //cout<<"first var for pattern:"<<var_id<<",remaining_goal_vars:";
+		  //for(auto id : remaining_goal_vars) cout<<","<<id;
+		  //cout<<",remaining_vars:";
+		  //for(auto id : remaining_vars) cout<<","<<id;
+		  //cout<<endl;
+		  
 		  pattern[var_id]=true;
 		  pattern_int.push_back(var_id);
 		  double next_var_size = variables[var_id].get_domain_size();
@@ -1365,14 +1392,18 @@ namespace pdbs {
 	//cout<<"g_timer:"<<utils::g_timer()<<",Starting bin_packing_no_rel_analysis, pdb_max_size:"<<pdb_max_size<<endl;
 	
 	//if(pdb_factory->name().find("symbolic")!=string::npos){
-	  std::default_random_engine generator;
-	  std::normal_distribution<double> distribution((max_target_size+min_target_size)/2,max_target_size-min_target_size+1);
+	  //std::default_random_engine generator;
+	  std::normal_distribution<double> distribution((max_target_size+min_target_size)/2,(max_target_size-min_target_size)/2);
 	  int temp=distribution(generator);
 	  //pdb_max_size=pow(10,7);
 	  //int temp=rand()%(max_target_size-min_target_size);temp+=min_target_size;
+	  
+	  //Limited to between min_size and max_size
 	  pdb_max_size=9*pow(10,temp);
+	  pdb_max_size=min(pdb_max_size,9*pow(10,initial_max_target_size));
+	  pdb_max_size=max(pdb_max_size,pow(10,min_target_size));
 	//}
-	//cout<<",Starting bin_packing_no_rel, pdb_max_size:"<<pdb_max_size<<",g_timer:"<<utils::g_timer<<",temp:"<<temp<<",max_target_size:"<<max_target_size<<",min_target_size:"<<min_target_size<<flush;
+	//cout<<",Starting reg_bin_packing, pdb_max_size:"<<pdb_max_size<<",g_timer:"<<utils::g_timer<<",temp:,"<<temp<<",max_target_size:"<<max_target_size<<",min_target_size:"<<min_target_size<<endl;
 
 	TaskProxy task_proxy(*task);
 	VariablesProxy variables = task_proxy.get_variables();
@@ -1386,7 +1417,6 @@ namespace pdbs {
 	}
 	size_t max_patterns=INT_MAX;//As many patterns as needed
 
-	
 	//Some problems benefit form less patterns, higher sizes
 	//if(rand() % 10 >4){
 	//  max_patterns=0;
@@ -1481,6 +1511,7 @@ namespace pdbs {
 		//cout<<"\t skipping pattern"<<endl;
 	    //}
 	    //Sort patterns by size, so zero_one cost partition benefits larger patterns over shorter ones
+
 	    sort(pattern_collection.begin(),pattern_collection.end(),compare_pattern_length);
 	    
 	    DEBUG_MSG(

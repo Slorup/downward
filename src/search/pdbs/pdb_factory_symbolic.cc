@@ -45,6 +45,7 @@ namespace pdbs {
 	DEBUG_MSG(cout << "COMPUTE SYMBOLIC PDB" << endl;);
 	std::set<int> pattern_set (pattern.begin(), pattern.end()); 
 	DEBUG_MSG(cout << "Pattern: "; for (int v : pattern_set) { cout << " " << v; }cout << endl;);
+	//cout << "Pattern: "; for (int v : pattern_set) { cout << " " << v; }cout << endl;
 	
 	assert(manager);
 

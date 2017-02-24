@@ -42,7 +42,6 @@ static options::PluginTypePlugin<PDBFactory> _type_plugin(
 	    //}
 	  }
 	  else{
-	    //cout<<"pdb_type:"<<name()<<",finished:"<<is_finished()<<endl;
 	    continue_creation(*(item->second));
 	    return item->second;
 	  }
@@ -52,6 +51,10 @@ static options::PluginTypePlugin<PDBFactory> _type_plugin(
 	    // 	num_patterns_regenerated ++;
 	    // }
 	}
+	//else{
+	//  cout<<"pattern:";for (int v : pattern) cout << ","<< v;cout<<",is new"<<endl;
+	//}
+
 
 	num_patterns_created ++;
 	shared_ptr<PatternDatabaseInterface> result = create_pdb(task, pattern, operator_costs); 

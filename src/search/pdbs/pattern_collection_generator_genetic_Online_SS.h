@@ -78,6 +78,8 @@ class PatternCollectionGeneratorGeneticSS : public PatternCollectionGenerator {
     int min_target_size=4;
     double min_improv_time_limit=20.0;
     int episodes_to_mutate=1;
+    std::default_random_engine generator;
+    set<int> goal_vars;
    
     //SS data
     std::set<SSQueue, classcomp> L;

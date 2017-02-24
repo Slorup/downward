@@ -132,11 +132,11 @@ namespace pdbs {
 	    return;
 	}
 	if(search->finished()){
-	  cout<<"Nothing to terminate, search was finished"<<endl;
+	  //cout<<"Nothing to terminate, search was finished"<<endl;
 	  return;
 	}
 	else{
-	  cout<<"search not finished, doing longer search till terminate time limit(ms):"<<max_time_ms<<",or max_nodes:"<<max_nodes<<",or global_limit_memory_MB:"<<global_limit_memory_MB<<endl;
+	  //cout<<"search not finished, doing longer search till terminate time limit(ms):"<<max_time_ms<<",or max_nodes:"<<max_nodes<<",or global_limit_memory_MB:"<<global_limit_memory_MB<<endl;
 	}
 
 	search->set_limits(max_step_time_ms, max_nodes);
@@ -150,12 +150,12 @@ namespace pdbs {
 	    search->step();
 	} 
 
-	cout<<"time(ms):"<<time()*1000<<",memory:"<<vars->totalMemoryGB()<<",global_limit_memory_GB:"<<global_limit_memory_MB*1024<<",isSearchable:"<<search->isSearchable()<<endl;
+	//cout<<"time(ms):"<<time()*1000<<",memory:"<<vars->totalMemoryGB()<<",global_limit_memory_GB:"<<global_limit_memory_MB*1024<<",isSearchable:"<<search->isSearchable()<<endl;
 	//cout << "g_timer when symbolic search finished: " << utils::g_timer() << endl; 
 	finished = search->finished();
 	hvalue_unseen_states = search->getHNotClosed();
-	cout << "finished: " << finished << " perimeter g: " << hvalue_unseen_states 
-	     << " average value: " << average << " g_timer: "  << utils::g_timer() << endl;
+	//cout << "finished: " << finished << " perimeter g: " << hvalue_unseen_states 
+	//     << " average value: " << average << " g_timer: "  << utils::g_timer() << endl;
 
 	if(search->getEngine()->solved()) {
 	    heuristic = search->getEngine()->get_solution()->getADD();	    
@@ -165,7 +165,7 @@ namespace pdbs {
 	    //cout<<"time after serch.getHeuristic(false):"<<time()<<endl;
 	    if(finished) dead_ends += search->notClosed(); 
 	}
-	cout << "Computed heuristic ADD. g_timer: " << utils::g_timer() << endl;
+	//cout << "Computed heuristic ADD. g_timer: " << utils::g_timer() << endl;
     }
 }
 
