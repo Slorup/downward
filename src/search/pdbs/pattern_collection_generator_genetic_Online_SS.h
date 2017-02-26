@@ -7,6 +7,7 @@
 
 #include <memory>
 #include <vector>
+#include <random>
 #include "../ss/ss_search.h"
 #include "../global_state.h"
 #include "group_zero_one_pdbs.h"
@@ -139,6 +140,7 @@ class PatternCollectionGeneratorGeneticSS : public PatternCollectionGenerator {
     bool use_SS_fitness=true;
     bool use_avg_h_value=false;
     bool use_ipdb_walk=false;
+	bool use_first_goal_vars=false;
     float best_avg_h=0;
 
 

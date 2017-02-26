@@ -60,7 +60,8 @@ namespace pdbs {
 	use_lmcut(opts.get<bool>("use_lmcut")),
 	use_ucb(opts.get<bool>("use_ucb")) ,
 	size_selection(opts.get<bool>("size_selection")),
-	sampling_method(opts.get<string>("sampling_method")) {
+	sampling_method(opts.get<string>("sampling_method")),
+	use_first_goal_vars(opts.get<bool>("use_first_goal_vars")){
     
 	cout<<"hybrid_pdb_size:"<<hybrid_pdb_size<<endl;
 	cout<<"create_perimeter:"<<create_perimeter<<endl;
@@ -1237,9 +1238,9 @@ namespace pdbs {
 	
 	//if(pdb_factory->name().find("symbolic")!=string::npos){
 	  //std::default_random_engine generator;
-	  std::normal_distribution<double> distribution((max_target_size+min_target_size)/2,(max_target_size-min_target_size)/2);
-	  int temp=distribution(generator);
-	  //int temp=rand()%(max_target_size-min_target_size);temp+=min_target_size;
+	  //std::normal_distribution<double> distribution((max_target_size+min_target_size)/2,(max_target_size-min_target_size)/2);
+	  //int temp=distribution(generator);
+	  int temp=rand()%(max_target_size-min_target_size);temp+=min_target_size;
 	  //pdb_max_size=pow(10,7);
 	  
 	  //Limited to between min_size and max_size
@@ -1285,91 +1286,98 @@ namespace pdbs {
 	    vector<int> pattern_int;
 	    vector<int> candidate_pattern;
 	    int var_id;
-	    while(!remaining_vars.empty()){
-		if(pattern_int.size()>0){
-		  candidate_pattern=pattern_int;
-		  sort(candidate_pattern.begin(), candidate_pattern.end());
-		  set<int> rel_vars_set;
-		  vector<int> relevant_vars;
-		  vector<int> relevant_vars_in_remaining;
-		  for (auto var : pattern_int){
-		    const vector<int> &rel_vars = causal_graph.get_eff_to_pre(var);
-		    for(auto var2 : rel_vars){
-		      rel_vars_set.insert(var2);
-		    }
+		while(!remaining_vars.empty()){
+		  if(pattern_int.size()>0){
+			candidate_pattern=pattern_int;
+			sort(candidate_pattern.begin(), candidate_pattern.end());
+			set<int> rel_vars_set;
+			vector<int> relevant_vars;
+			vector<int> relevant_vars_in_remaining;
+			for (auto var : pattern_int){
+			  const vector<int> &rel_vars = causal_graph.get_eff_to_pre(var);
+			  for(auto var2 : rel_vars){
+				rel_vars_set.insert(var2);
+			  }
+			}
+			set_difference(rel_vars_set.begin(), rel_vars_set.end(),
+				candidate_pattern.begin(), candidate_pattern.end(),
+				back_inserter(relevant_vars));
+			//cout<<"relevant vars to current_pattern:";for (auto item : relevant_vars) cout<<item<<",";cout<<endl;
+			set_intersection(relevant_vars.begin(), relevant_vars.end(),
+				remaining_vars.begin(), remaining_vars.end(),
+				back_inserter(relevant_vars_in_remaining));
+			//cout<<"relevant vars in remaining:";for (auto item : relevant_vars_in_remaining) cout<<item<<",";cout<<endl;
+			g_rng()->shuffle(relevant_vars);
+			while(relevant_vars_in_remaining.size()>0){
+			  var_id=relevant_vars_in_remaining.back();
+			  relevant_vars_in_remaining.pop_back();
+			  double next_var_size = variables[var_id].get_domain_size();
+			  if(utils::is_product_within_limit(current_size, next_var_size, pdb_max_size)) {
+				candidate_pattern.push_back(var_id);
+				current_size *= next_var_size;
+				pattern[var_id] = true;
+				remaining_vars.erase(var_id);
+				remaining_goal_vars.erase(var_id);
+				//cout<<"added to pattern var_id:"<<var_id<<",current_size:"<<current_size<<",pdb_max_size:"<<pdb_max_size<<",new_pattern:"<<candidate_pattern<<",remaining vars:"<<remaining_vars.size()<<endl;
+				break;
+			  }
+			}
+			if(candidate_pattern!=pattern_int){
+			  pattern_int=candidate_pattern;
+			}
+			else{//no var is small enough to be added, or none left
+			  //cout<<"no more relevant vars can be added"<<flush<<endl;
+			  if(pattern_int.size()>0){
+			  pattern_collection.push_back(pattern);
+			  vector<int> trans_pattern=transform_to_pattern_normal_form(pattern_collection.back());
+			  //cout<<"added pattern["<<pattern_collection.size()-1<<"]:"<<trans_pattern<<",size:"<<get_pattern_size(trans_pattern)<<endl;
+			  pattern_int.clear();
+			  pattern.clear();
+			  pattern.resize(variables.size(), false);
+			  current_size = 1;
+			  //TRYING ONLY ONE PATTERN
+			  if(single_pattern_only){
+				break;
+			  }
+			  }
+			}
 		  }
-		  set_difference(rel_vars_set.begin(), rel_vars_set.end(),
-		      candidate_pattern.begin(), candidate_pattern.end(),
-		      back_inserter(relevant_vars));
-		  //cout<<"relevant vars to current_pattern:";for (auto item : relevant_vars) cout<<item<<",";cout<<endl;
-		  set_intersection(relevant_vars.begin(), relevant_vars.end(),
-		      remaining_vars.begin(), remaining_vars.end(),
-		      back_inserter(relevant_vars_in_remaining));
-		  //cout<<"relevant vars in remaining:";for (auto item : relevant_vars_in_remaining) cout<<item<<",";cout<<endl;
-		  g_rng()->shuffle(relevant_vars);
-		  while(relevant_vars_in_remaining.size()>0){
-		    var_id=relevant_vars_in_remaining.back();
-		    relevant_vars_in_remaining.pop_back();
-		    double next_var_size = variables[var_id].get_domain_size();
-		    if(utils::is_product_within_limit(current_size, next_var_size, pdb_max_size)) {
-		      candidate_pattern.push_back(var_id);
-		      current_size *= next_var_size;
-		      pattern[var_id] = true;
-		      remaining_vars.erase(var_id);
-		      remaining_goal_vars.erase(var_id);
-		      //cout<<"added to pattern var_id:"<<var_id<<",current_size:"<<current_size<<",pdb_max_size:"<<pdb_max_size<<",new_pattern:"<<candidate_pattern<<",remaining vars:"<<remaining_vars.size()<<endl;
-		      break;
-		    }
+		  else{//choose a remaining var at random, nothing selected yet for this pattern
+			if(!use_first_goal_vars){
+				auto temp_it=remaining_vars.begin();
+				advance(temp_it,rand()%remaining_vars.size());
+			}
+			else{//using goal valrs first
+			  if(remaining_goal_vars.empty()){
+				//no more goal vars, so no more patterns, as we can not start it with a goal variable
+				break;
+			  }
+			  auto temp_it=remaining_goal_vars.begin();
+			  advance(temp_it,rand()%remaining_goal_vars.size());
+			}
+			var_id=*temp_it;
+			remaining_goal_vars.erase(temp_it);
+			remaining_vars.erase(var_id);
+			
+			//cout<<"first var for pattern:"<<var_id<<",remaining_goal_vars:";
+			//for(auto id : remaining_goal_vars) cout<<","<<id;
+			//cout<<",remaining_vars:";
+			//for(auto id : remaining_vars) cout<<","<<id;
+			//cout<<endl;
+			
+			pattern[var_id]=true;
+			pattern_int.push_back(var_id);
+			double next_var_size = variables[var_id].get_domain_size();
+			current_size *= next_var_size;
+			}
 		  }
-		  if(candidate_pattern!=pattern_int){
-		    pattern_int=candidate_pattern;
-		  }
-		  else{//no var is small enough to be added, or none left
-		    //cout<<"no more relevant vars can be added"<<flush<<endl;
-		    if(pattern_int.size()>0){
+			//Add the last pattern!
+		  if(remaining_vars.empty()&&pattern_int.size()>0){
 			pattern_collection.push_back(pattern);
 			vector<int> trans_pattern=transform_to_pattern_normal_form(pattern_collection.back());
-			//cout<<"added pattern["<<pattern_collection.size()-1<<"]:"<<trans_pattern<<",size:"<<get_pattern_size(trans_pattern)<<endl;
-			pattern_int.clear();
-			pattern.clear();
-			pattern.resize(variables.size(), false);
-			current_size = 1;
-			//TRYING ONLY ONE PATTERN
-			if(single_pattern_only){
-			  break;
-			}
-		    }
+			//cout<<"last added pattern["<<pattern_collection.size()-1<<"]:"<<trans_pattern<<",size:"<<get_pattern_size(trans_pattern)<<endl;
 		  }
 		}
-		else{//choose a remaining var at random, nothing selected yet for this pattern
-		  if(remaining_goal_vars.empty()){
-		    //no more goal vars, so no more patterns, as we can not start it with a goal variable
-		    break;
-		  }
-		  auto temp_it=remaining_goal_vars.begin();
-		  advance(temp_it,rand()%remaining_goal_vars.size());
-		  var_id=*temp_it;
-		  remaining_goal_vars.erase(temp_it);
-		  remaining_vars.erase(var_id);
-		  
-		  //cout<<"first var for pattern:"<<var_id<<",remaining_goal_vars:";
-		  //for(auto id : remaining_goal_vars) cout<<","<<id;
-		  //cout<<",remaining_vars:";
-		  //for(auto id : remaining_vars) cout<<","<<id;
-		  //cout<<endl;
-		  
-		  pattern[var_id]=true;
-		  pattern_int.push_back(var_id);
-		  double next_var_size = variables[var_id].get_domain_size();
-		  current_size *= next_var_size;
-		}
-		//Add the last pattern!
-		if(remaining_vars.empty()&&pattern_int.size()>0){
-		  pattern_collection.push_back(pattern);
-		  vector<int> trans_pattern=transform_to_pattern_normal_form(pattern_collection.back());
-		  //cout<<"last added pattern["<<pattern_collection.size()-1<<"]:"<<trans_pattern<<",size:"<<get_pattern_size(trans_pattern)<<endl;
-		}
-	    }
 	    //Sort patterns by size, so zero_one cost partition benefits larger patterns over shorter ones
 	    sort(pattern_collection.begin(),pattern_collection.end(),compare_pattern_length);
 	    
@@ -1393,10 +1401,10 @@ namespace pdbs {
 	
 	//if(pdb_factory->name().find("symbolic")!=string::npos){
 	  //std::default_random_engine generator;
-	  std::normal_distribution<double> distribution((max_target_size+min_target_size)/2,(max_target_size-min_target_size)/2);
-	  int temp=distribution(generator);
+	  //std::normal_distribution<double> distribution((max_target_size+min_target_size)/2,(max_target_size-min_target_size)/2);
+	  //int temp=distribution(generator);
 	  //pdb_max_size=pow(10,7);
-	  //int temp=rand()%(max_target_size-min_target_size);temp+=min_target_size;
+	  int temp=rand()%(max_target_size-min_target_size);temp+=min_target_size;
 	  
 	  //Limited to between min_size and max_size
 	  pdb_max_size=9*pow(10,temp);
@@ -2902,6 +2910,9 @@ namespace pdbs {
     parser.add_option<string>("sampling_method", 
 	"Whether to use_SS (time prediction),use_avg_h(not complementary size prediction) or use_ipdb_walk (complementary size prediction) as a sampling method",
       	"use_SS");
+    parser.add_option<bool>("use_first_goal_vars", 
+	"Whether to, when using causal analysis while bin_packing, to set first variable to be a goal or not",
+      	"false");
 
 	Options opts = parser.parse();
 	if (parser.dry_run())
