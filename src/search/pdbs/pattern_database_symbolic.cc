@@ -44,6 +44,7 @@ namespace pdbs {
 	search->init(manager, false);
 	//cout<<"serach.init.time:"<<utils::g_timer()-start_time<<",";
 
+
 	Timer time; 
 	while (!search->finished() && 
 	       time()*1000.0 < (double)max_time_ms &&
@@ -55,10 +56,30 @@ namespace pdbs {
 	    //cout<<"\tstep search time:"<<utils::g_timer()-start_step_time<<",overall time(secs):"<<time()*1000<<endl;
 	} 
 	
+	/*if(search->getHNotClosed()==0){//Since we wasted all this time, do at least one more time_limit
+	  while (!search->finished() && 
+	       time()*500.0 < (double)max_time_ms &&
+	       vars->totalMemoryGB()*1024 < global_limit_memory_MB &&
+	       search->isSearchable()  && 
+	       !engine->solved()) {
+	  cout<<"g_timer:,"<<utils::g_timer<<", before 1st step,so no 0 unseen value"<<endl;
+	  search->step();
+	  cout<<"g_timer:"<<utils::g_timer<<",after 1st step"<<endl;
+	  }
+	}*/
+
 	finished = search->finished();
 	hvalue_unseen_states = search->getHNotClosed();
 	//average = search->getClosed()->average_hvalue();
 	DEBUG_MSG(for (int v : pattern) cout << v << " ";);
+	/*cout<<"g_timer:"<<utils::g_timer<<",Pattern:";for (auto var : pattern) cout<<","<<var;
+	cout<<",finished:"<<search->finished();
+	if(!search->finished()){
+	  cout<<",Perim:"<<hvalue_unseen_states<<",time:,"<<time()*1000.0<<endl;
+	}
+	else{
+	  cout<<endl;
+	}*/
 	
 	DEBUG_MSG(cout << "Solved: " << engine->solved() << " Finished: " << search->finished() <<  ", Average: " << average << endl;);
 	//cout << "Solved: " << engine->solved() << " Finished: " << search->finished() <<  ", max_time_ms: " << max_time_ms << endl;

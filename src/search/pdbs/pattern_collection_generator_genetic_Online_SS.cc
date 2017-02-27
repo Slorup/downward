@@ -370,14 +370,14 @@ namespace pdbs {
     }
     else{//so symbolic*/
       //pdb_max_size=numeric_limits<double>::max();
-      if(!last_sampler_too_big){
-	if(valid_pattern_counter!=0&&valid_pattern_counter%10==0&&valid_pattern_counter>last_valid_pattern_counter&&(!size_targets_fixed)){
+	if(!last_sampler_too_big){
+	  if(valid_pattern_counter!=0&&valid_pattern_counter%10==0&&valid_pattern_counter>last_valid_pattern_counter&&(!size_targets_fixed)){
 	    min_target_size++;
 	    int new_min_target_size=min_target_size;
 	    //In case max_target_size was making generation times too big
 	    if(max_target_size<initial_max_target_size){
 	      max_target_size++;
-	      cout<<"max_target_size raised back to:"<<max_target_size<<",initial_max_target_size:"<<initial_max_target_size<<endl;
+	      cout<<"g_timer:"<<utils::g_timer<<",max_target_size raised back to:"<<max_target_size<<",initial_max_target_size:"<<initial_max_target_size<<endl;
 	      bin_pack_next=true;
 	    }
 	    if(pdb_factory->name().find("symbolic")!=string::npos){
@@ -616,7 +616,9 @@ namespace pdbs {
 		    time_limit=pdb_factory->get_time_limit()/1000.0;
 		    if(valid_pattern_counter>0&&utils::g_timer()-last_time_collections_improved>min_improv_time_limit){
 		      run_SS_again=true;
-		      cout<<"running SS again, too long since last improvement"<<endl;
+		      cout<<"g_timer:"<<utils::g_timer()<<",running SS again, too long since last improvement:";
+			  cout<<",time_since_last_improv:"<<utils::g_timer()-last_time_collections_improved;
+			  cout<<",min_improv_time_limit:"<<min_improv_time_limit<<endl;
 			/*if(utils::g_timer()-real_last_time_collections_improved>90.0&&current_episode>5){
 			  size_targets_fixed=true;
 			  pdb_factory->increase_computational_limits();
@@ -1240,14 +1242,15 @@ namespace pdbs {
 	  //std::default_random_engine generator;
 	  //std::normal_distribution<double> distribution((max_target_size+min_target_size)/2,(max_target_size-min_target_size)/2);
 	  //int temp=distribution(generator);
-	  int temp=rand()%(max_target_size-min_target_size);temp+=min_target_size;
+	  int temp=rand()%(max_target_size-min_target_size+1);temp+=min_target_size;
 	  //pdb_max_size=pow(10,7);
 	  
 	  //Limited to between min_size and max_size
 	  pdb_max_size=9*pow(10,temp);
 	  pdb_max_size=min(pdb_max_size,pow(10,initial_max_target_size));
 	  pdb_max_size=max(pdb_max_size,pow(10,min_target_size));
-	  //cout<<"Rel_bin_packing,g_timer:"<<utils::g_timer<<",temp:,"<<temp<<",max_target_size:"<<max_target_size<<",min_target_size:"<<min_target_size<<",pdb_max_size:"<<pdb_max_size<<flush<<endl;
+	  //cout<<"Rel_bin_packing,g_timer:"<<utils::g_timer<<",temp:,"<<temp<<",max_target_size:"<<max_target_size;
+	  //cout<<",min_target_size:"<<min_target_size<<",pdb_max_size:"<<pdb_max_size<<flush<<endl;
 	//}
 
 	TaskProxy task_proxy(*task);
@@ -1344,19 +1347,21 @@ namespace pdbs {
 		  }
 		  else{//choose a remaining var at random, nothing selected yet for this pattern
 			if(!use_first_goal_vars){
-				auto temp_it=remaining_vars.begin();
+			  auto temp_it=remaining_vars.begin();
 				advance(temp_it,rand()%remaining_vars.size());
+				var_id=*temp_it;
 			}
 			else{//using goal valrs first
+			  auto temp_it=remaining_goal_vars.begin();
 			  if(remaining_goal_vars.empty()){
 				//no more goal vars, so no more patterns, as we can not start it with a goal variable
 				break;
 			  }
-			  auto temp_it=remaining_goal_vars.begin();
+			  temp_it=remaining_goal_vars.begin();
 			  advance(temp_it,rand()%remaining_goal_vars.size());
+			  var_id=*temp_it;
+			  remaining_goal_vars.erase(temp_it);
 			}
-			var_id=*temp_it;
-			remaining_goal_vars.erase(temp_it);
 			remaining_vars.erase(var_id);
 			
 			//cout<<"first var for pattern:"<<var_id<<",remaining_goal_vars:";
@@ -1372,12 +1377,11 @@ namespace pdbs {
 			}
 		  }
 			//Add the last pattern!
-		  if(remaining_vars.empty()&&pattern_int.size()>0){
+		  if(pattern_int.size()>0){
 			pattern_collection.push_back(pattern);
 			vector<int> trans_pattern=transform_to_pattern_normal_form(pattern_collection.back());
-			//cout<<"last added pattern["<<pattern_collection.size()-1<<"]:"<<trans_pattern<<",size:"<<get_pattern_size(trans_pattern)<<endl;
+			//cout<<"added last added pattern["<<pattern_collection.size()-1<<"]:"<<trans_pattern<<",size:"<<get_pattern_size(trans_pattern)<<endl;
 		  }
-		}
 	    //Sort patterns by size, so zero_one cost partition benefits larger patterns over shorter ones
 	    sort(pattern_collection.begin(),pattern_collection.end(),compare_pattern_length);
 	    
@@ -1391,7 +1395,7 @@ namespace pdbs {
 	    pattern_collections.push_back(pattern_collection);
 	}
 	DEBUG_MSG(cout<<"bin_packed finished generating "<<pattern_collections.back().size()<<" patterns"<<endl;);
-    }
+	}
 
 
     void PatternCollectionGeneratorGeneticSS::bin_packing_no_rel_analysis() {
@@ -1404,7 +1408,7 @@ namespace pdbs {
 	  //std::normal_distribution<double> distribution((max_target_size+min_target_size)/2,(max_target_size-min_target_size)/2);
 	  //int temp=distribution(generator);
 	  //pdb_max_size=pow(10,7);
-	  int temp=rand()%(max_target_size-min_target_size);temp+=min_target_size;
+	  int temp=rand()%(max_target_size-min_target_size+1);temp+=min_target_size;
 	  
 	  //Limited to between min_size and max_size
 	  pdb_max_size=9*pow(10,temp);
@@ -1563,7 +1567,7 @@ namespace pdbs {
 	}*/
 
 
-	int time_to_clean_dom=1;
+	int time_to_clean_dom=100;
 	bin_packed_episode=true;
 	task = task_;
 	best_fitness = -1;
@@ -2652,13 +2656,17 @@ namespace pdbs {
 	  //if no symbolic, limiting max_target_size to 900 mill elements
 	  if(pdb_factory->name().find("symbolic")==string::npos){
 	    max_target_size=7;
+		initial_max_target_size=max_target_size;
 	    cout<<"initial time_limit="<<time_limit<<endl;
 	  }
+	  else{
+		initial_max_target_size=max_target_size;
+		max_target_size=max_target_size/2.0;
+	  }
 	  time_limit=pdb_factory->get_time_limit()/1000.0;
-	  initial_max_target_size=max_target_size;
-	  min_target_size=5;
+	  min_target_size=4;
 	  pdb_max_size=2*pow(10,min_target_size);
-	  cout<<"initial_max_target_size:"<<max_target_size<<",initial_min_target_size:"<<min_target_size<<",time_limit(per pattern):"<<time_limit<<endl;
+	  cout<<"initial_max_target_size:"<<max_target_size<<",initial_min_target_size:"<<min_target_size<<",time_limit(per pattern):"<<time_limit<<flush<<endl;
 	  Options temp_options2;
 	  temp_options2.set<int>(
 	      "cost_type", NORMAL);

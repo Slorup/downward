@@ -22,6 +22,9 @@ ZeroOnePDBs::ZeroOnePDBs(TaskProxy task_proxy, const PatternCollection &patterns
     vector<int> operator_costs;
     OperatorsProxy operators = task_proxy.get_operators();
     operator_costs.reserve(operators.size());
+	
+	size_t costs_zeroed=0;
+
     for (OperatorProxy op : operators)
         operator_costs.push_back(op.get_cost());
     //cout<<"operator_costs.size:"<<operator_costs.size()<<flush<<endl;
@@ -46,10 +49,17 @@ ZeroOnePDBs::ZeroOnePDBs(TaskProxy task_proxy, const PatternCollection &patterns
         /* Set cost of relevant operators to 0 for further iterations
            (action cost partitioning). */
         for (OperatorProxy op : operators) {
-            if (pdb->is_operator_relevant(op))
-                operator_costs[op.get_id()] = 0;
+            if (pdb->is_operator_relevant(op)){
+			  if(operator_costs[op.get_id()]!=0){
+				costs_zeroed++;
+				operator_costs[op.get_id()] = 0;
+			  }
+			}
         }
-
+		if(costs_zeroed>(9*operators.size())/10){
+		  cout<<"all costs are zero, no more PDB generation"<<endl;
+		  break;
+		}
     }
 }
 
