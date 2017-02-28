@@ -1237,19 +1237,20 @@ namespace pdbs {
       
       bin_packing_reg_count++;
 	DEBUG_MSG(cout<<"Starting Rel_bin_packing, pdb_max_size:"<<pdb_max_size<<endl;);
+	cout<<"Starting Rel_bin_packing, pdb_max_size:"<<pdb_max_size<<flush<<endl;
 	
 	//if(pdb_factory->name().find("symbolic")!=string::npos){
 	  //std::default_random_engine generator;
 	  //std::normal_distribution<double> distribution((max_target_size+min_target_size)/2,(max_target_size-min_target_size)/2);
 	  //int temp=distribution(generator);
-	  int temp=rand()%(max_target_size-min_target_size+1);temp+=min_target_size;
+	int temp=rand()%(max_target_size-min_target_size+1);temp+=min_target_size;
 	  //pdb_max_size=pow(10,7);
 	  
 	  //Limited to between min_size and max_size
 	  pdb_max_size=9*pow(10,temp);
 	  pdb_max_size=min(pdb_max_size,pow(10,initial_max_target_size));
 	  pdb_max_size=max(pdb_max_size,pow(10,min_target_size));
-	  //cout<<"Rel_bin_packing,g_timer:"<<utils::g_timer<<",temp:,"<<temp<<",max_target_size:"<<max_target_size;
+	  cout<<"Rel_bin_packing,g_timer:"<<utils::g_timer<<",temp:,"<<temp<<",max_target_size:"<<max_target_size<<flush<<endl;
 	  //cout<<",min_target_size:"<<min_target_size<<",pdb_max_size:"<<pdb_max_size<<flush<<endl;
 	//}
 
@@ -1309,7 +1310,7 @@ namespace pdbs {
 			set_intersection(relevant_vars.begin(), relevant_vars.end(),
 				remaining_vars.begin(), remaining_vars.end(),
 				back_inserter(relevant_vars_in_remaining));
-			//cout<<"relevant vars in remaining:";for (auto item : relevant_vars_in_remaining) cout<<item<<",";cout<<endl;
+			cout<<"relevant vars in remaining:";for (auto item : relevant_vars_in_remaining) cout<<item<<",";cout<<flush<<endl;
 			g_rng()->shuffle(relevant_vars);
 			while(relevant_vars_in_remaining.size()>0){
 			  var_id=relevant_vars_in_remaining.back();
@@ -1321,7 +1322,7 @@ namespace pdbs {
 				pattern[var_id] = true;
 				remaining_vars.erase(var_id);
 				remaining_goal_vars.erase(var_id);
-				//cout<<"added to pattern var_id:"<<var_id<<",current_size:"<<current_size<<",pdb_max_size:"<<pdb_max_size<<",new_pattern:"<<candidate_pattern<<",remaining vars:"<<remaining_vars.size()<<endl;
+				cout<<"\t\tadded to pattern var_id:"<<var_id<<",current_size:"<<current_size<<",pdb_max_size:"<<pdb_max_size<<",new_pattern:"<<candidate_pattern<<",remaining vars:"<<remaining_vars.size()<<endl;
 				break;
 			  }
 			}
@@ -1333,7 +1334,7 @@ namespace pdbs {
 			  if(pattern_int.size()>0){
 			  pattern_collection.push_back(pattern);
 			  vector<int> trans_pattern=transform_to_pattern_normal_form(pattern_collection.back());
-			  //cout<<"added pattern["<<pattern_collection.size()-1<<"]:"<<trans_pattern<<",size:"<<get_pattern_size(trans_pattern)<<endl;
+			  cout<<"added pattern["<<pattern_collection.size()-1<<"]:"<<trans_pattern<<",size:"<<get_pattern_size(trans_pattern)<<flush<<endl;
 			  pattern_int.clear();
 			  pattern.clear();
 			  pattern.resize(variables.size(), false);
@@ -1364,11 +1365,11 @@ namespace pdbs {
 			}
 			remaining_vars.erase(var_id);
 			
-			//cout<<"first var for pattern:"<<var_id<<",remaining_goal_vars:";
-			//for(auto id : remaining_goal_vars) cout<<","<<id;
-			//cout<<",remaining_vars:";
-			//for(auto id : remaining_vars) cout<<","<<id;
-			//cout<<endl;
+			cout<<"\t\tfirst var for pattern:"<<var_id<<",remaining_goal_vars:"<<flush;
+			for(auto id : remaining_goal_vars) cout<<","<<id;
+			cout<<",remaining_vars:";
+			for(auto id : remaining_vars) cout<<","<<id;
+			cout<<endl;
 			
 			pattern[var_id]=true;
 			pattern_int.push_back(var_id);
@@ -2660,11 +2661,13 @@ namespace pdbs {
 	    cout<<"initial time_limit="<<time_limit<<endl;
 	  }
 	  else{
-		initial_max_target_size=max_target_size;
-		max_target_size=max_target_size/2.0;
+			initial_max_target_size=max_target_size;
+			if(max_target_size>10){//start with a cautious max_target_size for symbolic
+				max_target_size=max_target_size/2.0;
+			}
 	  }
 	  time_limit=pdb_factory->get_time_limit()/1000.0;
-	  min_target_size=4;
+	  min_target_size=min(max_target_size-2,4);
 	  pdb_max_size=2*pow(10,min_target_size);
 	  cout<<"initial_max_target_size:"<<max_target_size<<",initial_min_target_size:"<<min_target_size<<",time_limit(per pattern):"<<time_limit<<flush<<endl;
 	  Options temp_options2;

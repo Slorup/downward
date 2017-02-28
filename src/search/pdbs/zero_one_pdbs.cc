@@ -57,7 +57,7 @@ ZeroOnePDBs::ZeroOnePDBs(TaskProxy task_proxy, const PatternCollection &patterns
 			}
         }
 		if(costs_zeroed==operators.size()){
-		  DEBUG_MSG(cout<<"all costs are zero, no more PDB generation"<<endl);
+		  //DEBUG_MSG(cout<<"all costs are zero, no more PDB generation"<<endl);
 		  break;
 		}
     }
