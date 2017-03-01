@@ -2925,7 +2925,7 @@ void PatternCollectionGeneratorGeneticSS::bin_packing_no_rel_analysis() {
       	"true");
     parser.add_option<bool>("size_selection", 
 	"Whether to use size or time as fitness function",
-      	"true");
+      	"false");
     parser.add_option<string>("sampling_method", 
 	"Whether to use_SS (time prediction),use_avg_h(not complementary size prediction) or use_ipdb_walk (complementary size prediction) as a sampling method",
       	"use_SS");
