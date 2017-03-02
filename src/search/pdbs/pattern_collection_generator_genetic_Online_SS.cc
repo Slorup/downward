@@ -62,7 +62,8 @@ namespace pdbs {
 	size_selection(opts.get<bool>("size_selection")),
 	sampling_method(opts.get<string>("sampling_method")),
 	use_first_goal_vars(opts.get<bool>("use_first_goal_vars")),
-	use_norm_dist(opts.get<bool>("use_norm_dist")){
+	use_norm_dist(opts.get<bool>("use_norm_dist")),
+  use_online_domination_check(opts.get<bool>("use_online_domination_check")){
     
 	cout<<"hybrid_pdb_size:"<<hybrid_pdb_size<<endl;
 	cout<<"create_perimeter:"<<create_perimeter<<endl;
@@ -1681,7 +1682,7 @@ void PatternCollectionGeneratorGeneticSS::bin_packing_no_rel_analysis() {
 	    else if((i%episodes_to_mutate==0&&i>0)||bin_pack_next){
 	      bin_pack_next=false;
 	      DEBUG_MSG(cout<<"time to bin_pack"<<endl;);
-	      if(utils::g_timer()>time_to_clean_dom){
+	      if(utils::g_timer()>time_to_clean_dom&&use_online_domination_check){
 		    cout<<"time:"<<utils::g_timer()<<",time to clear dominated heuristics every 100 secs"<<endl;
 		    clear_dominated_heuristics();
 		    cout<<"time:"<<utils::g_timer()<<",finished clearing dominated heuristics every 100 secs"<<endl;
@@ -1796,7 +1797,9 @@ void PatternCollectionGeneratorGeneticSS::bin_packing_no_rel_analysis() {
 	       !pdb_factory->release_memory_below_limit_mb(memory_limit)){
 		avg_sampled_states=double(overall_sampled_states)/double(total_online_samples);
 		if (!recompute_max_additive_subsets) {
-		  clear_dominated_heuristics();
+			if(use_online_domination_check){
+				clear_dominated_heuristics();
+			}
 		}
 		//cout<<"final episode:,"<<current_episode<<",g_time:,"<<utils::g_timer()<<",genetic_SS_timer:"<<genetic_SS_timer<<",overall_pdb_gen_time:,"<<overall_pdb_gen_time<<",overall_pdb_helper_time:,"<<overall_pdb_helper_gen_time<<",online_samples:,"<<total_online_samples<<",overall_sampling_time:,"<<overall_online_samp_time<<",avg samp time:,"<<double(overall_online_samp_time)/double((total_online_samples == 0) ? 1 : total_online_samples)<<",overall_backward_sampling_time:,"<<overall_backward_sampling_timer<<",avg_sampled_states:,"<<avg_sampled_states<<endl;
 		cout<<"final episode:,"<<current_episode<<",time:,"<<utils::g_timer()<<",overall_pdb_gen_time:,"<<overall_pdb_gen_time<<",online_samples:,"<<total_online_samples<<",overall_sampling_time:,"<<overall_sampling_time<<",avg samp time:,"<<double(overall_sampling_time)/double((total_online_samples == 0) ? 1 : total_online_samples)<<",avg_sampled_states:,"<<avg_sampled_states<<",overall_probe_time:,"<<overall_probe_time<<",candidate_count:,"<<candidate_count<<",unique_samples.size:,"<<unique_samples.size()<<",best_heuristics count:,"<<best_pdb_collections.size()<<",overall_dominance_prunning_time:,"<<overall_dominance_prunning_time<<",bin_total_calls:"<<bin_total_calls<<",bin_reg_wins:"<<avg_reward_reg<<",bin_rel_wins:,"<<avg_reward_rel<<endl;
@@ -1818,12 +1821,13 @@ void PatternCollectionGeneratorGeneticSS::bin_packing_no_rel_analysis() {
 	    
 	DEBUG_MSG(cout<<"time:,"<<utils::g_timer()<<",finished with episodes"<<flush<<endl;);
 	
-	if (!recompute_max_additive_subsets) {
+	if (!recompute_max_additive_subsets&&use_online_domination_check){
 	  cout<<"starting clear_dominated,starting heurs"<<best_pdb_collections.size()<<endl;fflush(stdout);
 	  clear_dominated_heuristics();
 	  cout<<"finished clear_dominated,remaining heurs"<<best_pdb_collections.size()<<endl;fflush(stdout);
 	}
-    }
+		}
+
 
     double PatternCollectionGeneratorGeneticSS::probe_best_only(){
 	DEBUG_MSG(cout<<"calling probe_best_only,threshold:"<<threshold<<endl;fflush(stdout););
@@ -2665,7 +2669,7 @@ void PatternCollectionGeneratorGeneticSS::bin_packing_no_rel_analysis() {
 	  //if no symbolic, limiting max_target_size to 900 mill elements
 	  if(pdb_factory->name().find("symbolic")==string::npos){
 	    max_target_size=7;
-		initial_max_target_size=max_target_size;
+			initial_max_target_size=max_target_size;
 	    cout<<"initial time_limit="<<time_limit<<endl;
 	  }
 	  else{
@@ -2730,7 +2734,9 @@ void PatternCollectionGeneratorGeneticSS::bin_packing_no_rel_analysis() {
       
 
 	if(!recompute_max_additive_subsets){//need to recompute here, we are finished adding pdbs now
-	  clear_dominated_heuristics();
+		if(use_online_domination_check){
+			clear_dominated_heuristics();
+		}
 	  cout<<"final best_pdb_collections:"<<best_pdb_collections.size()<<endl;
 	  for (size_t collection=0; collection<best_pdb_collections.size();collection++){
 	    cout<<"\tcollection["<<collection<<"]"<<*best_pdb_collections[collection]<<endl;
@@ -2934,6 +2940,9 @@ void PatternCollectionGeneratorGeneticSS::bin_packing_no_rel_analysis() {
       	"false");
     parser.add_option<bool>("use_norm_dist", 
 	"Whether to select PDB size log as a normal or uniform distribution",
+      	"true");
+    parser.add_option<bool>("use_online_domination_check", 
+	"Whether to clear pattern collections if dominated for all sampled states",
       	"true");
 	Options opts = parser.parse();
 	if (parser.dry_run())

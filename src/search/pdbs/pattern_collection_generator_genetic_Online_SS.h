@@ -142,6 +142,7 @@ class PatternCollectionGeneratorGeneticSS : public PatternCollectionGenerator {
     bool use_ipdb_walk=false;
 		bool use_first_goal_vars=false;
 		bool use_norm_dist=true;
+		bool use_online_domination_check=true;
     float best_avg_h=0;
 
 
