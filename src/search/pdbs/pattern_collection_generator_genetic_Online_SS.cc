@@ -2668,7 +2668,7 @@ void PatternCollectionGeneratorGeneticSS::bin_packing_no_rel_analysis() {
 	  max_target_size = min(20.0,log10 (overall_problem_size));
 	  //if no symbolic, limiting max_target_size to 900 mill elements
 	  if(pdb_factory->name().find("symbolic")==string::npos){
-	    max_target_size=7;
+	    max_target_size=6;
 			initial_max_target_size=max_target_size;
 	    cout<<"initial time_limit="<<time_limit<<endl;
 	  }
