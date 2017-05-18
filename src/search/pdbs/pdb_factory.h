@@ -116,6 +116,17 @@ PDBFactory() : num_patterns_created(0), num_patterns_requested(0), num_patterns_
     virtual bool is_finished () const {
 	return false;
     }
+		//For explicit, to know if pattern is duplicated
+		//Note that currently, continue explicit generation is not implemented
+		virtual bool is_started_pattern (
+			   const Pattern &pattern, 
+				 const std::vector<int> &operator_costs) const {
+			auto item = stored_pdbs.find(PDBKey(pattern, operator_costs));
+			if (item != stored_pdbs.end()) {
+				return true;
+			}
+			return false;
+		}
 
     virtual symbolic::Bucket get_dead_ends() const {
 	return symbolic::Bucket();

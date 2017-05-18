@@ -512,6 +512,7 @@ void PatternCollectionGeneratorGeneticSS::evaluate(vector<double> &fitness_value
 		  continue;
 		  }*/
 
+
 		valid_pattern_counter++;
 		if(valid_pattern_counter%100==0){
 		  cout<<"time:"<<utils::g_timer()<<",valid_pattern_counter:"<<valid_pattern_counter<<endl;
@@ -539,6 +540,10 @@ void PatternCollectionGeneratorGeneticSS::evaluate(vector<double> &fitness_value
 		    break;
 		}
 		ZeroOnePDBs candidate (task_proxy, pattern_collection, *pdb_factory);
+		
+		//Only add new pdbs to candidate count
+		candidate_count+=candidate.get_new_pdbs();
+		
 		if(genetic_SS_timer->is_expired()||
 		   !pdb_factory->release_memory_below_limit_mb(memory_limit)) {
 		    cout<<"breaking-1 out of GA Algortihm, current gen_time:"<<genetic_SS_timer<<" bigger than time_limit:"<<genetic_time_limit<<endl;
@@ -550,7 +555,7 @@ void PatternCollectionGeneratorGeneticSS::evaluate(vector<double> &fitness_value
 	  	  max_gen_size=overall_pdb_size;
 		}
 		if(current_episode%100==0){
-		  cout<<"generated candidate[,"<<candidate_count+1<<",],time:,"<<utils::g_timer()<<",size:,"<<overall_pdb_size<<",generation_time:,"<<pdb_gen_time<<",episode:,"<<current_episode<<",finished:,"<<pdb_factory->is_finished()<<",bin_packed:,"<<bin_packed_episode<<",Peak Memory:"<<utils::get_peak_memory_in_kb()<<",current_memory:"<<utils::get_current_memory_in_kb()<<flush<<endl;
+		  cout<<"episode[,"<<current_episode<<",],generated_candidate,time:,"<<utils::g_timer()<<",size:,"<<overall_pdb_size<<",generation_time:,"<<pdb_gen_time<<",episode:,"<<current_episode<<",finished:,"<<pdb_factory->is_finished()<<",bin_packed:,"<<bin_packed_episode<<",Peak Memory:"<<utils::get_peak_memory_in_kb()<<",current_memory:"<<utils::get_current_memory_in_kb()<<",bin_rel_calls:"<<bin_rel_calls<<",bin_reg_calls:"<<bin_reg_calls<<",candidate_count:"<<candidate_count+1<<endl;
 		}
 
 		if(pdb_gen_time>100.0*time_limit){
@@ -577,7 +582,11 @@ void PatternCollectionGeneratorGeneticSS::evaluate(vector<double> &fitness_value
 		    problem_solved_while_pdb_gen=true;
 		    cout<<"Solution found while generating PDB candidate of type:"<<pdb_factory->name()<<", adding PDB and exiting generation at time"<<utils::g_timer()<<endl;
 
-		    cout<<"final episode:,"<<current_episode<<",time:,"<<utils::g_timer()<<",overall_pdb_gen_time:,"<<overall_pdb_gen_time<<",online_samples:,"<<total_online_samples<<",overall_sampling_time:,"<<overall_sampling_time<<",avg samp time:,"<<double(overall_sampling_time)/double((total_online_samples == 0) ? 1 : total_online_samples)<<",avg_sampled_states:,"<<avg_sampled_states<<",overall_probe_time:,"<<overall_probe_time<<",candidate_count:,"<<candidate_count<<",unique_samples.size:,"<<unique_samples.size()<<",best_heuristics count:,"<<best_pdb_collections.size()<<",overall_dominance_prunning_time:,"<<overall_dominance_prunning_time<<endl;
+				size_t best_pdbs_count=0;
+				for (size_t collection=0; collection<best_pdb_collections.size();collection++){
+					best_pdbs_count+=best_pdb_collections[collection]->size();
+				}
+		    cout<<"final episode:,"<<current_episode<<",time:,"<<utils::g_timer()<<",overall_pdb_gen_time:,"<<overall_pdb_gen_time<<",online_samples:,"<<total_online_samples<<",overall_sampling_time:,"<<overall_sampling_time<<",avg samp time:,"<<double(overall_sampling_time)/double((total_online_samples == 0) ? 1 : total_online_samples)<<",avg_sampled_states:,"<<avg_sampled_states<<",overall_probe_time:,"<<overall_probe_time<<",candidate_count:,"<<candidate_count<<",unique_samples.size:,"<<unique_samples.size()<<",best_heuristics count:,"<<best_pdbs_count<<",overall_dominance_prunning_time:,"<<overall_dominance_prunning_time<<endl;
 		    best_pdb_added=true;
 		    float start_time_dom=utils::g_timer();
 		    if(recompute_max_additive_subsets){
@@ -592,7 +601,7 @@ void PatternCollectionGeneratorGeneticSS::evaluate(vector<double> &fitness_value
 		    best_pdb_collections.push_back(pdb_factory->terminate_creation(candidate.get_pattern_databases()));
 		    return;
 		}
-		candidate_count++;
+		//candidate_count++;
 		//ZeroOnePDBs candidate_explicit(task_proxy, *pattern_collection, *pdb_type_explicit );
 		//cout<<"ZeroOnePDBs candidate_explicit has type:"<<pdb_type_explicit->name()<<endl;
 		overall_pdb_gen_time+=utils::g_timer()-temp;
@@ -713,7 +722,7 @@ void PatternCollectionGeneratorGeneticSS::evaluate(vector<double> &fitness_value
     
 		//double probes_start_timer=utils::g_timer();
 		//double avg_probe_deviation=0;
-		//double avg_probe_result=0;
+		//double vg_probe_result=0;
 
 		const State &initial_state = task_proxy.get_initial_state();
 		//DEBUG_MSG(cout<<"\tcurrent_episode:"<<current_episode<<",pdb_max_size:"<<pdb_max_size<<",candidate initial h:"<<candidate.get_value(initial_state)<<endl;fflush(stdout););
@@ -1618,7 +1627,12 @@ void PatternCollectionGeneratorGeneticSS::bin_packing_no_rel_analysis() {
 	    problem_solved_while_pdb_gen=true;
 	    cout<<"Solution found while generating Perimeter PDB candidate of type:"<<pdb_factory->name()<<", adding PDB and exiting generation at time"<<utils::g_timer()<<endl;
 
-	    cout<<"final episode:,"<<current_episode<<",time:,"<<utils::g_timer()<<",overall_pdb_gen_time:,"<<overall_pdb_gen_time<<",online_samples:,"<<total_online_samples<<",overall_sampling_time:,"<<overall_sampling_time<<",avg samp time:,"<<double(overall_sampling_time)/double((total_online_samples == 0) ? 1 : total_online_samples)<<",avg_sampled_states:,"<<avg_sampled_states<<",overall_probe_time:,"<<overall_probe_time<<",candidate_count:,"<<candidate_count<<",unique_samples.size:,"<<unique_samples.size()<<",best_heuristics count:,"<<best_pdb_collections.size()<<",overall_dominance_prunning_time:,"<<overall_dominance_prunning_time<<",bin_pack_reg_count:,"<<bin_packing_reg_count<<",bin_packing_rel_count:"<<bin_packing_rel_count<<endl;
+			size_t best_pdbs_count=0;
+			for (size_t collection=0; collection<best_pdb_collections.size();collection++){
+				best_pdbs_count+=best_pdb_collections[collection]->size();
+			}
+
+	    cout<<"final episode:,"<<current_episode<<",time:,"<<utils::g_timer()<<",overall_pdb_gen_time:,"<<overall_pdb_gen_time<<",online_samples:,"<<total_online_samples<<",overall_sampling_time:,"<<overall_sampling_time<<",avg samp time:,"<<double(overall_sampling_time)/double((total_online_samples == 0) ? 1 : total_online_samples)<<",avg_sampled_states:,"<<avg_sampled_states<<",overall_probe_time:,"<<overall_probe_time<<",candidate_count:,"<<candidate_count<<",unique_samples.size:,"<<unique_samples.size()<<",best_heuristics count:,"<<best_pdbs_count<<",overall_dominance_prunning_time:,"<<overall_dominance_prunning_time<<",bin_pack_reg_count:,"<<bin_packing_reg_count<<",bin_packing_rel_count:"<<bin_packing_rel_count<<endl;
 	    best_pdb_added=true;
 	    float start_time_dom=utils::g_timer();
 	    if(recompute_max_additive_subsets){
@@ -1668,17 +1682,17 @@ void PatternCollectionGeneratorGeneticSS::bin_packing_no_rel_analysis() {
 	    }
 	    if(genetic_SS_timer->is_expired()){
 		//cout<<"breaking-3 out of GA Algortihm, current gen time:"<<timer()<<" bigger than time_limit:"<<time_limit<<endl;
-		avg_sampled_states=double(overall_sampled_states)/double(total_online_samples);
+				avg_sampled_states=double(overall_sampled_states)/double(total_online_samples);
 		//cout<<"final episode:,"<<current_episode<<",time:,"<<utils::g_timer()<<",overall_pdb_gen_time:,"<<overall_pdb_gen_time<<",overall_pdb_helper_time:,"<<overall_pdb_helper_gen_time<<",online_samples:,"<<total_online_samples<<",overall_sampling_time:,"<<overall_online_samp_time<<",avg samp time:,"<<double(overall_online_samp_time)/double((total_online_samples == 0) ? 1 : total_online_samples)<<",avg_sampled_states:,"<<avg_sampled_states<<",overall_probe_time:"<<overall_probe_time<<endl;
-		cout<<"final episode:,"<<current_episode<<",time:,"<<utils::g_timer()<<",overall_pdb_gen_time:,"<<overall_pdb_gen_time<<",online_samples:,"<<total_online_samples<<",overall_sampling_time:,"<<overall_sampling_time<<",avg samp time:,"<<double(overall_sampling_time)/double((total_online_samples == 0) ? 1 : total_online_samples)<<",avg_sampled_states:,"<<avg_sampled_states<<",overall_probe_time:,"<<overall_probe_time<<",candidate_count:,"<<candidate_count<<",unique_samples.size:,"<<unique_samples.size()<<",best_heuristics count:,"<<best_pdb_collections.size()<<",overall_dominance_prunning_time:,"<<overall_dominance_prunning_time<<endl;
-		cout<<"Peak memory:"<<utils::get_peak_memory_in_kb()<<endl;fflush(stdout);
-		std::shared_ptr<PDBCollection> best_pdb_collections_print=result->get_pdbs();
-		int counter=0;
-		for(auto pdb : *best_pdb_collections_print){
-		    cout<<"final_pdb["<<counter<<"]:"<<*pdb<<endl;
-		    counter++;
-		}
-	    }
+				cout<<"final episode:,"<<current_episode<<",time:,"<<utils::g_timer()<<",overall_pdb_gen_time:,"<<overall_pdb_gen_time<<",online_samples:,"<<total_online_samples<<",overall_sampling_time:,"<<overall_sampling_time<<",avg samp time:,"<<double(overall_sampling_time)/double((total_online_samples == 0) ? 1 : total_online_samples)<<",avg_sampled_states:,"<<avg_sampled_states<<",overall_probe_time:,"<<overall_probe_time<<",candidate_count:,"<<candidate_count<<",unique_samples.size:,"<<unique_samples.size()<<",best_heuristics count:,"<<best_pdb_collections.size()<<",overall_dominance_prunning_time:,"<<overall_dominance_prunning_time<<endl;
+				cout<<"Peak memory:"<<utils::get_peak_memory_in_kb()<<endl;fflush(stdout);
+				std::shared_ptr<PDBCollection> best_pdb_collections_print=result->get_pdbs();
+				int counter=0;
+				for(auto pdb : *best_pdb_collections_print){
+					cout<<"final_pdb["<<counter<<"]:"<<*pdb<<endl;
+					counter++;
+				}
+			}
 	    else if((i%episodes_to_mutate==0&&i>0)||bin_pack_next){
 	      bin_pack_next=false;
 	      DEBUG_MSG(cout<<"time to bin_pack"<<endl;);
@@ -1688,69 +1702,69 @@ void PatternCollectionGeneratorGeneticSS::bin_packing_no_rel_analysis() {
 		    cout<<"time:"<<utils::g_timer()<<",finished clearing dominated heuristics every 100 secs"<<endl;
 		    time_to_clean_dom+=100;
 		    episodes_to_mutate=1;
-		}
-		disjoint_patterns=!disjoint_patterns;
-		num_collections=1;
+				}
+				disjoint_patterns=!disjoint_patterns;
+				num_collections=1;
 		 
 	        if(rel_analysis_only==true){
                     bin_packing();
-		}
-                else if(reg_bin_pack_only==true){
-	            bin_packing_no_rel_analysis();
-                }
-                else{//doing mixed bin_packing
-		  if(use_ucb){
-		    //cout<<"use_ucb"<<endl;
-		    bin_reg_packed=false;
-		    bin_rel_packed=false;
-		    reward_bin_rel=(avg_reward_rel/bin_rel_calls)+sqrt(2*log(bin_rel_calls)/bin_total_calls);
-		    reward_bin_reg=(avg_reward_reg/bin_reg_calls)+sqrt(2*log(bin_reg_calls)/bin_total_calls);
-		    if(reward_bin_rel>reward_bin_reg){
-		      //cout<<"using rel_bin_pack, reward_bin_rel="<<reward_bin_rel<<",reward_bin_reg:"<<reward_bin_reg;
+					}
+					else if(reg_bin_pack_only==true){
+					 	bin_packing_no_rel_analysis();
+					}
+					else{//doing mixed bin_packing
+					if(use_ucb){
+					//cout<<"use_ucb"<<endl;
+					bin_reg_packed=false;
+					bin_rel_packed=false;
+					reward_bin_rel=(avg_reward_rel/bin_rel_calls)+sqrt(2*log(bin_rel_calls)/bin_total_calls);
+					reward_bin_reg=(avg_reward_reg/bin_reg_calls)+sqrt(2*log(bin_reg_calls)/bin_total_calls);
+					if(reward_bin_rel>reward_bin_reg){
+						//cout<<"using rel_bin_pack, reward_bin_rel="<<reward_bin_rel<<",reward_bin_reg:"<<reward_bin_reg;
+						//cout<<",bin_total_calls:"<<bin_total_calls<<",bin_reg_calls:"<<bin_reg_calls<<",bin_rel_calls:"<<bin_rel_calls<<endl;
+						bin_rel_calls++;
+						bin_packing();
+						bin_rel_packed=true;
+					}
+					else if(reward_bin_rel<reward_bin_reg){
+						//cout<<"using reg_bin_pack, reward_bin_rel="<<reward_bin_rel<<",reward_bin_reg:"<<reward_bin_reg;
+						//cout<<",bin_total_calls:"<<bin_total_calls<<",bin_reg_calls:"<<bin_reg_calls<<",bin_rel_calls:"<<bin_rel_calls<<endl;
+						bin_reg_calls++;
+					bin_packing_no_rel_analysis();
+					bin_reg_packed=true;
+					}
+					else if(rand()%2>0){ 
+						//cout<<"using random rel_bin_pack, reward_bin_rel="<<reward_bin_rel<<"==reward_bin_reg:"<<reward_bin_reg;
 		      //cout<<",bin_total_calls:"<<bin_total_calls<<",bin_reg_calls:"<<bin_reg_calls<<",bin_rel_calls:"<<bin_rel_calls<<endl;
 		      bin_rel_calls++;
 		      bin_packing();
-		      bin_rel_packed=true;
-		    }
-		    else if(reward_bin_rel<reward_bin_reg){
-		      //cout<<"using reg_bin_pack, reward_bin_rel="<<reward_bin_rel<<",reward_bin_reg:"<<reward_bin_reg;
-		      //cout<<",bin_total_calls:"<<bin_total_calls<<",bin_reg_calls:"<<bin_reg_calls<<",bin_rel_calls:"<<bin_rel_calls<<endl;
-		      bin_reg_calls++;
-		    bin_packing_no_rel_analysis();
-		    bin_reg_packed=true;
-		    }
-		    else if(rand()%2>0){ 
-		      //cout<<"using random rel_bin_pack, reward_bin_rel="<<reward_bin_rel<<"==reward_bin_reg:"<<reward_bin_reg;
-		      //cout<<",bin_total_calls:"<<bin_total_calls<<",bin_reg_calls:"<<bin_reg_calls<<",bin_rel_calls:"<<bin_rel_calls<<endl;
-		      bin_rel_calls++;
-		      bin_packing();
-		    }
-		    else{
-		      //cout<<"using random reg_bin_pack, reward_bin_rel="<<reward_bin_rel<<"==reward_bin_reg:"<<reward_bin_reg<<endl;
-		      //cout<<",bin_total_calls:"<<bin_total_calls<<",bin_reg_calls:"<<bin_reg_calls<<",bin_rel_calls:"<<bin_rel_calls<<endl;
-		      bin_reg_calls++;
-		      bin_packing_no_rel_analysis();
-		    }
-		  }
-		  else if(rand()%2>0){ 
-		    //cout<<"using random rel_bin_pack, reward_bin_rel="<<reward_bin_rel<<"==reward_bin_reg:"<<reward_bin_reg;
-		    //cout<<",bin_total_calls:"<<bin_total_calls<<",bin_reg_calls:"<<bin_reg_calls<<",bin_rel_calls:"<<bin_rel_calls<<endl;
-		    bin_rel_calls++;
-		    bin_packing();
-		  }
-		  else{
+					}
+					else{
+						//cout<<"using random reg_bin_pack, reward_bin_rel="<<reward_bin_rel<<"==reward_bin_reg:"<<reward_bin_reg<<endl;
+						//cout<<",bin_total_calls:"<<bin_total_calls<<",bin_reg_calls:"<<bin_reg_calls<<",bin_rel_calls:"<<bin_rel_calls<<endl;
+						bin_reg_calls++;
+						bin_packing_no_rel_analysis();
+					}
+					}
+					else if(rand()%2>0){ 
+						//cout<<"using random rel_bin_pack, reward_bin_rel="<<reward_bin_rel<<"==reward_bin_reg:"<<reward_bin_reg;
+					//cout<<",bin_total_calls:"<<bin_total_calls<<",bin_reg_calls:"<<bin_reg_calls<<",bin_rel_calls:"<<bin_rel_calls<<endl;
+					bin_rel_calls++;
+					bin_packing();
+				}
+				else{
 		    //cout<<"using random reg_bin_pack, reward_bin_rel="<<reward_bin_rel<<"==reward_bin_reg:"<<reward_bin_reg<<endl;
 		    //cout<<",bin_total_calls:"<<bin_total_calls<<",bin_reg_calls:"<<bin_reg_calls<<",bin_rel_calls:"<<bin_rel_calls<<endl;
-		    bin_reg_calls++;
-		    bin_packing_no_rel_analysis();
-		  }
-		}
+					bin_reg_calls++;
+					bin_packing_no_rel_analysis();
+				}
+			}
 		bin_total_calls++;
 
 		bin_packed_episode=true;
 		mutation_probability=((double) rand() / (RAND_MAX))/10.0;
 		//cout<<"bin_packed_episode:"<<current_episode<<",mutation_probability:"<<mutation_probability<<endl;
-	    }
+			}
 	    else{
 	      //cout<<"calling mutate2, current_episode:"<<i<<endl;
 		int mutations=mutate2();

@@ -33,6 +33,8 @@ public:
     } 
     void set_fitness(float fitness_) {fitness=fitness_;};
     float get_fitness() const {return fitness;};
+		size_t new_pdbs=0;
+		size_t get_new_pdbs(){return new_pdbs;};
 };
 }
 

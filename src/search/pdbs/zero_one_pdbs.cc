@@ -19,6 +19,14 @@ ZeroOnePDBs::ZeroOnePDBs(TaskProxy task_proxy, const PatternCollection &patterns
 			 PDBFactory & pdb_factory) {
   //cout<<"ZeroOne calling time:"<<utils::g_timer()<<flush<<endl;
   //float before_op_time=utils::g_timer();
+		    
+	/*int counter=0;
+	for (auto pattern :patterns){ 
+		counter++;
+		cout<<"\tzero_one_pattern["<<counter<<"]:"<<patterns[i]<<endl;
+	}
+	*/
+
     vector<int> operator_costs;
     OperatorsProxy operators = task_proxy.get_operators();
     operator_costs.reserve(operators.size());
@@ -33,6 +41,10 @@ ZeroOnePDBs::ZeroOnePDBs(TaskProxy task_proxy, const PatternCollection &patterns
     pattern_databases.reserve(patterns.size());
     for (const Pattern &pattern : patterns) {
 	if(pattern.empty()) continue;
+		if(!pdb_factory.is_started_pattern(pattern, operator_costs)){
+			new_pdbs++;
+		}
+			
 	//float start_gen_time=utils::g_timer();
 	//cout<<"start_gen_time:"<<start_gen_time<<endl;
 	//cout<<"\tcreating pdb with pattern:"<<pattern<<flush<<endl;
@@ -61,6 +73,7 @@ ZeroOnePDBs::ZeroOnePDBs(TaskProxy task_proxy, const PatternCollection &patterns
 		  break;
 		}
     }
+		//DEBUG_MSG(cout<<"\t new pdbs:"<<new_pdbs<<endl);
 }
 
 
