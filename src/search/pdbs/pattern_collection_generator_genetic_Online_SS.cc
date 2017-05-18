@@ -554,7 +554,7 @@ void PatternCollectionGeneratorGeneticSS::evaluate(vector<double> &fitness_value
 		  max_gen_time=utils::g_timer()-temp;
 	  	  max_gen_size=overall_pdb_size;
 		}
-		if(current_episode%100==0){
+		if(current_episode%1000==0){
 		  cout<<"episode[,"<<current_episode<<",],generated_candidate,time:,"<<utils::g_timer()<<",size:,"<<overall_pdb_size<<",generation_time:,"<<pdb_gen_time<<",episode:,"<<current_episode<<",finished:,"<<pdb_factory->is_finished()<<",bin_packed:,"<<bin_packed_episode<<",Peak Memory:"<<utils::get_peak_memory_in_kb()<<",current_memory:"<<utils::get_current_memory_in_kb()<<",bin_rel_calls:"<<bin_rel_calls<<",bin_reg_calls:"<<bin_reg_calls<<",candidate_count:"<<candidate_count+1<<endl;
 		}
 
@@ -2687,6 +2687,8 @@ void PatternCollectionGeneratorGeneticSS::bin_packing_no_rel_analysis() {
 	    cout<<"initial time_limit="<<time_limit<<endl;
 	  }
 	  else{
+			//DOING EXPERIMENTS FOR SYMBOLIC WITH FIXED MAX TARGET SIZE
+	    max_target_size=4;
 			initial_max_target_size=max_target_size;
 			if(max_target_size>10){//start with a cautious max_target_size for symbolic
 				max_target_size=max_target_size/2.0;
