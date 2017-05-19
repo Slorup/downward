@@ -1663,6 +1663,7 @@ void PatternCollectionGeneratorGeneticSS::bin_packing_no_rel_analysis() {
 	    cout<<"bin_packing regular only"<<endl;
 	  }
 	  else{//doing mixed bin_packing
+			max_target_size=8;
 	    cout<<"bin_packing, mixed regular and rel_analysis"<<endl;
 	    if(rand()%2>0){ 
 	      bin_packing();
