@@ -2688,7 +2688,7 @@ void PatternCollectionGeneratorGeneticSS::bin_packing_no_rel_analysis() {
 	  }
 	  else{
 			//DOING EXPERIMENTS FOR SYMBOLIC WITH FIXED MAX TARGET SIZE
-	    max_target_size=6;
+	    max_target_size=7;
 			initial_max_target_size=max_target_size;
 			if(max_target_size>10){//start with a cautious max_target_size for symbolic
 				max_target_size=max_target_size/2.0;
