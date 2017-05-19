@@ -1663,7 +1663,6 @@ void PatternCollectionGeneratorGeneticSS::bin_packing_no_rel_analysis() {
 	    cout<<"bin_packing regular only"<<endl;
 	  }
 	  else{//doing mixed bin_packing
-			max_target_size=8;
 	    cout<<"bin_packing, mixed regular and rel_analysis"<<endl;
 	    if(rand()%2>0){ 
 	      bin_packing();
@@ -2683,13 +2682,13 @@ void PatternCollectionGeneratorGeneticSS::bin_packing_no_rel_analysis() {
 	  max_target_size = min(20.0,log10 (overall_problem_size));
 	  //if no symbolic, limiting max_target_size to 900 mill elements
 	  if(pdb_factory->name().find("symbolic")==string::npos){
-	    max_target_size=6;
+	    max_target_size=8;
 			initial_max_target_size=max_target_size;
 	    cout<<"initial time_limit="<<time_limit<<endl;
 	  }
 	  else{
 			//DOING EXPERIMENTS FOR SYMBOLIC WITH FIXED MAX TARGET SIZE
-	    max_target_size=7;
+	    max_target_size=8;
 			initial_max_target_size=max_target_size;
 			if(max_target_size>10){//start with a cautious max_target_size for symbolic
 				max_target_size=max_target_size/2.0;
