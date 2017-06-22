@@ -477,7 +477,8 @@ fast_downward_plugin(
         pdbs/pattern_database_symbolic_online.cc
         pdbs/pattern_collection_generator_combo.cc
         pdbs/pattern_collection_generator_genetic.cc
-        pdbs/pattern_collection_generator_genetic_Online_SS.cc
+#pdbs/pattern_collection_generator_genetic_Online_SS.cc
+        pdbs/pattern_collection_generator_complementary.cc
         pdbs/pattern_collection_generator_hillclimbing.cc
         pdbs/pattern_collection_generator_manual.cc
         pdbs/pattern_collection_generator_manual_multiple.cc
