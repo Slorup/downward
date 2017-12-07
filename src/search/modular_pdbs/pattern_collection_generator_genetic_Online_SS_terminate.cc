@@ -30,14 +30,12 @@
 #include "pattern_database_interface.h"
 #include "../utils/debug_macros.h"
 #include <random>
-#include "../sampling.h"
-#include "../task_tools.h"
 
 
     
 using namespace std;
 
-namespace pdbs {
+namespace pdbs3 {
     PatternCollectionGeneratorGeneticSS::PatternCollectionGeneratorGeneticSS(
 	const Options &opts)
 	: pdb_factory (opts.get<shared_ptr<PDBFactory>>("pdb_factory")),
@@ -48,65 +46,18 @@ namespace pdbs {
 	  mutation_probability(opts.get<double>("mutation_probability")),
 	  disjoint_patterns(opts.get<bool>("disjoint")), 
 	  hybrid_pdb_size(opts.get<bool>("hybrid_pdb_size")),
-	  time_limit(opts.get<double>("time_limit")),
+	  time_limit(opts.get<int>("time_limit")),
 	  genetic_time_limit(opts.get<int>("genetic_time_limit")),
 	  create_perimeter(opts.get<bool>("create_perimeter")), 
 	  perimeter_time_ms(opts.get<int>("perimeter_time_ms")),
 	perimeter_step_time_ms(opts.get<int>("perimeter_step_time_ms")),
-	perimeter_nodes(opts.get<int>("perimeter_nodes")),
-	reg_bin_pack_only(opts.get<bool>("reg_bin_pack_only")),
-	rel_analysis_only(opts.get<bool>("rel_analysis_only")),
-	single_pattern_only(opts.get<bool>("single_pattern_only")),
-	use_lmcut(opts.get<bool>("use_lmcut")),
-	use_ucb(opts.get<bool>("use_ucb")) ,
-	size_selection(opts.get<bool>("size_selection")),
-	sampling_method(opts.get<string>("sampling_method")),
-	use_first_goal_vars(opts.get<bool>("use_first_goal_vars")),
-	use_norm_dist(opts.get<bool>("use_norm_dist")),
-  use_online_domination_check(opts.get<bool>("use_online_domination_check")){
-    
+	perimeter_nodes(opts.get<int>("perimeter_nodes")) {
+	
 	cout<<"hybrid_pdb_size:"<<hybrid_pdb_size<<endl;
 	cout<<"create_perimeter:"<<create_perimeter<<endl;
-	cout<<"initial pdb type:"<<pdb_factory->name()<<endl;
-	cout<<"initial time_limit per pdb:"<<time_limit<<endl;
-	cout<<"reg_bin_pack_only:"<<reg_bin_pack_only<<endl;
-	cout<<"rel_analysis_only:"<<rel_analysis_only<<endl;
-	cout<<"single_pattern_only:"<<single_pattern_only<<endl;
-	cout<<"use_ucb:"<<use_ucb<<endl;
-	cout<<"size_selection:"<<size_selection<<endl;
-	cout<<"sampling_method:"<<sampling_method<<endl;
-	if(use_norm_dist){
-		cout<<"using normal distribution to choose size logs"<<endl;
-	}
-	else{
-		cout<<"using uniform distribution to choose size logs"<<endl;
-	}
+	cout<<"pdb type:"<<pdb_factory->name()<<endl;
 	num_collections=1;
 	result=make_shared<PatternCollectionInformation>(task, make_shared<PatternCollection>());
-	
-	//Should do a switch here, in a hurry as usual!
-	if(sampling_method.find("use_avg_h")!=string::npos){
-	  use_avg_h_value=true;
-	  use_ipdb_walk=false;
-	  use_SS_fitness=false;
-	}
-	else if(sampling_method.find("use_ipdb_walk")!=string::npos){
-	  use_ipdb_walk=true;
-	  use_SS_fitness=false;
-	  use_avg_h_value=false;
-	}
-	else if(sampling_method.find("use_SS")!=string::npos){
-	  use_ipdb_walk=true;
-	  use_SS_fitness=false;
-	  use_ipdb_walk=false;
-	}
-	else{
-	  use_SS_fitness=true;
-	  use_ipdb_walk=false;
-	  use_avg_h_value=false;
-	}
-	cout<<"sampling method,SS:"<<use_SS_fitness<<",ipdb_walk:"<<use_ipdb_walk<<",avg_h:"<<use_avg_h_value<<endl;
-
        
 	if(recompute_max_additive_subsets)
 	  cout<<"recompute_max_additive_subsets is on"<<endl;
@@ -304,7 +255,8 @@ namespace pdbs {
 	sort(pattern.begin(), pattern.end());
     }
 
-    bool PatternCollectionGeneratorGeneticSS::is_pattern_too_large(const Pattern &pattern) const {
+    bool PatternCollectionGeneratorGeneticSS::is_pattern_too_large(
+	const Pattern &pattern) const {
 	// Test if the pattern respects the memory limit.
 	TaskProxy task_proxy(*task);
 	VariablesProxy variables = task_proxy.get_variables();
@@ -330,7 +282,7 @@ namespace pdbs {
 	return false;
     }
 
-void PatternCollectionGeneratorGeneticSS::evaluate(vector<double> &fitness_values) {
+    void PatternCollectionGeneratorGeneticSS::evaluate(vector<double> &fitness_values) {
 	//static int last_count=best_heuristic.count_zero_one_pdbs();
 	//static int last_sampled_best_heurs_count=0;
 	//static double last_time_better_heur_found=0;
@@ -378,31 +330,24 @@ void PatternCollectionGeneratorGeneticSS::evaluate(vector<double> &fitness_value
     }
     else{//so symbolic*/
       //pdb_max_size=numeric_limits<double>::max();
-	if(!last_sampler_too_big){
-	  if(valid_pattern_counter!=0&&valid_pattern_counter%10==0&&valid_pattern_counter>last_valid_pattern_counter&&(!size_targets_fixed)){
+      if(!last_sampler_too_big){
+	if(valid_pattern_counter!=0&&valid_pattern_counter%25==0&&valid_pattern_counter>last_valid_pattern_counter){
+	if(pdb_factory->name().find("symbolic")!=string::npos){
 	    min_target_size++;
-	    int new_min_target_size=min_target_size;
 	    //In case max_target_size was making generation times too big
 	    if(max_target_size<initial_max_target_size){
 	      max_target_size++;
-	      cout<<"g_timer:"<<utils::g_timer<<",max_target_size raised back to:"<<max_target_size<<",initial_max_target_size:"<<initial_max_target_size<<endl;
 	      bin_pack_next=true;
 	    }
-	    if(pdb_factory->name().find("symbolic")!=string::npos){
-	      min_target_size=min(min_target_size,max_target_size-3);//We want a minimum spread between max_target_size and min_target_size
-	    }
-	    else{
-	      min_target_size=min(min_target_size,max_target_size-2);//We want a minimum spread between max_target_size and min_target_size
-	    }
+	    min_target_size=min(min_target_size,max_target_size-3);//We want a minimum spread between max_target_size and min_target_size
 	    max_target_size=max(max_target_size,min_target_size);
-	    if(new_min_target_size==min_target_size){
-	      cout<<"time:"<<utils::g_timer<<",current_episode:"<<current_episode<<",increased min_target_size to:,"<<min_target_size<<",max_size:,"<<max_target_size<<endl;
-	    }
-	  //else{
-	  //  pdb_max_size*=10;
-	  //  min_size=pdb_max_size/1000;
-	  //  cout<<"time:"<<utils::g_timer<<",current_episode:"<<current_episode<<",pdb_max_size raised to:,"<<pdb_max_size<<",min_size:,"<<min_size<<endl;
-	  //}
+	    cout<<"time:"<<utils::g_timer<<",current_episode:"<<current_episode<<",min_target_size raised to:,"<<min_target_size<<",max_size:,"<<max_target_size<<endl;
+	  }
+	  else{
+	    pdb_max_size*=10;
+	    min_size=pdb_max_size/1000;
+	    cout<<"time:"<<utils::g_timer<<",current_episode:"<<current_episode<<",pdb_max_size raised to:,"<<pdb_max_size<<",min_size:,"<<min_size<<endl;
+	  }
 	  last_valid_pattern_counter=valid_pattern_counter;
 	}
       }
@@ -417,10 +362,10 @@ void PatternCollectionGeneratorGeneticSS::evaluate(vector<double> &fitness_value
       //Giving hard limit if pdb is not symbolic so we do not blow up memomry
       //100 million elements seems high enough while safe
 	
-      //if(pdb_factory->name().find("symbolic")==string::npos){
-	//  pdb_max_size=min(pow(10.0,8),pdb_max_size);
-	  //min_size=min(pdb_max_size/100,min_size);//in case current_episode<100
-      //}
+      if(pdb_factory->name().find("symbolic")==string::npos){
+	  pdb_max_size=min(pow(10.0,8),pdb_max_size);
+	  min_size=min(pdb_max_size/100,min_size);//in case current_episode<100
+      }
       min_size=max(min_size,1.0);//no empty patterns!
 	  //pdb_max_size=pow(10.0,8);
 	  //min_size=pow(10.0,6);
@@ -512,14 +457,12 @@ void PatternCollectionGeneratorGeneticSS::evaluate(vector<double> &fitness_value
 		  continue;
 		  }*/
 
-
 		valid_pattern_counter++;
 		if(valid_pattern_counter%100==0){
 		  cout<<"time:"<<utils::g_timer()<<",valid_pattern_counter:"<<valid_pattern_counter<<endl;
 		}
 		DEBUG_MSG(cout<<"pattern valid!,SS evaluating:"<<endl;);
-		if(genetic_SS_timer->is_expired()||
-		   !pdb_factory->release_memory_below_limit_mb(memory_limit)) {
+		if(genetic_SS_timer->is_expired()||(double(utils::get_peak_memory_in_kb())/1024.0>memory_limit)){
 		    if(double(utils::get_current_memory_in_kb())/1024.0>memory_limit){
 			cout<<"No more PDB generation, Current memory above 2 GB max:"<<utils::get_current_memory_in_kb()/1024.0<<endl;
 		    }
@@ -535,58 +478,26 @@ void PatternCollectionGeneratorGeneticSS::evaluate(vector<double> &fitness_value
 		double temp=utils::g_timer();
 		//cout<<"pattern_collection:"<<*pattern_collection<<endl;fflush(stdout);
 
-		if(utils::g_timer()>genetic_time_limit+avg_pdb_gen_time){//in case PDBs are getting very big, we want to get out before generating next pdb
-		    DEBUG_MSG(cout<<"breaking-1a out of GA Algortihm, current expected generation time:"<<utils::g_timer()+avg_pdb_gen_time<<" bigger than time_limit:"<<genetic_time_limit<<endl;);
-		    break;
-		}
+		//if(utils::g_timer()>genetic_time_limit+avg_pdb_gen_time){//in case PDBs are getting very big, we want to get out before generating next pdb
+		//    cout<<"breaking-1a out of GA Algortihm, current expected generation time:"<<utils::g_timer()+avg_pdb_gen_time<<" bigger than time_limit:"<<genetic_time_limit<<endl;
+		//    break;
+		//}
 		ZeroOnePDBs candidate (task_proxy, pattern_collection, *pdb_factory);
-		
-		//Only add new pdbs to candidate count
-		candidate_count+=candidate.get_new_pdbs();
-		
-		if(genetic_SS_timer->is_expired()||
-		   !pdb_factory->release_memory_below_limit_mb(memory_limit)) {
-		    cout<<"breaking-1 out of GA Algortihm, current gen_time:"<<genetic_SS_timer<<" bigger than time_limit:"<<genetic_time_limit<<endl;
-		    break;
-		}
+		//if(genetic_SS_timer->is_expired()||(double(utils::get_peak_memory_in_kb())/1024.0>memory_limit)){
+		//    cout<<"breaking-1 out of GA Algortihm, current gen_time:"<<genetic_SS_timer<<" bigger than time_limit:"<<genetic_time_limit<<endl;
+		//    break;
+		//}
 		float pdb_gen_time=utils::g_timer()-temp;
 		if(utils::g_timer()-temp>max_gen_time){
 		  max_gen_time=utils::g_timer()-temp;
 	  	  max_gen_size=overall_pdb_size;
 		}
-		if(current_episode%1000==0){
-		  cout<<"episode[,"<<current_episode<<",],generated_candidate,time:,"<<utils::g_timer()<<",size:,"<<overall_pdb_size<<",generation_time:,"<<pdb_gen_time<<",episode:,"<<current_episode<<",finished:,"<<pdb_factory->is_finished()<<",bin_packed:,"<<bin_packed_episode<<",Peak Memory:"<<utils::get_peak_memory_in_kb()<<",current_memory:"<<utils::get_current_memory_in_kb()<<",bin_rel_calls:"<<bin_rel_calls<<",bin_reg_calls:"<<bin_reg_calls<<",candidate_count:"<<candidate_count+1<<endl;
-		}
-
-		if(pdb_gen_time>100.0*time_limit){
-		  last_sampler_too_big=true;
-		  if (pdb_factory->name().find("symbolic") == std::string::npos) {
-		    max_target_size-=2;//symbolic much bigger, with explicit 2 orders of magnitude reduction already makes huge difference
-		    max_target_size=max(3,max_target_size);
-		    min_target_size=min(max_target_size-2,min_target_size);
-		    min_target_size=max(min_target_size,0);//at least 0!
-		    pdb_max_size=9*pow(10.0,(min_target_size+((max_target_size-min_target_size)/2)));
-		    cout<<"last pdb_gen_time is huge!, reducing max_target_size by 2 orders of magnitude,max_target_size:"<<max_target_size<<",min_target_size to"<<min_target_size<<",pdb_max_size:"<<pdb_max_size<<",pdb_gen_time:"<<pdb_gen_time<<",time_limit:"<<time_limit<<endl;
-		  }
-		  else{
-		    max_target_size=max_target_size/2;
-		    max_target_size=max(3,max_target_size);
-		    min_target_size=min(max_target_size-3,min_target_size);
-		    min_target_size=max(min_target_size,0);//at least 0!
-		    pdb_max_size=9*pow(10.0,(min_target_size+((max_target_size-min_target_size)/2)));
-		    cout<<"last pdb_gen_time is huge!, halving max_target_size orders of magnitude,max_target_size:"<<max_target_size<<",min_target_size to"<<min_target_size<<",pdb_max_size:"<<pdb_max_size<<",pdb_gen_time:"<<pdb_gen_time<<",time_limit:"<<time_limit<<endl;
-		  }
-		}
-
+		cout<<"generated candidate[,"<<candidate_count+1<<",],time:,"<<utils::g_timer()<<",size:,"<<overall_pdb_size<<",generation_time:,"<<pdb_gen_time<<",episode:,"<<current_episode<<",finished:,"<<pdb_factory->is_finished()<<",bin_packed:,"<<bin_packed_episode<<endl;
 		if(pdb_factory->is_solved()){
 		    problem_solved_while_pdb_gen=true;
 		    cout<<"Solution found while generating PDB candidate of type:"<<pdb_factory->name()<<", adding PDB and exiting generation at time"<<utils::g_timer()<<endl;
 
-				size_t best_pdbs_count=0;
-				for (size_t collection=0; collection<best_pdb_collections.size();collection++){
-					best_pdbs_count+=best_pdb_collections[collection]->size();
-				}
-		    cout<<"final episode:,"<<current_episode<<",time:,"<<utils::g_timer()<<",overall_pdb_gen_time:,"<<overall_pdb_gen_time<<",online_samples:,"<<total_online_samples<<",overall_sampling_time:,"<<overall_sampling_time<<",avg samp time:,"<<double(overall_sampling_time)/double((total_online_samples == 0) ? 1 : total_online_samples)<<",avg_sampled_states:,"<<avg_sampled_states<<",overall_probe_time:,"<<overall_probe_time<<",candidate_count:,"<<candidate_count<<",unique_samples.size:,"<<unique_samples.size()<<",best_heuristics count:,"<<best_pdbs_count<<",overall_dominance_prunning_time:,"<<overall_dominance_prunning_time<<endl;
+		    cout<<"final episode:,"<<current_episode<<",time:,"<<utils::g_timer()<<",overall_pdb_gen_time:,"<<overall_pdb_gen_time<<",online_samples:,"<<total_online_samples<<",overall_sampling_time:,"<<overall_sampling_time<<",avg samp time:,"<<double(overall_sampling_time)/double((total_online_samples == 0) ? 1 : total_online_samples)<<",avg_sampled_states:,"<<avg_sampled_states<<",overall_probe_time:,"<<overall_probe_time<<",candidate_count:,"<<candidate_count<<",unique_samples.size:,"<<unique_samples.size()<<",best_heuristics count:,"<<best_pdb_collections.size()<<",overall_dominance_prunning_time:,"<<overall_dominance_prunning_time<<endl;
 		    best_pdb_added=true;
 		    float start_time_dom=utils::g_timer();
 		    if(recompute_max_additive_subsets){
@@ -601,7 +512,7 @@ void PatternCollectionGeneratorGeneticSS::evaluate(vector<double> &fitness_value
 		    best_pdb_collections.push_back(pdb_factory->terminate_creation(candidate.get_pattern_databases()));
 		    return;
 		}
-		//candidate_count++;
+		candidate_count++;
 		//ZeroOnePDBs candidate_explicit(task_proxy, *pattern_collection, *pdb_type_explicit );
 		//cout<<"ZeroOnePDBs candidate_explicit has type:"<<pdb_type_explicit->name()<<endl;
 		overall_pdb_gen_time+=utils::g_timer()-temp;
@@ -619,7 +530,7 @@ void PatternCollectionGeneratorGeneticSS::evaluate(vector<double> &fitness_value
 		      //we do not know symbolic size, so we use explicit size to estimate pdb_gen_times
 		      //some times std_deviation is orders of magnitude, e.g. childsnack
 		    avg_pdb_gen_time=(overall_pdb_gen_time-last_overall_pdb_gen_time)/float(episodes_to_check);
-		    //cout<<"time:"<<utils::g_timer<<",avg_pdb_gen_time:"<<avg_pdb_gen_time<<",max_time:"<<max_gen_time<<endl;
+		    cout<<"time:"<<utils::g_timer<<",avg_pdb_gen_time:"<<avg_pdb_gen_time<<",max_time:"<<max_gen_time<<endl;
 		    last_overall_pdb_gen_time=overall_pdb_gen_time;
 
    //SANTIAGO TODO: What is a good criteria for increasing pdb_max_size? I believe it should be independent of time_limit. Here, what we are trying
@@ -631,68 +542,62 @@ void PatternCollectionGeneratorGeneticSS::evaluate(vector<double> &fitness_value
 		      // cout<<"time:,"<<utils::g_timer()<<",increasing pdb_max_size to,"<<pdb_max_size<<",min_size:"<<min_size<<", avg_pdb_gen_time="<<avg_pdb_gen_time<<"<"<<time_limit<<endl; 
 		    } else*/ 
 		    time_limit=pdb_factory->get_time_limit()/1000.0;
-		    if(valid_pattern_counter>0&&utils::g_timer()-last_time_collections_improved>min_improv_time_limit){
-		      run_SS_again=true;
-		      cout<<"g_timer:"<<utils::g_timer()<<",running SS again, too long since last improvement:";
-			  cout<<",time_since_last_improv:"<<utils::g_timer()-last_time_collections_improved;
-			  cout<<",min_improv_time_limit:"<<min_improv_time_limit<<endl;
-			/*if(utils::g_timer()-real_last_time_collections_improved>90.0&&current_episode>5){
-			  size_targets_fixed=true;
-			  pdb_factory->increase_computational_limits();
-			  if(log10(last_improv_collection_size)<initial_max_target_size-2){//do not want to go back to perimeter size!!!
-			    if(utils::g_timer()-real_last_time_collections_improved>180.0&&current_episode>5){
-			      max_target_size=log10(last_improv_collection_size)+2;
-			      cout<<"more than a 180 secs since we had improvement, increasing time limits but keeping size limits around last improvement"<<endl;
-			    }
-			    else{
-			      max_target_size=log10(last_improv_collection_size)+1;
-			      cout<<"more than a 90 secs since we had improvement, increasing time limits but keeping size limits around last improvement"<<endl;
-			    }
-			  }
-			  time_limit=pdb_factory->get_time_limit()/1000.0;
+		    if(valid_pattern_counter>10&&utils::g_timer()-last_time_collections_improved>min_improv_time_limit){
+		      if(utils::g_timer()-last_time_collections_improved>100.0&&current_episode>5){
+			pdb_factory->increase_computational_limits();
+			time_limit=pdb_factory->get_time_limit()/1000.0;
+			if(log10(last_improv_collection_size)<initial_max_target_size-2){//do not want to go back to perimeter size!!!
+			  max_target_size=log10(last_improv_collection_size)+1;
+			  min_target_size=log10(last_improv_collection_size)-1;
 			}
-			else{*/
-			  pdb_factory->increase_computational_limits();
-			  last_sampler_too_big=false;
-			//}
-
+			cout<<"more than a 100 secs since we had improvment, increasing time limits but keeping size limits around last improvement"<<endl;
+		      }
+		      else if(pdb_factory->name().find("symbolic")!=string::npos){
+			pdb_factory->increase_computational_limits();
+			time_limit=pdb_factory->get_time_limit()/1000.0;
 			min_target_size+=1;
-			if(pdb_factory->name().find("symbolic")!=string::npos){
-			  min_target_size=min(max_target_size-3,min_target_size);
-			}
-			else{
-			  min_target_size=min(max_target_size-2,min_target_size);
-			}
-
+			min_target_size=min(max_target_size,min_target_size);
 			bin_pack_next=true;
-			min_improv_time_limit*=1.5;
-			cout<<"increased min_improv_time_limit:"<<min_improv_time_limit<<",time_limit:"<<time_limit<<",min_target_size:"<<min_target_size<<",max_target_size:"<<max_target_size<<endl;
-			cout<<"time:,"<<utils::g_timer()<<",increasing min_improv_time_limit to,"<<min_improv_time_limit<<",pdb_max_size:"<<pdb_max_size<<",max_target_size:"<<max_target_size<<",min_target_size:"<<min_target_size<<", too long since last improvement found"<<endl; 
-			last_time_collections_improved=utils::g_timer();
-		    }
-		    else if(avg_pdb_gen_time>100.0*time_limit){
-		      last_sampler_too_big=true;
-		      if (pdb_factory->name().find("symbolic") == std::string::npos) {
-			max_target_size-=2;//symbolic much bigger, with explicit 2 orders of magnitude reduction already makes huge difference
-			max_target_size=max(3,max_target_size);
 		      }
 		      else{
-			max_target_size=max_target_size/2;
+			time_limit*=1.5;
 		      }
-		      min_target_size=0;
-		      bin_pack_next=true;
-		      cout<<"avg_pdb_gen_time is huge!, reducing max_target_size to half:"<<max_target_size<<",min_target_size to :"<<min_target_size<<",pdb_max_size:"<<pdb_max_size<<",pdb_gen_time:"<<avg_pdb_gen_time<<",time_limit:"<<time_limit<<endl;
+		      min_improv_time_limit*=1.5;
+		      cout<<"increased min_improv_time_limit:"<<min_improv_time_limit<<",time_limit:"<<time_limit<<",min_target_size:"<<min_target_size<<",max_target_size:"<<max_target_size<<endl;
+			last_sampler_too_big=false;
+			//pdb_max_size=max(last_improv_collection_size*10.0,20000.0);//20K just in case something went wrong 
+
+			//SANTIAGO TODO: What is a good criteria for
+			//increasing pdb_max_size? I believe it should
+			//be independent of time_limit
+
+		      // if(max_gen_time<(time_limit*2)){
+		      // 	pdb_max_size=pdb_max_size*10.0;
+		      // 	min_size=pdb_max_size/100;
+		      // } else{
+		      // 	min_size=pdb_max_size/10;
+		      // }
+		      cout<<"time:,"<<utils::g_timer()<<",increasing min_improv_time_limit to,"<<min_improv_time_limit<<",pdb_max_size:"<<pdb_max_size<<",max_target_size:"<<max_target_size<<",min_target_size:"<<min_target_size<<", too long since last improvement found"<<endl; 
+		      last_time_collections_improved=utils::g_timer();
 		    }
 		    else if(avg_pdb_gen_time>10.0*time_limit){
 		      last_sampler_too_big=true;
+		      max_target_size=max_target_size/2;
+		      min_target_size=0;
+		      bin_pack_next=true;
+		      cout<<"avg_pdb_gen_time is huge!, reducing max_target_size to half:"<<max_target_size<<",min_target_size to 0"<<endl;
+		    }
+		    else if(avg_pdb_gen_time>2.0*time_limit){
+		      last_sampler_too_big=true;
 		      if(max_target_size>4){//Never reducing bellow 10^4
 			max_target_size-=2;
-			cout<<"time:,"<<utils::g_timer<<",reducing max_target_size,avg_pdb_gen_time:"<<avg_pdb_gen_time<<", is at least ten as big as time limit:,"<<time_limit<<endl;
+			cout<<"time:,"<<utils::g_timer<<",reducing max_target_size,avg_pdb_gen_time:"<<avg_pdb_gen_time<<", is at least twice as big as time limit:,"<<time_limit<<endl;
 			bin_pack_next=true;
 		      }
 		    }
-		    min_target_size=min(max_target_size-2,min_target_size);
-		    min_target_size=max(min_target_size,0);//at least 0!
+		      min_target_size=min(max_target_size-2,min_target_size);
+		      min_target_size=max(min_target_size,0);//at least 0!
+		      cout<<"time:,"<<utils::g_timer()<<",time_limit:"<<time_limit<<",avg_pdb_gen_time:"<<avg_pdb_gen_time<<",reducing max_target_size to,"<<max_target_size<<",min_target_size:"<<min_target_size<<endl;
 
 		      //pdb_max_size=max(10000.0,pdb_max_size/10.0);
 		      //if(max_gen_time>5*time_limit){
@@ -701,8 +606,14 @@ void PatternCollectionGeneratorGeneticSS::evaluate(vector<double> &fitness_value
 		      //else{
 		//	pdb_max_size=last_improv_collection_size*10.0;
 		 //     }
-		      //cout<<"Last "<<episodes_to_check<<" pdbs avg_pdb_gen_time:"<<avg_pdb_gen_time<<",time_limit:"<<time_limit<<", Fixing max_target_size to:"<<max_target_size<<",min_target_size:"<<min_target_size<<endl;
+		      cout<<"Last"<<episodes_to_check<<" pdbs avg_pdb_gen_time:"<<avg_pdb_gen_time<<",time_limit:"<<time_limit<<", Fixing max_target_size to:"<<max_target_size<<",min_target_size:"<<min_target_size<<endl;
 		    //Need to keep size limit for explicit representation
+		    string temp_string("symbolic");
+		    if (pdb_factory->name().find(temp_string) == std::string::npos) {
+		      cout<<"pdb is not symbolic, sticking to max pdb_size of :";
+		      pdb_max_size=min(9*pow(10,12),pdb_max_size);
+		      cout<<pdb_max_size<<endl;
+		    }
 		    avg_pdb_gen_time=0;
 		    max_gen_time=0;
 		    max_gen_size=0;
@@ -722,10 +633,11 @@ void PatternCollectionGeneratorGeneticSS::evaluate(vector<double> &fitness_value
     
 		//double probes_start_timer=utils::g_timer();
 		//double avg_probe_deviation=0;
-		//double vg_probe_result=0;
+		//double avg_probe_result=0;
 
 		const State &initial_state = task_proxy.get_initial_state();
 		//DEBUG_MSG(cout<<"\tcurrent_episode:"<<current_episode<<",pdb_max_size:"<<pdb_max_size<<",candidate initial h:"<<candidate.get_value(initial_state)<<endl;fflush(stdout););
+		bool run_again=false;
 		if(best_pdb_collections.size()==0||create_perimeter){
 		    cout<<"no initial heuristic yet"<<endl;fflush(stdout);
 		    fitness = 1.0;//best_heuristic not populated yet
@@ -764,7 +676,7 @@ void PatternCollectionGeneratorGeneticSS::evaluate(vector<double> &fitness_value
 		    threshold=candidate.get_value(initial_state);
 		    continue;
 		    //best_patterns = best_pattern_collection;
-		} else if(use_SS_fitness){
+		} else{
 		    //cout<<"current best_heuristics_count:"<<best_heuristic.count_zero_one_pdbs()<<endl;//fflush(stdout);
 		    //cout<<"\tbest_heuristic initial h:"<<best_heuristic.get_value(initial_state)<<endl;fflush(stdout);
 		    best_heur_dead_ends=0;
@@ -772,118 +684,72 @@ void PatternCollectionGeneratorGeneticSS::evaluate(vector<double> &fitness_value
 		    if(best_initial_value<get_best_value(initial_state)){
 			best_initial_value=get_best_value(initial_state);
 			cout<<"timer:,"<<utils::g_timer()<<",best heuristic initial value raised to:"<<best_initial_value<<endl;
-			run_SS_again=true;
+			run_again=true;
 		    } else if(pruned_states>total_SS_gen_nodes/4){
-			run_SS_again=true;
-			cout<<"timer:,"<<utils::g_timer()<<",run_SS_again, ratio:"<<total_SS_gen_nodes/pruned_states<<endl;
+			run_again=true;
+			cout<<"timer:,"<<utils::g_timer()<<",run_again, ratio:"<<total_SS_gen_nodes/pruned_states<<endl;
 		    }
 
-		    if(SS_states.size()<100){
-			run_SS_again=true;
-			cout<<"Running SS sampling again, SS tree is almost empty"<<endl;
+		    if(SS_states.size()<5000){
+			run_again=true;
+			cout<<"Running SS sampling again, SS states left less than 5K"<<endl;
 		    }
-		    if(run_SS_again){
+		    if(run_again){
 			SS_states.clear();
 			SS_states_vector.clear();
 			double start_probe_time=utils::g_timer();
 			threshold=max(best_initial_value,max(1,threshold));
-			int last_threshold=0;
-			int repetition=0;
 			//threshold=44;
-			cout<<"initial threshold:"<<threshold<<endl;
-			if(threshold==best_initial_value){
-			  for (int prob_index=0;prob_index<2000;prob_index++){
-			    SS_states.clear();SS_states_vector.clear();
-			    for(size_t j=1;j<20;j++){
-			      probe_best_only();
-			      if(SS_states.size()>500){
-				break;
-			      }
-			    }
-			    if(SS_states.size()>500){
-			      cout<<"best initial threshold raised to:"<<threshold<<",probe states:"<<SS_states.size()<<endl;
-			      SS_states.clear();SS_states_vector.clear();
-			      break;
-			    }
-			    threshold=max(threshold+1,int(threshold*1.2));
-			    //cout<<"next_threshold:"<<threshold<<endl;
-			  }
-			}
-
-			for (repetition=0;repetition<10;repetition++){
+			for (int repetition=0;repetition<10;repetition++){
 			    vector<double> probe_data;
-			    for (int prob_index=0;prob_index<1000;prob_index++){
+			    for (int prob_index=0;prob_index<50;prob_index++){
 				probe_data.push_back(probe_best_only());
 				if(utils::g_timer()-start_probe_time>10.0){
 				    cout<<"exceeded 10 seconds limit for probes, number of repetitions completed:"<<repetition<<endl;
 				    break;
 				} else if(SS_states.size()>20000){
-				    cout<<"exceeded 20K max SS_states sampled,current size:"<<SS_states.size()<<",probe:"<<prob_index<<",threshold:"<<threshold<<endl;
+				    cout<<"exceeded 20K max SS_states sampled,current size:"<<SS_states.size()<<endl;
 				    break;
 				}
 			    }
-			    //cout<<"\trepetition:"<<repetition<<",threshold:"<<threshold<<",SS_states:"<<SS_states.size()<<endl;
 			    pair<double,double> avg_and_dev=utils::avg_and_standard_deviation(probe_data);
 			    //cout<<scientific<<"repetition:"<<repetition<<",probe data average:"<<avg_and_dev.first<<endl;
 			    //cout<<scientific<<"repetition:"<<repetition<<",probe data standard deviation:"<<avg_and_dev.second<<endl;
 			    probe_avgs.push_back(avg_and_dev.first);
 		      
 			    if(utils::g_timer()-start_probe_time>10.0){
-				cout<<"exceeded 10 seconds limit for probes, number of repetions completed:"<<repetition<<",threshold:"<<threshold<<endl;
+				cout<<"exceeded 10 seconds limit for probes, number of repetions completed:"<<repetition<<endl;
 				break;
 			    } else if(SS_states.size()>20000){
-				cout<<"exceeded 20K max SS_states sampled,current size:"<<SS_states.size()<<",threshold:"<<threshold<<endl;
+				cout<<"exceeded 20K max SS_states sampled,current size:"<<SS_states.size()<<endl;
 				break;
 			    } else if(avg_and_dev.first>pow(10,100)){
-				cout<<"avg probe:"<<avg_and_dev.first<<" past 10^100 nodes, not going further, gets very unprecise"<<",threshold:"<<threshold<<endl;
+				cout<<"avg probe:"<<avg_and_dev.first<<" past 10^100 nodes, not going further, gets very unprecise"<<endl;
 				break;
 			    }
+			    //do not want to go too far, rule of thumb do not increase threshold pass 4 times the initial perimeter distance if it is being used
+			    if(initial_perimeter_threshold>0){
+			      if(threshold<4*initial_perimeter_threshold)
+				threshold=threshold*2;
+			    }
+			    else{
+			      threshold=threshold*2;
+			    }
 
-			    SS_states_copy=SS_states;
-			    last_threshold=threshold;
-			    threshold=max(threshold+1,int(threshold*1.2));
-			    SS_states.clear();
-			    SS_states_vector.clear();
 			}
-
-			if(repetition>0){
-			  if(SS_states.size()<20000){
-			    cout<<"final SS_states:"<<SS_states.size()<<",for threshold:,"<<last_threshold<<endl;
-			    threshold=last_threshold;
-			    SS_states=SS_states_copy;
-			  }
-			}
-			SS_states_copy.clear();
 			overall_probe_time+=utils::g_timer()-start_probe_time;
 		    
-			//pair<double,double> avg_and_dev=utils::avg_and_standard_deviation(probe_avgs);
-			//cout<<"avg probe:"<<avg_and_dev.first<<endl;
-			//cout<<"avg probe deviation:"<<avg_and_dev.second<<endl;
-			//cout<<"SS_states.size:"<<SS_states.size()<<endl;
-			//cout<<"Finished probing with threshold:"<<threshold<<endl;
+			pair<double,double> avg_and_dev=utils::avg_and_standard_deviation(probe_avgs);
+			cout<<"avg probe:"<<avg_and_dev.first<<endl;
+			cout<<"avg probe deviation:"<<avg_and_dev.second<<endl;
+			cout<<"SS_states.size:"<<SS_states.size()<<endl;
+			cout<<"Finished probing with threshold:"<<threshold<<endl;
 			//last_sampled_best_heurs_count=best_heuristic.count_zero_one_pdbs();
-			//cout<<"current_episode:"<<current_episode<<",best_heuristics_count:"<<best_pdb_collections.size()<<",new sampled_states batch"<<endl;
+			cout<<"current_episode:"<<current_episode<<",best_heuristics_count:"<<best_pdb_collections.size()<<",new sampled_states batch"<<endl;fflush(stdout);
 			best_heuristic_values.clear();
 		  
-			//cout<<"time:,"<<utils::g_timer()<<",starting sorting SS states,size:"<<SS_states.size()<<endl;
+			cout<<"time:,"<<utils::g_timer()<<",starting sorting SS states,size:"<<SS_states.size()<<endl;
 			map<size_t,pair<int,double> >::iterator SS_iter_map;
-			
-			cout<<"use_lmcut:"<<use_lmcut<<",lmcut_TPN:"<<lmcut_TPN<<",SS_iter_map_size:"<<SS_states.size()<<endl;
-			if(use_lmcut&&lmcut_TPN==0){
-			  utils::Timer lmcut_timer;
-			  int counter_lmcut=0;
-			  for(SS_iter_map=SS_states.begin();SS_iter_map!=SS_states.end();SS_iter_map++){
-			    counter_lmcut++;
-			    lmcut->compute_heuristic(unique_samples.at(SS_iter_map->first).first);
-			    if(counter_lmcut%100==0){
-			      if(lmcut_timer()>1.0){
-				break;
-			      }
-			    }
-			  }
-			  lmcut_TPN=lmcut_timer.stop()/double(counter_lmcut);
-			  cout<<"lmcut tpn:"<<lmcut_TPN<<",counter_lmcut:"<<counter_lmcut<<",lmcut_timer:"<<lmcut_timer()<<endl;
-			}
 		
 			for(SS_iter_map=SS_states.begin();SS_iter_map!=SS_states.end();){
 			    //cout<<",SS_iter_map->first:"<<SS_iter_map->first<<endl;
@@ -907,195 +773,107 @@ void PatternCollectionGeneratorGeneticSS::evaluate(vector<double> &fitness_value
 			    SS_states_vector.push_back(temp);
 			    SS_iter_map++;
 			}
-		  
 			//sort(SS_states_vector.begin(),SS_states_vector.end(),compare_SS_states);
 			g_rng()->shuffle(SS_states_vector);
 		    }
 		    DEBUG_MSG(cout<<"time:,"<<utils::g_timer()<<",finished randomzing SS states vector,size:"<<SS_states.size()<<",best_heur_dead_ends"<<best_heur_dead_ends<<endl;);
-		  pruned_states=0;
-		  fitness=0;
-		  sampled_states=0;
-		  raised_states=0;
-		  g_rng()->shuffle(SS_states_vector);
-		  double start_sampler_time=utils::g_timer();
-		  vector<SS_state>::iterator SS_iter;
+		}
+		pruned_states=0;
+		fitness=0;
+		sampled_states=0;
+		raised_states=0;
+		g_rng()->shuffle(SS_states_vector);
+		double start_sampler_time=utils::g_timer();
+		vector<SS_state>::iterator SS_iter;
 
-		  DEBUG_MSG(cout<<"time;,"<<utils::g_timer()<<",SS_states_vector.size:"<<SS_states_vector.size()<<flush<<endl;);
-		      
-		  current_heur_initial_value=candidate.get_value(initial_state);
-		  total_online_samples++;
-		  total_SS_gen_nodes=0;
-		  for(SS_iter=SS_states_vector.begin();SS_iter!=SS_states_vector.end();){
-		      //cout<<"time:,"<<utils::g_timer<<",working on state:"<<sampled_states<<endl;
-		      if(unique_samples.find(SS_iter->id)==unique_samples.end()){
-			  cout<<"state not in unique_samples!!!"<<endl;exit(22);
-		      }
-
-		      if(sampled_states%1000==0){
-			  if(pruned_states==0){
-			      if(utils::g_timer()-start_sampler_time>0.2){
-				  //cout<<"\tcurrent_episode:"<<current_episode<<",exiting candidate vs best_heuristic SS_states comparison, 0.2 secs iterating without a single better h value"<<endl;
-				  break;
-			      }
-			  }
-			  else if(pruned_states>0){
-			      if(utils::g_timer()-start_sampler_time>0.5){
-				cout<<"\t exiting candidate vs best_heuristic SS_states comparison, spent max 0.5 secs,sampled states:"<<sampled_states<<endl;
-				  //cout<<"\t exiting candidate vs best_heuristic SS_states comparison, spent max 0.5 secs"<<endl;
-				  break;
-			      }
-			  }
-		      }
+		DEBUG_MSG(cout<<"SS_states_vector.size:"<<SS_states_vector.size()<<endl;fflush(stdout););
+		cout<<"time;,"<<utils::g_timer()<<",SS_states_vector.size:"<<SS_states_vector.size()<<endl;fflush(stdout);
 		    
-		      //int best_h=get_best_value(unique_samples.at(SS_iter->id).first);
-		      int best_h=unique_samples.at(SS_iter->id).second;
-		      if(best_h==numeric_limits<int>::max()){
-			  best_heur_dead_ends++;
-			  SS_states.erase(SS_iter->id);
-			  SS_iter=SS_states_vector.erase(SS_iter);
-			  //cout<<"\tstate is already known dead_end, removing"<<endl;
-			  continue;
-		      }
-		      else if(best_h+SS_iter->g>sampling_threshold){
-			  SS_states.erase(SS_iter->id);
-			  SS_iter=SS_states_vector.erase(SS_iter);
-			  //cout<<"\tstored best_h is above prunning threshold,f:"<<best_h+SS_iter->g<< ",threshold:"<<sampling_threshold<<endl;
-			  continue;
-		      }
-		      sampled_states++;
-		      total_SS_gen_nodes+=SS_iter->weight;
-		      //cout<<"sampled_state:"<<sampled_states<<",new_f="<<current_heuristic->get_heuristic()+SS_iter->g<<",old f:"<<best_heuristic->get_heuristic()+SS_iter->g<<",g:"<<SS_iter->g<<",weight:"<<SS_iter->weight<<",sampling_threshold:"<<sampling_threshold<<endl;
-		      int candidate_h=candidate.get_value(unique_samples.at(SS_iter->id).first);
-		      //cout<<"candidate_h:"<<candidate_h<<",best_h:"<<best_h<<endl;
-		      /*if(candidate_h<candidate_explicit.get_value(unique_samples.at(SS_iter->id))){
-			cout<<"candidate_h:"<<candidate_h<<",candidate_explicit:"<<candidate_explicit.get_value(unique_samples.at(SS_iter->id))<<endl;
-			exit(0);
-			}*/
-		      if(candidate_h==numeric_limits<int>::max()){
-			  raised_states++;
-			  pruned_states+=SS_iter->weight;
-			  //cout<<"sampled_state:,"<<sampled_states<<",out of "<<SS_states.size()<<"is now pruned by dead_end, weight:"<<SS_iter->weight<<",current_total:"<<total_SS_gen_nodes<<",best_h:"<<best_h<<endl;
-			  SS_iter++;
-			  //if(float(raised_states)/float(sampled_states)>min_improvement_ratio){
-			  //  break;
-			  //}
-			  continue;
-		      }
-
-		      fitness+=candidate_h;
-
-		      /*  if(candidate_h+SS_iter->g>sampling_threshold){
-			  pruned_states+=SS_iter->weight;
-			  raised_states++;
-			  //cout<<"id:,"<<SS_iter->id<<",sampled_state:,"<<sampled_states<<",out of "<<SS_states.size()<<"is now pruned by higher F, weight:"<<SS_iter->weight<<",current_total:"<<total_SS_gen_nodes<<endl;
-			  //cout<<"h1="<<current_heuristic->get_heuristic()<<"+g="<<SS_iter->g<<",f:"<<current_heuristic->get_heuristic()+SS_iter->g<<",sampling_threshold:"<<sampling_threshold<<endl;
-			  //cout<<"h2="<<best_heuristic->get_heuristic()<<"+g="<<SS_iter->g<<",f:"<<best_heuristic->get_heuristic()+SS_iter->g<<",sampling_threshold:"<<sampling_threshold<<endl;
-		      }
-		      else {*/
-			  if(candidate_h>best_h){
-			      pruned_states+=SS_iter->weight;
-			      raised_states++;
-			      //if(float(raised_states)/float(sampled_states)>min_improvement_ratio){
-			       // break;
-			      //}
-			      //cout<<"id:,"<<SS_iter->id<<",candidate_h:"<<candidate_h<<",best_h:"<<best_h<<endl;
-			      //cout<<"sampled_state:,"<<sampled_states<<",out of "<<SS_states.size()<<"is now pruned by higher h, weight:"<<SS_iter->weight<<",current_total:"<<total_SS_gen_nodes<<endl;
-			      //cout<<"\tsampled_state:,"<<sampled_states<<",out of "<<SS_states.size()<<"is now pruned by candidate_h:"<<candidate_h<<",best_h:"<<best_h<<",current_total:"<<total_SS_gen_nodes<<endl;
-			  }
-			  //else{
-			    //cout<<"\tstored best_h is above candidate_h:"<<candidate_h<<",best_h:"<<best_h<<endl;
-			  //}
-		      //}
-		      SS_iter++;
-		  }
-		  overall_sampled_states+=sampled_states;
-		  DEBUG_MSG(cout<<"episode:"<<current_episode<<",finished sampling,sampled_states:"<<sampled_states<<",raised_states:"<<raised_states<<",pruned_states:"<<pruned_states<<endl;fflush(stdout););
-		  sampler_time=utils::g_timer()-start_sampler_time;
-		  double heur_time_cost=0;
-
-		  if(raised_states>0){
-		    utils::Timer heur_timer;
-		    int counter_temp=0;
-		    for (auto sample=unique_samples.begin();sample!=unique_samples.end();sample++){
-		      candidate.get_value(sample->second.first);
-		      if(counter_temp>20000){
-			break;
-		      }
-		      counter_temp++;
+		current_heur_initial_value=candidate.get_value(initial_state);
+		total_online_samples++;
+		for(SS_iter=SS_states_vector.begin();SS_iter!=SS_states_vector.end();){
+		    //cout<<"time:,"<<utils::g_timer<<",working on state:"<<sampled_states<<endl;
+		    if(unique_samples.find(SS_iter->id)==unique_samples.end()){
+			cout<<"state not in unique_samples!!!"<<endl;exit(22);
 		    }
-		    heur_time_cost=heur_timer.stop()/SS_states_vector.size();
-		    if(use_lmcut){
-		      saved_time=total_SS_gen_nodes*(node_gen_and_exp_cost+lmcut_TPN+heur_time_cost*best_pdb_collections.size())-(total_SS_gen_nodes-pruned_states)*(node_gen_and_exp_cost+lmcut_TPN+heur_time_cost*(best_pdb_collections.size()+1));
+		    if(sampled_states%100==0){
+			if(pruned_states==0){
+			    if(utils::g_timer()-start_sampler_time>0.2){
+				//cout<<"\tcurrent_episode:"<<current_episode<<",exiting candidate vs best_heuristic SS_states comparison, 0.2 secs iterating without a single better h value"<<endl;
+				break;
+			    }
+			}
+			else if(pruned_states>0){
+			    if(utils::g_timer()-start_sampler_time>0.5){
+			      cout<<"\t exiting candidate vs best_heuristic SS_states comparison, spent max 0.5 secs,sampled states:"<<sampled_states<<endl;
+				//cout<<"\t exiting candidate vs best_heuristic SS_states comparison, spent max 0.5 secs"<<endl;
+				break;
+			    }
+			}
+			if(sampled_states>0){
+			    if(float(raised_states)/float(sampled_states)>min_improvement_ratio){
+				break;
+			    }
+			}
 		    }
-		    else{
-		      saved_time=total_SS_gen_nodes*(node_gen_and_exp_cost+heur_time_cost*best_pdb_collections.size())-(total_SS_gen_nodes-pruned_states)*(node_gen_and_exp_cost+heur_time_cost*(best_pdb_collections.size()+1));
+		  
+		    //int best_h=get_best_value(unique_samples.at(SS_iter->id));
+		    int best_h=unique_samples.at(SS_iter->id).second;
+		    if(best_h==numeric_limits<int>::max()){
+			best_heur_dead_ends++;
+			SS_states.erase(SS_iter->id);
+			SS_iter=SS_states_vector.erase(SS_iter);
+			//cout<<"\tstate is already known dead_end, removing"<<endl;
+			continue;
 		    }
-		    //cout<<"ratio:"<<float(raised_states)/float(sampled_states)<<",node_gen_and_exp_cost:"<<node_gen_and_exp_cost<<",sampling_time:"<<sampler_time<<",heur_time_cost"<<heur_time_cost<<",best_prev_time:"<<total_SS_gen_nodes*(node_gen_and_exp_cost+best_pdb_collections.size()*heur_time_cost)<<",new_time:"<<(total_SS_gen_nodes-pruned_states)*(node_gen_and_exp_cost+heur_time_cost*(best_pdb_collections.size()+1))<<",saved_time:"<<saved_time<<"total_SS_gen_nodes:"<<total_SS_gen_nodes<<",new_nodes:"<<total_SS_gen_nodes-pruned_states<<",initial_h:"<<candidate.get_value(initial_state)<<endl;
-		  }
-		  else{
-		    saved_time=0;
-		  }
-		} else if(use_avg_h_value){
-		  float candidate_avg_h=candidate.compute_approx_mean_finite_h();
-		  //current_heur_initial_value=candidate.get_value(initial_state);
-		  //cout<<"candidate_avg_h:"<<candidate_avg_h<<",current_heur_initial_value:"<<current_heur_initial_value<<endl;
-		  //HACK, need to get experiments quickly
-		  //if avg_h increases then we set raised_states to 1
-		  //and saved_time to 1 so that our code will treat it as if
-		  //SS determined it to be a good heuristic
-		  if(candidate_avg_h>best_avg_h){
-		    cout<<"raised avg_h to:"<<candidate_avg_h<<endl;
-		    best_avg_h=candidate_avg_h;
-		    raised_states=1;
-		    saved_time=1;
-		  }
-		  else{
-		    raised_states=0;
-		    saved_time=0;
-		  }
-		}
-		else if(use_ipdb_walk){
-		  //sample on demmand
-		  if(samples.size()==0){
-		    sample_states(task_proxy, samples, average_operator_cost);
-		    DEBUG_MSG(cout<<"adding to samples, unique_size prior:"<<unique_samples.size()<<",sampled_states:"<<samples.size()<<endl;);
-		    for(auto state : samples){
-		      size_t state_id = state.hash();
-		      unique_samples.insert(make_pair(state_id,make_pair(state,get_best_value(state))));
+		    else if(best_h+SS_iter->g>sampling_threshold){
+			SS_states.erase(SS_iter->id);
+			SS_iter=SS_states_vector.erase(SS_iter);
+			//cout<<"\tstored best_h is above prunning threshold,f:"<<best_h+SS_iter->g<< ",threshold:"<<sampling_threshold<<endl;
+			continue;
 		    }
-		  }
-		  bool improvement=false;
-		  for(auto state : samples){
-		    if(get_best_value(state)==numeric_limits<int>::max()){
-		      continue;
-		    }
-		    int candidate_h=candidate.get_value(state);
+		    sampled_states++;
+		    overall_sampled_states++;
+		    total_SS_gen_nodes+=SS_iter->weight;
+		    //cout<<"sampled_state:"<<sampled_states<<",new_f="<<current_heuristic->get_heuristic()+SS_iter->g<<",old f:"<<best_heuristic->get_heuristic()+SS_iter->g<<",g:"<<SS_iter->g<<",weight:"<<SS_iter->weight<<",sampling_threshold:"<<sampling_threshold<<endl;
+		    int candidate_h=candidate.get_value(unique_samples.at(SS_iter->id).first);
+		    //cout<<"candidate_h:"<<candidate_h<<",best_h:"<<best_h<<endl;
+		    /*if(candidate_h<candidate_explicit.get_value(unique_samples.at(SS_iter->id))){
+		      cout<<"candidate_h:"<<candidate_h<<",candidate_explicit:"<<candidate_explicit.get_value(unique_samples.at(SS_iter->id))<<endl;
+		      exit(0);
+		      }*/
 		    if(candidate_h==numeric_limits<int>::max()){
-		      cout<<"\timprovement found, new dead_end"<<endl;
-		      improvement=true;
-		      break;
+			raised_states++;
+			pruned_states+=SS_iter->weight;
+			//cout<<"sampled_state:,"<<sampled_states<<",out of "<<SS_states.size()<<"is now pruned by dead_end, weight:"<<SS_iter->weight<<",current_total:"<<total_SS_gen_nodes<<endl;
+			SS_iter++;
+			continue;
 		    }
-		    else if(candidate_h>get_best_value(state)){
-		      cout<<"\t\t improvement found, h value increased from "<< get_best_value(state) <<" to "<<candidate_h<<endl;
-		      improvement=true;
-		      break;
+
+		    fitness+=candidate_h;
+
+		    /*  if(candidate_h+SS_iter->g>sampling_threshold){
+			pruned_states+=SS_iter->weight;
+			raised_states++;
+			//cout<<"id:,"<<SS_iter->id<<",sampled_state:,"<<sampled_states<<",out of "<<SS_states.size()<<"is now pruned by higher F, weight:"<<SS_iter->weight<<",current_total:"<<total_SS_gen_nodes<<endl;
+			//cout<<"h1="<<current_heuristic->get_heuristic()<<"+g="<<SS_iter->g<<",f:"<<current_heuristic->get_heuristic()+SS_iter->g<<",sampling_threshold:"<<sampling_threshold<<endl;
+			//cout<<"h2="<<best_heuristic->get_heuristic()<<"+g="<<SS_iter->g<<",f:"<<best_heuristic->get_heuristic()+SS_iter->g<<",sampling_threshold:"<<sampling_threshold<<endl;
 		    }
-		  }
-
-		  if(improvement){
-		    samples.clear();//we redo sample each time we find improvement
-		    raised_states=1;
-		    saved_time=1;
-		  }
+		    else {*/
+			if(candidate_h>best_h){
+			    pruned_states+=SS_iter->weight;
+			    raised_states++;
+			    //cout<<"id:,"<<SS_iter->id<<",candidate_h:"<<candidate_h<<",best_h:"<<best_h<<endl;
+			    //cout<<"sampled_state:,"<<sampled_states<<",out of "<<SS_states.size()<<"is now pruned by higher h, weight:"<<SS_iter->weight<<",current_total:"<<total_SS_gen_nodes<<endl;
+			}
+			else{
+			  //cout<<"\tstored best_h is above candidate_h:"<<candidate_h<<",best_h:"<<best_h<<endl;
+			}
+		    //}
+		    SS_iter++;
 		}
-                else{
-		    raised_states=0;
-		    saved_time=0;
-		}
-
-		
-
-
+		DEBUG_MSG(cout<<"episode:"<<current_episode<<",finished sampling,sampled_states:"<<sampled_states<<",raised_states:"<<raised_states<<",pruned_states:"<<pruned_states<<endl;fflush(stdout););
+		sampler_time=utils::g_timer()-start_sampler_time;
 		overall_sampling_time+=sampler_time;
 	    DEBUG_MSG(cout<<"sampler_time:"<<sampler_time<<",last_sampler_too_big:"<<last_sampler_too_big<<endl;);
 	      
@@ -1122,7 +900,7 @@ void PatternCollectionGeneratorGeneticSS::evaluate(vector<double> &fitness_value
 	      //cout<<"g_timer:,"<<utils::g_timer()<<",current_episode:,"<<current_episode<<",pdb_max_size:,"<<pdb_max_size<<",candidate initial h:,"<<candidate->get_value(initial_state)<<",sampled_states:,"<<sampled_states<<",raised_states:,"<<raised_states<<",ratio:,"<<float(raised_states)/float(sampled_states)<<",overall_pdb_size:,"<<overall_pdb_size<<endl;
 		//fitness_values.push_back(fitness);
 
-		if((float(raised_states)/float(sampled_states)>min_improvement_ratio&&(size_selection||saved_time>0))||(best_pdb_collections.size()==0)) {
+		if(float(raised_states)/float(sampled_states)>min_improvement_ratio||(best_pdb_collections.size()==0)) {
 
 		    best_fitness = fitness;
 		    //if(current_episode>0){
@@ -1135,23 +913,12 @@ void PatternCollectionGeneratorGeneticSS::evaluate(vector<double> &fitness_value
 		    //else{
 		    //  cout<<"best_heuristic being set for the first time"<<endl;
 		    //}
-		    cout<<"time:,"<<utils::g_timer()<<",bin_packed:,"<<bin_packed_episode<<",adding1 best_heuristic,episode:,"<<current_episode<<",collection:,"<<collection_counter<<",new raised_ratio:,"<<float(raised_states)/float(sampled_states)<<",actual_states_ratio:,"<<float(raised_states)/float(sampled_states)<<",total_nodes:"<<total_SS_gen_nodes<<",pruned_states:"<<pruned_states<<",fitness:,"<<fitness<<",sampled_states:,"<<sampled_states<<",initial_value:,"<<current_heur_initial_value<<",skip_sampling:,"<<skip_sampling<<",best_heur_dead_ends:,"<<best_heur_dead_ends<<",best_heuristics count:"<<best_pdb_collections.size()<<",size:"<<overall_pdb_size<<",pdb_gen_time:"<<pdb_gen_time<<",episode:,"<<current_episode<<",finished:,"<<pdb_factory->is_finished()<<",bin_packed:,"<<bin_packed_episode<<",bin_reg_packed:,"<<bin_reg_packed<<",bin_rel_packed:,"<<bin_rel_packed<<",Peak memory:,"<<utils::get_peak_memory_in_kb()<<",saved_time:,"<<saved_time<<flush<<endl;
+		    cout<<"time:,"<<utils::g_timer()<<",bin_packed:,"<<bin_packed_episode<<",adding1 best_heuristic,episode:,"<<current_episode<<",collection:,"<<collection_counter<<",new raised_ratio:,"<<float(raised_states)/float(sampled_states)<<",actual_states_ratio:,"<<float(raised_states)/float(sampled_states)<<",total_nodes:"<<total_SS_gen_nodes<<",pruned_states:"<<pruned_states<<",fitness:,"<<fitness<<",sampled_states:,"<<sampled_states<<",initial_value:,"<<current_heur_initial_value<<",skip_sampling:,"<<skip_sampling<<",best_heur_dead_ends:,"<<best_heur_dead_ends<<",best_heuristics count:"<<best_pdb_collections.size()<<",size:"<<overall_pdb_size<<",pdb_gen_time:"<<pdb_gen_time<<",episode:,"<<current_episode<<",finished:,"<<pdb_factory->is_finished()<<",bin_packed:,"<<bin_packed_episode<<endl;
 		    episodes_to_mutate=20;//Want to mutate around good episodes
-		    run_SS_again=true;
-		    //Noting which bin packing is working best
-		    if(bin_packed_episode){
-		      if(bin_reg_packed){
-			avg_reward_reg+=1.0;
-		      }
-		      else if(bin_rel_packed){
-			avg_reward_rel+=1.0;
-		      }
+		    if(min_improvement_ratio<0.02&&current_episode>40&&float(raised_states)/float(sampled_states)>0.2){
+		      min_improvement_ratio=0.2;
+		      cout<<"updated min_improv_ratio, was low because of perimeter but it seems perimeter was not that good to start with"<<endl;
 		    }
-
-		    //if(min_improvement_ratio<0.02&&current_episode>40&&float(raised_states)/float(sampled_states)>0.2){
-		    //  min_improvement_ratio=0.2;
-		    //  cout<<"updated min_improv_ratio, was low because of perimeter but it seems perimeter was not that good to start with"<<endl;
-		    //}
 		    candidate.set_fitness(fitness);
 		    double start_adding_best_time=utils::g_timer();
 
@@ -1163,7 +930,10 @@ void PatternCollectionGeneratorGeneticSS::evaluate(vector<double> &fitness_value
 		    }
 		    //cout<<"calling terminate_creation from genetic_online"<<endl;
 		    double start_termination_time=utils::g_timer();
-		    best_pdb_collections.push_back(pdb_factory->terminate_creation(candidate.get_pattern_databases()));
+		    //best_pdb_collections.push_back(pdb_factory->terminate_creation(candidate.get_pattern_databases()));
+		    best_pdb_collections.push_back(pdb_factory->terminate_creation(candidate.get_pattern_databases(), 0, 0, 0)); 
+		    //terminate them properly towards the end, not when searching for patterns
+		    //as it bias towards preselected patterns
 		    cout<<"termination_time:"<<utils::g_timer()-start_termination_time<<endl;
 
 		    best_pdb_added=true;
@@ -1193,11 +963,9 @@ void PatternCollectionGeneratorGeneticSS::evaluate(vector<double> &fitness_value
 		      perimeter_created=false;
 		    }
 		    else{
-		      real_last_time_collections_improved=utils::g_timer();
 		      last_time_collections_improved=utils::g_timer();
 		      last_improv_collection_size=overall_pdb_size;
-		      size_targets_fixed=false;//found improvement, free size targets
-		      cout<<"time:"<<utils::g_timer<<",last_improv_collection_size:"<<last_improv_collection_size<<endl;
+		      cout<<"last_improv_collection_size:"<<last_improv_collection_size<<endl;
 		    }
 
 		    //Not true anymore since using online PDBs
@@ -1222,20 +990,8 @@ void PatternCollectionGeneratorGeneticSS::evaluate(vector<double> &fitness_value
 		    DEBUG_MSG(cout<<"overall_pdb_gen_time:"<<overall_pdb_gen_time<<endl;);
 		    best_fitness_was_duplicate=false;
 		} else {
-		  if(bin_packed_episode){
-		    episodes_to_mutate=1;//No mutations if no improvement on last bin pack
-		  }
-		  //even if not added, this pattern was competitive, so we reward its choice
-		  //if(bin_reg_packed){
-		  //  avg_reward_reg++;
-		 // }
-		 // else if(bin_rel_packed){
-		 //   avg_reward_rel++;
-		 // }
-		  run_SS_again=false;
-		  //if(raised_states>1)
-		    //cout<<"not_adding:,"<<utils::g_timer()<<",raised_states:,"<<raised_states<<",sampled_states:,"<<sampled_states<<",ratio:"<<float(raised_states)/float(sampled_states)<<endl;
-		    //cout<<"not_adding,time:,"<<utils::g_timer()<<",bin_packed:,"<<bin_packed_episode<<",episode:,"<<current_episode<<",collection:,"<<collection_counter<<",raised_ratio:,"<<float(raised_states)/float(sampled_states)<<",total_nodes:"<<total_SS_gen_nodes<<",pruned_states:"<<pruned_states<<",fitness:,"<<fitness<<",sampled_states:,"<<sampled_states<<",initial_value:,"<<current_heur_initial_value<<",skip_sampling:,"<<skip_sampling<<",size:"<<overall_pdb_size<<",pdb_gen_time:"<<pdb_gen_time<<",episode:,"<<current_episode<<",finished:,"<<pdb_factory->is_finished()<<"Peak memory:"<<utils::get_peak_memory_in_kb()<<flush<<endl;
+		  if(raised_states>1)
+		    cout<<"not_adding:,"<<utils::g_timer()<<",raised_states:,"<<raised_states<<",sampled_states:,"<<sampled_states<<",ratio:"<<float(raised_states)/float(sampled_states)<<endl;
 		  
 		    DEBUG_MSG(if(current_heuristic!=NULL){
 			cout<<"time:,"<<utils::g_timer()<<",bin_packed:,"<<bin_packed_episode<<",current_heuristic rejected,online_sampling time:,"<<sampler_time
@@ -1248,28 +1004,19 @@ void PatternCollectionGeneratorGeneticSS::evaluate(vector<double> &fitness_value
 	    fitness_values.push_back(fitness);
 	}
 	DEBUG_MSG(cout<<"finished evaluate"<<endl;fflush(stdout););
-}
+    }
 
-void PatternCollectionGeneratorGeneticSS::bin_packing() {
-	max_target_size=8;
-	bin_packing_reg_count++;
-	DEBUG_MSG(cout<<"Starting Rel_bin_packing, pdb_max_size:"<<pdb_max_size<<endl;);
+    void PatternCollectionGeneratorGeneticSS::bin_packing() {
+	DEBUG_MSG(cout<<"Starting bin_packing, pdb_max_size:"<<pdb_max_size<<endl;);
 	
-	int temp=0;
-	if(use_norm_dist){  
-		std::normal_distribution<double> distribution((max_target_size+min_target_size)/2,(max_target_size-min_target_size)/2);
-	  temp=distribution(generator);
-	} else{
-		temp=rand()%(max_target_size-min_target_size+1);temp+=min_target_size;
+	if(pdb_factory->name().find("symbolic")!=string::npos){
+	  std::default_random_engine generator;
+	  std::normal_distribution<double> distribution((max_target_size+min_target_size)/2,max_target_size-min_target_size);
+	  //int temp=rand()%(max_target_size-min_target_size);
+	  int temp=distribution(generator);
+	  pdb_max_size=9*pow(10,temp);
+	  cout<<"bin_packing,g_timer:"<<utils::g_timer<<",temp:"<<temp<<",max_target_size:"<<max_target_size<<",min_target_size:"<<min_target_size<<",pdb_max_size:"<<pdb_max_size<<flush;
 	}
-	  //pdb_max_size=pow(10,7);
-	  
-	  //Limited to between min_size and max_size
-	pdb_max_size=9*pow(10,temp);
-	pdb_max_size=min(pdb_max_size,pow(10,initial_max_target_size));
-	pdb_max_size=max(pdb_max_size,pow(10,min_target_size));
-	//cout<<"Rel_bin_packing,g_timer:"<<utils::g_timer<<",temp:,"<<temp<<",max_target_size:"<<max_target_size<<flush<<endl;
-	//cout<<",min_target_size:"<<min_target_size<<",pdb_max_size:"<<pdb_max_size<<flush<<endl;
 
 	TaskProxy task_proxy(*task);
 	VariablesProxy variables = task_proxy.get_variables();
@@ -1286,19 +1033,7 @@ void PatternCollectionGeneratorGeneticSS::bin_packing() {
 		remaining_vars.insert(i);
 	      }
 	  }
-	  //cout<<"\tremaining_vars:";for (auto var : remaining_vars) cout<<var<<",";cout<<endl;
-	  
-	  vector<int> vars_to_check;
-	  
-	  set<int> remaining_goal_vars;
-	  for (FactProxy goal : task_proxy.get_goals()) {
-	    //int , l_id=goal.get_variable().get_id();
-	    double next_var_size = goal.get_variable().get_domain_size();
-	    if (next_var_size <= pdb_max_size){
-	      remaining_goal_vars.insert(goal.get_variable().get_id());
-	    }
-	  }
-	  //cout<<"\tremaining_goal_vars:";for (auto var : remaining_goal_vars) cout<<var<<",";cout<<endl;
+	  //cout<<"remaining_vars:";for (auto var : remaining_vars) cout<<var<<",";cout<<endl;
 
 	  vector<vector<bool>> pattern_collection;
 	  vector<bool> pattern(variables.size(), false);
@@ -1307,99 +1042,75 @@ void PatternCollectionGeneratorGeneticSS::bin_packing() {
 	    vector<int> pattern_int;
 	    vector<int> candidate_pattern;
 	    int var_id;
-		while(!remaining_vars.empty()){
-		  if(pattern_int.size()>0){
-			candidate_pattern=pattern_int;
-			sort(candidate_pattern.begin(), candidate_pattern.end());
-			set<int> rel_vars_set;
-			vector<int> relevant_vars;
-			vector<int> relevant_vars_in_remaining;
-			for (auto var : pattern_int){
-			  const vector<int> &rel_vars = causal_graph.get_eff_to_pre(var);
-			  for(auto var2 : rel_vars){
-				rel_vars_set.insert(var2);
-			  }
-			}
-			set_difference(rel_vars_set.begin(), rel_vars_set.end(),
-				candidate_pattern.begin(), candidate_pattern.end(),
-				back_inserter(relevant_vars));
-			//cout<<"relevant vars to current_pattern:";for (auto item : relevant_vars) cout<<item<<",";cout<<endl;
-			set_intersection(relevant_vars.begin(), relevant_vars.end(),
-				remaining_vars.begin(), remaining_vars.end(),
-				back_inserter(relevant_vars_in_remaining));
-			//cout<<"relevant vars in remaining:";for (auto item : relevant_vars_in_remaining) cout<<item<<",";cout<<flush<<endl;
-			g_rng()->shuffle(relevant_vars);
-			while(relevant_vars_in_remaining.size()>0){
-			  var_id=relevant_vars_in_remaining.back();
-			  relevant_vars_in_remaining.pop_back();
-			  double next_var_size = variables[var_id].get_domain_size();
-			  if(utils::is_product_within_limit(current_size, next_var_size, pdb_max_size)) {
-				candidate_pattern.push_back(var_id);
-				current_size *= next_var_size;
-				pattern[var_id] = true;
-				remaining_vars.erase(var_id);
-				remaining_goal_vars.erase(var_id);
-				//cout<<"\t\tadded to pattern var_id:"<<var_id<<",current_size:"<<current_size<<",pdb_max_size:"<<pdb_max_size<<",new_pattern:"<<candidate_pattern<<",remaining vars:"<<remaining_vars.size()<<endl;
-				break;
-			  }
-			}
-			if(candidate_pattern!=pattern_int){
-			  pattern_int=candidate_pattern;
-			}
-			else{//no var is small enough to be added, or none left
-			  //cout<<"no more relevant vars can be added"<<flush<<endl;
-			  if(pattern_int.size()>0){
-			  pattern_collection.push_back(pattern);
-			  vector<int> trans_pattern=transform_to_pattern_normal_form(pattern_collection.back());
-			  //cout<<"added pattern["<<pattern_collection.size()-1<<"]:"<<trans_pattern<<",size:"<<get_pattern_size(trans_pattern)<<flush<<endl;
-			  pattern_int.clear();
-			  pattern.clear();
-			  pattern.resize(variables.size(), false);
-			  current_size = 1;
-			  //TRYING ONLY ONE PATTERN
-			  if(single_pattern_only){
-				break;
-			  }
-			  }
-			}
+	    while(!remaining_vars.empty()){
+		if(pattern_int.size()>0){
+		  candidate_pattern=pattern_int;
+		  sort(candidate_pattern.begin(), candidate_pattern.end());
+		  set<int> rel_vars_set;
+		  vector<int> relevant_vars;
+		  vector<int> relevant_vars_in_remaining;
+		  for (auto var : pattern_int){
+		    const vector<int> &rel_vars = causal_graph.get_eff_to_pre(var);
+		    for(auto var2 : rel_vars){
+		      rel_vars_set.insert(var2);
+		    }
 		  }
-		  else{//choose a remaining var at random, nothing selected yet for this pattern
-			if(!use_first_goal_vars){
-			  auto temp_it=remaining_vars.begin();
-				advance(temp_it,rand()%remaining_vars.size());
-				var_id=*temp_it;
-			}
-			else{//using goal valrs first
-			  auto temp_it=remaining_goal_vars.begin();
-			  if(remaining_goal_vars.empty()){
-				//no more goal vars, so no more patterns, as we can not start it with a goal variable
-				break;
-			  }
-			  temp_it=remaining_goal_vars.begin();
-			  advance(temp_it,rand()%remaining_goal_vars.size());
-			  var_id=*temp_it;
-			  remaining_goal_vars.erase(temp_it);
-			}
-			remaining_vars.erase(var_id);
-			
-			//cout<<"\t\tfirst var for pattern:"<<var_id<<",remaining_goal_vars:"<<flush;
-			//for(auto id : remaining_goal_vars) cout<<","<<id;
-			//cout<<",remaining_vars:";
-			//for(auto id : remaining_vars) cout<<","<<id;
-			//cout<<endl;
-			
-			pattern[var_id]=true;
-			pattern_int.push_back(var_id);
-			double next_var_size = variables[var_id].get_domain_size();
-			current_size *= next_var_size;
-			}
+		  set_difference(rel_vars_set.begin(), rel_vars_set.end(),
+		      candidate_pattern.begin(), candidate_pattern.end(),
+		      back_inserter(relevant_vars));
+		  //cout<<"relevant vars to current_pattern:";for (auto item : relevant_vars) cout<<item<<",";cout<<endl;
+		  set_intersection(relevant_vars.begin(), relevant_vars.end(),
+		      remaining_vars.begin(), remaining_vars.end(),
+		      back_inserter(relevant_vars_in_remaining));
+		  //cout<<"relevant vars in remaining:";for (auto item : relevant_vars_in_remaining) cout<<item<<",";cout<<endl;
+		  g_rng()->shuffle(relevant_vars);
+		  while(relevant_vars_in_remaining.size()>0){
+		    var_id=relevant_vars_in_remaining.back();
+		    relevant_vars_in_remaining.pop_back();
+		    double next_var_size = variables[var_id].get_domain_size();
+		    if(utils::is_product_within_limit(current_size, next_var_size, pdb_max_size)) {
+		      candidate_pattern.push_back(var_id);
+		      current_size *= next_var_size;
+		      pattern[var_id] = true;
+		      remaining_vars.erase(var_id);
+		      //cout<<"added to pattern var_id:"<<var_id<<",current_size:"<<current_size<<",pdb_max_size:"<<pdb_max_size<<",new_pattern:"<<candidate_pattern<<",remaining vars:"<<remaining_vars.size()<<endl;
+		      break;
+		    }
 		  }
-			//Add the last pattern!
-		  if(pattern_int.size()>0){
+		  if(candidate_pattern!=pattern_int){
+		    pattern_int=candidate_pattern;
+		  }
+		  else{//no var is small enough to be added, or none left
+		    //cout<<"no more relevant vars can be added"<<flush<<endl;
+		    if(pattern_int.size()>0){
 			pattern_collection.push_back(pattern);
 			vector<int> trans_pattern=transform_to_pattern_normal_form(pattern_collection.back());
-			//cout<<"added last added pattern["<<pattern_collection.size()-1<<"]:"<<trans_pattern<<",size:"<<get_pattern_size(trans_pattern)<<endl;
+			//cout<<"added pattern["<<pattern_collection.size()-1<<"]:"<<trans_pattern<<",size:"<<get_pattern_size(trans_pattern)<<endl;
+			pattern_int.clear();
+			pattern.clear();
+			pattern.resize(variables.size(), false);
+			current_size = 1;
+		    }
 		  }
+		}
+		else{//choose a remaining var at random, nothing selected yet for this pattern
+		  auto temp_it=remaining_vars.begin();
+		  advance(temp_it,rand()%remaining_vars.size());
+		  var_id=*temp_it;
+		  remaining_vars.erase(temp_it);
+		  //cout<<"first var for pattern:"<<var_id<<",remaining vars:"<<remaining_vars.size()<<endl;
+		  pattern[var_id]=true;
+		  pattern_int.push_back(var_id);
+		  double next_var_size = variables[var_id].get_domain_size();
+		  current_size *= next_var_size;
+		}
+		//Add the last pattern!
+		if(remaining_vars.empty()&&pattern_int.size()>0){
+		  pattern_collection.push_back(pattern);
+		  vector<int> trans_pattern=transform_to_pattern_normal_form(pattern_collection.back());
+		  //cout<<"last added pattern["<<pattern_collection.size()-1<<"]:"<<trans_pattern<<",size:"<<get_pattern_size(trans_pattern)<<endl;
+		}
+	    }
 	    //Sort patterns by size, so zero_one cost partition benefits larger patterns over shorter ones
 	    sort(pattern_collection.begin(),pattern_collection.end(),compare_pattern_length);
 	    
@@ -1413,29 +1124,22 @@ void PatternCollectionGeneratorGeneticSS::bin_packing() {
 	    pattern_collections.push_back(pattern_collection);
 	}
 	DEBUG_MSG(cout<<"bin_packed finished generating "<<pattern_collections.back().size()<<" patterns"<<endl;);
-	}
+    }
 
 
-void PatternCollectionGeneratorGeneticSS::bin_packing_no_rel_analysis() {
-	max_target_size=8;
-	bin_packing_rel_count++;
+    void PatternCollectionGeneratorGeneticSS::bin_packing_no_rel_analysis() {
 	DEBUG_MSG(cout<<"Starting bin_packing_no_rel, pdb_max_size:"<<pdb_max_size<<endl;);
-
-
-	int temp=0;
-	if(use_norm_dist){  
-		std::normal_distribution<double> distribution((max_target_size+min_target_size)/2,(max_target_size-min_target_size)/2);
-		temp=distribution(generator);
-	} else{
-		temp=rand()%(max_target_size-min_target_size+1);temp+=min_target_size;
+	cout<<"g_timer:"<<utils::g_timer()<<",Starting bin_packing, pdb_max_size:"<<pdb_max_size<<endl;
+	
+	if(pdb_factory->name().find("symbolic")!=string::npos){
+	  std::default_random_engine generator;
+	  std::normal_distribution<double> distribution((max_target_size+min_target_size)/2,max_target_size-min_target_size);
+	  //int temp=rand()%(max_target_size-min_target_size);
+	  int temp=distribution(generator);
+	  cout<<"g_timer:"<<utils::g_timer<<",temp:"<<temp<<",max_target_size:"<<max_target_size<<",min_target_size:"<<min_target_size<<flush;
+	  pdb_max_size=9*pow(10,temp);
 	}
-	  
-	  //Limited to between min_size and max_size
-	pdb_max_size=9*pow(10,temp);
-	pdb_max_size=min(pdb_max_size,9*pow(10,initial_max_target_size));
-	pdb_max_size=max(pdb_max_size,pow(10,min_target_size));
-	//}
-	//cout<<",Starting reg_bin_packing, pdb_max_size:"<<pdb_max_size<<",g_timer:"<<utils::g_timer<<",temp:,"<<temp<<",max_target_size:"<<max_target_size<<",min_target_size:"<<min_target_size<<endl;
+	cout<<",Starting bin_packing, pdb_max_size:"<<pdb_max_size<<flush<<endl;
 
 	TaskProxy task_proxy(*task);
 	VariablesProxy variables = task_proxy.get_variables();
@@ -1449,6 +1153,7 @@ void PatternCollectionGeneratorGeneticSS::bin_packing_no_rel_analysis() {
 	}
 	size_t max_patterns=INT_MAX;//As many patterns as needed
 
+	
 	//Some problems benefit form less patterns, higher sizes
 	//if(rand() % 10 >4){
 	//  max_patterns=0;
@@ -1538,11 +1243,11 @@ void PatternCollectionGeneratorGeneticSS::bin_packing_no_rel_analysis() {
 	      if (current_size > 1 || var_counter>0) {
 		  pattern_collection.push_back(pattern);
 	      }
+	    //}
 	    //else{
 		//cout<<"\t skipping pattern"<<endl;
 	    //}
 	    //Sort patterns by size, so zero_one cost partition benefits larger patterns over shorter ones
-
 	    sort(pattern_collection.begin(),pattern_collection.end(),compare_pattern_length);
 	    
 	    DEBUG_MSG(
@@ -1560,49 +1265,22 @@ void PatternCollectionGeneratorGeneticSS::bin_packing_no_rel_analysis() {
 
     void PatternCollectionGeneratorGeneticSS::genetic_algorithm(
 	shared_ptr<AbstractTask> task_) {
-	
-	task = task_;
-	TaskProxy task_proxy(*task);
-	VariablesProxy variables = task_proxy.get_variables();
-	/*while(true){
-	  float temp=utils::g_timer();
-          if(true){
-	    Pattern pattern;
-	    for(int i=0;i<10;i++){
-	      //pattern.push_back(rand()%variables.size());
-	      pattern.push_back(i);
-	    }
-	    //Pattern pattern={1,2,3};
-	    PatternCollection pattern_collection;
-	    pattern_collection.push_back(pattern);
-	    cout<<"calling ZeroOnePDBs"<<flush<<endl;
-	    ZeroOnePDBs candidate (task_proxy, pattern_collection, *pdb_factory);
-	    cout<<"after calling ZeroOnePDBs"<<flush<<endl;
-	    cout<<"Peak Memory:"<<utils::get_peak_memory_in_kb()<<",current_memory:"<<utils::get_current_memory_in_kb()<<flush<<endl;
-	  }
-	  float pdb_gen_time=utils::g_timer()-temp;
-	  cout<<"generated candidate[,"<<candidate_count+1<<",],time:,"<<",gen_time:,"<<pdb_gen_time<<",Peak Memory:"<<utils::get_peak_memory_in_kb()<<",current_memory:"<<utils::get_current_memory_in_kb()<<flush<<endl;
-	  candidate_count++;
-	}*/
-
-
-	int time_to_clean_dom=100;
+	int time_to_clean_dom=1;
 	bin_packed_episode=true;
 	task = task_;
 	best_fitness = -1;
 	//best_patterns = nullptr;
 	    
-	if(create_perimeter){
-	  cout<<"seeding with creating_perimeter"<<endl;
-	  //min_improvement_ratio=0.01;//we want any heuristic improving perimenter
-	  min_improvement_ratio=0.00;//we want any heuristic improving perimenter
+       	if(create_perimeter){
+	  cout<<"creating_perimeter"<<endl;
+	  min_improvement_ratio=0.01;//we want any heuristic improving perimenter
 	  
 	  //do not want to start with 20,000 elements if cant find improvement on perimeter
 	  //on first 50 secs, 10 mill should be a more reasonable start
 	  last_improv_collection_size=pow(10,6);
 	  
 	  pattern_collections.clear();
-	  //TaskProxy task_proxy(*task);
+	  TaskProxy task_proxy(*task);
 	  VariablesProxy variables = task_proxy.get_variables();
 	  Pattern pattern;
 	  for(size_t i=0;i<variables.size();i++){
@@ -1627,12 +1305,7 @@ void PatternCollectionGeneratorGeneticSS::bin_packing_no_rel_analysis() {
 	    problem_solved_while_pdb_gen=true;
 	    cout<<"Solution found while generating Perimeter PDB candidate of type:"<<pdb_factory->name()<<", adding PDB and exiting generation at time"<<utils::g_timer()<<endl;
 
-			size_t best_pdbs_count=0;
-			for (size_t collection=0; collection<best_pdb_collections.size();collection++){
-				best_pdbs_count+=best_pdb_collections[collection]->size();
-			}
-
-	    cout<<"final episode:,"<<current_episode<<",time:,"<<utils::g_timer()<<",overall_pdb_gen_time:,"<<overall_pdb_gen_time<<",online_samples:,"<<total_online_samples<<",overall_sampling_time:,"<<overall_sampling_time<<",avg samp time:,"<<double(overall_sampling_time)/double((total_online_samples == 0) ? 1 : total_online_samples)<<",avg_sampled_states:,"<<avg_sampled_states<<",overall_probe_time:,"<<overall_probe_time<<",candidate_count:,"<<candidate_count<<",unique_samples.size:,"<<unique_samples.size()<<",best_heuristics count:,"<<best_pdbs_count<<",overall_dominance_prunning_time:,"<<overall_dominance_prunning_time<<",bin_pack_reg_count:,"<<bin_packing_reg_count<<",bin_packing_rel_count:"<<bin_packing_rel_count<<endl;
+	    cout<<"final episode:,"<<current_episode<<",time:,"<<utils::g_timer()<<",overall_pdb_gen_time:,"<<overall_pdb_gen_time<<",online_samples:,"<<total_online_samples<<",overall_sampling_time:,"<<overall_sampling_time<<",avg samp time:,"<<double(overall_sampling_time)/double((total_online_samples == 0) ? 1 : total_online_samples)<<",avg_sampled_states:,"<<avg_sampled_states<<",overall_probe_time:,"<<overall_probe_time<<",candidate_count:,"<<candidate_count<<",unique_samples.size:,"<<unique_samples.size()<<",best_heuristics count:,"<<best_pdb_collections.size()<<",overall_dominance_prunning_time:,"<<overall_dominance_prunning_time<<endl;
 	    best_pdb_added=true;
 	    float start_time_dom=utils::g_timer();
 	    if(recompute_max_additive_subsets){
@@ -1654,23 +1327,7 @@ void PatternCollectionGeneratorGeneticSS::bin_packing_no_rel_analysis() {
 	  last_improv_collection_size=get_pattern_size(pattern);
 	  perimeter_created=true;
 	} else{
-	  if(rel_analysis_only==true){
-	    bin_packing();
-	    cout<<"bin_packing with rel_analysis_only"<<endl;
-	  }
-	  else if(reg_bin_pack_only==true){
-	    bin_packing_no_rel_analysis();
-	    cout<<"bin_packing regular only"<<endl;
-	  }
-	  else{//doing mixed bin_packing
-	    cout<<"bin_packing, mixed regular and rel_analysis"<<endl;
-	    if(rand()%2>0){ 
-	      bin_packing();
-	    }
-	    else{
-	      bin_packing_no_rel_analysis();
-	    }
-	  }
+	  bin_packing();
 	}
 	vector<double> initial_fitness_values;
 	evaluate(initial_fitness_values);
@@ -1682,89 +1339,59 @@ void PatternCollectionGeneratorGeneticSS::bin_packing_no_rel_analysis() {
 	    }
 	    if(genetic_SS_timer->is_expired()){
 		//cout<<"breaking-3 out of GA Algortihm, current gen time:"<<timer()<<" bigger than time_limit:"<<time_limit<<endl;
-				avg_sampled_states=double(overall_sampled_states)/double(total_online_samples);
+		avg_sampled_states=double(overall_sampled_states)/double(total_online_samples);
 		//cout<<"final episode:,"<<current_episode<<",time:,"<<utils::g_timer()<<",overall_pdb_gen_time:,"<<overall_pdb_gen_time<<",overall_pdb_helper_time:,"<<overall_pdb_helper_gen_time<<",online_samples:,"<<total_online_samples<<",overall_sampling_time:,"<<overall_online_samp_time<<",avg samp time:,"<<double(overall_online_samp_time)/double((total_online_samples == 0) ? 1 : total_online_samples)<<",avg_sampled_states:,"<<avg_sampled_states<<",overall_probe_time:"<<overall_probe_time<<endl;
-				cout<<"final episode:,"<<current_episode<<",time:,"<<utils::g_timer()<<",overall_pdb_gen_time:,"<<overall_pdb_gen_time<<",online_samples:,"<<total_online_samples<<",overall_sampling_time:,"<<overall_sampling_time<<",avg samp time:,"<<double(overall_sampling_time)/double((total_online_samples == 0) ? 1 : total_online_samples)<<",avg_sampled_states:,"<<avg_sampled_states<<",overall_probe_time:,"<<overall_probe_time<<",candidate_count:,"<<candidate_count<<",unique_samples.size:,"<<unique_samples.size()<<",best_heuristics count:,"<<best_pdb_collections.size()<<",overall_dominance_prunning_time:,"<<overall_dominance_prunning_time<<endl;
-				cout<<"Peak memory:"<<utils::get_peak_memory_in_kb()<<endl;fflush(stdout);
-				std::shared_ptr<PDBCollection> best_pdb_collections_print=result->get_pdbs();
-				int counter=0;
-				for(auto pdb : *best_pdb_collections_print){
-					cout<<"final_pdb["<<counter<<"]:"<<*pdb<<endl;
-					counter++;
-				}
-			}
+		cout<<"final episode:,"<<current_episode<<",time:,"<<utils::g_timer()<<",overall_pdb_gen_time:,"<<overall_pdb_gen_time<<",online_samples:,"<<total_online_samples<<",overall_sampling_time:,"<<overall_sampling_time<<",avg samp time:,"<<double(overall_sampling_time)/double((total_online_samples == 0) ? 1 : total_online_samples)<<",avg_sampled_states:,"<<avg_sampled_states<<",overall_probe_time:,"<<overall_probe_time<<",candidate_count:,"<<candidate_count<<",unique_samples.size:,"<<unique_samples.size()<<",best_heuristics count:,"<<best_pdb_collections.size()<<",overall_dominance_prunning_time:,"<<overall_dominance_prunning_time<<endl;
+		cout<<"Peak memory:"<<utils::get_peak_memory_in_kb()<<endl;fflush(stdout);
+		std::shared_ptr<PDBCollection> best_pdb_collections_print=result->get_pdbs();
+		int counter=0;
+		for(auto pdb : *best_pdb_collections_print){
+		    cout<<"final_pdb["<<counter<<"]:"<<*pdb<<endl;
+		    counter++;
+		}
+	    }
 	    else if((i%episodes_to_mutate==0&&i>0)||bin_pack_next){
 	      bin_pack_next=false;
-	      DEBUG_MSG(cout<<"time to bin_pack"<<endl;);
-	      if(utils::g_timer()>time_to_clean_dom&&use_online_domination_check){
+	      if(utils::g_timer()>time_to_clean_dom){
 		    cout<<"time:"<<utils::g_timer()<<",time to clear dominated heuristics every 100 secs"<<endl;
 		    clear_dominated_heuristics();
 		    cout<<"time:"<<utils::g_timer()<<",finished clearing dominated heuristics every 100 secs"<<endl;
 		    time_to_clean_dom+=100;
 		    episodes_to_mutate=1;
-				}
-				disjoint_patterns=!disjoint_patterns;
-				num_collections=1;
-		 
-	        if(rel_analysis_only==true){
-                    bin_packing();
-					}
-					else if(reg_bin_pack_only==true){
-					 	bin_packing_no_rel_analysis();
-					}
-					else{//doing mixed bin_packing
-					if(use_ucb){
-					//cout<<"use_ucb"<<endl;
-					bin_reg_packed=false;
-					bin_rel_packed=false;
-					reward_bin_rel=(avg_reward_rel/bin_rel_calls)+sqrt(2*log(bin_rel_calls)/bin_total_calls);
-					reward_bin_reg=(avg_reward_reg/bin_reg_calls)+sqrt(2*log(bin_reg_calls)/bin_total_calls);
-					if(reward_bin_rel>reward_bin_reg){
-						//cout<<"using rel_bin_pack, reward_bin_rel="<<reward_bin_rel<<",reward_bin_reg:"<<reward_bin_reg;
-						//cout<<",bin_total_calls:"<<bin_total_calls<<",bin_reg_calls:"<<bin_reg_calls<<",bin_rel_calls:"<<bin_rel_calls<<endl;
-						bin_rel_calls++;
-						bin_packing();
-						bin_rel_packed=true;
-					}
-					else if(reward_bin_rel<reward_bin_reg){
-						//cout<<"using reg_bin_pack, reward_bin_rel="<<reward_bin_rel<<",reward_bin_reg:"<<reward_bin_reg;
-						//cout<<",bin_total_calls:"<<bin_total_calls<<",bin_reg_calls:"<<bin_reg_calls<<",bin_rel_calls:"<<bin_rel_calls<<endl;
-						bin_reg_calls++;
-					bin_packing_no_rel_analysis();
-					bin_reg_packed=true;
-					}
-					else if(rand()%2>0){ 
-						//cout<<"using random rel_bin_pack, reward_bin_rel="<<reward_bin_rel<<"==reward_bin_reg:"<<reward_bin_reg;
-		      //cout<<",bin_total_calls:"<<bin_total_calls<<",bin_reg_calls:"<<bin_reg_calls<<",bin_rel_calls:"<<bin_rel_calls<<endl;
-		      bin_rel_calls++;
-		      bin_packing();
-					}
-					else{
-						//cout<<"using random reg_bin_pack, reward_bin_rel="<<reward_bin_rel<<"==reward_bin_reg:"<<reward_bin_reg<<endl;
-						//cout<<",bin_total_calls:"<<bin_total_calls<<",bin_reg_calls:"<<bin_reg_calls<<",bin_rel_calls:"<<bin_rel_calls<<endl;
-						bin_reg_calls++;
-						bin_packing_no_rel_analysis();
-					}
-					}
-					else if(rand()%2>0){ 
-						//cout<<"using random rel_bin_pack, reward_bin_rel="<<reward_bin_rel<<"==reward_bin_reg:"<<reward_bin_reg;
-					//cout<<",bin_total_calls:"<<bin_total_calls<<",bin_reg_calls:"<<bin_reg_calls<<",bin_rel_calls:"<<bin_rel_calls<<endl;
-					bin_rel_calls++;
-					bin_packing();
-				}
-				else{
-		    //cout<<"using random reg_bin_pack, reward_bin_rel="<<reward_bin_rel<<"==reward_bin_reg:"<<reward_bin_reg<<endl;
-		    //cout<<",bin_total_calls:"<<bin_total_calls<<",bin_reg_calls:"<<bin_reg_calls<<",bin_rel_calls:"<<bin_rel_calls<<endl;
-					bin_reg_calls++;
-					bin_packing_no_rel_analysis();
-				}
-			}
-		bin_total_calls++;
-
+		}
+		disjoint_patterns=!disjoint_patterns;
+		num_collections=1;
+		    
+//		  if(utils::g_timer()-last_time_collections_improved>50.0){
+//		  if(best_patterns.size()>2&&rand()%2==0){
+//		    vector<vector<bool> > pattern_coll_bool;
+//		    //size_t selected_coll=max(size_t(1),size_t(rand()%best_patterns.size()));//avoiding perimeter pdb, no point mutating that one
+//		    size_t selected_coll=best_patterns.size()-1;
+//		    vector<vector<int> > pattern_coll_int=best_patterns.at(selected_coll);
+//		    double current_pdb_size=0;
+//		    for(size_t i=0;i<best_patterns.back().size();i++){
+//		      current_pdb_size+=get_pattern_size(pattern_coll_int[i]);
+//		      vector<bool> pattern_bit;
+//		      transform_to_pattern_bitvector_form(pattern_bit,pattern_coll_int[i]);
+//		      pattern_coll_bool.push_back(pattern_bit);
+//		    }
+//		    pattern_collections.assign(1,pattern_coll_bool);
+//		    cout<<"no bin_packing, using existing selected pattern collection to mutate a bigger pdb:"<<endl;
+//		    pdb_max_size=current_pdb_size*10;
+//		    mutate2();
+//		  }
+//		}
+//		elle{
+		if(rand()%2>0){  
+		  bin_packing();
+		}
+		else{
+		  bin_packing_no_rel_analysis();
+		}
+//		}
 		bin_packed_episode=true;
 		mutation_probability=((double) rand() / (RAND_MAX))/10.0;
-		//cout<<"bin_packed_episode:"<<current_episode<<",mutation_probability:"<<mutation_probability<<endl;
-			}
+	    }
 	    else{
 	      //cout<<"calling mutate2, current_episode:"<<i<<endl;
 		int mutations=mutate2();
@@ -1807,16 +1434,13 @@ void PatternCollectionGeneratorGeneticSS::bin_packing_no_rel_analysis() {
 	    evaluate(fitness_values);
 	    DEBUG_MSG(cout<<"time:"<<utils::g_timer()<<",evaluated finished"<<endl;);
 	    // We allow to select invalid pattern collections.
-	    if(genetic_SS_timer->is_expired() || 
-	       !pdb_factory->release_memory_below_limit_mb(memory_limit)){
+	    if(genetic_SS_timer->is_expired()||(double(utils::get_peak_memory_in_kb())/1024>memory_limit)){
 		avg_sampled_states=double(overall_sampled_states)/double(total_online_samples);
 		if (!recompute_max_additive_subsets) {
-			if(use_online_domination_check){
-				clear_dominated_heuristics();
-			}
+		  clear_dominated_heuristics();
 		}
 		//cout<<"final episode:,"<<current_episode<<",g_time:,"<<utils::g_timer()<<",genetic_SS_timer:"<<genetic_SS_timer<<",overall_pdb_gen_time:,"<<overall_pdb_gen_time<<",overall_pdb_helper_time:,"<<overall_pdb_helper_gen_time<<",online_samples:,"<<total_online_samples<<",overall_sampling_time:,"<<overall_online_samp_time<<",avg samp time:,"<<double(overall_online_samp_time)/double((total_online_samples == 0) ? 1 : total_online_samples)<<",overall_backward_sampling_time:,"<<overall_backward_sampling_timer<<",avg_sampled_states:,"<<avg_sampled_states<<endl;
-		cout<<"final episode:,"<<current_episode<<",time:,"<<utils::g_timer()<<",overall_pdb_gen_time:,"<<overall_pdb_gen_time<<",online_samples:,"<<total_online_samples<<",overall_sampling_time:,"<<overall_sampling_time<<",avg samp time:,"<<double(overall_sampling_time)/double((total_online_samples == 0) ? 1 : total_online_samples)<<",avg_sampled_states:,"<<avg_sampled_states<<",overall_probe_time:,"<<overall_probe_time<<",candidate_count:,"<<candidate_count<<",unique_samples.size:,"<<unique_samples.size()<<",best_heuristics count:,"<<best_pdb_collections.size()<<",overall_dominance_prunning_time:,"<<overall_dominance_prunning_time<<",bin_total_calls:"<<bin_total_calls<<",bin_reg_wins:"<<avg_reward_reg<<",bin_rel_wins:,"<<avg_reward_rel<<endl;
+		cout<<"final episode:,"<<current_episode<<",time:,"<<utils::g_timer()<<",overall_pdb_gen_time:,"<<overall_pdb_gen_time<<",online_samples:,"<<total_online_samples<<",overall_sampling_time:,"<<overall_sampling_time<<",avg samp time:,"<<double(overall_sampling_time)/double((total_online_samples == 0) ? 1 : total_online_samples)<<",avg_sampled_states:,"<<avg_sampled_states<<",overall_probe_time:,"<<overall_probe_time<<",candidate_count:,"<<candidate_count<<",unique_samples.size:,"<<unique_samples.size()<<",best_heuristics count:,"<<best_pdb_collections.size()<<",overall_dominance_prunning_time:,"<<overall_dominance_prunning_time<<endl;
 		std::shared_ptr<PDBCollection> best_pdb_collections_print=result->get_pdbs();
 		int counter=0;
 		for(auto pdb : *best_pdb_collections_print){
@@ -1835,20 +1459,38 @@ void PatternCollectionGeneratorGeneticSS::bin_packing_no_rel_analysis() {
 	    
 	DEBUG_MSG(cout<<"time:,"<<utils::g_timer()<<",finished with episodes"<<flush<<endl;);
 	
-	if (!recompute_max_additive_subsets&&use_online_domination_check){
+	if (!recompute_max_additive_subsets) {
 	  cout<<"starting clear_dominated,starting heurs"<<best_pdb_collections.size()<<endl;fflush(stdout);
 	  clear_dominated_heuristics();
 	  cout<<"finished clear_dominated,remaining heurs"<<best_pdb_collections.size()<<endl;fflush(stdout);
 	}
-		}
-
+	  
+	vector<std::shared_ptr<PDBCollection> > terminated_best_pdb_collections; //Store the PDBs as well
+	std::shared_ptr<PDBCollection> terminated_collection;
+	for(auto collection : best_pdb_collections){
+	  terminated_collection->clear();
+	  for(auto pdb : *collection){
+	    if(!pdb->is_finished()){
+	    cout<<"Final terminate, time:,"<<utils::g_timer()<<",calling terminate_creation, g_timer:"<<utils::g_timer()<<endl;
+	    pdb->terminate_creation(perimeter_time_ms,perimeter_step_time_ms,perimeter_nodes,2000);
+	    terminated_collection->push_back(pdb);
+	    cout<<"finished terminate_creation, g_timer:"<<utils::g_timer()<<endl;
+	    }
+	    else{
+	      terminated_collection->push_back(pdb);
+	    }
+	  }
+	  terminated_best_pdb_collections.push_back(collection);
+	}
+	best_pdb_collections=terminated_best_pdb_collections;
+    }
 
     double PatternCollectionGeneratorGeneticSS::probe_best_only(){
 	DEBUG_MSG(cout<<"calling probe_best_only,threshold:"<<threshold<<endl;fflush(stdout););
   
 	//set<int> visited_states;//for cutting off zero-cost operator loops
 	TaskProxy task_proxy(*task);
-	//SuccessorGenerator successor_generator(task);
+	SuccessorGenerator successor_generator(task);
 	const State &initial_state = task_proxy.get_initial_state();
 
 	Options temp_options2;
@@ -1888,12 +1530,8 @@ void PatternCollectionGeneratorGeneticSS::bin_packing_no_rel_analysis() {
 	    initial_h=get_best_value(initial_state);
 	    //initial_h needs to be at least 1
 	    initial_h=max(1,initial_h);
-	    if(use_lmcut){
-	      initial_h=max(initial_h,lmcut->compute_heuristic(initial_state));
-	    }
 	    //initial_h=temp_lmcut_heuristic.compute_heuristic(initial_state);
 	    //cout<<"prev_heur_initial_value:"<<initial_value<<endl;
-	    //cout<<"\tprobe_best_only,initial_h:"<<initial_h<<endl;
 	}
 	else{
 	    cout<<"cant call probe_best_only if best_heuristic is empty,DEBUG ME!!!"<<endl;
@@ -1909,7 +1547,7 @@ void PatternCollectionGeneratorGeneticSS::bin_packing_no_rel_analysis() {
         
 
 	vector<OperatorProxy> applicable_ops; 
-	successor_generator->generate_applicable_ops(initial_state,applicable_ops); //count nodes generated
+	successor_generator.generate_applicable_ops(initial_state,applicable_ops); //count nodes generated
 	//cout<<"before amount_initial"<<endl;fflush(stdout);
         double amount_initial = (double)applicable_ops.size();
         //Need to initialize child state before using	
@@ -2058,7 +1696,7 @@ void PatternCollectionGeneratorGeneticSS::bin_packing_no_rel_analysis() {
 	    }
 
 	    State* current_state=&(it->second.first);
-	    successor_generator->generate_applicable_ops(*current_state,applicable_ops); //count nodes generated
+	    successor_generator.generate_applicable_ops(*current_state,applicable_ops); //count nodes generated
 
 	    // std::pair<std::map<Node2, double>::iterator, bool> ret;
 	    // std::map<Node2, double>::iterator it;
@@ -2123,17 +1761,8 @@ void PatternCollectionGeneratorGeneticSS::bin_packing_no_rel_analysis() {
 //                  	vector<int> F_culprit;
 			    
 		h=get_best_value(child);
-		//If use_lmcut, only add pattern if it improves upon lmcut
-		if(use_lmcut){
-		  h=max(h,lmcut->compute_heuristic(child));
-		}
 		//h=temp_lmcut_heuristic.compute_heuristic(child);
 		if(h==numeric_limits<int>::max()){
-		  pair<map<size_t,pair<State,int> >::iterator,bool> ret;
-		  ret=unique_samples.insert(make_pair(child_hash,make_pair(child,h)));
-		  if(!ret.second){//keep max h value stored, so we do not need to recalculate
-		    ret.first->second.second=max(h,ret.first->second.second);
-		  }
 		    continue;
 		    //cout<<"prev_h_deade_end_found"<<endl;
 		}
@@ -2166,7 +1795,7 @@ void PatternCollectionGeneratorGeneticSS::bin_packing_no_rel_analysis() {
 
 		vector<OperatorProxy> applicable_ops2; 
 		//cout<<"S:"<<endl;global_state_2.dump_inline();fflush(stdout);
-		successor_generator->generate_applicable_ops(child,applicable_ops2); //count nodes generated
+		successor_generator.generate_applicable_ops(child,applicable_ops2); //count nodes generated
              
 		int amount = applicable_ops2.size();
                 
@@ -2176,12 +1805,12 @@ void PatternCollectionGeneratorGeneticSS::bin_packing_no_rel_analysis() {
       
 		//add to the collector
 	
-		pair<map<size_t,pair<State,int> >::iterator,bool> ret;
-		ret=unique_samples.insert(make_pair(child_hash,make_pair(child,h)));
+		unique_samples.insert(make_pair(child_hash,make_pair(child,0)));
+		//pair<map<size_t,pair<State,int> >::iterator,bool> ret;
 		//ret=unique_samples.insert(make_pair(child_hash,make_pair(child,5)));
-		if(!ret.second){//keep max h value stored, so we do not need to recalculate
-		  ret.first->second.second=max(h,ret.first->second.second);
-		}
+		//if(!ret.second){
+		//  ret.first->second.first=State(child);
+		//}
 		//visited_states.insert(child.hash());
 		if ( h + g_real + op.get_cost()  <= threshold) {
 		    //Keep a record of all sampled states and their maximum weights and minimum depths
@@ -2506,10 +2135,6 @@ void PatternCollectionGeneratorGeneticSS::bin_packing_no_rel_analysis() {
 	if(best_pdb_collections.size()<2){
 	    return;
 	}
-	if(use_SS_fitness==false&&use_ipdb_walk==false){
-	  //We only do domination check when we have SS states to compare against
-	  return;
-	}
 
 	double start_time=utils::g_timer();
 	cout<<"calling clear_dominated_heuristics with "<<best_pdb_collections.size()<<" best heuristics and unique_samples:"<<unique_samples.size()<<endl;fflush(stdout);
@@ -2522,7 +2147,6 @@ void PatternCollectionGeneratorGeneticSS::bin_packing_no_rel_analysis() {
 	vector<int> current_best_h_values;
 	int h=0;
 	int h_temp=0;
-
 	for(map<size_t,pair<State,int> >::iterator it=unique_samples.begin(); it!=unique_samples.end();it++){
 	    //cout<<"before evaluate state_id:"<<it->get_id()<<endl;fflush(stdout);
 	    //cout<<"State:";it->dump_inline();cout<<endl;fflush(stdout);
@@ -2601,31 +2225,6 @@ void PatternCollectionGeneratorGeneticSS::bin_packing_no_rel_analysis() {
       best_pdb_collections.at(i).reset();
     }
   }
-
-  //Lines bellow are future work
-  //for when we remove lmcut if not helping	
-  /*if(use_lmcut){
-    bool dominated_heur=true;
-    int j=0;
-    int h=0;
-    for(map<size_t,pair<State,int> >::iterator it=unique_samples.begin(); it!=unique_samples.end();it++){
-      if(current_best_h_values[j]==INT_MAX){
-	j++;
-	continue;
-      }
-      h=lmcut->compute_heuristic(it->second.first);
-      if(h>current_best_h_values[j]){
-	dominated_heur=false;
-	break;
-	cout<<"lmcut is still undominated"<<endl;
-      }
-    }
-    if(dominated_heur){
-      use_lmcut=false;
-      cout<<"stop using lmcut"<<endl;exit(0);
-    }
-  }*/
-
   cout<<"best_pdb_collections size:"<<best_pdb_collections.size();
   best_pdb_collections=cleaned_best_pdb_collections;
   cout<<",cleaned_best_pdb_collections:"<<cleaned_best_pdb_collections.size()<<","<<best_pdb_collections.size()<<",time:"<<utils::g_timer()-start_time<<endl;
@@ -2649,19 +2248,16 @@ void PatternCollectionGeneratorGeneticSS::bin_packing_no_rel_analysis() {
 
 	TaskProxy task_proxy(*task);
 	const State &initial_state = task_proxy.get_initial_state();
-	successor_generator=utils::make_unique_ptr<SuccessorGenerator>(task);
-	if(use_ipdb_walk){
-	  average_operator_cost=get_average_operator_cost(task_proxy);
-	}
+	SuccessorGenerator successor_generator(task);
 	vector<OperatorProxy> applicable_ops; 
-	successor_generator->generate_applicable_ops(initial_state,applicable_ops); //count nodes generated
+	successor_generator.generate_applicable_ops(initial_state,applicable_ops); //count nodes generated
 	if(applicable_ops.size()==0){
 	  cout<<"Initial state is dead_end,probably unsolvable in preprocessor,";
 	  exit(1);
 	}
 
-	//if(pdb_factory->name().find("symbolic")!=string::npos){
-	  //TaskProxy task_proxy(*task);
+	if(pdb_factory->name().find("symbolic")!=string::npos){
+	  TaskProxy task_proxy(*task);
 	  VariablesProxy variables = task_proxy.get_variables();
 	  cout<<"after get_variables"<<flush<<endl;
 	  cout<<"variables.size:"<<flush<<variables.size()<<flush<<endl;
@@ -2680,69 +2276,16 @@ void PatternCollectionGeneratorGeneticSS::bin_packing_no_rel_analysis() {
 	  //symbolic can not deal with them, limiting it
 	  //to 20 orders of magnitude for now
 	  max_target_size = min(20.0,log10 (overall_problem_size));
-	  //if no symbolic, limiting max_target_size to 900 mill elements
-	  if(pdb_factory->name().find("symbolic")==string::npos){
-	    max_target_size=8;
-			initial_max_target_size=max_target_size;
-	    cout<<"initial time_limit="<<time_limit<<endl;
-	  }
-	  else{
-			//DOING EXPERIMENTS FOR SYMBOLIC WITH FIXED MAX TARGET SIZE
-	    max_target_size=8;
-			initial_max_target_size=max_target_size;
-			if(max_target_size>10){//start with a cautious max_target_size for symbolic
-				max_target_size=max_target_size/2.0;
-			}
-	  }
-	  time_limit=pdb_factory->get_time_limit()/1000.0;
-	  min_target_size=min(max_target_size-2,4);
+	  initial_max_target_size=max_target_size;
+	  min_target_size=5;
 	  pdb_max_size=2*pow(10,min_target_size);
-	  cout<<"initial_max_target_size:"<<max_target_size<<",initial_min_target_size:"<<min_target_size<<",time_limit(per pattern):"<<time_limit<<flush<<endl;
-	  Options temp_options2;
-	  temp_options2.set<int>(
-	      "cost_type", NORMAL);
-	  temp_options2.set<bool>(
-	      "cache_estimates", false);
-	  if(use_lmcut){
-	    lmcut = utils::make_unique_ptr<lm_cut_heuristic::LandmarkCutHeuristic>(temp_options2);
-	    lmcut->initialize();
-	    cout<<"initial_lmcut_h:"<<lmcut->compute_heuristic(task_proxy.get_initial_state())<<endl;
-	  }
-	    
-	  
-	//}
-	//else{
-	//    pdb_max_size=2*pow(10,4);
-	//}
+	  time_limit=pdb_factory->get_time_limit()/1000.0;
+	  cout<<"initial_max_target:"<<max_target_size<<",initial_min_target:"<<min_target_size<<",time_limit(per pattern):"<<time_limit<<endl;
+	}
+	else{
+	    pdb_max_size=2*pow(10,4);
+	}
 	
-	  cout<<"starting timings"<<flush<<endl;
-	  utils::Timer node_gen_and_exp_timings;
-	  int node_counter=0;
-	  State succ_state = task_proxy.get_initial_state();
-	  vector<State> succ_states;
-	  set<State> visited_states;
-	  while(node_gen_and_exp_timings()<1.0){
-	    node_counter++;
-	    applicable_ops.clear();
-	    successor_generator->generate_applicable_ops(succ_state, applicable_ops);
-	    for(auto op : applicable_ops){
-	      succ_states.push_back(succ_state.get_successor(op));
-	    }
-	    //const OperatorProxy &op = applicable_ops[rand()%applicable_ops.size()];//choose operator at random
-	    if(applicable_ops.size()==0){//dead_end,go back to initial state
-	      succ_state = task_proxy.get_initial_state();
-	      node_counter--;
-	      continue;
-	    }
-	    else{
-	      //cout<<"\t\tapplicable_ops:"<<applicable_ops.size()<<endl;
-	      succ_state = succ_state.get_successor(applicable_ops[rand()%applicable_ops.size()]);
-	      visited_states.insert(succ_state);
-	    }
-	  }
-	  visited_states.clear();
-	  node_gen_and_exp_cost=node_gen_and_exp_timings.stop()/double(node_counter);
-	  cout<<"node gen_and_exp_cost:"<<node_gen_and_exp_cost<<",node_counter:"<<node_counter<<endl;
 	cout<<"Setting num_collections to 1 no matter the input,peak memory:"<<utils::get_peak_memory_in_kb()<<endl; // ???????
 	genetic_algorithm(task);
 	DEBUG_MSG(cout<<"genetic_algorithm is finished"<<endl;);
@@ -2750,9 +2293,7 @@ void PatternCollectionGeneratorGeneticSS::bin_packing_no_rel_analysis() {
       
 
 	if(!recompute_max_additive_subsets){//need to recompute here, we are finished adding pdbs now
-		if(use_online_domination_check){
-			clear_dominated_heuristics();
-		}
+	  clear_dominated_heuristics();
 	  cout<<"final best_pdb_collections:"<<best_pdb_collections.size()<<endl;
 	  for (size_t collection=0; collection<best_pdb_collections.size();collection++){
 	    cout<<"\tcollection["<<collection<<"]"<<*best_pdb_collections[collection]<<endl;
@@ -2765,34 +2306,11 @@ void PatternCollectionGeneratorGeneticSS::bin_packing_no_rel_analysis() {
 	result->set_dead_ends(pdb_factory->get_dead_ends());
 
 
-	cout <<"Finished,episodes:"<<current_episode<<",Pattern generation (Edelkamp) time: " << timer <<",Peak Memory:"<<utils::get_peak_memory_in_kb()<<",current_memory:"<<utils::get_current_memory_in_kb()<<flush<<endl;
+	cout <<"Finished,episodes:"<<current_episode<<",Pattern generation (Edelkamp) time: " << timer <<",Peak Memory:"<<utils::get_peak_memory_in_kb()<<endl;fflush(stdout);
 	return *result;
     }
-    void PatternCollectionGeneratorGeneticSS::sample_states(
-    TaskProxy task_proxy, vector<State> &samples, double average_operator_cost) {
-      const State &initial_state = task_proxy.get_initial_state();
-      int num_samples=20000;
-      samples.clear();
-      float start_time=utils::g_timer();
-    int init_h = get_best_value(initial_state);
-
-    try {
-        samples = sample_states_with_random_walks(
-            task_proxy, *successor_generator, num_samples, init_h,
-            average_operator_cost,
-            [this](const State &state) {
-                return result->is_dead_end(state);
-            },
-            genetic_SS_timer);
-    } catch (SamplingTimeout &) {
-      cout<<"We are finished,sampling_timeout in random_walk,random_walk_time:"<<utils::g_timer()-start_time<<endl;
-      return;
-    }
-}
-
 
     static shared_ptr<PatternCollectionGenerator> _parse(OptionParser &parser) {
-      cout<<"parsing options"<<endl;
 	parser.document_synopsis(
 	    "Genetic Algorithm Patterns",
 	    "The following paper describes the automated creation of pattern "
@@ -2913,7 +2431,7 @@ void PatternCollectionGeneratorGeneticSS::bin_packing_no_rel_analysis() {
         "recompute_max_additive_subsets",
         "attempts to recompute max additive subsets after generating all patterns",
         "false");
-    parser.add_option<double>(
+    parser.add_option<int>(
         "time_limit",
         "time limit in seconds for symbolic pdb_generation cut off",
         "0.5");
@@ -2925,41 +2443,11 @@ void PatternCollectionGeneratorGeneticSS::bin_packing_no_rel_analysis() {
         "create_perimeter",
         "whether to start with a perimeter",
         "false");
-    parser.add_option<bool>(
-        "single_pattern_only",
-        "single pattern to test full costs",
-        "false");
 
     parser.add_option<int>("perimeter_time_ms", "maximum time for the perimeter", "250000");
     parser.add_option<int>("perimeter_step_time_ms", "ms for each step of the perimeter", "50000");
     parser.add_option<int>("perimeter_nodes", "number of BDD nodes in the perimeter frontier", "10000000");
-    parser.add_option<bool>("rel_analysis_only", 
-	"bin pack chooses randomly from related vars, first var picked at random",
-       	"false");
-    parser.add_option<bool>("reg_bin_pack_only", 
-	"bin pack randomly as normal",
-      	"false");
-    parser.add_option<bool>("use_lmcut", 
-	"Complement lmcut as initial heuristic, note if lmcut is dominated by PDBs, it will be removed",
-      	"false");
-    parser.add_option<bool>("use_ucb", 
-	"Whether to use bandint algorithm or not",
-      	"true");
-    parser.add_option<bool>("size_selection", 
-	"Whether to use size or time as fitness function",
-      	"false");
-    parser.add_option<string>("sampling_method", 
-	"Whether to use_SS (time prediction),use_avg_h(not complementary size prediction) or use_ipdb_walk (complementary size prediction) as a sampling method",
-      	"use_SS");
-    parser.add_option<bool>("use_first_goal_vars", 
-	"Whether to, when using causal analysis while bin_packing, to set first variable to be a goal or not",
-      	"false");
-    parser.add_option<bool>("use_norm_dist", 
-	"Whether to select PDB size log as a normal or uniform distribution",
-      	"true");
-    parser.add_option<bool>("use_online_domination_check", 
-	"Whether to clear pattern collections if dominated for all sampled states",
-      	"true");
+
 	Options opts = parser.parse();
 	if (parser.dry_run())
 	    return 0;
@@ -2976,5 +2464,5 @@ void PatternCollectionGeneratorGeneticSS::bin_packing_no_rel_analysis() {
 	return os;
     }
 
-    static PluginShared<PatternCollectionGenerator> _plugin("genetic_ss", _parse);
+    static PluginShared<PatternCollectionGenerator> _plugin("modular_genetic_ss", _parse);
 }

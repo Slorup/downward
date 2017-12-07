@@ -476,10 +476,10 @@ fast_downward_plugin(
         pdbs/pattern_database_online.cc
         pdbs/pattern_database_symbolic_online.cc
         pdbs/pattern_collection_generator_combo.cc
-        pdbs/pattern_collection_generator_genetic.cc
+        #        pdbs/pattern_collection_generator_genetic.cc
 #pdbs/pattern_collection_generator_genetic_Online_SS.cc
-        pdbs/pattern_collection_generator_genetic_Online_SS.cc
-#pdbs/pattern_collection_generator_complementary.cc
+#        pdbs/pattern_collection_generator_genetic_Online_SS.cc
+#pdbs/complementary_pdbs_heuristic.cc
         pdbs/pattern_collection_generator_hillclimbing.cc
         pdbs/pattern_collection_generator_manual.cc
         pdbs/pattern_collection_generator_manual_multiple.cc
@@ -498,6 +498,50 @@ fast_downward_plugin(
         pdbs/zero_one_pdbs.cc
         pdbs/zero_one_pdbs_heuristic.cc
         pdbs/group_zero_one_pdbs.cc
+)
+fast_downward_plugin(
+  NAME MODULAR_PDBS
+    HELP "Plugin containing the code for modular PDBs"
+    SOURCES
+        modular_pdbs/canonical_pdbs.cc
+        modular_pdbs/canonical_pdbs_heuristic.cc
+        modular_pdbs/dominance_pruning.cc
+        modular_pdbs/incremental_canonical_pdbs.cc
+        modular_pdbs/match_tree.cc
+        modular_pdbs/match_tree_online.cc
+        modular_pdbs/max_additive_pdb_sets.cc
+        modular_pdbs/max_cliques.cc
+        modular_pdbs/pattern_collection_information.cc
+        modular_pdbs/pattern_database.cc
+        modular_pdbs/pattern_database_interface.cc
+        modular_pdbs/pattern_database_online.cc
+        #modular_pdbs/pattern_database_symbolic_online.cc
+        modular_pdbs/pattern_collection_generator_combo.cc
+        modular_pdbs/pattern_collection_generator_genetic.cc
+        modular_pdbs/pattern_collection_generator_genetic_Online_SS.cc
+#modular_pdbs/complementary_modular_pdbs_heuristic.cc
+        modular_pdbs/pattern_collection_generator_hillclimbing.cc
+        modular_pdbs/pattern_collection_generator_manual.cc
+        modular_pdbs/pattern_collection_generator_manual_multiple.cc
+        modular_pdbs/pattern_collection_generator_systematic.cc
+        modular_pdbs/pattern_generator_greedy.cc
+        modular_pdbs/pattern_generator_manual.cc
+        modular_pdbs/pattern_generator.cc
+	modular_pdbs/pdb_factory.cc
+	modular_pdbs/pdb_factory_explicit.cc
+  #modular_pdbs/pdb_factory_online.cc
+  #	modular_pdbs/pdb_factory_symbolic_online.cc
+        modular_pdbs/pdb_heuristic.cc
+	modular_pdbs/pdb_heuristic_online.cc
+        modular_pdbs/types.cc
+        modular_pdbs/validation.cc
+        modular_pdbs/zero_one_pdbs.cc
+        modular_pdbs/zero_one_pdbs_heuristic.cc
+        modular_pdbs/group_zero_one_pdbs.cc
+        modular_pdbs/pattern_collection_generator_complementary.cc
+        modular_pdbs/pattern_collection_generator_RBP.cc
+        modular_pdbs/modular_heuristic.cc
+
 )
 
 

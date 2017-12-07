@@ -37,7 +37,7 @@
     
 using namespace std;
 
-namespace pdbs {
+namespace pdbs3 {
     PatternCollectionGeneratorGeneticSS::PatternCollectionGeneratorGeneticSS(
 	const Options &opts)
 	: pdb_factory (opts.get<shared_ptr<PDBFactory>>("pdb_factory")),
@@ -2976,5 +2976,5 @@ void PatternCollectionGeneratorGeneticSS::bin_packing_no_rel_analysis() {
 	return os;
     }
 
-    static PluginShared<PatternCollectionGenerator> _plugin("genetic_ss", _parse);
+    static PluginShared<PatternCollectionGenerator> _plugin("modular_genetic_ss", _parse);
 }
