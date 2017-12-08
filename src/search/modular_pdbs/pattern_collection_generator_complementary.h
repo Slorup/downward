@@ -36,6 +36,9 @@ class PatternCollectionContainer {
     void add_pc(Pattern input){
       pc.push_back(input);
     }
+    int get_size() const{
+      return pc.size();
+    }
 };
 
 }

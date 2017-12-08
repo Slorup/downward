@@ -1,7 +1,9 @@
 #include "modular_heuristic.h"
+#include "types.h"
 
 //#include "pattern_generator.h"
 #include "pattern_collection_generator_RBP.h"
+#include "pattern_collection_evaluator_RandWalk.h"
 
 
 #include "../option_parser.h"
@@ -44,8 +46,14 @@ ModularHeuristic::ModularHeuristic(const Options &opts)
     : Heuristic(opts){
     shared_ptr<PatternCollectionGeneratorComplementary> pattern_generator =
         opts.get<shared_ptr<PatternCollectionGeneratorComplementary>>("patterns");
+    
+    shared_ptr<PatternCollectionEvaluator> pattern_evaluator =
+        opts.get<shared_ptr<PatternCollectionEvaluator>>("evaluator");
+    
     pattern_generator->initialize(task);
     PatternCollectionContainer Initial_collection=pattern_generator->generate();
+    best_collection=Initial_collection;
+    
     }
 
 //void ModularHeuristic::initialize(){
@@ -96,6 +104,11 @@ static Heuristic *_parse(OptionParser &parser) {
         "patterns",
         "pattern Collection generation method",
         "modular_rbp");
+    parser.add_option<shared_ptr<PatternCollectionEvaluator>>(
+        "evaluator",
+        "pattern Collection evaluation method",
+        "rand_walk");
+    Heuristic::add_options_to_parser(parser);
     Heuristic::add_options_to_parser(parser);
 
     Options opts = parser.parse();

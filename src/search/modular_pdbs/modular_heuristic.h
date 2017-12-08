@@ -17,6 +17,7 @@ namespace pdbs3 {
 // Implements a heuristic for a single PDB.
 class ModularHeuristic : public Heuristic {
     //PatternDatabase pdb;
+    PatternCollectionContainer best_collection;
 protected:
     virtual int compute_heuristic(const GlobalState &global_state) override;
     //virtual void initialize() override;

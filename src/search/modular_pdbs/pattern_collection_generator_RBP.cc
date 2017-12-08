@@ -71,6 +71,10 @@ PatternCollectionGeneratorRBP::PatternCollectionGeneratorRBP(const options::Opti
         temp_pattern.push_back(i);
       }
       PC.add_pc(temp_pattern);
+
+      cout<<"chosen pattern:";
+      for(auto var : temp_pattern ) cout<<var<<",";
+      cout<<endl;
       return PC;
     }
 

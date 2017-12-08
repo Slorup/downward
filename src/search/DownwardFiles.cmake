@@ -540,6 +540,9 @@ fast_downward_plugin(
         modular_pdbs/group_zero_one_pdbs.cc
         modular_pdbs/pattern_collection_generator_complementary.cc
         modular_pdbs/pattern_collection_generator_RBP.cc
+        modular_pdbs/pattern_collection_evaluator.cc
+        modular_pdbs/pattern_collection_evaluator_RandWalk.cc
+        #        modular_pdbs/pattern_collection_evaluator_ipdb.cc
         modular_pdbs/modular_heuristic.cc
 
 )

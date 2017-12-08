@@ -1,0 +1,115 @@
+//#include "pattern_collection_generator_complementary.h"
+#include "pattern_collection_evaluator_RandWalk.h"
+#include "../sampling.h"
+#include "../utils/timer.h"
+#include "../task_tools.h"
+#include "../utils/countdown_timer.h"
+#include "../options/option_parser.h"
+#include "../options/plugin.h"
+
+//#include "../causal_graph.h"
+//#include "../globals.h"
+//#include "../task_proxy.h"
+
+//#include "../utils/markup.h"
+//#include "../utils/math.h"
+//#include "../utils/rng.h"
+//#include "../utils/timer.h"
+//#include "../heuristic.h"
+
+//#include <algorithm>
+//#include <cassert>
+//#include <iostream>
+//#include <unordered_set>
+//#include <vector>
+//#include <math.h>
+//Hack to use SS get_type, it needs heuristic object in constructor
+//#include "../heuristics/blind_search_heuristic.h"
+//#include "../heuristics/lm_cut_heuristic.h"
+//#include "pdb_factory.h"
+//#include "pattern_database_interface.h"
+//#include "../utils/debug_macros.h"
+//#include <random>
+//#include "../sampling.h"
+
+    
+using namespace std;
+//PatternCollectionEvaluator is to be the driver for 8 PDB-based options
+//RandomCollectionGeneration: CBP, RBP, CGamer, the one used by *Pommerening et al. 
+//Local Search: iPDB, gaPDB, CGamer, VPN, *none, *changing order of patterns in gaPDB mutation. (this one matters to 0-1 greedy cost partitioning).
+//GenPDB: Symbolic, Explicit, Online, expressed on pdb_factory class
+//PDBEval: AvgH, Random sampling, Stratified sampling, *original iPDB method
+//CombPDBs->Canonical, hPO, Max
+//CostPartition->*None, Saturated, 0-1 greedy 
+//Learning: UCB1 to choose bin packing, pdb size. 
+//Re-evaluate: None, RemovedPDBsDominated, Run GHS (note: I think if we run GHS here, it may help to generate PDBs that are complementary to LM-cut)
+// And the pseudo-code logic for it:
+//While (time < 900 seconds)
+//     PC<-RandomCollectionGeneration(MaxSize,CostPartition)
+//     setInterestingPCs<-LocalSearch(P,PDBEval,MaxSize,CostPartition)
+//     selectedPCs<-SubsetSelection(setInterestingPCs,PDBEval,ComPDBs)
+//     generatedPDBs <-GenPDB(selectedPCs)
+//     H<-Re-evaluate (H¿generatedPCs)
+//     Learning(BinPackingRewards)
+//ComPDBs (Hl)
+namespace pdbs3 {
+PatterCollectionEvaluatorRandWalk::PatterCollectionEvaluatorRandWalk(const options::Options & opts) :
+	time_limit (opts.get<int>("time_limit")){
+    cout<<"hello EvaluatorRandWalk"<<endl;
+  //num_vars=task->get_num_variables();
+}
+  void PatterCollectionEvaluatorRandWalk::initialize(std::shared_ptr<AbstractTask> task) {
+    int num_vars= task->get_num_variables();
+    cout<<"num_vars:"<<num_vars<<endl;
+    TaskProxy task_proxy_temp(*task);
+    task_proxy=make_shared<TaskProxy>(task_proxy_temp);
+    successor_generator=utils::make_unique_ptr<SuccessorGenerator>(task);
+    result=make_shared<PatternCollectionInformation>(task, make_shared<PatternCollection>());
+//    cout << "Manual pattern collection: " << *patterns << endl;
+//    return PatternCollectionInformation(task, patterns);
+  }
+  bool PatterCollectionEvaluatorRandWalk::evaluate(const PatternCollectionContainer & best_pc,const PatternCollectionContainer & candidate_pc){
+    cout<<"candidate_pc.size:"<<candidate_pc.get_size()<<",best_pc.size:"<<best_pc.get_size()<<endl;
+    return true;
+  }
+  void PatterCollectionEvaluatorRandWalk::sample_states(const PatternCollectionContainer & best_pc,const PatternCollectionContainer & candidate_pc){
+    evaluator_timer = new utils::CountdownTimer(time_limit);
+    cout<<"candidate_pc.size:"<<candidate_pc.get_size()<<",best_pc.size:"<<best_pc.get_size()<<endl;
+      const State &initial_state = task_proxy->get_initial_state();
+      int num_samples=get_threshold();
+      samples.clear();
+      float start_time=utils::g_timer();
+      int init_h=100;//need to populate properly
+      cout<<"need to populate initial h properly!, currently hardcoded"<<endl;
+      double average_operator_cost=get_average_operator_cost(*task_proxy);
+    try {
+        samples = sample_states_with_random_walks(
+            *task_proxy, *successor_generator, num_samples, init_h,
+            average_operator_cost,
+            [this](const State &state) {
+                return result->is_dead_end(state);
+            },
+            evaluator_timer);
+    } catch (SamplingTimeout &) {
+      cout<<"We are finished,sampling_timeout in random_walk,random_walk_time:"<<utils::g_timer()-start_time<<endl;
+      return;
+    }
+  }
+
+
+
+  static shared_ptr<PatternCollectionEvaluator>_parse(options::OptionParser &parser) {
+    parser.add_option<int> ("time_limit", "If populated,stop construction on first node past boundary and time limit", "100");
+    options::Options options = parser.parse();
+    parser.document_synopsis(
+        "Pattern Generator RBP",
+        "RBP-stype selection of variables to generate Pattern Collection");
+    options::Options opts = parser.parse();
+    if (parser.dry_run())
+        return 0;
+
+    return make_shared<PatterCollectionEvaluatorRandWalk>(opts);
+  }
+
+  static options::PluginShared<PatternCollectionEvaluator> _plugin("rand_walk", _parse);
+}
