@@ -1,5 +1,5 @@
-#ifndef PDBS_PDB_FACTORY_H
-#define PDBS_PDB_FACTORY_H
+#ifndef PDBS_MODULAR_PDB_FACTORY_H
+#define PDBS_MODULAR_PDB_FACTORY_H
 
 #include <memory>
 #include <string>

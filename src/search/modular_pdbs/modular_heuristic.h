@@ -1,12 +1,12 @@
 #ifndef PDBS_MODULAR_HEURISTIC_H
 #define PDBS_MODULAR_HEURISTIC_H
 
-#include "pattern_database.h"
+//#include "pattern_database.h"
 
 #include "../heuristic.h"
 #include "pattern_collection_generator_complementary.h"
 #include "pattern_collection_evaluator.h"
-#include "pdb_factory.h"
+//#include "pdb_factory.h"
 
 class GlobalState;
 class State;
@@ -23,7 +23,7 @@ class ModularHeuristic : public Heuristic {
     PatternCollectionContainer best_collection;
     std::shared_ptr<PatternCollectionGeneratorComplementary> pattern_generator;
     std::shared_ptr<PatternCollectionEvaluator> pattern_evaluator;
-    std::shared_ptr<PDBFactory> pdb_factory;
+//    std::shared_ptr<PDBFactory> pdb_factory;
 protected:
     virtual int compute_heuristic(const GlobalState &global_state) override;
     //virtual void initialize() override;

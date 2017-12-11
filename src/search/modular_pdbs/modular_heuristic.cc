@@ -4,7 +4,7 @@
 //#include "pattern_generator.h"
 #include "pattern_collection_generator_RBP.h"
 #include "pattern_collection_evaluator_RandWalk.h"
-#include "pdb_factory_symbolic.h"
+//#include "pdb_factory_symbolic.h"
 
 
 #include "../option_parser.h"
@@ -14,8 +14,6 @@
 #include <limits>
 #include <memory>
 #include <climits>
-//#include "pdb_factory_symbolic.h"
-//#include "pdb_factory.h"
 
 using namespace std;
 
@@ -48,8 +46,8 @@ namespace pdbs3 {
 ModularHeuristic::ModularHeuristic(const Options &opts)
     : Heuristic(opts),
     pattern_generator(opts.get<shared_ptr<PatternCollectionGeneratorComplementary>>("patterns")),
-    pattern_evaluator(opts.get<shared_ptr<PatternCollectionEvaluator>>("evaluator")),
-    pdb_factory (opts.get<shared_ptr<PDBFactory>>("pdb_factory")){
+    pattern_evaluator(opts.get<shared_ptr<PatternCollectionEvaluator>>("evaluator")){
+//    pdb_factory (opts.get<shared_ptr<PDBFactory>>("pdb_factory"))
 //        cout<<"initial pdb type:"<<pdb_factory->name()<<endl;
 //    shared_ptr<PatternCollectionGeneratorComplementary> pattern_generator =
 //        opts.get<shared_ptr<PatternCollectionGeneratorComplementary>>("patterns");
@@ -119,10 +117,10 @@ static Heuristic *_parse(OptionParser &parser) {
         "evaluator",
         "pattern Collection evaluation method",
         "rand_walk");
-    parser.add_option<shared_ptr<PDBFactory>>(
-        "pdb_factory",
-        "See detailed documentation for pdb factories. ",
-	      "modular_symbolic");
+//    parser.add_option<shared_ptr<PDBFactory>>(
+//        "pdb_factory",
+//        "See detailed documentation for pdb factories. ",
+//	      "modular_symbolic");
     
     Heuristic::add_options_to_parser(parser);
 
