@@ -60,7 +60,7 @@ PatterCollectionEvaluatorRandWalk::PatterCollectionEvaluatorRandWalk(const optio
 }
   void PatterCollectionEvaluatorRandWalk::initialize(std::shared_ptr<AbstractTask> task) {
     int num_vars= task->get_num_variables();
-    cout<<"num_vars:"<<num_vars<<endl;
+    cout<<"num_vars:"<<num_vars<<flush<<endl;
     TaskProxy task_proxy_temp(*task);
     task_proxy=make_shared<TaskProxy>(task_proxy_temp);
     successor_generator=utils::make_unique_ptr<SuccessorGenerator>(task);
@@ -74,14 +74,16 @@ PatterCollectionEvaluatorRandWalk::PatterCollectionEvaluatorRandWalk(const optio
   }
   void PatterCollectionEvaluatorRandWalk::sample_states(const PatternCollectionContainer & best_pc,const PatternCollectionContainer & candidate_pc){
     evaluator_timer = new utils::CountdownTimer(time_limit);
-    cout<<"candidate_pc.size:"<<candidate_pc.get_size()<<",best_pc.size:"<<best_pc.get_size()<<endl;
+    cout<<"calling sample_states,candidate_pc.size:"<<candidate_pc.get_size()<<",best_pc.size:"<<best_pc.get_size()<<flush<<endl;
       const State &initial_state = task_proxy->get_initial_state();
       int num_samples=get_threshold();
+      cout<<"num_samples:"<<num_samples<<flush<<endl;
       samples.clear();
       float start_time=utils::g_timer();
       int init_h=100;//need to populate properly
-      cout<<"need to populate initial h properly!, currently hardcoded"<<endl;
+      cout<<"need to populate initial h properly!, currently hardcoded"<<flush<<endl;
       double average_operator_cost=get_average_operator_cost(*task_proxy);
+      cout<<"average_operator_cost:"<<average_operator_cost<<flush<<endl;
     try {
         samples = sample_states_with_random_walks(
             *task_proxy, *successor_generator, num_samples, init_h,
@@ -94,6 +96,7 @@ PatterCollectionEvaluatorRandWalk::PatterCollectionEvaluatorRandWalk(const optio
       cout<<"We are finished,sampling_timeout in random_walk,random_walk_time:"<<utils::g_timer()-start_time<<endl;
       return;
     }
+      cout<<"We are finished,random_walk,random_walk_time:"<<utils::g_timer()-start_time<<",samples:"<<samples.size()<<flush<<endl;
   }
 
 

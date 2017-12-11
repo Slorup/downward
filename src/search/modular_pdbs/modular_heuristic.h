@@ -5,6 +5,8 @@
 
 #include "../heuristic.h"
 #include "pattern_collection_generator_complementary.h"
+#include "pattern_collection_evaluator.h"
+#include "pdb_factory.h"
 
 class GlobalState;
 class State;
@@ -14,10 +16,14 @@ class Options;
 }
 
 namespace pdbs3 {
+//  class PDBFactory;
 // Implements a heuristic for a single PDB.
 class ModularHeuristic : public Heuristic {
     //PatternDatabase pdb;
     PatternCollectionContainer best_collection;
+    std::shared_ptr<PatternCollectionGeneratorComplementary> pattern_generator;
+    std::shared_ptr<PatternCollectionEvaluator> pattern_evaluator;
+    std::shared_ptr<PDBFactory> pdb_factory;
 protected:
     virtual int compute_heuristic(const GlobalState &global_state) override;
     //virtual void initialize() override;
