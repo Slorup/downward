@@ -1,5 +1,5 @@
-#ifndef PDBS_TYPES_H
-#define PDBS_TYPES_H
+#ifndef MODULAR_PDBS_TYPES_H
+#define MODULAR_PDBS_TYPES_H
 
 #include <memory>
 #include <vector>

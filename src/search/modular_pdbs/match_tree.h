@@ -1,5 +1,5 @@
-#ifndef PDBS_MATCH_TREE_H
-#define PDBS_MATCH_TREE_H
+#ifndef MODULAR_PDBS_MATCH_TREE_H
+#define MODULAR_PDBS_MATCH_TREE_H
 
 #include "types.h"
 

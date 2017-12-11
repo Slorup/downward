@@ -1,5 +1,5 @@
-#ifndef PDBS_PATTERN_COLLECTION_EVALUATOR_H
-#define PDBS_PATTERN_COLLECTION_EVALUATOR_H
+#ifndef MODULAR_PDBS_PATTERN_COLLECTION_EVALUATOR_H
+#define MODULAR_PDBS_PATTERN_COLLECTION_EVALUATOR_H
 
 //#include "types.h"
 #include "pattern_collection_generator_complementary.h"

@@ -1,5 +1,5 @@
-#ifndef PDBS_MODULAR_HEURISTIC_H
-#define PDBS_MODULAR_HEURISTIC_H
+#ifndef MODULAR_PDBS_HEURISTIC_H
+#define MODULAR_PDBS_HEURISTIC_H
 
 //#include "pattern_database.h"
 

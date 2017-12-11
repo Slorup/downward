@@ -1,5 +1,5 @@
-#ifndef PDBS_PATTERN_DATABASE_ONLINE_H
-#define PDBS_PATTERN_DATABASE_ONLINE_H
+#ifndef MODULAR_PDBS_PATTERN_DATABASE_ONLINE_H
+#define MODULAR_PDBS_PATTERN_DATABASE_ONLINE_H
 
 #include "types.h"
 #include "pattern_database_interface.h"

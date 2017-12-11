@@ -1,5 +1,5 @@
-#ifndef PDBS_MATCH_TREE_ONLINE_H
-#define PDBS_MATCH_TREE_ONLINE_H
+#ifndef MODULAR_PDBS_MATCH_TREE_ONLINE_H
+#define MODULAR_PDBS_MATCH_TREE_ONLINE_H
 
 #include <cstddef>
 #include <vector>

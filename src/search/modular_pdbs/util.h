@@ -1,5 +1,5 @@
-#ifndef PDBS_UTIL_H
-#define PDBS_UTIL_H
+#ifndef MODULAR_PDBS_UTIL_H
+#define MODULAR_PDBS_UTIL_H
 
 class OptionParser;
 class Options;

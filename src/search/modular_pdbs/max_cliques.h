@@ -1,5 +1,5 @@
-#ifndef PDBS_MAX_CLIQUES_H
-#define PDBS_MAX_CLIQUES_H
+#ifndef MODULAR_PDBS_MAX_CLIQUES_H
+#define MODULAR_PDBS_MAX_CLIQUES_H
 
 #include <vector>
 

@@ -1,5 +1,5 @@
-#ifndef PDBS_VALIDATION_H
-#define PDBS_VALIDATION_H
+#ifndef MODULAR_PDBS_VALIDATION_H
+#define MODULAR_PDBS_VALIDATION_H
 
 #include "types.h"
 
