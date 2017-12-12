@@ -16,14 +16,14 @@ class Options;
 }
 
 namespace pdbs3 {
-//  class PDBFactory;
+  class PDBFactory;
 // Implements a heuristic for a single PDB.
 class ModularHeuristic : public Heuristic {
     //PatternDatabase pdb;
     PatternCollectionContainer best_collection;
     std::shared_ptr<PatternCollectionGeneratorComplementary> pattern_generator;
     std::shared_ptr<PatternCollectionEvaluator> pattern_evaluator;
-//    std::shared_ptr<PDBFactory> pdb_factory;
+    std::shared_ptr<PDBFactory> pdb_factory;
 protected:
     virtual int compute_heuristic(const GlobalState &global_state) override;
     //virtual void initialize() override;
