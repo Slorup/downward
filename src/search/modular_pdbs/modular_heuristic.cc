@@ -77,17 +77,23 @@ ModularHeuristic::ModularHeuristic(const Options &opts)
     pattern_evaluator->initialize(task);
     //result included in sample_states call because needed for dead_end detection
     //set_dead_ends add dead_ends for symbolic, NEED TO ASK ALVARO ABOUT THIS
-    result->set_dead_ends(pdb_factory->get_dead_ends());
-    //NOTE: Missing dead_ends for latest heuristic,change sampling so it is aware of this
-    pattern_evaluator->sample_states(candidate_ptr,result);
+    //OK, so this was a call to collapse de dead_ends so adding new symbolic PDBs
+    //Would not take ages or something like that, needs to check on it and see what 
+    //we do now.
+    //result->set_dead_ends(pdb_factory->get_dead_ends());
     
     ///DISCUSS WITH ALVARO:adding pdbs to current set if evaluator says new collection is helpful
     //WHEN ADDING THE PDB, terminate_creation makes comparisons biased
     //because new candidate has less time to generate pdb, should we wait for 
     //terminate_pdb till the end of subset selection???
     //result->include_additive_pdbs(candidate_ptr->get_pattern_databases());
+    
+    //Always adding first collection
     result->include_additive_pdbs(pdb_factory->terminate_creation(candidate_ptr->get_pattern_databases()));
-
+    
+    //NOTE: Missing dead_ends for latest heuristic,change sampling so it is aware of this
+    pattern_evaluator->sample_states(result);
+    
     }
 
 //void ModularHeuristic::initialize(){

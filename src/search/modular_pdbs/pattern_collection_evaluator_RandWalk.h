@@ -41,8 +41,8 @@ class PatterCollectionEvaluatorRandWalk : public PatternCollectionEvaluator {
   
   virtual void initialize(std::shared_ptr<AbstractTask> task) override;
 	explicit PatterCollectionEvaluatorRandWalk(const options::Options &options);
-  virtual bool evaluate(const PatternCollectionContainer & best_pc) override;
-  virtual void sample_states(std::shared_ptr<ModularZeroOnePDBs> best_PC,std::shared_ptr<PatternCollectionInformation> current_result) override;
+  virtual bool evaluate(std::shared_ptr<ModularZeroOnePDBs> candidate_PC) override;
+  virtual void sample_states(std::shared_ptr<PatternCollectionInformation> current_result) override;
   //virtual void set_reward(const PatternCollectionContainer & pc, double reward) = 0;
 };
 
