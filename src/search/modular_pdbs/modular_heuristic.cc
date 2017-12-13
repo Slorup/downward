@@ -14,6 +14,7 @@
 #include <limits>
 #include <memory>
 #include <climits>
+#include "zero_one_pdbs.h"
 //#include "pdb_factory_symbolic.h"
 //#include "pdb_factory.h"
 
@@ -50,7 +51,12 @@ ModularHeuristic::ModularHeuristic(const Options &opts)
     pattern_generator(opts.get<shared_ptr<PatternCollectionGeneratorComplementary>>("patterns")),
     pattern_evaluator(opts.get<shared_ptr<PatternCollectionEvaluator>>("evaluator")),
     pdb_factory (opts.get<shared_ptr<PDBFactory>>("pdb_factory")) {
-//        cout<<"initial pdb type:"<<pdb_factory->name()<<endl;
+    TaskProxy task_proxy(*task);
+	  //need result here to store final PDB collection
+    result=make_shared<PatternCollectionInformation>(task, make_shared<PatternCollection>());
+    //std::shared_ptr<TaskProxy> task_proxy=make_shared<TaskProxy>(task_proxy_temp);
+	
+    cout<<"initial pdb type:"<<pdb_factory->name()<<endl;
 //    shared_ptr<PatternCollectionGeneratorComplementary> pattern_generator =
 //        opts.get<shared_ptr<PatternCollectionGeneratorComplementary>>("patterns");
     
@@ -59,11 +65,29 @@ ModularHeuristic::ModularHeuristic(const Options &opts)
     
     pattern_generator->initialize(task);
     PatternCollectionContainer Initial_collection=pattern_generator->generate();
+    Initial_collection.print();
+    PatternCollection temp_pc=Initial_collection.get_PC();
+    cout<<"temp_pc.size:"<<temp_pc.size()<<endl;
+		const State &initial_state = task_proxy.get_initial_state();
+    //ModularZeroOnePDBs candidate(task_proxy, Initial_collection.get_PC(), *pdb_factory);
+    shared_ptr<ModularZeroOnePDBs> candidate_ptr=make_shared<ModularZeroOnePDBs>(task_proxy, Initial_collection.get_PC(), *pdb_factory);
+    cout<<"Initial collection zero-one h value:"<<candidate_ptr->get_value(initial_state)<<endl;
     best_collection=Initial_collection;
     //generate sample states:
     pattern_evaluator->initialize(task);
-    pattern_evaluator->sample_states(best_collection,Initial_collection);
+    //result included in sample_states call because needed for dead_end detection
+    //set_dead_ends add dead_ends for symbolic, NEED TO ASK ALVARO ABOUT THIS
+    result->set_dead_ends(pdb_factory->get_dead_ends());
+    //NOTE: Missing dead_ends for latest heuristic,change sampling so it is aware of this
+    pattern_evaluator->sample_states(candidate_ptr,result);
     
+    ///DISCUSS WITH ALVARO:adding pdbs to current set if evaluator says new collection is helpful
+    //WHEN ADDING THE PDB, terminate_creation makes comparisons biased
+    //because new candidate has less time to generate pdb, should we wait for 
+    //terminate_pdb till the end of subset selection???
+    //result->include_additive_pdbs(candidate_ptr->get_pattern_databases());
+    result->include_additive_pdbs(pdb_factory->terminate_creation(candidate_ptr->get_pattern_databases()));
+
     }
 
 //void ModularHeuristic::initialize(){

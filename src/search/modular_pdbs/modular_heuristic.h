@@ -24,6 +24,7 @@ class ModularHeuristic : public Heuristic {
     std::shared_ptr<PatternCollectionGeneratorComplementary> pattern_generator;
     std::shared_ptr<PatternCollectionEvaluator> pattern_evaluator;
     std::shared_ptr<PDBFactory> pdb_factory;
+    std::shared_ptr<PatternCollectionInformation> result;
 protected:
     virtual int compute_heuristic(const GlobalState &global_state) override;
     //virtual void initialize() override;

@@ -3,6 +3,8 @@
 
 //#include "types.h"
 #include "pattern_collection_generator_complementary.h"
+#include "pattern_collection_information.h"
+#include "zero_one_pdbs.h"
 #include <memory>
 #include <vector>
 #include <random>
@@ -25,8 +27,8 @@ class PatternCollectionEvaluator {
   unsigned threshold=20000;
   public:
     virtual void initialize(std::shared_ptr<AbstractTask> task) = 0;
-    virtual bool evaluate(const PatternCollectionContainer & best_pc,const PatternCollectionContainer & candidate_pc)=0;
-    virtual void sample_states(const PatternCollectionContainer & best_pc,const PatternCollectionContainer & candidate_pc)=0;
+    virtual bool evaluate(const PatternCollectionContainer & best_pc)=0;
+    virtual void sample_states(std::shared_ptr<ModularZeroOnePDBs> best_PC,std::shared_ptr<PatternCollectionInformation> current_result)=0;
     void set_threshold(const unsigned thres){
       threshold=thres;
     }

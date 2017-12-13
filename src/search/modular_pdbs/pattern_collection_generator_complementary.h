@@ -7,6 +7,7 @@
 #include <memory>
 #include <vector>
 #include <random>
+#include <iostream>
 
 
 class AbstractTask;
@@ -38,6 +39,19 @@ class PatternCollectionContainer {
     }
     int get_size() const{
       return pc.size();
+    }
+    PatternCollection get_PC() const{
+      return pc;
+    }
+    void print(){
+      for (auto pattern : pc){
+        std::cout<<"[";
+        for (auto var : pattern){
+          std::cout<<var<<",";
+        }
+        std::cout<<"]";
+      }
+      std::cout<<std::endl;
     }
 };
 

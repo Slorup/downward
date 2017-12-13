@@ -26,7 +26,7 @@
 //Hack to use SS get_type, it needs heuristic object in constructor
 //#include "../heuristics/blind_search_heuristic.h"
 //#include "../heuristics/lm_cut_heuristic.h"
-//#include "pdb_factory.h"
+#include "pdb_factory.h"
 //#include "pattern_database_interface.h"
 //#include "../utils/debug_macros.h"
 //#include <random>
@@ -64,24 +64,25 @@ PatterCollectionEvaluatorRandWalk::PatterCollectionEvaluatorRandWalk(const optio
     TaskProxy task_proxy_temp(*task);
     task_proxy=make_shared<TaskProxy>(task_proxy_temp);
     successor_generator=utils::make_unique_ptr<SuccessorGenerator>(task);
-    result=make_shared<PatternCollectionInformation>(task, make_shared<PatternCollection>());
+    //result=make_shared<PatternCollectionInformation>(task, make_shared<PatternCollection>());
 //    cout << "Manual pattern collection: " << *patterns << endl;
 //    return PatternCollectionInformation(task, patterns);
   }
-  bool PatterCollectionEvaluatorRandWalk::evaluate(const PatternCollectionContainer & best_pc,const PatternCollectionContainer & candidate_pc){
-    cout<<"candidate_pc.size:"<<candidate_pc.get_size()<<",best_pc.size:"<<best_pc.get_size()<<endl;
+  bool PatterCollectionEvaluatorRandWalk::evaluate(const PatternCollectionContainer & candidate_PC){
+    cout<<"cabdudate_pc.size:"<<candidate_PC.get_size()<<endl;
     return true;
   }
-  void PatterCollectionEvaluatorRandWalk::sample_states(const PatternCollectionContainer & best_pc,const PatternCollectionContainer & candidate_pc){
+  void PatterCollectionEvaluatorRandWalk::sample_states(std::shared_ptr<ModularZeroOnePDBs> best_PC,
+      std::shared_ptr<PatternCollectionInformation> current_result){
+    result=current_result;
     evaluator_timer = new utils::CountdownTimer(time_limit);
-    cout<<"calling sample_states,candidate_pc.size:"<<candidate_pc.get_size()<<",best_pc.size:"<<best_pc.get_size()<<flush<<endl;
+    cout<<"calling sample_states,candidate_pc.size:"<<best_PC->get_size()<<endl;
       const State &initial_state = task_proxy->get_initial_state();
       int num_samples=get_threshold();
       cout<<"num_samples:"<<num_samples<<flush<<endl;
       samples.clear();
       float start_time=utils::g_timer();
-      int init_h=100;//need to populate properly
-      cout<<"need to populate initial h properly!, currently hardcoded"<<flush<<endl;
+      int init_h=best_PC->get_value(initial_state);
       double average_operator_cost=get_average_operator_cost(*task_proxy);
       cout<<"average_operator_cost:"<<average_operator_cost<<flush<<endl;
     try {
@@ -90,13 +91,28 @@ PatterCollectionEvaluatorRandWalk::PatterCollectionEvaluatorRandWalk(const optio
             average_operator_cost,
             [this](const State &state) {
                 return result->is_dead_end(state);
+                //return best_PC->is_dead_end(state);
             },
             evaluator_timer);
     } catch (SamplingTimeout &) {
       cout<<"We are finished,sampling_timeout in random_walk,random_walk_time:"<<utils::g_timer()-start_time<<endl;
-      return;
     }
-      cout<<"We are finished,random_walk,random_walk_time:"<<utils::g_timer()-start_time<<",samples:"<<samples.size()<<flush<<endl;
+    //DEBUG_MSG(cout<<"adding to samples, unique_size prior:"<<unique_samples.size()<<",sampled_states:"<<samples.size()<<endl;);
+    cout<<"adding to samples, unique_size prior:"<<unique_samples.size()<<",sampled_states:"<<samples.size()<<endl;
+    
+    //Always clear unique_samples before sampling again
+    unique_samples.clear();
+    for(auto state : samples){
+      size_t state_id = state.hash();
+      unique_samples.insert(make_pair(state_id,make_pair(state,best_PC->get_value(state))));
+	    
+      map<size_t,pair<State,int> >::iterator it=unique_samples.find(state_id);
+      cout<<"state_id:"<<state_id<<",value:"<<it->second.second<<endl;
+      if(best_PC->is_dead_end(state)){
+          cout<<"state is dead_end!"<<endl;
+        }
+    }
+      cout<<"We are finished,random_walk,random_walk_time:"<<utils::g_timer()-start_time<<",samples:"<<samples.size()<<flush<<endl;exit(1);
   }
 
 

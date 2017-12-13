@@ -6,6 +6,7 @@
 
 #include <memory>
 #include <vector>
+#include <map>
 #include <random>
 #include "../global_state.h"
 #include "../task_proxy.h"
@@ -34,13 +35,14 @@ class PatterCollectionEvaluatorRandWalk : public PatternCollectionEvaluator {
   std::unique_ptr<SuccessorGenerator> successor_generator;
   std::shared_ptr<PatternCollectionInformation> result;
   utils::CountdownTimer *evaluator_timer;
+  std::map<size_t,std::pair<State,int> > unique_samples;
   
   public:
   
   virtual void initialize(std::shared_ptr<AbstractTask> task) override;
 	explicit PatterCollectionEvaluatorRandWalk(const options::Options &options);
-  virtual bool evaluate(const PatternCollectionContainer & best_pc,const PatternCollectionContainer & candidate_pc) override;
-  virtual void sample_states(const PatternCollectionContainer & best_pc,const PatternCollectionContainer & candidate_pc) override;
+  virtual bool evaluate(const PatternCollectionContainer & best_pc) override;
+  virtual void sample_states(std::shared_ptr<ModularZeroOnePDBs> best_PC,std::shared_ptr<PatternCollectionInformation> current_result) override;
   //virtual void set_reward(const PatternCollectionContainer & pc, double reward) = 0;
 };
 

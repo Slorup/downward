@@ -524,6 +524,7 @@ fast_downward_plugin(
   modular_pdbs/pattern_collection_evaluator.cc
   modular_pdbs/pattern_database_interface.cc
   modular_pdbs/validation.cc
+  modular_pdbs/zero_one_pdbs.cc
 #  modular_pdbs/pattern_collection_generator_genetic_Online_SS.cc
 )
 
