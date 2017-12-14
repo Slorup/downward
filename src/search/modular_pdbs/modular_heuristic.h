@@ -23,8 +23,11 @@ class ModularHeuristic : public Heuristic {
     PatternCollectionContainer best_collection;
     std::shared_ptr<PatternCollectionGeneratorComplementary> pattern_generator;
     std::shared_ptr<PatternCollectionEvaluator> pattern_evaluator;
+    int modular_time_limit;
+    bool terminate_creation;
     std::shared_ptr<PDBFactory> pdb_factory;
     std::shared_ptr<PatternCollectionInformation> result;
+    utils::CountdownTimer *modular_heuristic_timer;
 protected:
     virtual int compute_heuristic(const GlobalState &global_state) override;
     //virtual void initialize() override;

@@ -69,16 +69,32 @@ PatterCollectionEvaluatorRandWalk::PatterCollectionEvaluatorRandWalk(const optio
 //    return PatternCollectionInformation(task, patterns);
   }
   bool PatterCollectionEvaluatorRandWalk::evaluate(std::shared_ptr<ModularZeroOnePDBs> candidate_PC){
-    cout<<"candidate_pc.size:"<<candidate_PC->get_size()<<endl;
-    return true;
+    //cout<<"candidate_pc.size:"<<candidate_PC->get_size()<<endl;
+    unsigned increased_states=0;
+    for(auto state_pair : unique_samples){
+      if(candidate_PC->get_value(state_pair.second.first)>state_pair.second.second){
+        cout<<"\th improved from "<<state_pair.second.second<<" to "<<candidate_PC->get_value(state_pair.second.first)<<endl;
+        increased_states++;
+      }
+    }
+    //UPDATING UNIQUE_SAMPLES h VALUES ONLY IF COLLECTION WILL BE ADDED
+    if(increased_states>get_threshold()){
+      cout<<"time:"<<utils::g_timer()<<",Selecting PC,increased_states:"<<increased_states<<",threshold:"<<get_threshold()<<" out of "<<get_num_samples()<<endl;
+      for(std::map<size_t,std::pair<State,int> >::iterator it=unique_samples.begin(); it!=unique_samples.end(); ++it){
+        it->second.second=max(it->second.second,candidate_PC->get_value(it->second.first));
+      }
+      return true;//Add collection
+    }
+    cout<<"time:"<<utils::g_timer()<<",Not_selecting PC,increased_states:"<<increased_states<<",threshold:"<<get_threshold()<<" out of "<<get_num_samples()<<endl;
+    return false;//Not adding collection
   }
+
   void PatterCollectionEvaluatorRandWalk::sample_states(std::shared_ptr<PatternCollectionInformation> current_result){
     //Need to keep pointer to result or sample_states... function will complain current_result is not captured
     result=current_result;
     evaluator_timer = new utils::CountdownTimer(time_limit);
       const State &initial_state = task_proxy->get_initial_state();
-      int num_samples=get_threshold();
-      cout<<"num_samples:"<<num_samples<<flush<<endl;
+      cout<<"num_samples:"<<get_num_samples()<<flush<<endl;
       samples.clear();
       float start_time=utils::g_timer();
       int init_h=current_result->get_value(initial_state);
@@ -86,7 +102,7 @@ PatterCollectionEvaluatorRandWalk::PatterCollectionEvaluatorRandWalk(const optio
       cout<<"average_operator_cost:"<<average_operator_cost<<flush<<endl;
     try {
         samples = sample_states_with_random_walks(
-            *task_proxy, *successor_generator, num_samples, init_h,
+            *task_proxy, *successor_generator, get_num_samples(), init_h,
             average_operator_cost,
             [this](const State &state) {
                 return result->is_dead_end(state);
@@ -107,7 +123,7 @@ PatterCollectionEvaluatorRandWalk::PatterCollectionEvaluatorRandWalk(const optio
       map<size_t,pair<State,int> >::iterator it=unique_samples.find(state_id);
       cout<<"state_id:"<<state_id<<",value:"<<it->second.second<<endl;
     }
-      cout<<"We are finished,random_walk,random_walk_time:"<<utils::g_timer()-start_time<<",samples:"<<samples.size()<<flush<<endl;exit(1);
+      cout<<"We are finished,random_walk,random_walk_time:"<<utils::g_timer()-start_time<<",samples:"<<samples.size()<<flush<<endl;
   }
 
 

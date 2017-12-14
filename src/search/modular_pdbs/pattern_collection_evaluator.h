@@ -24,7 +24,8 @@ namespace pdbs3 {
 //class PatternCollectionContainer;
 class PatternCollectionEvaluator {
     //std::shared_ptr<PatternCollection> patterns;
-  unsigned threshold=20000;
+  unsigned threshold=100;
+  unsigned num_samples=20000;
   public:
     virtual void initialize(std::shared_ptr<AbstractTask> task) = 0;
     virtual bool evaluate(std::shared_ptr<ModularZeroOnePDBs> candidate_PC)=0;
@@ -35,8 +36,13 @@ class PatternCollectionEvaluator {
     unsigned get_threshold(){
       return threshold;
     }
+    void set_num_samples(const unsigned samples){
+      num_samples=samples;
+    }
+    unsigned get_num_samples(){
+      return num_samples;
+    }
     //virtual void set_reward(const PatternCollectionContainer & pc, double reward) = 0;
-
 };
 
 }
