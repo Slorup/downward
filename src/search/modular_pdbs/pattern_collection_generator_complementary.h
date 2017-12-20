@@ -3,6 +3,7 @@
 
 //#include "pattern_generator.h"
 #include "types.h"
+#include "../globals.h"
 
 #include <memory>
 #include <vector>
@@ -29,6 +30,20 @@ class PatternCollectionGeneratorComplementary {
     virtual void initialize(std::shared_ptr<AbstractTask> task) = 0;
     virtual PatternCollectionContainer generate() = 0;
     //virtual void set_reward(const PatternCollectionContainer & pc, double reward) = 0;
+    
+    double get_pattern_size(Pattern pattern){
+      if(pattern.size()==0){
+        return 0;
+      }
+
+    double mem = 1;
+    for (size_t j = 0; j < pattern.size(); ++j) {
+      //cout<<"g_variable_domain[pattern["<<j<<"]]:"<<g_variable_domain[pattern[j]]<<",mem:"<<mem<<endl;
+      double domain_size = g_variable_domain[pattern[j]];
+      mem *= domain_size;
+    }   
+    return mem;
+    }
 
 };
 class PatternCollectionContainer {
@@ -54,7 +69,5 @@ class PatternCollectionContainer {
       std::cout<<std::endl;
     }
 };
-
 }
-
 #endif

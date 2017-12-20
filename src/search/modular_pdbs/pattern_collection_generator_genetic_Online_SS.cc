@@ -1251,7 +1251,7 @@ void PatternCollectionGeneratorGeneticSS::evaluate(vector<double> &fitness_value
 }
 
 void PatternCollectionGeneratorGeneticSS::bin_packing() {
-	max_target_size=8;
+	//max_target_size=8;
 	bin_packing_reg_count++;
 	DEBUG_MSG(cout<<"Starting Rel_bin_packing, pdb_max_size:"<<pdb_max_size<<endl;);
 	
@@ -1417,7 +1417,7 @@ void PatternCollectionGeneratorGeneticSS::bin_packing() {
 
 
 void PatternCollectionGeneratorGeneticSS::bin_packing_no_rel_analysis() {
-	max_target_size=8;
+	//max_target_size=8;
 	bin_packing_rel_count++;
 	DEBUG_MSG(cout<<"Starting bin_packing_no_rel, pdb_max_size:"<<pdb_max_size<<endl;);
 
@@ -2688,7 +2688,7 @@ void PatternCollectionGeneratorGeneticSS::bin_packing_no_rel_analysis() {
 	  }
 	  else{
 			//DOING EXPERIMENTS FOR SYMBOLIC WITH FIXED MAX TARGET SIZE
-	    max_target_size=8;
+	    //max_target_size=8;
 			initial_max_target_size=max_target_size;
 			if(max_target_size>10){//start with a cautious max_target_size for symbolic
 				max_target_size=max_target_size/2.0;
