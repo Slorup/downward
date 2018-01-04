@@ -513,7 +513,7 @@ fast_downward_plugin(
   #modular_pdbs/match_tree_online.cc
   modular_pdbs/pdb_factory.cc
   modular_pdbs/max_additive_pdb_sets.cc
-  modular_pdbs/pattern_collection_generator_RBP.cc
+  #modular_pdbs/pattern_collection_generator_RBP.cc
   modular_pdbs/pdb_factory_symbolic.cc
   modular_pdbs/max_cliques.cc
   modular_pdbs/pattern_collection_information.cc
