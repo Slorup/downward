@@ -41,14 +41,14 @@ From: ubuntu
         --plan-file $PLANFILE \
         $DOMAINFILE \
         $PROBLEMFILE \
-        --search "astar(lmcut())"
+        --search "astar(blind())"
 
 ## Update the following fields with meta data about your submission.
 ## Please use the same field names and use only one line for each value.
 %labels
-Name        demo
-Description forward search with A* and the LM-cut heuristic
-Authors     Alvaro Torralba <torralba@cs.uni-saarland.de> and Florian Pommerening <florian.pommerening@unibas.ch>
+Name        Complementary
+Description PDB heuristic which learns in situ how to adapt its pattern selection parameteres to maximize chance of finding "good" patterns as seach progresses and also complements any input heuristic.
+Authors     
 SupportsDerivedPredicates yes
 SupportsQuantifiedPreconditions no
 SupportsQuantifiedEffects no
