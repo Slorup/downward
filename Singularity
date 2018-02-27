@@ -41,14 +41,14 @@ From: ubuntu
         --plan-file $PLANFILE \
         $DOMAINFILE \
         $PROBLEMFILE \
-        --search "astar(blind())"
+        --search "astar(cpdbs_symbolic(genetic_ss(use_ucb=true,num_episodes=10000000,num_collections=1,pdb_factory=symbolic,genetic_time_limit=900,time_limit=1.0,create_perimeter=true,use_first_goal_vars=false,use_norm_dist=true)))"
 
 ## Update the following fields with meta data about your submission.
 ## Please use the same field names and use only one line for each value.
 %labels
 Name        Complementary-SeqOpt-V2
-Description PDB heuristic which learns in situ how to adapt its pattern selection parameteres to maximize chance of finding "good" patterns as seach progresses and also complements any input heuristic.
-Authors     
+Description PDB heuristic which learns in situ how to adapt its pattern selection parameteres to maximize chance of finding "good" patterns as seach progresses and also complements any input heuristic.  This is an implementation of the complementary heuristic with an input perimeter PDB and symbolic PDBs, as described in the IJCAI paper: https://www.ijcai.org/proceedings/2017/601
+Authors Santiago Franco, Levi H S Lelis and Mike W Barley     
 SupportsDerivedPredicates yes
 SupportsQuantifiedPreconditions no
 SupportsQuantifiedEffects no
