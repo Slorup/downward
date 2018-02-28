@@ -70,10 +70,8 @@ vector<State> sample_states_with_random_walks(
                 current_state = current_state.get_successor(random_op);
                 /* If current state is a dead end, then restart the random walk
                    with the initial state. */
-                if (is_dead_end(current_state)){
+                if (is_dead_end(current_state))
                     current_state = State(initial_state);
-                    cout<<"sampling,state is dead_end, restarting walk"<<endl;
-                }
             }
         }
         // The last state of the random walk is used as a sample.

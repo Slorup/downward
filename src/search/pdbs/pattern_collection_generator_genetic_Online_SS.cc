@@ -1251,7 +1251,6 @@ void PatternCollectionGeneratorGeneticSS::evaluate(vector<double> &fitness_value
 }
 
 void PatternCollectionGeneratorGeneticSS::bin_packing() {
-	max_target_size=8;
 	bin_packing_reg_count++;
 	DEBUG_MSG(cout<<"Starting Rel_bin_packing, pdb_max_size:"<<pdb_max_size<<endl;);
 	
@@ -1270,6 +1269,7 @@ void PatternCollectionGeneratorGeneticSS::bin_packing() {
 	pdb_max_size=max(pdb_max_size,pow(10,min_target_size));
 	//cout<<"Rel_bin_packing,g_timer:"<<utils::g_timer<<",temp:,"<<temp<<",max_target_size:"<<max_target_size<<flush<<endl;
 	//cout<<",min_target_size:"<<min_target_size<<",pdb_max_size:"<<pdb_max_size<<flush<<endl;
+	//}
 
 	TaskProxy task_proxy(*task);
 	VariablesProxy variables = task_proxy.get_variables();
@@ -1417,7 +1417,6 @@ void PatternCollectionGeneratorGeneticSS::bin_packing() {
 
 
 void PatternCollectionGeneratorGeneticSS::bin_packing_no_rel_analysis() {
-	max_target_size=8;
 	bin_packing_rel_count++;
 	DEBUG_MSG(cout<<"Starting bin_packing_no_rel, pdb_max_size:"<<pdb_max_size<<endl;);
 
@@ -1538,6 +1537,7 @@ void PatternCollectionGeneratorGeneticSS::bin_packing_no_rel_analysis() {
 	      if (current_size > 1 || var_counter>0) {
 		  pattern_collection.push_back(pattern);
 	      }
+	    //}
 	    //else{
 		//cout<<"\t skipping pattern"<<endl;
 	    //}
@@ -2687,8 +2687,8 @@ void PatternCollectionGeneratorGeneticSS::bin_packing_no_rel_analysis() {
 	    cout<<"initial time_limit="<<time_limit<<endl;
 	  }
 	  else{
-			//DOING EXPERIMENTS FOR SYMBOLIC WITH FIXED MAX TARGET SIZE
-	    max_target_size=8;
+	    //DOING EXPERIMENTS FOR SYMBOLIC WITH FIXED MAX TARGET SIZE
+	    //max_target_size=8;
 			initial_max_target_size=max_target_size;
 			if(max_target_size>10){//start with a cautious max_target_size for symbolic
 				max_target_size=max_target_size/2.0;

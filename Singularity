@@ -25,7 +25,7 @@ From: ubuntu
 
     ## Build your planner
     cd /planner
-    ./build.py release64 -j7
+    ./build.py release32 -j6
 
 %runscript
     ## The runscript is called whenever the container is used to solve
@@ -37,7 +37,7 @@ From: ubuntu
 
     ## Call your planner.
     /planner/fast-downward.py \
-        --build=release64 \
+        --build=release32 \
         --plan-file $PLANFILE \
         $DOMAINFILE \
         $PROBLEMFILE \
