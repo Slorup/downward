@@ -27,7 +27,6 @@ namespace pdbs {
 	termination_time_ms(opts.get<int>("termination_time_ms")), 
 	termination_step_time_ms(opts.get<int>("termination_step_time_ms")), 
 	termination_nodes(opts.get<int>("termination_nodes")),
-	global_limit_memory_MB(opts.get<int>("global_limit_memory_MB")),
 	increase_factor(opts.get<double>("increase_factor")),
 	dump (opts.get<bool>("dump")) {
 	  
@@ -63,7 +62,7 @@ namespace pdbs {
 							     searchParams, precomputation_time_ms,
 							     precomputation_step_time_ms,
 							     precomputation_nodes, 
-							     global_limit_memory_MB);
+							     memory_limit);
 
 	if(new_pdb->is_finished()) {
 	  finished=true;
@@ -106,7 +105,7 @@ namespace pdbs {
 	    pdb->terminate_creation(std::max(termination_time_ms, min_max_time),
 				    std::max(termination_step_time_ms, min_max_step_time), 
 				    std::max(termination_nodes, min_max_nodes), 
-				    global_limit_memory_MB);
+				    memory_limit);
 	    result->push_back(pdb);
 	}
 	return result;
@@ -116,7 +115,7 @@ namespace pdbs {
 
     void PDBFactorySymbolic::continue_creation (PatternDatabaseInterface & pdb) {
 	pdb.terminate_creation(precomputation_time_ms, precomputation_step_time_ms, 
-				precomputation_nodes, global_limit_memory_MB);
+				precomputation_nodes, memory_limit);
     }
 
 
@@ -145,7 +144,6 @@ static shared_ptr<PDBFactory>_parse(options::OptionParser &parser) {
     parser.add_option<int> ("termination_step_time_ms", "Maximum time for each step in the PDB construction during the termination phase.", "10000");
     parser.add_option<int> ("termination_nodes", "Maximum number of BDD nodes in the frontier of the PDB.", "10000000");
 
-    parser.add_option<int> ("global_limit_memory_MB", "Maximum memory allowed for the whole execution of the planner.", "2000");
     parser.add_option<double> ("increase_factor", "Multiplication factor when we increase the precomputation time for a PDB.", "2");
 
     options::Options options = parser.parse();

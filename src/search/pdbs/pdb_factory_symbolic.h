@@ -29,7 +29,6 @@ namespace pdbs {
 class PDBFactorySymbolic : public PDBFactory, public symbolic::SymController {
     int precomputation_time_ms, precomputation_step_time_ms, precomputation_nodes; 
     int termination_time_ms, termination_step_time_ms,  termination_nodes;
-    const int global_limit_memory_MB;
     const double increase_factor; 
     const bool dump;
     bool finished=false;
