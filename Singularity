@@ -46,7 +46,7 @@ From: ubuntu
 ## Update the following fields with meta data about your submission.
 ## Please use the same field names and use only one line for each value.
 %labels
-Name        Complementary-SeqOpt-V2
+Name        Complementary2
 Description PDB heuristic which learns in situ how to adapt its pattern selection parameteres to maximize chance of finding "good" patterns as seach progresses and also complements any input heuristic.  This is an implementation of the complementary heuristic with an input perimeter PDB and symbolic PDBs, as described in the IJCAI paper: https://www.ijcai.org/proceedings/2017/601
 Authors Santiago Franco, Levi H S Lelis and Mike W Barley     
 SupportsDerivedPredicates no

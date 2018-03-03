@@ -21,6 +21,8 @@
 * Copyright 2001-2008 by Agner Fog. 
 * GNU General Public License http://www.gnu.org/licenses/gpl.html
 *******************************************************************************/
+#ifndef CRANDOMMERSENNE_C
+#define CRANDOMMERSENNE_C
 
 #include "randomc.h"
 
@@ -181,3 +183,4 @@ int CRandomMersenne::IRandomX(int min, int max) {
 
 #endif
 }
+#endif
