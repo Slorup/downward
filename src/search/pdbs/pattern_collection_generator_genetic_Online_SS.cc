@@ -2930,7 +2930,7 @@ void PatternCollectionGeneratorGeneticSS::bin_packing_no_rel_analysis() {
         "single pattern to test full costs",
         "false");
 
-    parser.add_option<int>("perimeter_time_ms", "maximum time for the perimeter", "25000000");
+    parser.add_option<int>("perimeter_time_ms", "maximum time for the perimeter", "250000");
     parser.add_option<int>("perimeter_step_time_ms", "ms for each step of the perimeter", "50000");
     parser.add_option<int>("perimeter_nodes", "number of BDD nodes in the perimeter frontier", "10000000");
     parser.add_option<bool>("rel_analysis_only", 
