@@ -169,6 +169,7 @@ namespace pdbs {
 	       search->isSearchable()  && 
 	       !search->getEngine()->solved()) {
 	    search->step();
+	    cout<<"\ttime:"<<utils::g_timer()<<",step,max_memory:"<<vars->totalMemoryGB()*1024<<",is_searchable:"<<search->isSearchable()<<",solved:"<<search->getEngine()->solved()<<",time:"<<time()*1000<<",max_time:"<<max_time_ms<<",max_memory:"<<global_limit_memory_MB<<endl;
 	} 
 
 	//cout<<"time(ms):"<<time()*1000<<",memory:"<<vars->totalMemoryGB()<<",global_limit_memory_GB:"<<global_limit_memory_MB*1024<<",isSearchable:"<<search->isSearchable()<<endl;

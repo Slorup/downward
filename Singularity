@@ -41,7 +41,7 @@ From: ubuntu
         --plan-file $PLANFILE \
         $DOMAINFILE \
         $PROBLEMFILE \
-        --search "astar(cpdbs_symbolic(genetic_ss(use_ucb=true,num_episodes=10000000,num_collections=1,pdb_factory=symbolic,genetic_time_limit=900,time_limit=1.0,create_perimeter=true,use_first_goal_vars=false,use_norm_dist=true)))"
+        --search "astar(cpdbs_symbolic(genetic_ss(use_ucb=true,num_episodes=10000000,num_collections=1,pdb_factory=symbolic,genetic_time_limit=900,time_limit=1.0,create_perimeter=true,use_first_goal_vars=true,use_norm_dist=true)))"
 
 ## Update the following fields with meta data about your submission.
 ## Please use the same field names and use only one line for each value.
