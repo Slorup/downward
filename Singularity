@@ -48,7 +48,7 @@ From: ubuntu
 %labels
 Name        Complementary2
 Description PDB heuristic which learns in situ how to adapt its pattern selection parameteres to maximize chance of finding "good" patterns as seach progresses and also complements any input heuristic.  This is an implementation of the complementary heuristic with an input perimeter PDB and symbolic PDBs, as described in the IJCAI paper: https://www.ijcai.org/proceedings/2017/601
-Authors Santiago Franco, Levi H S Lelis and Mike W Barley     
+Authors Santiago Franco<santiago.franco@gmail.com>, Levi H S Lelis<levilelis@gmail.com> and Mike W Barley<m.barley@auckland.ac.nz>     
 SupportsDerivedPredicates no
 SupportsQuantifiedPreconditions no
 SupportsQuantifiedEffects yes
