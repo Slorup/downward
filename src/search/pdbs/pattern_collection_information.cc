@@ -173,9 +173,9 @@ void PatternCollectionInformation::recompute_max_additive_subsets() {
 	  }
 	  cout<<endl;
       }*/
-    //cout<<"pdbs before Dominance prune:"<<pdbs->size()<<endl;
+    cout<<"pdbs before Dominance prune:"<<pdbs->size()<<endl;
     size_t last_size=max_additive_subsets->size();
-    //cout<<"max_additive subsets before Dominance prune"<<max_additive_subsets->size()<<endl;
+    cout<<"max_additive subsets before Dominance prune"<<max_additive_subsets->size()<<endl;
     max_additive_subsets = prune_dominated_subsets(*pdbs, *max_additive_subsets);
     //if(last_call%10==0){
     /* SANTIAGO_CHECK: Why not directly: 

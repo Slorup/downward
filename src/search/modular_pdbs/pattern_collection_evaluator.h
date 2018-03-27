@@ -42,6 +42,7 @@ class PatternCollectionEvaluator {
     unsigned get_num_samples(){
       return num_samples;
     }
+    virtual int get_reward() = 0;//How much better is than current heuristic in whichever metric we are using
     //virtual void set_reward(const PatternCollectionContainer & pc, double reward) = 0;
 };
 

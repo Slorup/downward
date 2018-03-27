@@ -25,6 +25,9 @@ class ModularHeuristic : public Heuristic {
     std::shared_ptr<PatternCollectionEvaluator> pattern_evaluator;
     int modular_time_limit;
     bool terminate_creation;
+    bool create_perimeter;
+    bool only_gamer;
+    bool only_CBP;
     std::shared_ptr<PDBFactory> pdb_factory;
     std::shared_ptr<PatternCollectionInformation> result;
     utils::CountdownTimer *modular_heuristic_timer;

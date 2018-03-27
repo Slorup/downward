@@ -6,6 +6,7 @@
 #include "../task_proxy.h"
 
 #include "../utils/logging.h"
+#include "../utils/debug_macros.h"
 
 #include <iostream>
 #include <limits>
@@ -39,18 +40,19 @@ ModularZeroOnePDBs::ModularZeroOnePDBs(TaskProxy task_proxy, const PatternCollec
   //cout<<"ZeroOne calling time:"<<utils::g_timer()-before_op_time<<endl;
 
     pattern_databases.reserve(patterns.size());
+    int counter=0;
     for (const Pattern &pattern : patterns) {
 	if(pattern.empty()) continue;
 		if(!pdb_factory.is_started_pattern(pattern, operator_costs)){
 			new_pdbs++;
 		}
 			
-	//float start_gen_time=utils::g_timer();
+	float start_gen_time=utils::g_timer();
 	//cout<<"start_gen_time:"<<start_gen_time<<endl;
 	//cout<<"\tcreating pdb with pattern:"<<pattern<<flush<<endl;
 	shared_ptr<PatternDatabaseInterface> pdb = pdb_factory.compute_pdb(task_proxy, pattern, 
 									   operator_costs);
-	//cout<<"compute_pdb_time:"<<utils::g_timer()-start_gen_time<<endl;
+	DEBUG_COMP(cout<<"compute_pdb_time:"<<utils::g_timer()-start_gen_time<<endl;);
 
         pattern_databases.push_back(pdb);
 	
@@ -62,16 +64,17 @@ ModularZeroOnePDBs::ModularZeroOnePDBs(TaskProxy task_proxy, const PatternCollec
            (action cost partitioning). */
         for (OperatorProxy op : operators) {
             if (pdb->is_operator_relevant(op)){
-			  if(operator_costs[op.get_id()]!=0){
-				costs_zeroed++;
-				operator_costs[op.get_id()] = 0;
-			  }
-			}
+              if(operator_costs[op.get_id()]!=0){
+                costs_zeroed++;
+                operator_costs[op.get_id()] = 0;
+              }
+            }
         }
-		if(costs_zeroed==operators.size()){
-		  //DEBUG_MSG(cout<<"all costs are zero, no more PDB generation"<<endl);
-		  break;
-		}
+        if(costs_zeroed==operators.size()){
+          DEBUG_COMP(cout<<"\tall costs are zero, no more PDB generation after pattern["<<counter<<"]:"<<pattern<<endl;);
+          break;
+        }
+          counter++;
     }
 		//DEBUG_MSG(cout<<"\t new pdbs:"<<new_pdbs<<endl);
 }
@@ -85,7 +88,7 @@ int ModularZeroOnePDBs::get_value(const State &state) const {
     int h_val = 0;
     int counter=0;
     if(pattern_databases.size()==0){//Reg bin pack can create patterns with no goal vars
-      cout<<"Pattern is empty"<<endl;
+      cout<<"Pattern is empty"<<endl;exit(1);
       return 0;
     }
     for (const shared_ptr<PatternDatabaseInterface> &pdb : pattern_databases) {

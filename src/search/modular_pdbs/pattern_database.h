@@ -194,6 +194,9 @@ public:
     virtual bool is_finished() const override { 
 	return finished;
     }
+    virtual bool is_solved() const override { 
+	return finished;
+    }
 };
 }
 

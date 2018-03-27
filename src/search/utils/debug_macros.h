@@ -9,6 +9,8 @@
     while (false)
    #define DEBUG_MAS(str) do {str} \
     while (false)
+   #define DEBUG_COMP(str) do {str} \
+    while (false)
 #else
    #define DEBUG_MSG(str) do {if (false) {str} \
 } \
@@ -19,6 +21,8 @@
    #define DEBUG_MAS(str) do {if (false) {str} \
 } \
     while (false)
+   #define DEBUG_COMP(str) do {if (false) {str} } while (false)
+   //#define DEBUG_COMP(str) do {str} while (false)
 #endif
 
 #endif

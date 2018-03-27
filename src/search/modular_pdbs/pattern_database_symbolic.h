@@ -33,6 +33,7 @@ class PatternDatabaseSymbolic : public PatternDatabaseInterface {
     BDD dead_ends;
     
     bool finished;
+    bool solved=false;
     int hvalue_unseen_states;
 
     mutable double average;
@@ -82,6 +83,9 @@ class PatternDatabaseSymbolic : public PatternDatabaseInterface {
 
     virtual bool is_finished() const override { 
 	return finished;
+    }
+    virtual bool is_solved() const override { 
+      return solved;
     }
 
     virtual int get_hvalue_unseen_states() const override { 

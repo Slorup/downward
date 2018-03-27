@@ -28,7 +28,7 @@
 //#include "../heuristics/lm_cut_heuristic.h"
 #include "pdb_factory.h"
 //#include "pattern_database_interface.h"
-//#include "../utils/debug_macros.h"
+#include "../utils/debug_macros.h"
 //#include <random>
 //#include "../sampling.h"
 
@@ -70,22 +70,42 @@ PatterCollectionEvaluatorRandWalk::PatterCollectionEvaluatorRandWalk(const optio
   }
   bool PatterCollectionEvaluatorRandWalk::evaluate(std::shared_ptr<ModularZeroOnePDBs> candidate_PC){
     //cout<<"candidate_pc.size:"<<candidate_PC->get_size()<<endl;
-    unsigned increased_states=0;
+    increased_states=0;
     for(auto state_pair : unique_samples){
       if(candidate_PC->get_value(state_pair.second.first)>state_pair.second.second){
-        cout<<"\th improved from "<<state_pair.second.second<<" to "<<candidate_PC->get_value(state_pair.second.first)<<endl;
+        DEBUG_MSG(cout<<"\th improved from "<<state_pair.second.second<<" to "<<candidate_PC->get_value(state_pair.second.first)<<endl;);
         increased_states++;
       }
     }
     //UPDATING UNIQUE_SAMPLES h VALUES ONLY IF COLLECTION WILL BE ADDED
     if(increased_states>get_threshold()){
       cout<<"time:"<<utils::g_timer()<<",Selecting PC,increased_states:"<<increased_states<<",threshold:"<<get_threshold()<<" out of "<<get_num_samples()<<endl;
-      for(std::map<size_t,std::pair<State,int> >::iterator it=unique_samples.begin(); it!=unique_samples.end(); ++it){
+      /*for(std::map<size_t,std::pair<State,int> >::iterator it=unique_samples.begin(); it!=unique_samples.end(); ++it){
         it->second.second=max(it->second.second,candidate_PC->get_value(it->second.first));
+      }*/
+
+      unsigned count_dead_ends=0;
+      std::map<size_t, std::pair<State,int> >::iterator itr = unique_samples.begin();
+      int new_h=0;
+      while (itr != unique_samples.end()) {
+        new_h=candidate_PC->get_value(itr->second.first);
+        if (itr->second.second==numeric_limits<int>::max()){
+          itr = unique_samples.erase(itr);
+          count_dead_ends++;
+        }
+        else if(new_h==numeric_limits<int>::max()){
+          itr = unique_samples.erase(itr);
+          count_dead_ends++;
+        }
+        else {
+          itr->second.second=max(itr->second.second,new_h);
+          ++itr;
+        }
       }
+      cout<<"deleted "<<count_dead_ends<<" from list of sampled_states, remaining states:"<<unique_samples.size()<<endl; 
       return true;//Add collection
     }
-    cout<<"time:"<<utils::g_timer()<<",Not_selecting PC,increased_states:"<<increased_states<<",threshold:"<<get_threshold()<<" out of "<<get_num_samples()<<endl;
+    DEBUG_COMP(cout<<"time:"<<utils::g_timer()<<",Not_selecting PC,increased_states:"<<increased_states<<",threshold:"<<get_threshold()<<" out of "<<get_num_samples()<<endl;);
     return false;//Not adding collection
   }
 
@@ -120,8 +140,8 @@ PatterCollectionEvaluatorRandWalk::PatterCollectionEvaluatorRandWalk(const optio
       size_t state_id = state.hash();
       unique_samples.insert(make_pair(state_id,make_pair(state,current_result->get_value(state))));
 	    
-      map<size_t,pair<State,int> >::iterator it=unique_samples.find(state_id);
-      cout<<"state_id:"<<state_id<<",value:"<<it->second.second<<endl;
+      //map<size_t,pair<State,int> >::iterator it=unique_samples.find(state_id);
+      //cout<<"state_id:"<<state_id<<",value:"<<it->second.second<<endl;
     }
       cout<<"We are finished,random_walk,random_walk_time:"<<utils::g_timer()-start_time<<",samples:"<<samples.size()<<flush<<endl;
   }

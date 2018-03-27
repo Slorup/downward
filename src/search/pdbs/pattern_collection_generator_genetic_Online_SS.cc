@@ -521,9 +521,9 @@ void PatternCollectionGeneratorGeneticSS::evaluate(vector<double> &fitness_value
 		if(genetic_SS_timer->is_expired()||
 		   !pdb_factory->release_memory_below_limit_mb(memory_limit)) {
 		    if(double(utils::get_current_memory_in_kb())/1024.0>memory_limit){
-			cout<<"No more PDB generation, Current memory above 2 GB max:"<<utils::get_current_memory_in_kb()/1024.0<<endl;
+			cout<<"No more PDB generation, Current memory above "<<memory_limit<<" GB max:"<<utils::get_current_memory_in_kb()/1024.0<<endl;
 		    }
-		    cout<<"breaking-1 out of GA Algortihm, current gen_time:"<<genetic_SS_timer<<" bigger than time_limit:"<<genetic_time_limit<<endl;
+		    cout<<"breaking-1 out of GA Algortihm, current gen_time:"<<*genetic_SS_timer<<" bigger than time_limit:"<<genetic_time_limit<<",memory usage:"<<utils::get_current_memory_in_kb()<<endl;
 		    break;
 		}
 		avg_sampled_states=double(overall_sampled_states)/double(total_online_samples);
@@ -1270,6 +1270,9 @@ void PatternCollectionGeneratorGeneticSS::bin_packing() {
 	pdb_max_size=max(pdb_max_size,pow(10,min_target_size));
 	//cout<<"Rel_bin_packing,g_timer:"<<utils::g_timer<<",temp:,"<<temp<<",max_target_size:"<<max_target_size<<flush<<endl;
 	//cout<<",min_target_size:"<<min_target_size<<",pdb_max_size:"<<pdb_max_size<<flush<<endl;
+  
+  //pdb_max_size=10*pow(10,15);
+	//cout<<"g_timer:"<<utils::g_timer<<",Starting Rel_bin_packing, pdb_max_size:"<<pdb_max_size<<endl;
 
 	TaskProxy task_proxy(*task);
 	VariablesProxy variables = task_proxy.get_variables();
@@ -1328,7 +1331,10 @@ void PatternCollectionGeneratorGeneticSS::bin_packing() {
 				remaining_vars.begin(), remaining_vars.end(),
 				back_inserter(relevant_vars_in_remaining));
 			//cout<<"relevant vars in remaining:";for (auto item : relevant_vars_in_remaining) cout<<item<<",";cout<<flush<<endl;
-			g_rng()->shuffle(relevant_vars);
+      //if(current_episode%1000==0)
+      //  cout<<"BUG,NEED TO TEST ALTERNATIVE, currently shuffling relevant_vars, but the actual poll of variables is being done in relevant_vars_in_remaining, so no random selection when doing RPB beyond choosing goal variable at random?!"<<endl;
+      //g_rng()->shuffle(relevant_vars_in_remaining);
+      g_rng()->shuffle(relevant_vars);
 			while(relevant_vars_in_remaining.size()>0){
 			  var_id=relevant_vars_in_remaining.back();
 			  relevant_vars_in_remaining.pop_back();
@@ -1364,23 +1370,23 @@ void PatternCollectionGeneratorGeneticSS::bin_packing() {
 			}
 		  }
 		  else{//choose a remaining var at random, nothing selected yet for this pattern
-			if(!use_first_goal_vars){
-			  auto temp_it=remaining_vars.begin();
-				advance(temp_it,rand()%remaining_vars.size());
-				var_id=*temp_it;
-			}
-			else{//using goal valrs first
-			  auto temp_it=remaining_goal_vars.begin();
-			  if(remaining_goal_vars.empty()){
-				//no more goal vars, so no more patterns, as we can not start it with a goal variable
-				break;
+        if(!use_first_goal_vars){
+          auto temp_it=remaining_vars.begin();
+          advance(temp_it,rand()%remaining_vars.size());
+          var_id=*temp_it;
+        }
+        else{//using goal valrs first
+          auto temp_it=remaining_goal_vars.begin();
+          if(remaining_goal_vars.empty()){
+          //no more goal vars, so no more patterns, as we can not start it with a goal variable
+          break;
 			  }
-			  temp_it=remaining_goal_vars.begin();
-			  advance(temp_it,rand()%remaining_goal_vars.size());
-			  var_id=*temp_it;
-			  remaining_goal_vars.erase(temp_it);
-			}
-			remaining_vars.erase(var_id);
+          temp_it=remaining_goal_vars.begin();
+          advance(temp_it,rand()%remaining_goal_vars.size());
+          var_id=*temp_it;
+          remaining_goal_vars.erase(temp_it);
+        }
+        remaining_vars.erase(var_id);
 			
 			//cout<<"\t\tfirst var for pattern:"<<var_id<<",remaining_goal_vars:"<<flush;
 			//for(auto id : remaining_goal_vars) cout<<","<<id;

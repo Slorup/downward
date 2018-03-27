@@ -20,6 +20,7 @@ vector<State> sample_states_with_random_walks(
     function<bool (State)> is_dead_end,
     const utils::CountdownTimer *timer) {
     vector<State> samples;
+    int sampling_dead_ends_counter=0;
 
     const State &initial_state = task_proxy.get_initial_state();
 
@@ -72,12 +73,14 @@ vector<State> sample_states_with_random_walks(
                    with the initial state. */
                 if (is_dead_end(current_state)){
                     current_state = State(initial_state);
-                    cout<<"sampling,state is dead_end, restarting walk"<<endl;
+                    sampling_dead_ends_counter++;
+                    //cout<<"sampling,state is dead_end, restarting walk"<<endl;
                 }
             }
         }
         // The last state of the random walk is used as a sample.
         samples.push_back(current_state);
     }
+    cout<<"random_walk sampling finished, dead_ends hit:"<<sampling_dead_ends_counter<<",probes:"<<samples.size()<<endl;
     return samples;
 }

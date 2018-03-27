@@ -1328,7 +1328,9 @@ void PatternCollectionGeneratorGeneticSS::bin_packing() {
 				remaining_vars.begin(), remaining_vars.end(),
 				back_inserter(relevant_vars_in_remaining));
 			//cout<<"relevant vars in remaining:";for (auto item : relevant_vars_in_remaining) cout<<item<<",";cout<<flush<<endl;
-			g_rng()->shuffle(relevant_vars);
+			//g_rng()->shuffle(relevant_vars);
+      //BUG FOUND, WE CHOOSE FROM RELEVANT_VARS_IN_REMAIING HENCE THAT SHOULD BE THE ONE WE SHUFFLE
+      g_rng()->shuffle(relevant_vars_in_remaining);
 			while(relevant_vars_in_remaining.size()>0){
 			  var_id=relevant_vars_in_remaining.back();
 			  relevant_vars_in_remaining.pop_back();

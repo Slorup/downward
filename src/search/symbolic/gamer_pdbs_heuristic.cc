@@ -50,6 +50,15 @@ std::ostream & operator<<(std::ostream &os, const PDBSearch & pdb){
     return os;
 }
 
+std::ostream & operator<<(std::ostream &os, const set<int> & pattern){
+    for (int v : pattern) os << " " << v;  
+    return os;
+}
+std::ostream & operator<<(std::ostream &os, const vector<int> & pattern){
+    for (int v : pattern) os << " " << v;  
+    return os;
+}
+
 
 void PDBSearch::search(const SymParamsSearch & params, 
 		       int generationTime, double generationMemory) {
@@ -90,6 +99,7 @@ vector<int> PDBSearch::candidate_vars() const {
 	}
     }
 
+    cout<<"\ttime:"<<utils::g_timer()<<",Gamer-current_pattern:"<<pattern<<",candidates:"<<candidates<<endl;
     return candidates;
 }
 
@@ -160,17 +170,19 @@ void GamerPDBsHeuristic::initialize() {
     set<int> pattern;
     for (auto goal : g_goal) pattern.insert(goal.first);
 
-    cout << "Initialize initial abstraction" << endl;
+    cout << "time:"<<utils::g_timer()<<",Starting Initialize initial abstraction" << endl;
 
     //Create first pdb with only goal variables
     // if(perimeter) {
 	// best_pdb.reset(new PDBSearch(pattern, this, 
 	// 			     originalSearch, g_timer() - generationTime, searchParams.maxStepNodes, 
 	// 			     mgrParams, searchParams, originalStateSpace.get()));
-    // } else {
+    // } else 
     auto best_pdb = make_unique<PDBSearch>(pattern, this, originalStateSpace);
 
     best_pdb->search(searchParams, generationTime, generationMemory);
+    DEBUG_MSG(cout << "inital PDB (only goals):"<<*best_pdb<<",avg_value:"<<best_pdb->average_value()<<endl;);
+    cout << "time:"<<utils::g_timer()<<",Finished Initialize initial abstraction" << endl;
 
     while((generationTime == 0 || utils::g_timer() < generationTime) && 
 	  (generationMemory == 0 || vars->totalMemory() < generationMemory) && 
@@ -193,7 +205,7 @@ void GamerPDBsHeuristic::initialize() {
 	    // 	new_pdb.reset(new PDBSearch(child_pattern, this, 
 	    // 				    originalSearch, utils::g_timer() - generationTime, searchParams.maxStepNodes, 
 	    // 				    mgrParams, searchParams, originalStateSpace.get()));
-	    // } else {
+	    // } else 
 	    auto new_pdb = make_unique<PDBSearch>(child_pattern, this, originalStateSpace);
 	
 	    new_pdb->search(searchParams, generationTime, generationMemory);
@@ -211,11 +223,15 @@ void GamerPDBsHeuristic::initialize() {
 		   lower_bound >= new_pdb->get_search()->getF());
 
 	    if (new_pdb->average_value() > best_pdb->average_value()) {
-		DEBUG_MSG(cout << "Adding to best" << endl;);
-		new_best_value = max(new_best_value, new_pdb->average_value());
-		new_bests.push_back(std::move(new_pdb));
-	    }  
+        cout << "child_pattern:"<<*new_pdb<<",Adding to best,new avg_value:"<<new_pdb->average_value()<<",old_average_value:"<<best_pdb->average_value() << endl;
+        new_best_value = max(new_best_value, new_pdb->average_value());
+        new_bests.push_back(std::move(new_pdb));
+	    }
+      else{
+        DEBUG_MSG(cout << "child_pattern:"<<*new_pdb<<",Not-Adding to best,new avg_value:"<<new_pdb->average_value()<<",old_average_value:"<<best_pdb->average_value() << endl;);
+      }
 	}
+  cout<<"Finished checking all possible single variable improvements on previous best pdb:"<<*best_pdb<<",new_bests.size before clean:"<<new_bests.size()<<endl;
 
 	if (new_bests.empty()) break;
 	new_bests.erase(std::remove_if(
@@ -224,6 +240,8 @@ void GamerPDBsHeuristic::initialize() {
 			    [new_best_value](unique_ptr<PDBSearch> & x){
 				return x->average_value() < 0.999*new_best_value;
 			    }), new_bests.end());
+  for(size_t i=0;i<new_bests.size();i++)
+    cout<<"GamerPDBs,selected new_bests["<<i<<"]:"<<*new_bests[i]<<endl;
 
 	if (!solved() && new_bests.size() > 1) {
 	    set<int> new_pattern; 

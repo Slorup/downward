@@ -24,12 +24,12 @@ class CountdownTimer;
 namespace pdbs3 {
 //class PDBFactory;
 class PatternCollectionGeneratorRBP : public PatternCollectionGeneratorComplementary {
-  unsigned num_vars=0;
 	int time_limit=100;
+  int num_patterns=5;
+  bool single_pattern_only=true;
   std::shared_ptr<PDBFactory> pdb_factory;//We treat size limits differently if symbolic or explicit
   std::shared_ptr<PatternCollection> patterns;
   int pdb_gen_time_limit;
-  int max_single_PDB_size=8;
   int min_single_PDB_size=4;
   double overall_problem_size=0;
 	unsigned RBP_count=0;
@@ -37,7 +37,7 @@ class PatternCollectionGeneratorRBP : public PatternCollectionGeneratorComplemen
   public:
   
   virtual void initialize(std::shared_ptr<AbstractTask> task) override;
-	explicit PatternCollectionGeneratorRBP(const options::Options &options);
+  explicit PatternCollectionGeneratorRBP(const options::Options &options);
   virtual PatternCollectionContainer generate() override;
   //virtual void set_reward(const PatternCollectionContainer & pc, double reward) = 0;
 };

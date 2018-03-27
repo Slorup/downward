@@ -44,7 +44,7 @@ namespace pdbs3 {
 	assert(!solved());
 	DEBUG_MSG(cout << "COMPUTE SYMBOLIC PDB" << endl;);
 	std::set<int> pattern_set (pattern.begin(), pattern.end()); 
-	DEBUG_MSG(cout << "Pattern: "; for (int v : pattern_set) { cout << " " << v; }cout << endl;);
+	DEBUG_COMP(cout << "Pattern: "; for (int v : pattern_set) { cout << " " << v; }cout << endl;);
 	//cout << "Pattern: "; for (int v : pattern_set) { cout << " " << v; }cout << endl;
 	
 	assert(manager);
@@ -67,6 +67,7 @@ namespace pdbs3 {
 
 	if(new_pdb->is_finished()) {
 	  finished=true;
+      DEBUG_COMP(cout << "Pattern: "; for (int v : pattern_set) { cout << " " << v; };cout<<",is finished"<<endl;);
 	    DEBUG_MSG(cout << "Dead end states discovered: " << new_pdb->get_dead_ends().nodeCount() << endl;);
 
 	    if(!(new_pdb->get_dead_ends()*manager->getInitialState()).IsZero()) {
@@ -137,12 +138,12 @@ static shared_ptr<PDBFactory>_parse(options::OptionParser &parser) {
 
     parser.add_option<bool> ("dump", "If set to true, prints the construction time.", "false");
 
-    parser.add_option<int> ("precomputation_time_ms", "Maximum construction time for each PDB.", "1000");
-    parser.add_option<int> ("precomputation_step_time_ms", "Maximum time for each step in the PDB construction.", "500");
-    parser.add_option<int> ("precomputation_nodes", "Maximum number of BDD nodes in the frontier of the PDB.", "100000");
+    parser.add_option<int> ("precomputation_time_ms", "Maximum construction time for each PDB.", "5000");
+    parser.add_option<int> ("precomputation_step_time_ms", "Maximum time for each step in the PDB construction.", "25000");
+    parser.add_option<int> ("precomputation_nodes", "Maximum number of BDD nodes in the frontier of the PDB.", "500000");
 
-    parser.add_option<int> ("termination_time_ms", "Maximum construction time for each PDB in the termination phase.", "30000");
-    parser.add_option<int> ("termination_step_time_ms", "Maximum time for each step in the PDB construction during the termination phase.", "10000");
+    parser.add_option<int> ("termination_time_ms", "Maximum construction time for each PDB in the termination phase.", "60000");
+    parser.add_option<int> ("termination_step_time_ms", "Maximum time for each step in the PDB construction during the termination phase.", "20000");
     parser.add_option<int> ("termination_nodes", "Maximum number of BDD nodes in the frontier of the PDB.", "10000000");
 
     parser.add_option<int> ("global_limit_memory_MB", "Maximum memory allowed for the whole execution of the planner.", "2000");

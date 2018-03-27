@@ -10,6 +10,12 @@ using namespace std;
 using utils::ExitCode;
 
 int main(int argc, const char **argv) {
+    /*if(sizeof(void*) == 8){
+      cout<<"64 bits"<<endl;
+    }
+    else{
+      cout<<"32 bits"<<endl;
+    }*/
     utils::register_event_handlers();
 
     if (argc < 2) {

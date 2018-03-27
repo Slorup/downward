@@ -81,6 +81,7 @@ namespace symbolic {
 	    if (sol.solved()){
 		cout << "Solution found with cost " << sol.getCost() << 
 		    " total time: " << g_timer <<  endl;
+    solved=true;//so pdb_factory knows this might only be partially solved
 		// Solution found :)
 		engine->new_solution(sol);
 	    }

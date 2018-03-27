@@ -106,6 +106,9 @@ public:
     virtual bool is_finished() const { 
 	return true;
     }
+    virtual bool is_solved() const { 
+	return false;
+    }
 
     // Returns the size (number of abstract states) of the PDB
     virtual std::size_t get_size() const {

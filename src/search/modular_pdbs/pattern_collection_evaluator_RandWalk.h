@@ -28,7 +28,8 @@ namespace pdbs3 {
 //class PDBFactory;
 //class PatternCollectionContainer;
 class PatterCollectionEvaluatorRandWalk : public PatternCollectionEvaluator {
-	int time_limit=100;
+	int time_limit=20;
+  unsigned increased_states=0;//We keep this value so we can pass overall progress 
   std::vector<State> samples;
   //std::shared_ptr<AbstractTask> task;
   std::shared_ptr<TaskProxy> task_proxy;
@@ -43,6 +44,7 @@ class PatterCollectionEvaluatorRandWalk : public PatternCollectionEvaluator {
 	explicit PatterCollectionEvaluatorRandWalk(const options::Options &options);
   virtual bool evaluate(std::shared_ptr<ModularZeroOnePDBs> candidate_PC) override;
   virtual void sample_states(std::shared_ptr<PatternCollectionInformation> current_result) override;
+  virtual int get_reward() override {return increased_states;};//So metric is improved_states
   //virtual void set_reward(const PatternCollectionContainer & pc, double reward) = 0;
 };
 

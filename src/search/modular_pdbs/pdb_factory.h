@@ -140,6 +140,10 @@ PDBFactory() : num_patterns_created(0), num_patterns_requested(0), num_patterns_
 	//std::cout<<"calling default terminate_creation"<<std::endl;
 	return std::make_shared<PDBCollection>(pdb_collection);
     }
+   //in case we want to just get the PDBs
+    std::shared_ptr<PDBCollection> no_terminate_creation (const PDBCollection & pdb_collection){ 
+      return std::make_shared<PDBCollection>(pdb_collection);
+    }
 
     virtual void continue_creation (PatternDatabaseInterface & /*pdb*/) {
       std::cout<<"Need to implement continue creation for this method!"<<std::endl;exit(0);

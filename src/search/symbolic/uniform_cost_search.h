@@ -51,6 +51,7 @@ namespace symbolic {
 	//SymStepCostEstimation estimationDisjCost, estimationDisjZero;
 	bool lastStepCost; //If the last step was a cost step (to know if we are in estimationDisjCost or Zero)
 	bool infeasible; //Boolean flag to stop the search when the frontier could not be prepared (if p.stop_on_failure)
+  bool solved=false;
 
 	SymController * engine; //Access to the bound and notification of new solutions
 
@@ -93,6 +94,9 @@ namespace symbolic {
 		   closed->getHNotClosed() == std::numeric_limits<int>::max());
 	    return open_list.empty() && frontier.empty(); 
 	}
+	bool is_solved() const {
+    return solved;
+  }
 
 	virtual bool stepImage(int maxTime, int maxNodes);
 
