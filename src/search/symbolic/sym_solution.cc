@@ -25,9 +25,10 @@ namespace symbolic {
 		vector<int> s = g_initial_state_data;
 		//Get state
 		for (auto op : path) {
-		  
+		    vector<int> prev_s = s;
+
 		    for (const GlobalEffect &eff : op->get_effects()) {
-			if (eff.does_fire(s)) {
+			if (eff.does_fire(prev_s)) {
 			    s[eff.var] = eff.val;
 			}
 		    }
@@ -79,9 +80,11 @@ namespace symbolic {
 	BDD sBDD = vars->getStateBDD(s);
 	hADD += sBDD.Add() * (vars->getADD(h_val + 1));
 	for (auto op : path) {
+	    vector<int> prev_s = s;
+
 	    h_val -= op->get_cost();
 	    for (const GlobalEffect &eff : op->get_effects()) {
-		if (eff.does_fire(s)) {
+		if (eff.does_fire(prev_s)) {
 		    s[eff.var] = eff.val;
 		}
 	    }
