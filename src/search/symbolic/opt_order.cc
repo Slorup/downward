@@ -100,7 +100,7 @@ double InfluenceGraph::optimize_variable_ordering_gamer(vector <int> &order,
             continue;
 
         //Compute the new value of the optimization function
-        for (size_t i = 0; i < order.size(); i++) {
+        for (int i = 0; i < int(order.size()); i++) {
             if ((int)i == swapIndex1 || (int)i == swapIndex2)
                 continue;
 
@@ -141,7 +141,7 @@ double InfluenceGraph::compute_function(const std::vector <int> &order) const {
     for (size_t i = 0; i < order.size() - 1; i++) {
         for (size_t j = i + 1; j < order.size(); j++) {
             if (influence(order[i], order[j])) {
-                totalDistance += (i - j) * (i - j);
+                totalDistance += (j - i) * (j - i);
             }
         }
     }
@@ -177,7 +177,7 @@ void InfluenceGraph::optimize_variable_ordering_gamer(vector <int> &order,
             continue;
 
         //Compute the new value of the optimization function
-        for (size_t i = 0; i < order.size(); i++) {
+        for (int i = 0; i < int(order.size()); i++) {
             if ((int)i == swapIndex1 || (int)i == swapIndex2)
                 continue;
 
