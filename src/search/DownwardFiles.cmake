@@ -477,7 +477,7 @@ fast_downward_plugin(
         pdbs/pattern_database_symbolic_online.cc
         pdbs/pattern_collection_generator_combo.cc
         #        pdbs/pattern_collection_generator_genetic.cc
-        pdbs/pattern_collection_generator_genetic_Online_SS.cc
+	#pdbs/pattern_collection_generator_genetic_Online_SS.cc
         pdbs/pattern_collection_generator_hillclimbing.cc
         pdbs/pattern_collection_generator_manual.cc
         pdbs/pattern_collection_generator_manual_multiple.cc
@@ -504,6 +504,7 @@ fast_downward_plugin(
   	SOURCES
   		modular_pdbs/dominance_pruning.cc
   		modular_pdbs/pattern_collection_evaluator_RandWalk.cc
+		modular_pdbs/pattern_collection_evaluator_SS.cc
   		#modular_pdbs/pattern_database_online.cc
   		modular_pdbs/match_tree.cc
   		modular_pdbs/pattern_collection_generator_complementary.cc

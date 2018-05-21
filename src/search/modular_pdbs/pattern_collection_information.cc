@@ -237,9 +237,10 @@ void PatternCollectionInformation::recompute_max_additive_subsets() {
 	  cout<<endl;
       }*/
 }
-//void PatternCollectionInformation::pdb_counts() {   
-//  cout<<"pdbs:"<<pdbs->size()<<endl;
-//}
+size_t PatternCollectionInformation::pdb_counts() {   
+  //cout<<"pdbs:"<<pdbs->size()<<endl;
+  return pdbs->size();
+}
 
 void PatternCollectionInformation::set_max_additive_subsets(
     shared_ptr<MaxAdditivePDBSubsets> max_additive_subsets_) {

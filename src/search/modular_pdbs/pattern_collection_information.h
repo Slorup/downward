@@ -62,6 +62,7 @@ public:
 	return dead_ends;
     }
     bool is_dead_end(const State &state) const ;
+    size_t pdb_counts();
 };
 }
 

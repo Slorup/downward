@@ -22,7 +22,7 @@ OriginalStateSpace::OriginalStateSpace(SymVariables *v,
     for (size_t i = 0; i < g_operators.size(); i++) {
         const GlobalOperator *op = &(g_operators[i]);
         int cost = cost_type->get_adjusted_cost(i);
-        DEBUG_MSG(cout << "Creating TR of op " << i << " of cost " << cost << endl;
+        DEBUG_MSG(cout << "Creating TR of op " << i << " of cost " << cost << "out of "<< g_operators.size()<<endl;
                   );
         indTRs[cost].push_back(TransitionRelation(vars, op, cost));
         if (p.mutex_type == MutexType::MUTEX_EDELETION) {
