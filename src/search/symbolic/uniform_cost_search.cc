@@ -139,8 +139,8 @@ namespace symbolic {
 		}
 	    }
 	}
-
-	if(shouldClose) {
+	
+	if(shouldClose && frontier.expansionReady()){
 	    const auto & frontier_bucket = engine->solved() ? frontier.bucket() : frontier.prepared_bucket();
 	    
 	    DEBUG_MSG (cout <<"Insert g="<< frontier.g() << " states into closed: " << 
