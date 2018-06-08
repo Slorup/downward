@@ -68,6 +68,7 @@ ModularHeuristic::ModularHeuristic(const Options &opts)
     pattern_generator(opts.get<shared_ptr<PatternCollectionGeneratorComplementary>>("patterns")),
     pattern_evaluator(opts.get<shared_ptr<PatternCollectionEvaluator>>("evaluator")),
 	  modular_time_limit(opts.get<int>("modular_time_limit")),
+	  always_CBP_or_RBP_or_UCB(opts.get<int>("always_cbp_or_rbp_or_ucb")), 
 	  terminate_creation(opts.get<bool>("terminate_creation")),
 	  create_perimeter(opts.get<bool>("create_perimeter")), 
 	  only_gamer(opts.get<bool>("only_gamer")), 
@@ -249,6 +250,11 @@ ModularHeuristic::ModularHeuristic(const Options &opts)
         pattern_evaluator->set_threshold(1);//If using perimeter, then we want all heuristics which can see further
       }
       else{
+	if(always_CBP_or_RBP_or_UCB==0)
+	  pattern_generator->set_InSituCausalCheck(true);
+	else if(always_CBP_or_RBP_or_UCB==1)
+	  pattern_generator->set_InSituCausalCheck(false);
+
         PatternCollectionContainer Initial_collection=pattern_generator->generate();
         cout<<"Initial PC:";
         Initial_collection.print();
@@ -443,6 +449,7 @@ ModularHeuristic::ModularHeuristic(const Options &opts)
           pattern_generator->set_goals_to_add(num_goals_to_group);
 
           //Now generating next set of patterns
+	  pattern_generator->set_InSituCausalCheck(true);
           candidate_collection=pattern_generator->generate();
           candidate_ptr=make_shared<ModularZeroOnePDBs>(task_proxy, candidate_collection.get_PC(), *pdb_factory);
           pdb_time=utils::g_timer()-start_time;
@@ -658,6 +665,7 @@ ModularHeuristic::ModularHeuristic(const Options &opts)
               }
           }
       }
+      cout<<"CBP calls:,"<<pattern_generator->get_CBP_calls()<<",RBP calls:,"<<pattern_generator->get_RBP_calls()<<endl;
       //Now terminate creation of unfinished selected PDBs
       float start_time=utils::g_timer();
       auto pdb_collection=result->get_pdbs(); 
@@ -735,6 +743,10 @@ static Heuristic *_parse(OptionParser &parser) {
         "modular_time_limit",
         "time limit in seconds for modular_pdb_heuristic initialization cut off",
         "900");
+    parser.add_option<int> (
+	"always_cbp_or_rbp_or_ucb", 
+	"If 0,ensure any added variable is causally connected(CBP), if 1, only check causal connection after all patterns are selected(RBP), if 2, use UCB to learn which is better", 
+	"0");
     parser.add_option<shared_ptr<PDBFactory>>(
         "pdb_factory",
         "See detailed documentation for pdb factories. ",

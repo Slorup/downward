@@ -24,6 +24,7 @@ class ModularHeuristic : public Heuristic {
     std::shared_ptr<PatternCollectionGeneratorComplementary> pattern_generator;
     std::shared_ptr<PatternCollectionEvaluator> pattern_evaluator;
     int modular_time_limit;
+    int always_CBP_or_RBP_or_UCB;
     bool terminate_creation;
     bool create_perimeter;
     bool only_gamer;

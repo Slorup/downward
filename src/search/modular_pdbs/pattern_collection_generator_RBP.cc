@@ -53,6 +53,15 @@ using namespace std;
 //     Learning(BinPackingRewards)
 //ComPDBs (Hl)
 namespace pdbs3 {
+
+/*std::ostream& operator<< (std::ostream &out, const set<int> x)
+{
+    // Since operator<< is a friend of the Point class, we can access Point's members directly.
+    for(auto element : x)
+      out<<element<<",";
+ 
+    return out;
+}*/
   PatternCollectionGeneratorRBP::PatternCollectionGeneratorRBP(const options::Options & opts) :
     time_limit (opts.get<int>("time_limit")),
     pdb_factory (opts.get<shared_ptr<PDBFactory>>("pdb_factory")){
@@ -66,7 +75,7 @@ namespace pdbs3 {
     //TaskProxy task_proxy_temp(*task);
     //task_proxy=make_shared<TaskProxy>(task_proxy_temp);
     task_proxy=make_shared<TaskProxy>(*task);
-    //VariablesProxy variables = task_proxy.get_variables();
+    VariablesProxy variables = task_proxy->get_variables();
     Pattern pattern;
     for(size_t i=0;i<num_vars;i++){
       //cout<<"i:"<<i<<flush<<endl;
@@ -74,6 +83,21 @@ namespace pdbs3 {
     }
     overall_problem_size=get_pattern_size(pattern);
     cout<<"Overall problem size:"<<overall_problem_size<<endl;
+    //Store goal variables for multiple use
+    for (FactProxy goal : task_proxy->get_goals()) {
+      //int , l_id=goal.get_variable().get_id();
+      double next_var_size = goal.get_variable().get_domain_size();
+      if (next_var_size <= max_single_PDB_size){
+        initial_remaining_goal_vars.insert(goal.get_variable().get_id());
+      }
+    }
+    cout<<"initial_remaining_goal_vars:";for( auto element : initial_remaining_goal_vars) cout<<element<<",";cout<<endl;
+    for (size_t i = 0; i < variables.size(); ++i) {
+        double next_var_size = variables[i].get_domain_size();
+        if (next_var_size <= max_single_PDB_size){
+          initial_remaining_vars.insert(i);
+        }
+    }
     //Some problems have such large sizes that even 
     //symbolic can not deal with them, limiting it
     //to 20 orders of magnitude for now
@@ -101,11 +125,17 @@ namespace pdbs3 {
       //const CausalGraph &causal_graph = task_proxy->get_causal_graph();
   }
   PatternCollectionContainer PatternCollectionGeneratorRBP::generate(){
+    //cout<<"Calling GeneratorRBP-style,InSituCausalCheck:"<<InSituCausalCheck<<flush<<endl;exit(1);
     double limit=max_single_PDB_size;
     //double limit=10*pow(10,11);
     //cout<<"fixed_pdb_size limit to:"<<limit<<endl;
     //cout<<"single pattern only true"<<endl;
-    RBP_count++;
+	  
+    if(InSituCausalCheck)
+      CBP_count++;
+    else
+      RBP_count++;
+     
     PatternCollectionContainer PC;
     //First choose PDB size between min and max target sizes
 		//int temp_max_single_PDB_size=rand()%(max_single_PDB_size-min_single_PDB_size+1);temp_max_single_PDB_size+=min_single_PDB_size;
@@ -118,33 +148,16 @@ namespace pdbs3 {
     DEBUG_COMP(cout<<"RBP,max_pdb_size:"<<max_single_PDB_size<<",goals_to_add:"<<goals_to_add<<flush<<endl;);
    
     //Now generate initial PCs
-	  set<int> remaining_vars;
-	  set<int> initial_remaining_vars;
-    for (size_t i = 0; i < variables.size(); ++i) {
-        double next_var_size = variables[i].get_domain_size();
-        if (next_var_size <= max_single_PDB_size){
-          remaining_vars.insert(i);
-        }
-    }
 
-    initial_remaining_vars=remaining_vars;
+    set<int> remaining_vars=initial_remaining_vars;
     set<int> remaining_goal_vars;
-	  set<int> initial_remaining_goal_vars;
-    for (FactProxy goal : task_proxy->get_goals()) {
-      //int , l_id=goal.get_variable().get_id();
-      double next_var_size = goal.get_variable().get_domain_size();
-      if (next_var_size <= max_single_PDB_size){
-        remaining_goal_vars.insert(goal.get_variable().get_id());
-      }
-    }
-    //goals_to_add=remaining_goal_vars.size();
+    remaining_goal_vars=initial_remaining_goal_vars;
     DEBUG_COMP(cout<<"\t\tgoals_to_add:"<<goals_to_add<<",out of:"<<remaining_goal_vars.size()<<endl;);
-    initial_remaining_goal_vars=remaining_goal_vars;
-    //goals_to_add=rand()%remaining_goal_vars.size()+1;
 
     for (int i = 0; i < num_patterns; ++i) {
 
       DEBUG_COMP(cout<<"Working on pattern:"<<i<<endl;);
+      //cout<<"Working on pattern:"<<i<<endl;
       //cout<<",remaining_vars:";for (auto var : remaining_vars) cout<<var<<",";cout<<endl;
 
         vector<int> vars_to_check;
@@ -157,7 +170,7 @@ namespace pdbs3 {
         double current_size = 1;
         
         vector<int> pattern_int;
-        vector<int> candidate_pattern;
+        Pattern candidate_pattern;
 
         while(!remaining_vars.empty()){
           if(pattern_int.size()>0){
@@ -166,12 +179,23 @@ namespace pdbs3 {
           set<int> rel_vars_set;
           vector<int> relevant_vars;
           vector<int> relevant_vars_in_remaining;
-          for (auto var : pattern_int){
-            const vector<int> &rel_vars = causal_graph.get_eff_to_pre(var);
-            for(auto var2 : rel_vars){
-            rel_vars_set.insert(var2);
-            }
-          }
+	  //The only diference in variable selection
+	  //between RBP and CBP is that CBP limits the number of variables
+	  //To those remaining which also are causally connected to already
+	  //selected variabels.  For RBP, a posteriori check is performed
+	  //to remove any variables non casually related
+	  if(InSituCausalCheck){
+	    for (auto var : pattern_int){
+	      const vector<int> &rel_vars = causal_graph.get_eff_to_pre(var);
+	      for(auto var2 : rel_vars){
+		rel_vars_set.insert(var2);
+	      }
+	    }
+	    //cout<<"\tpattern_int:";print_vect_int(pattern_int);cout<<",rel_vars_set:";for(auto element : rel_vars_set) cout<<element<<",";cout<<endl;
+	  }
+	  else{
+	    rel_vars_set=remaining_vars;
+	  }
           set_difference(rel_vars_set.begin(), rel_vars_set.end(),
             candidate_pattern.begin(), candidate_pattern.end(),
             back_inserter(relevant_vars));
@@ -192,19 +216,44 @@ namespace pdbs3 {
               pattern[var_id] = true;
               remaining_vars.erase(var_id);
               remaining_goal_vars.erase(var_id);
-              //cout<<"\tadded to pattern var_id:"<<var_id<<",current_size:"<<current_size<<",max_single_PDB_size:"<<max_single_PDB_size<<",new_pattern:";print_vect_int(candidate_pattern);cout<<endl;//",remaining vars:"<<remaining_vars.size()<<endl;
+              //cout<<"\t\tadded to pattern var_id:"<<var_id<<",current_size:"<<current_size<<",max_single_PDB_size:"<<max_single_PDB_size<<",new_pattern:";print_vect_int(candidate_pattern);cout<<"relevant_vars left:,";for (auto element : relevant_vars_in_remaining) cout<<element<<",";cout<<endl;//",remaining vars:"<<remaining_vars.size()<<endl;
               break;
             }
           }
+
           if(candidate_pattern!=pattern_int){
+
             pattern_int=candidate_pattern;
             if(remaining_vars.size()==0){//one single pattern with all vars, add now!
+	      //Pattern creaton finished, removed irrelevant vars and return to list of available vars
+	      //if doing disjunctive patterns and a goal is remaining, otherwise not needed because for 
+	      //every new pattern all vars are available anyhow
+	      Pattern removed_vars;
+	      remove_irrelevant_variables(pattern_int,removed_vars);
+
+	      if(disjunctive_patterns&&remaining_goal_vars.size()>0){
+		remaining_vars.insert(removed_vars.begin(), removed_vars.end());
+		cout<<"\t\tinserted removed_vars:";for(auto element : removed_vars) cout<<element<<",";cout<<endl;
+	      }
+	      cout<<"\t\t no remaining_vars,adding pc:";for (auto element : pattern_int) cout<<element<<",";cout<<endl;
               PC.add_pc(pattern_int);
               break;
             }
           }
           else{//no var is small enough to be added, or none left
             if(pattern_int.size()>0){
+	      //Pattern creaton finished, removed irrelevant vars and return to list of available vars
+	      //if doing disjunctive patterns and a goal is remaining, otherwise not needed because for 
+	      //every new pattern all vars are available anyhow
+	      Pattern removed_vars;
+	      remove_irrelevant_variables(pattern_int,removed_vars);
+
+	      if(disjunctive_patterns&&remaining_goal_vars.size()>0){
+		remaining_vars.insert(removed_vars.begin(), removed_vars.end());
+		//cout<<"\t\tinserted removed_vars:";for(auto element : removed_vars) cout<<element<<",";cout<<endl;
+	      }
+
+	      //cout<<"\t\t no var is small enough,adding pc:";for (auto element : pattern_int) cout<<element<<",";cout<<endl;
               PC.add_pc(pattern_int);
             }
             else{
@@ -230,11 +279,6 @@ namespace pdbs3 {
               //no more goal vars, so no more patterns, as we can not start it with a goal variable
               break;
             }
-            //TO_DO:
-            //ADDING RANDOM NUMBER OF GOALS SO WE DO NOT BENEFIT ANY PARTICULAR GROUPING
-            //OF GOALS VARIABLES, THIS SHOULD BE UCBfied
-            //E.G. IN BARMAN, GROUPING ALL GOAL VARS IS GREAT BUT IN OTHERS,SPLITING THEM UP
-            //IS BETTER
             double next_var_size=0;
             for(unsigned goal_vars=0;goal_vars<goals_to_add;goal_vars++){
               if(remaining_goal_vars.size()==0){
@@ -273,7 +317,56 @@ namespace pdbs3 {
         break;
       }
     }
+      cout<<"Generated PC:";PC.print();
+
     return PC;
+  }
+  void PatternCollectionGeneratorRBP::remove_irrelevant_variables(Pattern &pattern,Pattern &removed_vars){
+	set<int> in_original_pattern(pattern.begin(), pattern.end());
+	set<int> in_pruned_pattern;
+	removed_vars.clear();
+	
+	vector<int> vars_to_check;
+	for ( auto var_id : initial_remaining_goal_vars) {
+	  if (in_original_pattern.count(var_id)) {
+	    vars_to_check.push_back(var_id);
+	    in_pruned_pattern.insert(var_id);
+	  }
+	}
+	//cout<<"vars_to_check:";print_vect_int(vars_to_check);
+	    
+	const CausalGraph &causal_graph = task_proxy->get_causal_graph();
+	while (!vars_to_check.empty()) {
+	    int var = vars_to_check.back();
+	    vars_to_check.pop_back();
+	    const vector<int> &rel = causal_graph.get_eff_to_pre(var);
+	    for (size_t i = 0; i < rel.size(); ++i) {
+		int var_no = rel[i];
+		if (in_original_pattern.count(var_no) &&
+		    !in_pruned_pattern.count(var_no)) {
+		    // Parents of relevant variables are causally relevant.
+		    vars_to_check.push_back(var_no);
+		    in_pruned_pattern.insert(var_no);
+		}
+	    }
+	}
+	pattern.assign(in_pruned_pattern.begin(), in_pruned_pattern.end());
+	sort(pattern.begin(), pattern.end());
+        //Now get the vars which were removed  
+	set_difference(in_original_pattern.begin(), in_original_pattern.end(),
+            in_pruned_pattern.begin(), in_pruned_pattern.end(),
+            back_inserter(removed_vars));
+	//cout<<"in_original_pattern:";for(auto element : in_original_pattern) cout<<element<<",";
+	//cout<<"in_prunned_pattern:";for(auto element: in_pruned_pattern) cout <<element<<","; 
+	//cout<<"removed_vars:";print_vect_int(removed_vars);cout<<endl;
+	if(InSituCausalCheck)
+	  if(in_original_pattern.size()>in_pruned_pattern.size()){
+	    cerr<<"Bug, if we are doing CBP, we should never select causally disconnected variables!";
+	    cerr<<"in_original_pattern:";for(auto element : in_original_pattern) cout<<element<<",";
+	    cerr<<"in_prunned_pattern:";for(auto element: in_pruned_pattern) cout <<element<<","; 
+	    cerr<<"removed_vars:";print_vect_int(removed_vars);cout<<endl;
+	    exit(1);
+	  }
   }
 
   static shared_ptr<PatternCollectionGeneratorComplementary>_parse(options::OptionParser &parser) {
@@ -288,8 +381,8 @@ namespace pdbs3 {
 
     options::Options options = parser.parse();
     parser.document_synopsis(
-        "Pattern Generator RBP",
-        "RBP-stype selection of variables to generate Pattern Collection");
+        "Pattern Generator for both RBP and CBP pattern generation styles",
+        "selection of variables to generate Pattern Collection");
     options::Options opts = parser.parse();
     if (parser.dry_run())
       return 0;

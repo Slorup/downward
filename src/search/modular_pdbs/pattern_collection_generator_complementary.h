@@ -57,6 +57,7 @@ class PatternCollectionContainer {
       std::cout<<"final_size:"<<pc.size()<<std::endl;
     }
     void print(){
+      std::cout<<"PC";
       for (auto pattern : pc){
         std::cout<<"[";
         for (auto var : pattern){
@@ -103,6 +104,7 @@ class PatternCollectionGeneratorComplementary {
   bool disjunctive_patterns=true;
   unsigned num_vars=0;
   unsigned goals_to_add;
+  bool InSituCausalCheck=true;
     //std::shared_ptr<PatternCollection> patterns;
   
   public:
@@ -138,6 +140,9 @@ class PatternCollectionGeneratorComplementary {
   }
   bool get_disjunctive_patterns(){
     return disjunctive_patterns;
+  }
+  void set_InSituCausalCheck(bool status){
+    InSituCausalCheck=status;
   }
 
     virtual void initialize(std::shared_ptr<AbstractTask> task) {
@@ -258,6 +263,8 @@ void print_vect_int(const std::vector<int>& values)
 }
 friend PatternCollectionGeneratorRBP;//mostly for max_single_PDB_size
 friend PatternCollectionGeneratorBinPackingV1;
+virtual unsigned get_RBP_calls(){ return 0;};
+virtual unsigned get_CBP_calls(){ return 0;};
 };
 
 }
