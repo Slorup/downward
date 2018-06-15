@@ -70,6 +70,7 @@ namespace pdbs3 {
     }
     
   void PatternCollectionGeneratorRBP::initialize(std::shared_ptr<AbstractTask> task) {
+    cout<<"Calling initialize GeneratorRBP-style,InSituCausalCheck:"<<InSituCausalCheck<<flush<<endl;
     num_vars= task->get_num_variables();
     cout<<"PatternCollectionGeneratorRBP::num_vars:"<<num_vars<<endl;
     //TaskProxy task_proxy_temp(*task);
@@ -85,18 +86,11 @@ namespace pdbs3 {
     cout<<"Overall problem size:"<<overall_problem_size<<endl;
     //Store goal variables for multiple use
     for (FactProxy goal : task_proxy->get_goals()) {
-      //int , l_id=goal.get_variable().get_id();
-      double next_var_size = goal.get_variable().get_domain_size();
-      if (next_var_size <= max_single_PDB_size){
-        initial_remaining_goal_vars.insert(goal.get_variable().get_id());
-      }
+      initial_remaining_goal_vars.insert(goal.get_variable().get_id());
     }
     cout<<"initial_remaining_goal_vars:";for( auto element : initial_remaining_goal_vars) cout<<element<<",";cout<<endl;
     for (size_t i = 0; i < variables.size(); ++i) {
-        double next_var_size = variables[i].get_domain_size();
-        if (next_var_size <= max_single_PDB_size){
           initial_remaining_vars.insert(i);
-        }
     }
     //Some problems have such large sizes that even 
     //symbolic can not deal with them, limiting it
@@ -120,6 +114,7 @@ namespace pdbs3 {
 	  
       pdb_gen_time_limit=pdb_factory->get_time_limit()/1000.0;
       cout<<"starting with a pdb_gen_time_limit of:"<<pdb_gen_time_limit<<" because PDB_factory is"<<pdb_factory->name()<<endl;
+      cout<<"Finished Calling initialize GeneratorRBP-style,InSituCausalCheck:"<<InSituCausalCheck<<flush<<endl;
     
       //VariablesProxy variables = task_proxy->get_variables();
       //const CausalGraph &causal_graph = task_proxy->get_causal_graph();
@@ -153,6 +148,7 @@ namespace pdbs3 {
     set<int> remaining_goal_vars;
     remaining_goal_vars=initial_remaining_goal_vars;
     DEBUG_COMP(cout<<"\t\tgoals_to_add:"<<goals_to_add<<",out of:"<<remaining_goal_vars.size()<<endl;);
+    //cout<<"total_vars:"<<remaining_vars.size()<<",goals:";for (auto var : remaining_goal_vars) cout<<var<<",";cout<<endl;exit(1);
 
     for (int i = 0; i < num_patterns; ++i) {
 
@@ -317,7 +313,7 @@ namespace pdbs3 {
         break;
       }
     }
-      cout<<"Generated PC:";PC.print();
+    //  cout<<"Generate PC:";PC.print();
 
     return PC;
   }

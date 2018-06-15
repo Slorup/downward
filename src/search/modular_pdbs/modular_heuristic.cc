@@ -147,9 +147,11 @@ ModularHeuristic::ModularHeuristic(const Options &opts)
       UCB_sizes.insert_choice(18);
       UCB_sizes.insert_choice(19);
       UCB_sizes.insert_choice(20);
-//      UCB_sizes.insert_choice(25);
-//      UCB_sizes.insert_choice(30);
-//      UCB_sizes.insert_choice(35);
+      //UCB_sizes.insert_choice(25);
+      //UCB_sizes.insert_choice(30);
+      //UCB_sizes.insert_choice(35);
+      //UCB_sizes.insert_choice(50);
+      //UCB_sizes.insert_choice(60);
 
       /*UCB_Disjunctive_patterns[pow(10,8)]=binary_choice;
       UCB_Disjunctive_patterns[pow(10,9)]=binary_choice;
@@ -211,6 +213,11 @@ ModularHeuristic::ModularHeuristic(const Options &opts)
       PatternCollectionContainer initial_Gamer_Collection=alternative_pattern_generator.get_PC();
       cout<<"Initial Gamer PDB:";initial_Gamer_Collection.print();
       candidate_ptr=make_shared<ModularZeroOnePDBs>(task_proxy, initial_Gamer_Collection.get_PC(), *pdb_factory);
+      if(pdb_factory->is_solved()){
+	cout<<"Solution found while generating PDB candidate of type:"<<pdb_factory->name()<<", adding PDB and exiting generation at time"<<utils::g_timer()<<endl;
+	result->include_additive_pdbs(pdb_factory->terminate_creation(candidate_ptr->get_pattern_databases()));
+	return;
+      }
       cout<<"initial avg_h for Gamer-Style:"<<candidate_ptr->compute_approx_mean_finite_h();
       cout<<"initial h value for Gamer-Style:"<<candidate_ptr->get_value(initial_state)<<endl;
       alternative_pattern_generator.check_improv(candidate_ptr->compute_approx_mean_finite_h());//This way we populate initial h value
@@ -454,6 +461,11 @@ ModularHeuristic::ModularHeuristic(const Options &opts)
           candidate_ptr=make_shared<ModularZeroOnePDBs>(task_proxy, candidate_collection.get_PC(), *pdb_factory);
           pdb_time=utils::g_timer()-start_time;
           DEBUG_COMP(cout<<"pdb_max_size:"<<pdb_max_size<<",pdb_time:"<<pdb_time<<endl;);
+          if(pdb_factory->is_solved()){
+		  cout<<"Solution found while generating PDB candidate of type:"<<pdb_factory->name()<<", adding PDB and exiting generation at time"<<utils::g_timer()<<endl;
+		  result->include_additive_pdbs(pdb_factory->terminate_creation(candidate_ptr->get_pattern_databases()));
+		  return;
+	  }
         }
           
 	if(generator_choice==0){//check if avg_h_value was improved
@@ -720,6 +732,8 @@ int ModularHeuristic::compute_heuristic(const GlobalState &global_state) {
 //    return h;
 //}
 
+void ModularHeuristic::clear_dominated_heuristics(){
+}
 static Heuristic *_parse(OptionParser &parser) {
     parser.document_synopsis("Pattern database heuristic", "TODO");
     parser.document_language_support("action costs", "supported");

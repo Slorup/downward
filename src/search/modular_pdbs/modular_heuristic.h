@@ -52,6 +52,7 @@ public:
        empty, default operator costs are used.
     */
     ModularHeuristic(const options::Options &opts);
+    void clear_dominated_heuristics();
     virtual ~ModularHeuristic() override = default;
 };
 }
