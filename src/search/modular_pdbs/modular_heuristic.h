@@ -29,6 +29,8 @@ class ModularHeuristic : public Heuristic {
     bool create_perimeter;
     bool only_gamer;
     bool only_CBP;
+    int CBP_counter=0;
+    int RBP_counter=0;
     std::shared_ptr<PDBFactory> pdb_factory;
     std::shared_ptr<PatternCollectionInformation> result;
     utils::CountdownTimer *modular_heuristic_timer;

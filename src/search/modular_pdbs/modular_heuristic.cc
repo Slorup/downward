@@ -302,6 +302,16 @@ ModularHeuristic::ModularHeuristic(const Options &opts)
       PatternCollectionContainer candidate_collection_Gamer;
       PatternCollectionContainer selected_collection_Gamer;
       while(!modular_heuristic_timer->is_expired()){
+	if(always_CBP_or_RBP_or_UCB==3){
+	  if(rand()%2==1){
+	    CBP_counter++;
+	    pattern_generator->set_InSituCausalCheck(true);
+	  }
+	  else{
+	    RBP_counter++;
+	    pattern_generator->set_InSituCausalCheck(false);
+	  }
+	}
 	 if(double(utils::get_current_memory_in_kb())/1024.0>memory_limit){
 	    cout<<"break-3,memory limit breached,current_memory(MB):"<<utils::get_current_memory_in_kb()/1024.0<<",memory_limit:"<<memory_limit<<endl;
 	    return;
@@ -700,6 +710,7 @@ ModularHeuristic::ModularHeuristic(const Options &opts)
 	    
       float terminate_time=utils::g_timer()-start_time;
       cout<<"time:"<<utils::g_timer()<<",before_recompute_max_additive_subset,Testing modular_heuristic constructor finished,time:"<<utils::g_timer()<<",episodes:"<<num_episodes<<",PC created:"<<PC_counter<<",final_pdbs:"<<result->get_patterns()->size()<<",terminate_time:"<<terminate_time<<endl;
+      cout<<"CBP_counter:,"<<CBP_counter<<",RBP_counter:,"<<RBP_counter<<endl;
       //result->recompute_max_additive_subsets();
       //cout<<"time:"<<utils::g_timer()<<",after recompute_max_additive_subset,Testing modular_heuristic constructor finished,time:"<<utils::g_timer()<<",episodes:"<<num_episodes<<",PC created:"<<PC_counter<<",final_pdbs:"<<result->get_patterns()->size()<<",terminate_time:"<<terminate_time<<endl;
 
@@ -759,7 +770,7 @@ static Heuristic *_parse(OptionParser &parser) {
         "900");
     parser.add_option<int> (
 	"always_cbp_or_rbp_or_ucb", 
-	"If 0,ensure any added variable is causally connected(CBP), if 1, only check causal connection after all patterns are selected(RBP), if 2, use UCB to learn which is better", 
+	"If 0,ensure any added variable is causally connected(CBP), if 1, only check causal connection after all patterns are selected(RBP), if 2, use UCB to learn which is better, if 3 do 50/50", 
 	"0");
     parser.add_option<shared_ptr<PDBFactory>>(
         "pdb_factory",
