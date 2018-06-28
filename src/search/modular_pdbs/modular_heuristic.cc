@@ -109,6 +109,8 @@ ModularHeuristic::ModularHeuristic(const Options &opts)
       Learning UCB_generator; UCB_generator.insert_choice(1); UCB_generator.insert_choice(0);
       //Initialize reward to 2 so it does not go too fast for initial selection
       UCB_generator.increase_reward(1);UCB_generator.increase_reward(0);
+      Learning UCB_RBP_vs_CBP; UCB_RBP_vs_CBP.insert_choice(1); UCB_RBP_vs_CBP.insert_choice(0);
+      UCB_RBP_vs_CBP.increase_reward(1,10);UCB_RBP_vs_CBP.increase_reward(0,10);
 
       Learning UCB_sizes;//PDB size selector
       map<double,Learning> UCB_Disjunctive_patterns;//Disjunctive (or not) pattern selector,one per size;
@@ -301,8 +303,20 @@ ModularHeuristic::ModularHeuristic(const Options &opts)
       //separate so clearing it for other bin packing algorithms does not clear partial gamer collections which we might want to try
       PatternCollectionContainer candidate_collection_Gamer;
       PatternCollectionContainer selected_collection_Gamer;
+      bool generator_type=true;
       while(!modular_heuristic_timer->is_expired()){
-	if(always_CBP_or_RBP_or_UCB==3){
+	if(always_CBP_or_RBP_or_UCB==2){
+	  generator_type=UCB_RBP_vs_CBP.make_choice();
+	  if(generator_type==1){
+	    CBP_counter++;
+	    pattern_generator->set_InSituCausalCheck(true);
+	  }
+	  else{
+	    RBP_counter++;
+	    pattern_generator->set_InSituCausalCheck(false);
+	  }
+	}
+	else if(always_CBP_or_RBP_or_UCB==3){
 	  if(rand()%2==1){
 	    CBP_counter++;
 	    pattern_generator->set_InSituCausalCheck(true);
@@ -414,9 +428,8 @@ ModularHeuristic::ModularHeuristic(const Options &opts)
         DEBUG_COMP(cout<<"time:"<<utils::g_timer()<<",generator_choice:"<<generator_choice<<flush<<endl;);
         float start_time=utils::g_timer();
         float pdb_time=0;
-        if(generator_choice==0){//Random split
+        if(generator_choice==0){//Gamer
 	    if(candidate_collection_Gamer.get_size()==0){
-
 	    candidate_collection_Gamer=alternative_pattern_generator.generate();
 	    cout<<"time:"<<utils::g_timer<<"Gamer,starting new_gamer_run with num_patterns:"<<candidate_collection_Gamer.get_size()<<endl;
 	    partial_gamer_run=false;
@@ -588,6 +601,7 @@ ModularHeuristic::ModularHeuristic(const Options &opts)
             UCB_sizes.increase_cost(log10(pattern_generator->get_pdb_max_size()),pdb_time);
             binary_choice.increase_cost(double(pattern_generator->get_disjunctive_patterns()),pdb_time);
             goals_choice.increase_cost(double(pattern_generator->get_goals_to_add()),pdb_time);
+	    UCB_RBP_vs_CBP.increase_cost(generator_type,pdb_time);
           }
           UCB_generator.increase_cost(generator_choice,pdb_time);
           //UCB_Disjunctive_patterns[pdb_max_size].increase_cost(double(pattern_generator->get_disjunctive_patterns()),pdb_time);
@@ -637,6 +651,7 @@ ModularHeuristic::ModularHeuristic(const Options &opts)
               binary_choice.increase_reward(double(pattern_generator->get_disjunctive_patterns()),pdb_time);
               goals_choice.increase_reward(double(pattern_generator->get_goals_to_add()),pdb_time);
               UCB_sizes.increase_reward(log10(pdb_max_size),pdb_time);
+	      UCB_RBP_vs_CBP.increase_reward(generator_type,pdb_time);
             }
             result->set_dead_ends(pdb_factory->get_dead_ends());//NOT SURE WHAT IT DOES, CHECK WITH ALVARO
             pattern_evaluator->sample_states(result);
@@ -661,6 +676,7 @@ ModularHeuristic::ModularHeuristic(const Options &opts)
                 //UCB_goals_to_group[pdb_max_size].increase_reward(double(pattern_generator->get_goals_to_add()),pdb_time);
                 binary_choice.increase_reward(double(pattern_generator->get_disjunctive_patterns()),pdb_time);
                 goals_choice.increase_reward(double(pattern_generator->get_goals_to_add()),pdb_time);
+		UCB_RBP_vs_CBP.increase_reward(generator_type,pdb_time);
               }
               UCB_generator.increase_reward(generator_choice,pdb_time);
               result->set_dead_ends(pdb_factory->get_dead_ends());//NOT SURE WHAT IT DOES, CHECK WITH ALVARO
