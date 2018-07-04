@@ -112,8 +112,6 @@ namespace pdbs3 {
       min_single_PDB_size=min(max_single_PDB_size-2.0,4.0);
       cout<<"starting with a min_single_PDB_size of:"<<min_single_PDB_size<<endl;
 	  
-      pdb_gen_time_limit=pdb_factory->get_time_limit()/1000.0;
-      cout<<"starting with a pdb_gen_time_limit of:"<<pdb_gen_time_limit<<" because PDB_factory is"<<pdb_factory->name()<<endl;
       cout<<"Finished Calling initialize GeneratorRBP-style,InSituCausalCheck:"<<InSituCausalCheck<<flush<<endl;
     
       //VariablesProxy variables = task_proxy->get_variables();

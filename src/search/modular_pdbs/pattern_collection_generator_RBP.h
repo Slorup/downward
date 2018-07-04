@@ -27,10 +27,8 @@ namespace pdbs3 {
 class PatternCollectionGeneratorRBP : public PatternCollectionGeneratorComplementary {
   int time_limit=100;
   int num_patterns=5;
-  bool single_pattern_only=true;
   std::shared_ptr<PDBFactory> pdb_factory;//We treat size limits differently if symbolic or explicit
   std::shared_ptr<PatternCollection> patterns;
-  int pdb_gen_time_limit;
   int min_single_PDB_size=4;
   double overall_problem_size=0;
   unsigned RBP_count=0;
