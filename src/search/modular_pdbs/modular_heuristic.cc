@@ -442,7 +442,7 @@ ModularHeuristic::ModularHeuristic(const Options &opts)
             UCB_generator.increase_cost(generator_choice,INT_MAX);//So we do not pick this option again
             if(only_gamer){
               cout<<"Finished, we are doing only_gamer as pattern generator"<<endl;
-              break;
+              return;
             }
             continue;
           }

@@ -53,6 +53,7 @@ ModularZeroOnePDBs::ModularZeroOnePDBs(TaskProxy task_proxy, const PatternCollec
 	shared_ptr<PatternDatabaseInterface> pdb = pdb_factory.compute_pdb(task_proxy, pattern, 
 									   operator_costs);
 	DEBUG_COMP(cout<<"compute_pdb_time:"<<utils::g_timer()-start_gen_time<<endl;);
+	cout<<"compute_pdb_time:"<<utils::g_timer()-start_gen_time<<endl;
 
         pattern_databases.push_back(pdb);
 	
