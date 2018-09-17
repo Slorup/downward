@@ -106,6 +106,7 @@ PatterCollectionEvaluatorRandWalk::PatterCollectionEvaluatorRandWalk(const optio
       return true;//Add collection
     }
     DEBUG_COMP(cout<<"time:"<<utils::g_timer()<<",Not_selecting PC,increased_states:"<<increased_states<<",threshold:"<<get_threshold()<<" out of "<<get_num_samples()<<endl;);
+    //cout<<"time:"<<utils::g_timer()<<",Not_selecting PC,increased_states:"<<increased_states<<",threshold:"<<get_threshold()<<" out of "<<get_num_samples()<<endl;
     return false;//Not adding collection
   }
 

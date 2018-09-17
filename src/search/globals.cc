@@ -391,6 +391,7 @@ bool g_is_part_of_anytime_portfolio = false;
 std::map<size_t,pair<State,int> > unique_samples;
 
 utils::Log g_log;
-//float memory_limit=4000;//MB
-float memory_limit=2000;//MB
+//64bitsfloat memory_limit=4000;//MB//,also need changes in the PDB individual limits, e.g. pdb_factory_symbolic.cc!
+//32bitsfloat memory_limit=2000;//MB//,also need changes in the PDB individual limits, e.g. pdb_factory_symbolic.cc!
+float memory_limit=4000;//MB//,also need changes in the PDB individual limits, e.g. pdb_factory_symbolic.cc!
 double overall_pdb_gen_time=0;

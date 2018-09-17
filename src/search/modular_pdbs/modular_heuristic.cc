@@ -74,7 +74,7 @@ ModularHeuristic::ModularHeuristic(const Options &opts)
 	  only_gamer(opts.get<bool>("only_gamer")), 
 	  only_CBP(opts.get<bool>("only_cbp")), 
     pdb_factory (opts.get<shared_ptr<PDBFactory>>("pdb_factory")) {
-      cout<<"Hi modular_v1"<<endl;
+      cout<<"Hi nonagnostic_v2"<<endl;
       bool unterminated_pdbs=false;
       cout<<"modular_time_limit:"<<modular_time_limit<<endl;
       cout<<"terminate_creation:"<<terminate_creation<<endl;
@@ -108,7 +108,7 @@ ModularHeuristic::ModularHeuristic(const Options &opts)
       //1 means Random split into two patterns, 0 means CBP
       Learning UCB_generator; UCB_generator.insert_choice(1); UCB_generator.insert_choice(0);
       //Initialize reward to 2 so it does not go too fast for initial selection
-      UCB_generator.increase_reward(1);UCB_generator.increase_reward(0);
+      UCB_generator.increase_reward(1,4);UCB_generator.increase_reward(0,4);
       Learning UCB_RBP_vs_CBP; UCB_RBP_vs_CBP.insert_choice(1); UCB_RBP_vs_CBP.insert_choice(0);
       UCB_RBP_vs_CBP.increase_reward(1,10);UCB_RBP_vs_CBP.increase_reward(0,10);
 
@@ -575,6 +575,10 @@ ModularHeuristic::ModularHeuristic(const Options &opts)
             if(Gamer_Combined_vect.size()==0){
               cout<<"Gamer_Combined_vect:"<<Gamer_Combined_vect<<",is empty,so we are finished with Gamer-style for this problem"<<endl;
               UCB_generator.increase_cost(generator_choice,INT_MAX);
+	      if(only_gamer){
+		cout<<"only-gamer=true, so we are finished building the heuristic"<<endl;
+		return;
+	      }
               continue;
             }
 	    if(Gamer_Combined_vect.size()>0&&partial_gamer_run){
