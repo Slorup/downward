@@ -138,13 +138,21 @@ static shared_ptr<PDBFactory>_parse(options::OptionParser &parser) {
 
     parser.add_option<bool> ("dump", "If set to true, prints the construction time.", "false");
 
+    if(sizeof(void*) == 8){
+      cout<<"64 bits, setting precompuation and termination_nodes limit for symbolic PDB generation accordingly, assuming IPC-18 memory limit of 8GBs total and 4GBs for PDB building."<<endl;
+      parser.add_option<int> ("precomputation_nodes", "Maximum number of BDD nodes in the frontier of the PDB.", "200000");
+      parser.add_option<int> ("termination_nodes", "Maximum number of BDD nodes in the frontier of the PDB.", "20000000");
+    }
+    else{
+      cout<<"64 bits, setting precompuation and termination_nodes limit for symbolic PDB generation accordingly, assuming IPC-18 memory limit of 8GBs total and 4GBs for PDB building."<<endl;
+      parser.add_option<int> ("precomputation_nodes", "Maximum number of BDD nodes in the frontier of the PDB.", "100000");
+      parser.add_option<int> ("termination_nodes", "Maximum number of BDD nodes in the frontier of the PDB.", "10000000");
+    }
     parser.add_option<int> ("precomputation_time_ms", "Maximum construction time for each PDB.", "5000");
     parser.add_option<int> ("precomputation_step_time_ms", "Maximum time for each step in the PDB construction.", "25000");
-    parser.add_option<int> ("precomputation_nodes", "Maximum number of BDD nodes in the frontier of the PDB.", "500000");
 
     parser.add_option<int> ("termination_time_ms", "Maximum construction time for each PDB in the termination phase.", "60000");
     parser.add_option<int> ("termination_step_time_ms", "Maximum time for each step in the PDB construction during the termination phase.", "20000");
-    parser.add_option<int> ("termination_nodes", "Maximum number of BDD nodes in the frontier of the PDB.", "10000000");
 
     parser.add_option<int> ("global_limit_memory_MB", "Maximum memory allowed for the whole execution of the planner.", "2000");
     parser.add_option<double> ("increase_factor", "Multiplication factor when we increase the precomputation time for a PDB.", "2");

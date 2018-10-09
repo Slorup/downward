@@ -10,12 +10,14 @@ using namespace std;
 using utils::ExitCode;
 
 int main(int argc, const char **argv) {
-    /*if(sizeof(void*) == 8){
-      cout<<"64 bits"<<endl;
+    if(sizeof(void*) == 8){
+      cout<<"64 bits, setting memory limit for PDB generation to 4GBs,assuming IPC-18 memory limit of 8GBs total"<<endl;
+      memory_limit=4000;
     }
     else{
-      cout<<"32 bits"<<endl;
-    }*/
+      cout<<"32 bits, setting memory limit for PDB generation to 2GBs,assuming pre-IPC-18 memory limit of 4GBs total"<<endl;
+      memory_limit=2000;
+    }
     utils::register_event_handlers();
 
     if (argc < 2) {
