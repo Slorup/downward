@@ -144,7 +144,7 @@ static shared_ptr<PDBFactory>_parse(options::OptionParser &parser) {
       parser.add_option<int> ("termination_nodes", "Maximum number of BDD nodes in the frontier of the PDB.", "20000000");
     }
     else{
-      cout<<"32 bits, setting precompuation and termination_nodes limit for symbolic PDB generation accordingly, assuming IPC-18 memory limit of 8GBs total and 4GBs for PDB building."<<endl;
+      cout<<"32 bits, setting precompuation and termination_nodes limit for symbolic PDB generation accordingly, assuming IPC-18 memory limit of 4GBs total and 2GBs for PDB building."<<endl;
       parser.add_option<int> ("precomputation_nodes", "Maximum number of BDD nodes in the frontier of the PDB.", "100000");
       parser.add_option<int> ("termination_nodes", "Maximum number of BDD nodes in the frontier of the PDB.", "10000000");
     }
