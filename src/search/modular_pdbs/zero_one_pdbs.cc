@@ -118,8 +118,14 @@ double ModularZeroOnePDBs::compute_approx_mean_finite_h() const {
     }
     return approx_mean_finite_h;
 }
+bool ModularZeroOnePDBs::is_finished() const {
+    for (const shared_ptr<PatternDatabaseInterface> &pdb : pattern_databases)
+     if(!pdb->is_finished()) 
+       return false;
+    return true;
+}
 
-void ModularZeroOnePDBs::dump() const {
+void ModularZeroOnePDBs::print() const {
     for (const shared_ptr<PatternDatabaseInterface> &pdb : pattern_databases) {
         cout << pdb->get_pattern() << endl;
     }

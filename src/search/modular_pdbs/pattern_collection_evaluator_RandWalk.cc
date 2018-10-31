@@ -146,6 +146,9 @@ PatterCollectionEvaluatorRandWalk::PatterCollectionEvaluatorRandWalk(const optio
     }
       cout<<"We are finished,random_walk,random_walk_time:"<<utils::g_timer()-start_time<<",samples:"<<samples.size()<<flush<<endl;
   }
+  void PatterCollectionEvaluatorRandWalk::clear_dominated_heuristics(std::shared_ptr<PatternCollectionInformation> current_result,std::shared_ptr<PatternCollectionInformation> &new_result){
+    new_result=current_result;
+  }
 
 
 

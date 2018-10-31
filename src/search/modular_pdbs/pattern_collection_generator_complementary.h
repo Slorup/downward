@@ -94,6 +94,11 @@ class PatternCollectionContainer {
         bitvector[pattern[i]]=true;
       }
     }
+
+    Pattern get_top_pattern(){
+      assert(pc.size()>0);
+      return pc[0];
+    }
 };
 //class PatternCollectionContainer;
 class PatternCollectionGeneratorRBP;

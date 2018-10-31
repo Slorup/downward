@@ -27,7 +27,7 @@ public:
       these states.
     */
     double compute_approx_mean_finite_h() const;
-    void dump() const;
+    void print() const;
 
     const PDBCollection & get_pattern_databases () const {
 	return pattern_databases;
@@ -38,6 +38,7 @@ public:
 		size_t get_new_pdbs(){return new_pdbs;};
     size_t get_size(){return pattern_databases.size();};
     bool is_dead_end(const State &state) const;
+    bool is_finished() const;
 };
 }
 

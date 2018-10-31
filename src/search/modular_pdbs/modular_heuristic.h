@@ -6,6 +6,7 @@
 #include "../heuristic.h"
 #include "pattern_collection_generator_complementary.h"
 #include "pattern_collection_evaluator.h"
+#include "pattern_collection_local_search.h"
 //#include "pdb_factory.h"
 
 class GlobalState;
@@ -23,11 +24,13 @@ class ModularHeuristic : public Heuristic {
     PatternCollectionContainer best_collection;
     std::shared_ptr<PatternCollectionGeneratorComplementary> pattern_generator;
     std::shared_ptr<PatternCollectionEvaluator> pattern_evaluator;
+    std::shared_ptr<PatternCollectionLocalSearch> pattern_local_search;
     int modular_time_limit;
     int always_CBP_or_RBP_or_UCB;
     bool terminate_creation;
     bool create_perimeter;
     bool only_gamer;
+    bool gamer_classic;
     bool only_CBP;
     int CBP_counter=0;
     int RBP_counter=0;

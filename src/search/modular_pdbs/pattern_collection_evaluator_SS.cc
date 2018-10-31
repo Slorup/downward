@@ -782,6 +782,11 @@ double PatterCollectionEvaluatorSS::probe_best_only(std::shared_ptr<PatternColle
 }
 
 
+  void PatterCollectionEvaluatorSS::clear_dominated_heuristics(std::shared_ptr<PatternCollectionInformation> current_result,std::shared_ptr<PatternCollectionInformation> &new_result){
+    new_result=current_result;
+  }
+
+
 
 static shared_ptr<PatternCollectionEvaluator>_parse(options::OptionParser &parser) {
   parser.add_option<int> ("time_limit", "If populated,stop construction on first node past boundary and time limit", "100");
