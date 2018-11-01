@@ -55,7 +55,8 @@ using namespace std;
 //ComPDBs (Hl)
 namespace pdbs3 {
 PatterCollectionEvaluatorSS::PatterCollectionEvaluatorSS(const options::Options & opts) :
-	time_limit (opts.get<int>("time_limit")){
+	time_limit (opts.get<int>("time_limit")),
+	time_or_size_selection(opts.get<int>("time_or_size_selection")){
     cout<<"hello EvaluatorSS"<<endl;fflush(stdout);
   //num_vars=task->get_num_variables();
 }
@@ -70,35 +71,40 @@ PatterCollectionEvaluatorSS::PatterCollectionEvaluatorSS(const options::Options 
    //Need a heuristic for SS h-basedtype system,using blind as a place holder
     const State &initial_state = task_proxy->get_initial_state();
     //Do A* related timings for predictions
-    cout<<"starting timings"<<flush<<endl;
-    utils::Timer node_gen_and_exp_timings;
-    int node_counter=0;
-    State succ_state = initial_state;
-    vector<State> succ_states;
-    set<State> visited_states;
-    vector<OperatorProxy> applicable_ops; 
-    while(node_gen_and_exp_timings()<1.0){
-      node_counter++;
-      applicable_ops.clear();
-      successor_generator->generate_applicable_ops(succ_state, applicable_ops);
-      for(auto op : applicable_ops){
-	succ_states.push_back(succ_state.get_successor(op));
+    if(time_or_size_selection==TIME_SELECTION){
+      cout<<"SS_based TIME_SELECTION,starting timings"<<flush<<endl;
+      utils::Timer node_gen_and_exp_timings;
+      int node_counter=0;
+      State succ_state = initial_state;
+      vector<State> succ_states;
+      set<State> visited_states;
+      vector<OperatorProxy> applicable_ops; 
+      while(node_gen_and_exp_timings()<1.0){
+	node_counter++;
+	applicable_ops.clear();
+	successor_generator->generate_applicable_ops(succ_state, applicable_ops);
+	for(auto op : applicable_ops){
+	  succ_states.push_back(succ_state.get_successor(op));
+	}
+	//const OperatorProxy &op = applicable_ops[rand()%applicable_ops.size()];//choose operator at random
+	if(applicable_ops.size()==0){//dead_end,go back to initial state
+	  succ_state = task_proxy->get_initial_state();
+	  node_counter--;
+	  continue;
+	}
+	else{
+	  //cout<<"\t\tapplicable_ops:"<<applicable_ops.size()<<endl;
+	  succ_state = succ_state.get_successor(applicable_ops[rand()%applicable_ops.size()]);
+	  visited_states.insert(succ_state);
+	}
       }
-      //const OperatorProxy &op = applicable_ops[rand()%applicable_ops.size()];//choose operator at random
-      if(applicable_ops.size()==0){//dead_end,go back to initial state
-        succ_state = task_proxy->get_initial_state();
-	node_counter--;
-	continue;
-      }
-      else{
-	//cout<<"\t\tapplicable_ops:"<<applicable_ops.size()<<endl;
-	succ_state = succ_state.get_successor(applicable_ops[rand()%applicable_ops.size()]);
-	visited_states.insert(succ_state);
-      }
+      visited_states.clear();
+      node_gen_and_exp_cost=node_gen_and_exp_timings.stop()/double(node_counter);
+      cout<<"node gen_and_exp_cost:"<<node_gen_and_exp_cost<<",node_counter:"<<node_counter<<endl;
     }
-    visited_states.clear();
-    node_gen_and_exp_cost=node_gen_and_exp_timings.stop()/double(node_counter);
-    cout<<"node gen_and_exp_cost:"<<node_gen_and_exp_cost<<",node_counter:"<<node_counter<<endl;
+    else{
+      cout<<"SS_based SIZE_SELECTION"<<endl;
+    }
   }
   bool PatterCollectionEvaluatorSS::evaluate(std::shared_ptr<ModularZeroOnePDBs> candidate_PC){
     //cout<<"ss, evaluate,candidate_PC.size:"<<candidate_PC->get_size()<<endl;
@@ -205,19 +211,24 @@ PatterCollectionEvaluatorSS::PatterCollectionEvaluatorSS(const options::Options 
     
     double saved_time=0;
     if(increased_states>0){
-      utils::Timer heur_timer;
-      //New, we calculate the current time cost for the current result
-      int counter_temp=0;
-      for (auto sample=unique_samples.begin();sample!=unique_samples.end();sample++){
-	candidate_PC->get_value(sample->second.first);
-	if(counter_temp>20000){
-	  break;
-	}
-	counter_temp++;
-      }
-      double candidate_heur_time_cost=heur_timer.stop()/SS_states_vector.size();
 
-      saved_time=total_SS_gen_nodes*(node_gen_and_exp_cost+current_heur_time_cost)-(total_SS_gen_nodes-pruned_states)*(node_gen_and_exp_cost+candidate_heur_time_cost+current_heur_time_cost);
+      if(time_or_size_selection==TIME_SELECTION){
+	utils::Timer heur_timer;
+	//New, we calculate the current time cost for the current result
+	int counter_temp=0;
+	for (auto sample=unique_samples.begin();sample!=unique_samples.end();sample++){
+	  candidate_PC->get_value(sample->second.first);
+	  if(counter_temp>20000){
+	  break;
+	  }
+	  counter_temp++;
+	}
+	double candidate_heur_time_cost=heur_timer.stop()/SS_states_vector.size();
+	saved_time=total_SS_gen_nodes*(node_gen_and_exp_cost+current_heur_time_cost)-(total_SS_gen_nodes-pruned_states)*(node_gen_and_exp_cost+candidate_heur_time_cost+current_heur_time_cost);
+      }
+      else{ 
+	return pruned_states;//True if >0, so choosing any heuristic if it lowers search space in the slightest
+      }
      //cout<<"ratio:"<<float(increased_states)/float(sampled_states)<<",node_gen_and_exp_cost:"<<node_gen_and_exp_cost<<",sampling_time:"<<sampler_time<<",candidate_heur_time_cost:"<<candidate_heur_time_cost<<",current_heur_time_cost:"<<current_heur_time_cost<<",best_prev_time:"<<total_SS_gen_nodes*(node_gen_and_exp_cost+best_pdb_collections.size()*heur_time_cost)<<",new_time:"<<(total_SS_gen_nodes-pruned_states)*(node_gen_and_exp_cost+heur_time_cost*(best_pdb_collections.size()+1))<<",saved_time:"<<saved_time<<"total_SS_gen_nodes:"<<total_SS_gen_nodes<<",new_nodes:"<<total_SS_gen_nodes-pruned_states<<",initial_h:"<<candidate.get_value(initial_state)<<endl;
     }
     if(saved_time>0){
@@ -344,6 +355,7 @@ void PatterCollectionEvaluatorSS::sample_states(std::shared_ptr<PatternCollectio
     }
     g_rng()->shuffle(SS_states_vector);
     //4) Measure the time costs of current heuristic combination, needed for evaluate when doing time predictions
+    if(time_or_size_selection==TIME_SELECTION){
       utils::Timer heur_timer;
       int counter_temp=0;
       for (auto sample=unique_samples.begin();sample!=unique_samples.end();sample++){
@@ -354,6 +366,7 @@ void PatterCollectionEvaluatorSS::sample_states(std::shared_ptr<PatternCollectio
 	counter_temp++;
       }
       current_heur_time_cost=heur_timer.stop()/SS_states_vector.size();
+    }
     DEBUG_MSG(cout<<"time:,"<<utils::g_timer()<<",finished randomzing SS states vector,size:"<<SS_states.size()<<",best_heur_dead_ends"<<best_heur_dead_ends<<endl;);
     cout<<"ss,time:,"<<utils::g_timer()<<",finished randomzing SS states vector,size:"<<SS_states.size()<<",best_heur_dead_ends"<<best_heur_dead_ends<<endl;
   }
@@ -790,6 +803,7 @@ double PatterCollectionEvaluatorSS::probe_best_only(std::shared_ptr<PatternColle
 
 static shared_ptr<PatternCollectionEvaluator>_parse(options::OptionParser &parser) {
   parser.add_option<int> ("time_limit", "If populated,stop construction on first node past boundary and time limit", "100");
+  parser.add_option<int> ("time_or_size_selection", "If TIME_SELECTION do time predictions, if SIZE_SELECTION do size prediction", "1");
   options::Options options = parser.parse();
   parser.document_synopsis(
       "Pattern Generator RBP",

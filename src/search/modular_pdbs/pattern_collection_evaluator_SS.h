@@ -36,7 +36,9 @@ namespace pdbs3 {
 //class PDBFactory;
 //class PatternCollectionContainer;
 class PatterCollectionEvaluatorSS : public PatternCollectionEvaluator {
+  enum{SIZE_SELECTION=0,TIME_SELECTION=1};
   int time_limit=20;
+  int time_or_size_selection=TIME_SELECTION;
   //unsigned increased_states=0;//We keep this value so we can pass overall progress 
   //std::vector<State> samples;
   std::vector<SS_state> SS_states_vector;
