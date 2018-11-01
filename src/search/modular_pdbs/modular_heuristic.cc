@@ -108,9 +108,10 @@ ModularHeuristic::ModularHeuristic(const Options &opts)
       vector<pair<double,Pattern > > improving_patterns;
       //double best_average_h_value=0;//For Gamer-Style selection
       //1 means Random split into two patterns, 0 means CBP
-      Learning UCB_generator; UCB_generator.insert_choice(1); UCB_generator.insert_choice(0);
+      Learning UCB_generator; UCB_generator.insert_choice(GAMER_GENERATOR); UCB_generator.insert_choice(RBP_CBP_GENERATOR);
+      Learning UCB_local_search; UCB_local_search.insert_choice(GAMER_LOCAL_SEARCH);
       //Initialize reward to 2 so it does not go too fast for initial selection
-      UCB_generator.increase_reward(1,4);UCB_generator.increase_reward(0,4);
+      UCB_generator.increase_reward(RBP_CBP_GENERATOR,4);UCB_generator.increase_reward(GAMER_GENERATOR,4);
       Learning UCB_RBP_vs_CBP; UCB_RBP_vs_CBP.insert_choice(1); UCB_RBP_vs_CBP.insert_choice(0);
       UCB_RBP_vs_CBP.increase_reward(1,10);UCB_RBP_vs_CBP.increase_reward(0,10);
 
@@ -620,6 +621,22 @@ ModularHeuristic::ModularHeuristic(const Options &opts)
 	    //vector<Pattern> patterns=gamer_current_pattern_Gamer.get_PC();
 	    cout<<"Starting gamer collection:";gamer_current_pattern_Gamer.print();
             new_candidate_Gamer=pattern_local_search->generate_next_candidate(gamer_current_pattern_Gamer);
+	    //If we can not find any new better improvement
+	    //We add 1 secs as a penalty everytime this happens if mixing local_search_methods, to avoid loops
+	    //otherwise UCB would keep choosing local_search on the same pattern repeatedly until the time spent 
+	    //is enough to prefer an alternative.
+	    //If only gamer, we simply return, no improvements possible by adding a single var.
+	    //Note: we could keep looking for better pattenrs by adding pairs, n-tupples, etc.  That is future work.
+	    if(new_candidate_Gamer.get_top_pattern()==gamer_current_pattern_Gamer.get_top_pattern()){
+	      if(only_gamer){
+		cout<<"No improvement possible, and only doing gamer, so we are finished."<<endl;
+		break;//breaking because we want to do the terminate of the selected PDB 
+		//in case it is not finished
+	      }
+	      else{
+		UCB_local_search.increase_cost(GAMER_LOCAL_SEARCH,1.0);
+	      }
+	    }
             candidate_ptr=make_shared<ModularZeroOnePDBs>(task_proxy, new_candidate_Gamer.get_PC(), *pdb_factory);
  //         }
 	}

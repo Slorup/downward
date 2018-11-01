@@ -37,6 +37,9 @@ class ModularHeuristic : public Heuristic {
     std::shared_ptr<PDBFactory> pdb_factory;
     std::shared_ptr<PatternCollectionInformation> result;
     utils::CountdownTimer *modular_heuristic_timer;
+    enum{GAMER_LOCAL_SEARCH=0,GA_LOCAL_SEARCH=1,IPDB_LOCAL_SEARCH=2};
+    enum{GAMER_GENERATOR=0,RBP_CBP_GENERATOR=1};
+
 protected:
     virtual int compute_heuristic(const GlobalState &global_state) override;
     //virtual void initialize() override;
