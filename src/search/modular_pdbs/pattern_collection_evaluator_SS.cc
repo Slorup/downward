@@ -258,7 +258,7 @@ void PatterCollectionEvaluatorSS::sample_states(std::shared_ptr<PatternCollectio
   vector<double> probe_avgs;
   //threshold=44;
   //Now sampling
-  cout<<"ss, sample_states 1), setting threshold"<<flush<<endl;
+  //cout<<"ss, sample_states 1), setting threshold"<<flush<<endl;
   //1) Set initial Threshold
   if(get_threshold()==unsigned(current_result->get_value(initial_state))){
     //set_threshold(200);
@@ -288,6 +288,7 @@ void PatterCollectionEvaluatorSS::sample_states(std::shared_ptr<PatternCollectio
     for (repetition=0;repetition<10;repetition++){
 	vector<double> probe_data;
 	for (int prob_index=0;prob_index<1000;prob_index++){
+	  DEBUG_MSG(cout<<"prob_index:"<<prob_index<<",starting probe_best_only"<<flush<<endl;;);
 	    probe_data.push_back(probe_best_only(current_result));
 	    if(utils::g_timer()-start_probe_time>10.0){
 		cout<<"exceeded 10 seconds limit for probes, number of repetitions completed:"<<repetition<<endl;
@@ -372,6 +373,7 @@ void PatterCollectionEvaluatorSS::sample_states(std::shared_ptr<PatternCollectio
   }
 
 double PatterCollectionEvaluatorSS::probe_best_only(std::shared_ptr<PatternCollectionInformation> current_result){
+  DEBUG_MSG(cout<<"hello probe_best_only"<<flush<<endl;);
   //Creating fake heuristic (blind) to store h-value results needed by SS sampler class interface
   options::Options temp_options2;
   temp_options2.set<int>(
@@ -379,26 +381,25 @@ double PatterCollectionEvaluatorSS::probe_best_only(std::shared_ptr<PatternColle
   temp_options2.set<bool>(
       "cache_estimates", false);
   blind_search_heuristic::BlindSearchHeuristic temp_blind_heuristic(temp_options2);
-  //cout<<"blind_search_heuristic created"<<flush<<endl;
-  //cout<<"sampler created"<<flush<<endl;
+  DEBUG_MSG(cout<<"blind_search_heuristic created"<<flush<<endl;);
   sampler = new TypeSystem(&temp_blind_heuristic);
+  DEBUG_MSG(cout<<"sampler created,"<<flush<<endl;);
   set<vector<int> > F_culprits;
   map<Type, SSNode> queue;
   const State &initial_state = task_proxy->get_initial_state();
-  //int initial_value=0;
+  //cout<<"after initial_state"<<flush<<endl;
   set_threshold(max(unsigned(current_result->get_value(initial_state)),max(unsigned(1),get_threshold())));
-  //cout<<"ss, calling probe_best_only,threshold:"<<get_threshold()<<endl;fflush(stdout);
+  DEBUG_MSG(cout<<"ss, calling probe_best_only,threshold:"<<get_threshold()<<endl;fflush(stdout););
   
   if(current_result->pdb_counts()>0){
-    //cout<<"initial_h:"<<flush;
       int initial_h=current_result->get_value(initial_state);
-      //cout<<initial_h<<endl;
+      DEBUG_MSG(cout<<initial_h<<flush<<endl;);
       //initial_h needs to be at least 1
       initial_h=max(1,initial_h);
   }
   else{
-      cout<<"cant call probe_best_only if there are no pdbs already added! current_result collections are empty,DEBUG ME!!!"<<endl;
-      exit(0);
+      cerr<<"cant call probe_best_only if there are no pdbs already added! current_result collections are empty,DEBUG ME!!!"<<endl;
+      exit(1);
   }	  
   sampling_threshold=get_threshold();
   

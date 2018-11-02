@@ -41,7 +41,7 @@ namespace pdbs3 {
     vector<int> candidates;
     for (size_t var = 0; var < g_variable_domain.size(); ++var) {
         if (pattern.count(var)){ 
-          cout<<"\t\tGamer_local_search,skipping exisiting var:"<<var<<endl;
+          //cout<<"\t\tGamer_local_search,skipping exisiting var:"<<var<<endl;
           continue;
         }
 	else if(forbidden_vars.count(var)){//This pattern was proven to not improve search
@@ -49,9 +49,8 @@ namespace pdbs3 {
 	}
 
       for (int succ : cg.get_pre_to_eff(var)) {
-        cout<<"\t\tGamer,checking connected variables to var:"<<var<<"trying succ:"<<succ<<endl;
         if (pattern.count(succ)) {
-          cout<<"\t\tGamer,connected variables:"<<succ<<"to var:"<<var<<" added."<<endl;
+          //cout<<"\t\tGamer,connected variables:"<<succ<<"to var:"<<var<<" added."<<endl;
           candidates.push_back(var); 
           break;
         }
@@ -66,7 +65,7 @@ namespace pdbs3 {
     cout<<"candidates:";for (auto i : candidates) cout<<i<<",";cout<<endl;
     assert(candidates.size()>0);
     last_var=candidates.at(rand()%candidates.size());
-    cout<<"adding random_var:"<<last_var<<endl;
+    //cout<<"adding random_var:"<<last_var<<endl;
     candidate_pattern.push_back(last_var);
     //All patterns have to be sorted! for duplication checks
     //and any other comparisons of patterns which are vectors,

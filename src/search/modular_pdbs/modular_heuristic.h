@@ -31,7 +31,7 @@ class ModularHeuristic : public Heuristic {
     bool create_perimeter;
     bool only_gamer;
     bool gamer_classic;
-    bool only_CBP;
+    bool gamer_excluded;
     int CBP_counter=0;
     int RBP_counter=0;
     std::shared_ptr<PDBFactory> pdb_factory;
