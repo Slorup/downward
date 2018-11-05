@@ -229,7 +229,7 @@ namespace pdbs3 {
 		remaining_vars.insert(removed_vars.begin(), removed_vars.end());
 		cout<<"\t\tinserted removed_vars:";for(auto element : removed_vars) cout<<element<<",";cout<<endl;
 	      }
-	      cout<<"\t\t no remaining_vars,adding pc:";for (auto element : pattern_int) cout<<element<<",";cout<<endl;
+	      //cout<<"\t\t no remaining_vars,adding pc:";for (auto element : pattern_int) cout<<element<<",";cout<<endl;
               PC.add_pc(pattern_int);
               break;
             }

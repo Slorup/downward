@@ -34,6 +34,8 @@ class ModularHeuristic : public Heuristic {
     bool gamer_excluded;
     int CBP_counter=0;
     int RBP_counter=0;
+    int Disj_counter=0;
+    int Not_Disj_counter=0;
     std::shared_ptr<PDBFactory> pdb_factory;
     std::shared_ptr<PatternCollectionInformation> result;
     utils::CountdownTimer *modular_heuristic_timer;

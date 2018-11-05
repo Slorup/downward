@@ -74,7 +74,7 @@ ModularHeuristic::ModularHeuristic(const Options &opts)
     create_perimeter(opts.get<bool>("create_perimeter")), 
     only_gamer(opts.get<bool>("only_gamer")), 
     gamer_classic(opts.get<bool>("gamer_classic")), 
-    gamer_excluded(opts.get<bool>("only_cbp")), 
+    gamer_excluded(opts.get<bool>("gamer_excluded")), 
     pdb_factory (opts.get<shared_ptr<PDBFactory>>("pdb_factory")) {
       cout<<"Hi nonagnostic_v2"<<endl;
       bool unterminated_pdbs=false;
@@ -82,8 +82,8 @@ ModularHeuristic::ModularHeuristic(const Options &opts)
       cout<<"terminate_creation:"<<terminate_creation<<endl;
       cout<<"pdb_type:"<<pdb_factory->name()<<endl;
       cout<<"only_gamer:"<<only_gamer<<",gamer_classic:"<<gamer_classic<<endl;
-      cout<<"gamer_excluded:"<<gamer_excluded<<endl;
-      unsigned num_goals_to_group=0;
+      cout<<"gamer_excluded:"<<gamer_excluded<<",always_cbp_or_rbp_or_ucb:"<<always_CBP_or_RBP_or_UCB<<endl;
+      //unsigned num_goals_to_group=0;
       modular_heuristic_timer = new utils::CountdownTimer(modular_time_limit);
       TaskProxy task_proxy(*task);
       int initial_h=0;
@@ -101,6 +101,7 @@ ModularHeuristic::ModularHeuristic(const Options &opts)
       opts4.set<int>("packer_selection",1);
       opts5.set<int>("packer_selection",2);
       PatternCollectionGeneratorGamer alternative_pattern_generator(opts2);
+      int increase_level=0;
       
 
 
@@ -135,23 +136,25 @@ ModularHeuristic::ModularHeuristic(const Options &opts)
       Learning terminate_choice;terminate_choice.insert_choice(1);terminate_choice.insert_choice(0);
       //terminate_choice.increase_reward(0,10);//biasing towards not terminating in the begining
       
-      UCB_sizes.insert_choice(9);
-      UCB_sizes.insert_choice(10);
-      UCB_sizes.insert_choice(11);
-      UCB_sizes.insert_choice(12);
-      UCB_sizes.insert_choice(13);
-      UCB_sizes.insert_choice(14);
-      UCB_sizes.insert_choice(15);
-      UCB_sizes.insert_choice(16);
-      UCB_sizes.insert_choice(17);
-      UCB_sizes.insert_choice(18);
-      UCB_sizes.insert_choice(19);
-      UCB_sizes.insert_choice(20);
-      //UCB_sizes.insert_choice(25);
-      //UCB_sizes.insert_choice(30);
-      //UCB_sizes.insert_choice(35);
-      //UCB_sizes.insert_choice(50);
-      //UCB_sizes.insert_choice(60);
+      //We divide the pdb_max_size limit in 10 groups, each a 10% bigger relative to 
+      //the overall problem_size, and we round up.  if problem size<10, we add as many categories
+      //until we reach the max size limit
+      double overall_problem_size=0;
+      pattern_generator->initialize(task);
+      PatternCollectionContainer perimeter_collection=pattern_generator->generate_perimeter();
+      overall_problem_size=perimeter_collection.get_overall_size();
+      double max_size_step=log10(overall_problem_size)/10.0;
+      cout<<"overall_problem_size:"<<overall_problem_size<<",max_size_step:"<<max_size_step<<endl;
+      for(int i=1;i<11;i++){
+	if(i*max_size_step<4)//skipping tiny patterns!
+	  continue;
+	UCB_sizes.insert_choice(i*max_size_step);
+	cout<<"added to UCB_sizes size_limit:"<<int(i*max_size_step)<<",overall_problem_size:"<<overall_problem_size<<endl;
+	if((i*max_size_step)>log10(overall_problem_size)){
+	  cout<<"no more max_size_steps, overall_problem_size too small"<<endl;
+	  break;
+	}
+      }
 
       /*UCB_Disjunctive_patterns[pow(10,8)]=binary_choice;
       UCB_Disjunctive_patterns[pow(10,9)]=binary_choice;
@@ -201,7 +204,6 @@ ModularHeuristic::ModularHeuristic(const Options &opts)
       //best_collection=Initial_collection;
       //generate sample states:
       pattern_evaluator->initialize(task);
-      pattern_generator->initialize(task);
       pattern_generator->set_pdb_max_size(initial_pdb_size);
       pattern_generator->set_disjunctive_patterns(initial_disjunctive);
       pattern_generator->set_goals_to_add(initial_goals_to_group);
@@ -234,11 +236,6 @@ ModularHeuristic::ModularHeuristic(const Options &opts)
       //terminate_pdb till the end of subset selection???
       //result->include_additive_pdbs(candidate_ptr->get_pattern_databases());
       
-      //Always adding first collection
-      double overall_problem_size=0;
-      PatternCollectionContainer perimeter_collection=pattern_generator->generate_perimeter();
-      overall_problem_size=perimeter_collection.get_overall_size();
-      cout<<"overall_problem_size:"<<overall_problem_size<<endl;
       //For Gamer-like local search when doing gamer only we store last successful pattern 
       //in gamer_current_pattern, new_candidate_gamer is the local_search generated
       //pattern which needs to be evaluated
@@ -283,8 +280,13 @@ ModularHeuristic::ModularHeuristic(const Options &opts)
 	  cout<<"initial avg_h:"<<candidate_ptr->compute_approx_mean_finite_h();
 	}
 
+	int initial_h_pre_terminate=candidate_ptr->get_value(initial_state);
 	result->include_additive_pdbs(pdb_factory->terminate_creation(candidate_ptr->get_pattern_databases()));
 	result->set_dead_ends(pdb_factory->get_dead_ends());
+	int initial_h_post_terminate=candidate_ptr->get_value(initial_state);
+	if(initial_h_post_terminate>initial_h_pre_terminate){
+	  cout<<"terminate when adding PDB has raised initial h value from:"<<initial_h_pre_terminate<<",to:,"<<initial_h_post_terminate<<endl;
+	}
       
       if(pdb_factory->is_solved()){
 	    cout<<"Solution found while generating PDB candidate of type:"<<pdb_factory->name()<<", adding PDB and exiting generation at time"<<utils::g_timer()<<endl;
@@ -420,52 +422,19 @@ ModularHeuristic::ModularHeuristic(const Options &opts)
           result->include_additive_pdbs(pdb_factory->terminate_creation(candidate_ptr->get_pattern_databases()));
           return;
         }
-        //Now choosing between RandomSplit and CBP pattern generation
-        int generator_choice=UCB_generator.make_choice();
-        if(gamer_excluded){
-          //generator_choice=RBP_CBP_GENERATOR; cout<<"Forcing generator_choice to non-CGamer-style always."<<endl;
-        }
-        else if(only_gamer){
-          //generator_choice=GAMER_GENERATOR; cout<<"Forcing generator_choice to Gamer-style always."<<endl;
-        }
-        DEBUG_COMP(cout<<"time:"<<utils::g_timer()<<",generator_choice:"<<generator_choice<<flush<<endl;);
-        float start_time=utils::g_timer();
-        float pdb_time=0;
 	  
-	//Now getting next pdb size
-	//cout<<"previos pdb_max_size:"<<pdb_max_size;
-	pdb_max_size=pow(10.0,UCB_sizes.make_choice());
-	pattern_generator->set_pdb_max_size(pdb_max_size);
-	DEBUG_COMP(cout<<",new pdb_max_size:,"<<pattern_generator->get_pdb_max_size(););
-	//bool disjunctive_choice=UCB_Disjunctive_patterns[pdb_max_size].make_choice();
-	bool disjunctive_choice=binary_choice.make_choice();
-	DEBUG_COMP(cout<<",new disjunctive_choice:"<<disjunctive_choice;);
-	pattern_generator->set_disjunctive_patterns(disjunctive_choice);
-	if(disjunctive_choice){//1 goal per pattern
-	  //Note that we may end up with more than one goal per disjunctive patern,
-	  //All this does is to disable greedy goal grouping, which makes sense to try when
-	  //variables are reusable among patterns but not if grouping all the goal variables 
-	  //in one patern means discarding most of variables not in first pattern due to inability
-	  //to reuse.  However, if goals happen to be dividide between a few patterns, that is not a 
-	  //problem either, can happen if goal variables get chosen randomly into patterns with existing goals
-	  num_goals_to_group=1;
+	//Now choosing between RandomSplit and CBP pattern generation
+	int generator_choice=0;
+	if(gamer_excluded){
+	  generator_choice=RBP_CBP_GENERATOR;
 	}
 	else{
-	  num_goals_to_group=goals_choice.make_choice();
+	  generator_choice=UCB_generator.make_choice();
 	}
-	DEBUG_COMP(cout<<",new goals_to_group:"<<num_goals_to_group;);
-	pattern_generator->set_goals_to_add(num_goals_to_group);
 
-	//Now generating next set of patterns
-	pattern_generator->set_InSituCausalCheck(true);
-	pdb_time=utils::g_timer()-start_time;
-	DEBUG_COMP(cout<<"pdb_max_size:"<<pdb_max_size<<",pdb_time:"<<pdb_time<<endl;);
-	if(pdb_factory->is_solved()){
-		cout<<"Solution found while generating PDB candidate of type:"<<pdb_factory->name()<<", adding PDB and exiting generation at time"<<utils::g_timer()<<endl;
-		result->include_additive_pdbs(pdb_factory->terminate_creation(candidate_ptr->get_pattern_databases()));
-		return;
-	}
-          
+	float pdb_time=0;
+	bool disjunctive_choice=false;
+	
 	if(only_gamer){//NEED TO CHANGE TO IF LOCAL_SEARCH_GAMER_STYLE CHOSEN
 	  //Need to ensure that we have an existing Gamer pattern
 	    assert(gamer_current_pattern.get_size()>0);
@@ -491,20 +460,75 @@ ModularHeuristic::ModularHeuristic(const Options &opts)
             candidate_ptr=make_shared<ModularZeroOnePDBs>(task_proxy, new_candidate_Gamer.get_PC(), *pdb_factory);
 	}
 	else{
-            UCB_sizes.increase_cost(log10(pattern_generator->get_pdb_max_size()),pdb_time);
-            binary_choice.increase_cost(double(pattern_generator->get_disjunctive_patterns()),pdb_time);
-            goals_choice.increase_cost(double(pattern_generator->get_goals_to_add()),pdb_time);
-	    UCB_RBP_vs_CBP.increase_cost(generator_type,pdb_time);
-          }
-          UCB_generator.increase_cost(generator_choice,pdb_time);
-          //UCB_Disjunctive_patterns[pdb_max_size].increase_cost(double(pattern_generator->get_disjunctive_patterns()),pdb_time);
-          //UCB_goals_to_group[pdb_max_size].increase_cost(double(pattern_generator->get_goals_to_add()),pdb_time);
-          PC_counter++;
-          if(pdb_factory->is_solved()){
-		  cout<<"Solution found while generating PDB candidate of type:"<<pdb_factory->name()<<", adding PDB and exiting generation at time"<<utils::g_timer()<<endl;
-		  result->include_additive_pdbs(pdb_factory->terminate_creation(candidate_ptr->get_pattern_databases()));
-		  return;
+	  DEBUG_COMP(cout<<"time:"<<utils::g_timer()<<",generator_choice:"<<generator_choice<<flush<<endl;);
+	  float start_time=utils::g_timer();
+	
+	  //Now getting next pdb size
+	  //cout<<"previos pdb_max_size:"<<pdb_max_size;
+	  pdb_max_size=pow(10.0,UCB_sizes.make_choice());
+	  //We add a random amount to pdb_max_size if the max_step_size>1 so that 
+	  //we increase the diversity of patterns generated in big problems
+	  if(max_size_step>1){
+	    increase_level=floor((float(rand()%100)/100.0)*max_size_step);
+	    //cout<<"increase_level:"<<increase_level<<endl;
 	  }
+	  pattern_generator->set_pdb_max_size(pdb_max_size+pow(10.0,increase_level));
+	  DEBUG_COMP(cout<<",new pdb_max_size:,"<<pattern_generator->get_pdb_max_size(););
+	  //bool disjunctive_choice=UCB_Disjunctive_patterns[pdb_max_size].make_choice();
+	  bool disjunctive_choice=binary_choice.make_choice();
+	  DEBUG_COMP(cout<<",new disjunctive_choice:"<<disjunctive_choice;);
+	  pattern_generator->set_disjunctive_patterns(disjunctive_choice);
+	  if(disjunctive_choice)
+	   Disj_counter++;
+	  else
+	    Not_Disj_counter++;
+	  /*if(disjunctive_choice){//1 goal per pattern
+	    //Note that we may end up with more than one goal per disjunctive patern,
+	    //All this does is to disable greedy goal grouping, which makes sense to try when
+	    //variables are reusable among patterns but not if grouping all the goal variables 
+	    //in one patern means discarding most of variables not in first pattern due to inability
+	    //to reuse.  However, if goals happen to be dividide between a few patterns, that is not a 
+	    //problem either, can happen if goal variables get chosen randomly into patterns with existing goals
+	    num_goals_to_group=1;
+	  }
+	  else{
+	  num_goals_to_group=goals_choice.make_choice();
+	  }*/
+	  //DEBUG_COMP(cout<<",new goals_to_group:"<<num_goals_to_group;);
+	  //pattern_generator->set_goals_to_add(num_goals_to_group);
+
+	  //Now generating next set of patterns and PDB
+	  PatternCollectionContainer candidate_collection=pattern_generator->generate(); 
+          candidate_ptr=make_shared<ModularZeroOnePDBs>(task_proxy, candidate_collection.get_PC(), *pdb_factory);
+	  pdb_time=utils::g_timer()-start_time;
+	  
+	  DEBUG_COMP(cout<<"pdb_max_size:"<<pdb_max_size<<",pdb_time:"<<pdb_time<<endl;);
+	  if(pdb_factory->is_solved()){
+	      cout<<"Solution found while generating PDB candidate of type:"<<pdb_factory->name()<<", adding PDB and exiting generation at time"<<utils::g_timer()<<endl;
+	      result->include_additive_pdbs(pdb_factory->terminate_creation(candidate_ptr->get_pattern_databases()));
+	      return;
+	  }
+	  UCB_sizes.increase_cost(log10(pdb_max_size),pdb_time);
+	  binary_choice.increase_cost(double(pattern_generator->get_disjunctive_patterns()),pdb_time);
+	  goals_choice.increase_cost(double(pattern_generator->get_goals_to_add()),pdb_time);
+	  UCB_RBP_vs_CBP.increase_cost(generator_type,pdb_time);
+	}
+
+	//Now evaluate and update UCB parameters as necessary
+	//Adding a minmum of 0.5 in case the PDB size limit is so low
+	//that we keep generating almost empty patterns but still calling it
+	//because the generation time is almost nill or also because the pattern
+	//is already stored
+	UCB_generator.increase_cost(generator_choice,max(pdb_time,float(0.5)));
+
+	//UCB_Disjunctive_patterns[pdb_max_size].increase_cost(double(pattern_generator->get_disjunctive_patterns()),pdb_time);
+	//UCB_goals_to_group[pdb_max_size].increase_cost(double(pattern_generator->get_goals_to_add()),pdb_time);
+	PC_counter++;
+	if(pdb_factory->is_solved()){
+		cout<<"Solution found while generating PDB candidate of type:"<<pdb_factory->name()<<", adding PDB and exiting generation at time"<<utils::g_timer()<<endl;
+		result->include_additive_pdbs(pdb_factory->terminate_creation(candidate_ptr->get_pattern_databases()));
+		return;
+	}
 
           new_initial_h=candidate_ptr->get_value(initial_state);
 	  initial_h=result->get_value(initial_state);
@@ -536,7 +560,8 @@ ModularHeuristic::ModularHeuristic(const Options &opts)
             //int temp_initial_h=candidate_ptr->get_value(initial_state);
             //cout<<"time:"<<utils::g_timer()<<",Initial h value before terminate:"<<temp_initial_h<<endl;
             result->include_additive_pdbs(pdb_factory->terminate_creation(candidate_ptr->get_pattern_databases()));
-            cout<<"time:,"<<utils::g_timer()<<"pdb_max_size:,"<<pdb_max_size<<",generator_choice:,"<<generator_choice<<",goals_choice:"<<num_goals_to_group<<",disjoint:"<<disjunctive_choice<<",Selecting PC and resampling because initial_h has been raised from "<<initial_h<<"to "<<new_initial_h<<endl;
+            //cout<<"time:,"<<utils::g_timer()<<"pdb_max_size:,"<<pdb_max_size<<",generator_choice:,"<<generator_choice<<",goals_choice:"<<num_goals_to_group<<",disjoint:"<<disjunctive_choice<<",Selecting PC and resampling because initial_h has been raised from "<<initial_h<<"to "<<new_initial_h<<endl;
+            cout<<"time:,"<<utils::g_timer()<<"pdb_max_size:,"<<pdb_max_size<<",generator_choice:,"<<generator_choice<<",disjoint:"<<disjunctive_choice<<",Selecting PC and resampling because initial_h has been raised from "<<initial_h<<"to "<<new_initial_h<<endl;
             initial_h=result->get_value(initial_state);//Might be higher than simply new cadidate collection value due to max additive pattern combinations beyond current collection, unlikely but possible!
 	      
 	    //Clean dominated PDBs after addition of improving patterns
@@ -574,7 +599,8 @@ ModularHeuristic::ModularHeuristic(const Options &opts)
 		}
 	      }
               //NEED TO CHECK WITHOUT TERMINATING CREATION UNTIL ALL PDBs ARE SELECTED
-              cout<<"time:"<<utils::g_timer()<<"pdb_max_size:"<<pdb_max_size<<",generator_choice:"<<generator_choice<<",disjoint:"<<disjunctive_choice<<",goals_choice:"<<num_goals_to_group<<",modular_heuristic_selecting PC"<<endl;
+              //cout<<"time:"<<utils::g_timer()<<"pdb_max_size:"<<pdb_max_size<<",generator_choice:"<<generator_choice<<",disjoint:"<<disjunctive_choice<<",goals_choice:"<<num_goals_to_group<<",modular_heuristic_selecting PC"<<endl;
+              cout<<"time:"<<utils::g_timer()<<"pdb_max_size:"<<pdb_max_size<<",generator_choice:"<<generator_choice<<",disjoint:"<<disjunctive_choice<<",modular_heuristic_selecting PC"<<endl;
               result->include_additive_pdbs(pdb_factory->terminate_creation(candidate_ptr->get_pattern_databases()));
 	 
 	      //Clean dominated PDBs after addition of improving patterns
@@ -654,7 +680,8 @@ ModularHeuristic::ModularHeuristic(const Options &opts)
 	    
       float terminate_time=utils::g_timer()-start_time;
       cout<<"time:"<<utils::g_timer()<<",before_recompute_max_additive_subset,Testing modular_heuristic constructor finished,time:"<<utils::g_timer()<<",episodes:"<<num_episodes<<",PC created:"<<PC_counter<<",final_pdbs:"<<result->get_patterns()->size()<<",terminate_time:"<<terminate_time<<endl;
-      cout<<"CBP_counter:,"<<CBP_counter<<",RBP_counter:,"<<RBP_counter<<endl;
+      cout<<"CBP_counter:,"<<CBP_counter<<",RBP_counter:,"<<RBP_counter<<",Disj_counter:,"<<Disj_counter<<",Not_Disj_counter:"<<Not_Disj_counter<<endl;
+
       //result->recompute_max_additive_subsets();
       //cout<<"time:"<<utils::g_timer()<<",after recompute_max_additive_subset,Testing modular_heuristic constructor finished,time:"<<utils::g_timer()<<",episodes:"<<num_episodes<<",PC created:"<<PC_counter<<",final_pdbs:"<<result->get_patterns()->size()<<",terminate_time:"<<terminate_time<<endl;
 
@@ -741,7 +768,7 @@ static Heuristic *_parse(OptionParser &parser) {
         "only gamer-style w/wo Perimeter",
 	      "false");
     parser.add_option<bool>(
-        "only_cbp",
+        "gamer_excluded",
         "only CBP-style w/wo Perimeter",
 	      "false");
     parser.add_option<bool>(
