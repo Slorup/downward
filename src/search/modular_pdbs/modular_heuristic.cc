@@ -262,9 +262,9 @@ ModularHeuristic::ModularHeuristic(const Options &opts)
         pattern_evaluator->set_threshold(1);//If using perimeter, then we want all heuristics which can see further
       }
       else{
-	if(always_CBP_or_RBP_or_UCB==0)
+	if(always_CBP_or_RBP_or_UCB==ALWAYS_CBP)
 	  pattern_generator->set_InSituCausalCheck(true);
-	else if(always_CBP_or_RBP_or_UCB==1)
+	else if(always_CBP_or_RBP_or_UCB==ALWAYS_RBP)
 	  pattern_generator->set_InSituCausalCheck(false);
 
 	if(only_gamer){
@@ -308,7 +308,7 @@ ModularHeuristic::ModularHeuristic(const Options &opts)
       //bool terminate_or_not=true;
       bool generator_type=true;
       while(!modular_heuristic_timer->is_expired()){
-	if(always_CBP_or_RBP_or_UCB==2){
+	if(always_CBP_or_RBP_or_UCB==ALWAYS_UCB){
 	  generator_type=UCB_RBP_vs_CBP.make_choice();
 	  if(generator_type==1){
 	    CBP_counter++;
@@ -319,7 +319,7 @@ ModularHeuristic::ModularHeuristic(const Options &opts)
 	    pattern_generator->set_InSituCausalCheck(false);
 	  }
 	}
-	else if(always_CBP_or_RBP_or_UCB==3){
+	else if(always_CBP_or_RBP_or_UCB==ALWAYS_50_50){
 	  if(rand()%2==1){
 	    CBP_counter++;
 	    pattern_generator->set_InSituCausalCheck(true);
@@ -423,10 +423,10 @@ ModularHeuristic::ModularHeuristic(const Options &opts)
         //Now choosing between RandomSplit and CBP pattern generation
         int generator_choice=UCB_generator.make_choice();
         if(gamer_excluded){
-          generator_choice=RBP_CBP_GENERATOR; cout<<"Forcing generator_choice to non-CGamer-style always."<<endl;
+          //generator_choice=RBP_CBP_GENERATOR; cout<<"Forcing generator_choice to non-CGamer-style always."<<endl;
         }
         else if(only_gamer){
-          generator_choice=GAMER_GENERATOR; cout<<"Forcing generator_choice to Gamer-style always."<<endl;
+          //generator_choice=GAMER_GENERATOR; cout<<"Forcing generator_choice to Gamer-style always."<<endl;
         }
         DEBUG_COMP(cout<<"time:"<<utils::g_timer()<<",generator_choice:"<<generator_choice<<flush<<endl;);
         float start_time=utils::g_timer();
@@ -600,9 +600,6 @@ ModularHeuristic::ModularHeuristic(const Options &opts)
             }
             else{
               DEBUG_COMP(cout<<"time:"<<utils::g_timer()<<"pdb_max_size:"<<pdb_max_size<<",modular_heuristic_not_selecting_PC"<<endl;);
-	      if(generator_choice==0){
-		cout<<"time:"<<utils::g_timer()<<"pdb_max_size:"<<pdb_max_size<<",modular_heuristic_not_selecting_PC"<<endl;
-	      }
 	      if(only_gamer){
 		//Need to check if latest PDB was fully grown
 		//Then we remove last var from set of testable vars
@@ -725,7 +722,7 @@ static Heuristic *_parse(OptionParser &parser) {
         "900");
     parser.add_option<int> (
 	"always_cbp_or_rbp_or_ucb", 
-	"If 0,ensure any added variable is causally connected(CBP), if 1, only check causal connection after all patterns are selected(RBP), if 2, use UCB to learn which is better, if 3 do 50/50", 
+"If 0,ensure any added variable is causally connected(CBP), if 1, only check causal connection after all patterns are selected(RBP), if 2, use UCB to learn which is better, if 3 do 50/50", 
 	"0");
     parser.add_option<shared_ptr<PDBFactory>>(
         "pdb_factory",

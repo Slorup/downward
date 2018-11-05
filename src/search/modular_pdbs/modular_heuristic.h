@@ -39,6 +39,7 @@ class ModularHeuristic : public Heuristic {
     utils::CountdownTimer *modular_heuristic_timer;
     enum{GAMER_LOCAL_SEARCH=0,GA_LOCAL_SEARCH=1,IPDB_LOCAL_SEARCH=2};
     enum{GAMER_GENERATOR=0,RBP_CBP_GENERATOR=1};
+    enum{ALWAYS_CBP=0,ALWAYS_RBP=1,ALWAYS_UCB=2,ALWAYS_50_50=3};
 
 protected:
     virtual int compute_heuristic(const GlobalState &global_state) override;
