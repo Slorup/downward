@@ -75,6 +75,7 @@ ModularHeuristic::ModularHeuristic(const Options &opts)
     only_gamer(opts.get<bool>("only_gamer")), 
     gamer_classic(opts.get<bool>("gamer_classic")), 
     gamer_excluded(opts.get<bool>("gamer_excluded")), 
+    do_local_search(opts.get<bool>("do_local_search")), 
     pdb_factory (opts.get<shared_ptr<PDBFactory>>("pdb_factory")) {
       cout<<"Hi nonagnostic_v2"<<endl;
       bool unterminated_pdbs=false;
@@ -83,6 +84,7 @@ ModularHeuristic::ModularHeuristic(const Options &opts)
       cout<<"pdb_type:"<<pdb_factory->name()<<endl;
       cout<<"only_gamer:"<<only_gamer<<",gamer_classic:"<<gamer_classic<<endl;
       cout<<"gamer_excluded:"<<gamer_excluded<<",always_cbp_or_rbp_or_ucb:"<<always_CBP_or_RBP_or_UCB<<endl;
+      cout<<"do_local_search:"<<do_local_search<<endl;
       //unsigned num_goals_to_group=0;
       modular_heuristic_timer = new utils::CountdownTimer(modular_time_limit);
       TaskProxy task_proxy(*task);
@@ -570,43 +572,53 @@ ModularHeuristic::ModularHeuristic(const Options &opts)
 	    //Testing local_search
 	    //for local_search_time_limit we 
 	    //test all possible vars, whenver there is an upgrade we add it.
-	    int start_local_search_time=utils::g_timer();
-	    bool local_improv_found=false;
-	    PatternCollectionContainer new_candidate_local_search;
-	    for(int i=0;i<num_vars;i++){
-	      //cout<<"before Gamer search, pc:"<<endl;cout<<"old initial_h value before local Gamer search:"<<candidate_ptr->get_value(initial_state)<<endl;
-	      int prev_local_search_h=candidate_ptr->get_value(initial_state);
-	      //candidate_collection.print();
-	      new_candidate_local_search=pattern_local_search->generate_next_candidate(candidate_collection);
-	      pattern_local_search->forbid_last_var();//We do not want to repeatedly try the same patterns!
-	      //cout<<"after Gamer search, pc:"<<endl;new_candidate_local_search.print();
-	      candidate_ptr=make_shared<ModularZeroOnePDBs>(task_proxy, new_candidate_local_search.get_PC(), *pdb_factory);
-	      int post_local_search_h=candidate_ptr->get_value(initial_state);
-	      //cout<<"new initial_h value after local Gamer search:"<<candidate_ptr->get_value(initial_state)<<endl;
-	      if(post_local_search_h>prev_local_search_h){
-		local_improv_found=true;
-		result->include_additive_pdbs(pdb_factory->terminate_creation(candidate_ptr->get_pattern_databases()));
-		result->set_dead_ends(pdb_factory->get_dead_ends());
-		candidate_collection=new_candidate_local_search;
-		i=0;//restart loop, we got a new improved pattern
-		cout<<"local_improv_found,new initial_h value after local Gamer search:"<<post_local_search_h<<",prev_h_val:,"<<prev_local_search_h<<endl;
-		pattern_local_search->reset_forbidden_vars();//all forbidden vars are now available for the new improved pattern
-		continue;
-	      }
-	      else if(pattern_evaluator->evaluate(candidate_ptr)){
-		cout<<"local_improv_found, initial_h unchanged"<<endl;
+	    if(do_local_search){
+	      int start_local_search_time=utils::g_timer();
+	      bool local_improv_found=false;
+	      PatternCollectionContainer new_candidate_local_search;
+	      pattern_local_search->reset_forbidden_vars();//all forbidden vars have to be cleared for new pattern!
+	      for(int i=0;i<num_vars;i++){
+		//cout<<"before Gamer search, pc:"<<endl;cout<<"old initial_h value before local Gamer search:"<<candidate_ptr->get_value(initial_state)<<endl;
+		int prev_local_search_h=candidate_ptr->get_value(initial_state);
+		//candidate_collection.print();
+		new_candidate_local_search=pattern_local_search->generate_next_candidate(candidate_collection);
+		pattern_local_search->forbid_last_var();//We do not want to repeatedly try the same patterns!
+		//cout<<"after Gamer search, pc:"<<endl;new_candidate_local_search.print();
+		candidate_ptr=make_shared<ModularZeroOnePDBs>(task_proxy, new_candidate_local_search.get_PC(), *pdb_factory);
+		int post_local_search_h=candidate_ptr->get_value(initial_state);
+		//cout<<"new initial_h value after local Gamer search:"<<candidate_ptr->get_value(initial_state)<<endl;
+		if(post_local_search_h>prev_local_search_h){
+		  local_improv_found=true;
+		  result->include_additive_pdbs(pdb_factory->terminate_creation(candidate_ptr->get_pattern_databases()));
+		  result->set_dead_ends(pdb_factory->get_dead_ends());
+		  candidate_collection=new_candidate_local_search;
+		  i=0;//restart loop, we got a new improved pattern
+		  cout<<"local_improv_found,new initial_h value after local Gamer search:"<<post_local_search_h<<",prev_h_val:,"<<prev_local_search_h<<endl;
+		  pattern_local_search->reset_forbidden_vars();//all forbidden vars are now available for the new improved pattern
+		  continue;
+		}
+		else if(pattern_evaluator->evaluate(candidate_ptr)){
+		  cout<<"local_improv_found, initial_h unchanged"<<endl;
+		  local_improv_found=true;
+		  result->include_additive_pdbs(pdb_factory->terminate_creation(candidate_ptr->get_pattern_databases()));
+		  result->set_dead_ends(pdb_factory->get_dead_ends());
+		  candidate_collection=new_candidate_local_search;
+		  i=0;//restart loop, we got a new improved pattern
+		  cout<<"local_improv_found,new initial_h value after local Gamer search:"<<post_local_search_h<<",prev_h_val:,"<<prev_local_search_h<<endl;
+		  pattern_local_search->reset_forbidden_vars();//all forbidden vars are now available for the new improved pattern
+		}
+
+		if(utils::g_timer()-start_local_search_time>pattern_local_search->get_time_limit()){
+		  cout<<"time:,"<<utils::g_timer()<<",leaving local search after checking "<<i<<" vars, time_limit for local_search breached("<<pattern_local_search->get_time_limit()<<endl;
+		  break;
+		}
 	      }
 
-	      if(utils::g_timer()-start_local_search_time>pattern_local_search->get_time_limit()){
-		cout<<"time:"<<utils::g_timer()<<",leaving local search after checking "<<i<<" vars, time_limit for local_search breached"<<endl;
-		break;
+	      if(recompute_additive_sets&&local_improv_found){
+		cout<<"time:"<<utils::g_timer<<",calling recompute_max_additive_subsets"<<endl;
+		result->recompute_max_additive_subsets();
+		cout<<"time:"<<utils::g_timer<<",after recompute_max_additive_subsets"<<endl;
 	      }
-	    }
-
-	    if(recompute_additive_sets&&local_improv_found){
-	      cout<<"time:"<<utils::g_timer<<",calling recompute_max_additive_subsets"<<endl;
-	      result->recompute_max_additive_subsets();
-	      cout<<"time:"<<utils::g_timer<<",after recompute_max_additive_subsets"<<endl;
 	    }
 
 	      
@@ -825,6 +837,10 @@ static Heuristic *_parse(OptionParser &parser) {
         "gamer_classic",
         "only gamer-style w avg_h value as selector",
 	      "false");
+    parser.add_option<bool>(
+        "do_local_search",
+        "Use local_search to try to furtherly improve any PCs we have selected.",
+	"false");
     
     Heuristic::add_options_to_parser(parser);
 
