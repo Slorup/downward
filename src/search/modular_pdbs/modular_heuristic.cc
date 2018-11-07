@@ -102,6 +102,7 @@ ModularHeuristic::ModularHeuristic(const Options &opts)
       opts5.set<int>("packer_selection",2);
       PatternCollectionGeneratorGamer alternative_pattern_generator(opts2);
       int increase_level=0;
+      int num_vars = task_proxy.get_variables().size();
       
 
 
@@ -142,6 +143,7 @@ ModularHeuristic::ModularHeuristic(const Options &opts)
       double overall_problem_size=0;
       pattern_generator->initialize(task);
       PatternCollectionContainer perimeter_collection=pattern_generator->generate_perimeter();
+      PatternCollectionContainer candidate_collection;
       overall_problem_size=perimeter_collection.get_overall_size();
       double max_size_step=log10(overall_problem_size)/10.0;
       cout<<"overall_problem_size:"<<overall_problem_size<<",max_size_step:"<<max_size_step<<endl;
@@ -498,7 +500,7 @@ ModularHeuristic::ModularHeuristic(const Options &opts)
 	  //pattern_generator->set_goals_to_add(num_goals_to_group);
 
 	  //Now generating next set of patterns and PDB
-	  PatternCollectionContainer candidate_collection=pattern_generator->generate(); 
+	  candidate_collection=pattern_generator->generate(); 
           candidate_ptr=make_shared<ModularZeroOnePDBs>(task_proxy, candidate_collection.get_PC(), *pdb_factory);
 	  pdb_time=utils::g_timer()-start_time;
 	  
@@ -560,9 +562,53 @@ ModularHeuristic::ModularHeuristic(const Options &opts)
             //int temp_initial_h=candidate_ptr->get_value(initial_state);
             //cout<<"time:"<<utils::g_timer()<<",Initial h value before terminate:"<<temp_initial_h<<endl;
             result->include_additive_pdbs(pdb_factory->terminate_creation(candidate_ptr->get_pattern_databases()));
+	    result->set_dead_ends(pdb_factory->get_dead_ends());
             //cout<<"time:,"<<utils::g_timer()<<"pdb_max_size:,"<<pdb_max_size<<",generator_choice:,"<<generator_choice<<",goals_choice:"<<num_goals_to_group<<",disjoint:"<<disjunctive_choice<<",Selecting PC and resampling because initial_h has been raised from "<<initial_h<<"to "<<new_initial_h<<endl;
             cout<<"time:,"<<utils::g_timer()<<"pdb_max_size:,"<<pdb_max_size<<",generator_choice:,"<<generator_choice<<",disjoint:"<<disjunctive_choice<<",Selecting PC and resampling because initial_h has been raised from "<<initial_h<<"to "<<new_initial_h<<endl;
             initial_h=result->get_value(initial_state);//Might be higher than simply new cadidate collection value due to max additive pattern combinations beyond current collection, unlikely but possible!
+
+	    //Testing local_search
+	    //for local_search_time_limit we 
+	    //test all possible vars, whenver there is an upgrade we add it.
+	    int start_local_search_time=utils::g_timer();
+	    bool local_improv_found=false;
+	    PatternCollectionContainer new_candidate_local_search;
+	    for(int i=0;i<num_vars;i++){
+	      //cout<<"before Gamer search, pc:"<<endl;cout<<"old initial_h value before local Gamer search:"<<candidate_ptr->get_value(initial_state)<<endl;
+	      int prev_local_search_h=candidate_ptr->get_value(initial_state);
+	      //candidate_collection.print();
+	      new_candidate_local_search=pattern_local_search->generate_next_candidate(candidate_collection);
+	      pattern_local_search->forbid_last_var();//We do not want to repeatedly try the same patterns!
+	      //cout<<"after Gamer search, pc:"<<endl;new_candidate_local_search.print();
+	      candidate_ptr=make_shared<ModularZeroOnePDBs>(task_proxy, new_candidate_local_search.get_PC(), *pdb_factory);
+	      int post_local_search_h=candidate_ptr->get_value(initial_state);
+	      //cout<<"new initial_h value after local Gamer search:"<<candidate_ptr->get_value(initial_state)<<endl;
+	      if(post_local_search_h>prev_local_search_h){
+		local_improv_found=true;
+		result->include_additive_pdbs(pdb_factory->terminate_creation(candidate_ptr->get_pattern_databases()));
+		result->set_dead_ends(pdb_factory->get_dead_ends());
+		candidate_collection=new_candidate_local_search;
+		i=0;//restart loop, we got a new improved pattern
+		cout<<"local_improv_found,new initial_h value after local Gamer search:"<<post_local_search_h<<",prev_h_val:,"<<prev_local_search_h<<endl;
+		pattern_local_search->reset_forbidden_vars();//all forbidden vars are now available for the new improved pattern
+		continue;
+	      }
+	      else if(pattern_evaluator->evaluate(candidate_ptr)){
+		cout<<"local_improv_found, initial_h unchanged"<<endl;
+	      }
+
+	      if(utils::g_timer()-start_local_search_time>pattern_local_search->get_time_limit()){
+		cout<<"time:"<<utils::g_timer()<<",leaving local search after checking "<<i<<" vars, time_limit for local_search breached"<<endl;
+		break;
+	      }
+	    }
+
+	    if(recompute_additive_sets&&local_improv_found){
+	      cout<<"time:"<<utils::g_timer<<",calling recompute_max_additive_subsets"<<endl;
+	      result->recompute_max_additive_subsets();
+	      cout<<"time:"<<utils::g_timer<<",after recompute_max_additive_subsets"<<endl;
+	    }
+
 	      
 	    //Clean dominated PDBs after addition of improving patterns
 	    if(recompute_additive_sets){
@@ -743,6 +789,10 @@ static Heuristic *_parse(OptionParser &parser) {
         "evaluator",
         "pattern Collection evaluation method",
         "rand_walk");
+    parser.add_option<shared_ptr<PatternCollectionLocalSearch>>(
+        "local_search",
+        "pattern Collection local search method",
+        "local_search_gamer");
     parser.add_option<int>(
         "modular_time_limit",
         "time limit in seconds for modular_pdb_heuristic initialization cut off",
@@ -775,10 +825,6 @@ static Heuristic *_parse(OptionParser &parser) {
         "gamer_classic",
         "only gamer-style w avg_h value as selector",
 	      "false");
-    parser.add_option<shared_ptr<PatternCollectionLocalSearch>>(
-        "local_search",
-        "pattern Collection local search method",
-        "local_search_gamer");
     
     Heuristic::add_options_to_parser(parser);
 

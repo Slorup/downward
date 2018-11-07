@@ -44,6 +44,7 @@ class PatternCollectionLocalSearchGamerStyle : public PatternCollectionLocalSear
   virtual void forbid_last_var() override;
   virtual void reset_forbidden_vars() override;
   virtual void print_last_var() override{std::cout<<"last_var:,"<<last_var<<std::endl;}
+  virtual int get_time_limit() override {return time_limit;};
 };
 
 }

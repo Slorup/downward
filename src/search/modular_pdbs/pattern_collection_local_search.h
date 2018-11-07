@@ -31,6 +31,7 @@ class PatternCollectionLocalSearch {
     virtual void forbid_last_var() = 0;
     virtual void reset_forbidden_vars() = 0;
     virtual void print_last_var() = 0;
+    virtual int get_time_limit(){ return 0;};
 };
 
 }
