@@ -36,7 +36,7 @@ class ModularHeuristic : public Heuristic {
     int RBP_counter=0;
     int Disj_counter=0;
     int Not_Disj_counter=0;
-    bool do_local_search=false;
+    bool doing_local_search=false;
     std::shared_ptr<PDBFactory> pdb_factory;
     std::shared_ptr<PatternCollectionInformation> result;
     utils::CountdownTimer *modular_heuristic_timer;
@@ -66,6 +66,7 @@ public:
     ModularHeuristic(const options::Options &opts);
     void clear_dominated_heuristics();
     virtual ~ModularHeuristic() override = default;
+    bool do_local_search (PatternCollectionContainer old_PC);
 };
 }
 

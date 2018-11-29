@@ -45,6 +45,9 @@ class PatternCollectionLocalSearchGamerStyle : public PatternCollectionLocalSear
   virtual void reset_forbidden_vars() override;
   virtual void print_last_var() override{std::cout<<"last_var:,"<<last_var<<std::endl;}
   virtual int get_time_limit() override {return time_limit;};
+  virtual void print_name() override {std::cout<<"Doing LocalSearchGamerStyle"<<std::endl;}
+  virtual std::string get_name() override {std::string output="LocalSearchGamerStyle";return output;};
+  std::shared_ptr<ModularZeroOnePDBs> compound_local_search(PatternCollectionContainer old_PC,std::shared_ptr<PatternCollectionInformation> current_result,std::shared_ptr<PDBFactory> pdb_factory);
 };
 
 }

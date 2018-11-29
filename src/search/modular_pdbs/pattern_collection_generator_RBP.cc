@@ -1,7 +1,6 @@
 //#include "pattern_collection_generator_complementary.h"
 #include "pattern_collection_generator_RBP.h"
 
-//#include "../causal_graph.h"
 //#include "../globals.h"
 //#include "../task_proxy.h"
 

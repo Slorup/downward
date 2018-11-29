@@ -27,6 +27,24 @@ namespace pdbs3 {
 class PatternCollectionContainer {
     PatternCollection pc;
   public:
+    PatternCollectionContainer() = default;
+    bool operator==(const PatternCollectionContainer input){ 
+      if(this->get_size()!=input.get_size())
+	return false;
+
+    PatternCollection pc1=this->get_PC();
+    PatternCollection pc2=input.get_PC();
+      for(int i=0;i<this->get_size(); i++){
+	if(pc1[i]!=pc2[i]){
+	  return false;
+	}
+      }
+      return true;//All patterns equal and in the same position, which matters for cost partitioning, so 
+      //same patterns in different position make a different PC
+    }
+    PatternCollectionContainer(PatternCollection Input_pc){
+      pc=Input_pc;
+    }
     void add_pc(Pattern input){
       pc.push_back(input);
     }
@@ -114,6 +132,8 @@ class PatternCollectionGeneratorComplementary {
   
   public:
     
+
+
   PatternCollectionContainer generate_perimeter(){
       PatternCollectionContainer PC;
       Pattern temp_pattern;

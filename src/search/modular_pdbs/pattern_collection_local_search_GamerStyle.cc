@@ -18,6 +18,7 @@
 
 #include "pdb_factory.h"
 #include "../utils/debug_macros.h"
+#include "pattern_collection_generator_complementary.h"
 
     
 using namespace std;

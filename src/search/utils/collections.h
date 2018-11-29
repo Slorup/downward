@@ -4,6 +4,7 @@
 #include <cassert>
 #include <cstddef>
 #include <vector>
+#include <iostream>
 
 namespace utils {
 template<class T>
@@ -38,6 +39,21 @@ template<class T>
 void release_vector_memory(std::vector<T> &vec) {
     std::vector<T>().swap(vec);
 }
+template < class T >
+std::ostream& operator << (std::ostream& os, const std::vector<T>& v) 
+{
+    os << "[";
+    for (typename std::vector<T>::const_iterator ii = v.begin(); ii != v.end(); ++ii)
+    {
+        os << *ii <<",";
+    }
+    os << "]";
+    return os;
+
+}
+//Specialized for vector<bool> to avoid lots of zeros, instead we print position of trues
+template <> std::ostream& operator <<<bool> (std::ostream& os, const std::vector<bool>& v);
+
 }
 
 #endif

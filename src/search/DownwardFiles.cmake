@@ -124,7 +124,7 @@ fast_downward_plugin(
     NAME UTILS
     HELP "System utilities"
     SOURCES
-        utils/collections.h
+        utils/collections.cc
         utils/countdown_timer.cc
         utils/dynamic_bitset.h
         utils/hash.h
@@ -527,6 +527,7 @@ fast_downward_plugin(
 		modular_pdbs/zero_one_pdbs.cc
 		modular_pdbs/pattern_collection_local_search.cc
 		modular_pdbs/pattern_collection_local_search_GamerStyle.cc
+		modular_pdbs/pattern_collection_local_search_GA.cc
 		#	DEPENDS BinPacking
 # modular_pdbs/pattern_collection_generator_genetic_Online_SS.cc
 )
