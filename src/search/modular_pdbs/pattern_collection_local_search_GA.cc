@@ -38,7 +38,9 @@ namespace pdbs3 {
     //If more than one pattern, we only do local search on the first pattern
     new_patterns=candidate_collection;
     int mutation_count=mutate(new_patterns);
-    cout<<"\t\tmutations:"<<mutation_count<<endl;// cout<<"old_patterns:";candidate_collection.print(); cout<<"new_patterns:";new_patterns.print();
+    int num_vars = task_proxy->get_variables().size();
+    cout<<"\t\tmutations:"<<mutation_count<<",patterns:"<<candidate_collection.get_size()<<",num_vars:"<<num_vars<<endl;
+    // cout<<"old_patterns:";candidate_collection.print(); cout<<"new_patterns:";new_patterns.print();
     return new_patterns;//Not adding collection
   }
 
@@ -76,7 +78,7 @@ namespace pdbs3 {
       }
 
       transform_to_pattern_int_vector_form(pattern,int_pattern);
-      cout<<"Before removing irrelevant_variables:"<<int_pattern<<endl;
+      //cout<<"Before removing irrelevant_variables:"<<int_pattern<<endl;
       remove_irrelevant_variables(int_pattern,removed_vars);
       
       if(int_pattern.size()==0){
@@ -84,8 +86,7 @@ namespace pdbs3 {
 	return 0;
       }
       new_collection.push_back(int_pattern);
-      cout<<"\tadding clean_pattern:";for(auto i : int_pattern) cout<<i<<",";
-      cout<<endl;
+      //cout<<"\tadding clean_pattern:";for(auto i : int_pattern) cout<<i<<",";cout<<endl;
     }
     //cout<<"finished processing bit_collection "<<flush<<endl;
     
@@ -116,10 +117,10 @@ namespace pdbs3 {
       //cerr<<"Need to make sure new_collection is updated correctly when mutations==0"<<endl;exit(1);
     }
 
-    cout<<"mutations:"<<mutations<<",old_collection:"<<endl;
+    /*cout<<"mutations:"<<mutations<<",old_collection:"<<endl;
     candidate_collection.print();
     cout<<"new_collection:"<<endl;
-    PatternCollectionContainer tempPCC(new_collection);tempPCC.print();
+    PatternCollectionContainer tempPCC(new_collection);tempPCC.print();*/
 
     candidate_collection=new_collection;
     return mutations;

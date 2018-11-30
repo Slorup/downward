@@ -35,7 +35,7 @@ class PatternCollectionLocalSearchGA : public PatternCollectionLocalSearch {
   //forbiddent_vars is cleared whenever we add a variable because then
   //previously discarded vars might actually help the new pattern
   std::set<int> forbidden_vars;
-  float mutation_rate=0.2;
+  float mutation_rate=0.1;
   int time_limit=40;
   int episodes=60;
   public:
