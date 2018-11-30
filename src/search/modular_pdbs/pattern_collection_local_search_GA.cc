@@ -38,7 +38,8 @@ namespace pdbs3 {
     //If more than one pattern, we only do local search on the first pattern
     new_patterns=candidate_collection;
     int mutation_count=mutate(new_patterns);
-    int num_vars = task_proxy->get_variables().size();
+    TaskProxy task_proxy2(*(g_root_task()));
+    int num_vars = task_proxy2.get_variables().size();
     cout<<"\t\tmutations:"<<mutation_count<<",patterns:"<<candidate_collection.get_size()<<",num_vars:"<<num_vars<<endl;
     // cout<<"old_patterns:";candidate_collection.print(); cout<<"new_patterns:";new_patterns.print();
     return new_patterns;//Not adding collection

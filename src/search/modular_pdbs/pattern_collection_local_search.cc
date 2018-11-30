@@ -27,6 +27,7 @@ namespace pdbs3 {
   
   void PatternCollectionLocalSearch::initialize(std::shared_ptr<AbstractTask> task) {
     num_vars= task->get_num_variables();
+    cout<<"ini,num_vars:"<<num_vars<<endl;
     task_proxy=make_shared<TaskProxy>(*task);
     for (FactProxy goal : task_proxy->get_goals()) {
       initial_remaining_goal_vars.insert(goal.get_variable().get_id());
