@@ -762,15 +762,14 @@ bool ModularHeuristic::do_local_search (PatternCollectionContainer candidate_col
   int start_local_search_time=utils::g_timer();
   bool local_improv_found=false;
   PatternCollectionContainer new_candidate_local_search;
-  cout<<"before local search, pc:"<<endl;cout<<"old initial_h value:,"<<result->get_value(initial_state)<<endl;
+  //cout<<"before local search, old initial_h value:,"<<result->get_value(initial_state)<<endl;
   int prev_local_search_h=result->get_value(initial_state);
 
-    
+  //cout<<"candidate_collection:";candidate_collection.print();
   if(pattern_local_search->get_name().find("LocalSearchGamerStyle")!=string::npos){
     pattern_local_search->reset_forbidden_vars();//all forbidden vars have to be cleared for new pattern!
     for(int i=0;i<num_vars;i++){
       prev_local_search_h=result->get_value(initial_state);
-      //candidate_collection.print();
       new_candidate_local_search=pattern_local_search->generate_next_candidate(candidate_collection);
       //Check pattern has been changed if doing gamer-style search
       //for GA it is OK if pattern is identical
@@ -821,12 +820,17 @@ bool ModularHeuristic::do_local_search (PatternCollectionContainer candidate_col
       //We use Canonical recompute function to clear dominated PDBs
     }
     else if(pattern_local_search->get_name().find("LocalSearchGA")!=string::npos){
+      //cout<<"before local search, old initial_h value:,"<<result->get_value(initial_state)<<endl;
       for(int i=0;i<pattern_local_search->get_episodes();i++){
 	prev_local_search_h=result->get_value(initial_state);
 	new_candidate_local_search=pattern_local_search->generate_next_candidate(candidate_collection);
+ 
+	//cout<<"new_candidate_collection:";new_candidate_local_search.print();
       
 	//In case the local_search method does not generate a new pattern, e.g. stocastic method never kicks in
 	//currently we enforce at least one change for GA, but better to future proof
+	//or even more important, mutations result in no causally connected variables to a goal
+	//then we procedd to try again, nothing to test since there are no new valid patterns.
        	if(new_candidate_local_search==candidate_collection){
 	  continue;
 	}

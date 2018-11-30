@@ -89,7 +89,7 @@ int ModularZeroOnePDBs::get_value(const State &state) const {
     int h_val = 0;
     int counter=0;
     if(pattern_databases.size()==0){//Reg bin pack can create patterns with no goal vars
-      cout<<"Pattern is empty"<<endl;exit(1);
+      cerr<<"Pattern is empty"<<endl;exit(1);
       return 0;
     }
     for (const shared_ptr<PatternDatabaseInterface> &pdb : pattern_databases) {

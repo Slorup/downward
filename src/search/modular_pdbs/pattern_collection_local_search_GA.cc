@@ -76,11 +76,16 @@ namespace pdbs3 {
       }
 
       transform_to_pattern_int_vector_form(pattern,int_pattern);
-      //cout<<"Before removing irrelevant_variables:"<<int_pattern<<endl;
+      cout<<"Before removing irrelevant_variables:"<<int_pattern<<endl;
       remove_irrelevant_variables(int_pattern,removed_vars);
+      
+      if(int_pattern.size()==0){
+	new_collection=collection;
+	return 0;
+      }
       new_collection.push_back(int_pattern);
-      //cout<<"\tadding clean_pattern:";for(auto i : int_pattern) cout<<i<<",";
-      //cout<<endl;
+      cout<<"\tadding clean_pattern:";for(auto i : int_pattern) cout<<i<<",";
+      cout<<endl;
     }
     //cout<<"finished processing bit_collection "<<flush<<endl;
     
@@ -111,10 +116,10 @@ namespace pdbs3 {
       //cerr<<"Need to make sure new_collection is updated correctly when mutations==0"<<endl;exit(1);
     }
 
-    /*cout<<"mutations:"<<mutations<<",old_collection:"<<endl;
+    cout<<"mutations:"<<mutations<<",old_collection:"<<endl;
     candidate_collection.print();
     cout<<"new_collection:"<<endl;
-    PatternCollectionContainer tempPCC(new_collection);tempPCC.print();*/
+    PatternCollectionContainer tempPCC(new_collection);tempPCC.print();
 
     candidate_collection=new_collection;
     return mutations;
