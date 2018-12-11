@@ -6,6 +6,7 @@
 #include "../utils/countdown_timer.h"
 #include "../options/option_parser.h"
 #include "../options/plugin.h"
+#include "pattern_database_interface.h"
 
 
 //#include "../causal_graph.h"
@@ -125,7 +126,7 @@ PatterCollectionEvaluatorSS::PatterCollectionEvaluatorSS(const options::Options 
     for(SS_iter=SS_states_vector.begin();SS_iter!=SS_states_vector.end();){
 	//cout<<"time:,"<<utils::g_timer<<",working on state:"<<sampled_states<<endl;
 	if(unique_samples.find(SS_iter->id)==unique_samples.end()){
-	    cout<<"state not in unique_samples!!!"<<endl;exit(22);
+	    cerr<<"state not in unique_samples!!!"<<endl;exit(22);
 	}
 
 	if(sampled_states%1000==0){
@@ -170,7 +171,7 @@ PatterCollectionEvaluatorSS::PatterCollectionEvaluatorSS(const options::Options 
 	if(candidate_h==numeric_limits<int>::max()){
 	    increased_states++;
 	    pruned_states+=SS_iter->weight;
-	    //cout<<"sampled_state:,"<<sampled_states<<",out of "<<SS_states.size()<<"is now pruned by dead_end, weight:"<<SS_iter->weight<<",current_total:"<<total_SS_gen_nodes<<",best_h:"<<best_h<<endl;
+	    //cout<<"\t\tsampled_state:,"<<sampled_states<<",out of "<<SS_states.size()<<"is now pruned by dead_end, weight:"<<SS_iter->weight<<",current_total:"<<total_SS_gen_nodes<<",best_h:"<<best_h<<endl;
 	    SS_iter++;
 	    //if(float(increased_states)/float(sampled_states)>min_improvement_ratio){
 	    //  break;
@@ -217,17 +218,22 @@ PatterCollectionEvaluatorSS::PatterCollectionEvaluatorSS(const options::Options 
 	//New, we calculate the current time cost for the current result
 	int counter_temp=0;
 	for (auto sample=unique_samples.begin();sample!=unique_samples.end();sample++){
+	  counter_temp++;
 	  candidate_PC->get_value(sample->second.first);
 	  if(counter_temp>20000){
 	  break;
 	  }
-	  counter_temp++;
 	}
-	double candidate_heur_time_cost=heur_timer.stop()/SS_states_vector.size();
+	double candidate_heur_time_cost=heur_timer.stop()/counter_temp;
 	saved_time=total_SS_gen_nodes*(node_gen_and_exp_cost+current_heur_time_cost)-(total_SS_gen_nodes-pruned_states)*(node_gen_and_exp_cost+candidate_heur_time_cost+current_heur_time_cost);
       }
-      else{ 
-	return pruned_states;//True if >0, so choosing any heuristic if it lowers search space in the slightest
+      else{
+	//We want to use the same ratio of increased states as if we were doing random_walk, this is 100(threshold) over 20K
+	//but since we are doing a SS sample, it applies to the SS prediction of generated and pruned states.
+       if((pruned_states/total_SS_gen_nodes)>double(get_threshold())/double(get_num_samples()))
+	return increased_states;//True if >0, so choosing any heuristic if it lowers search space in the slightest
+       else
+	 return false;
       }
      //cout<<"ratio:"<<float(increased_states)/float(sampled_states)<<",node_gen_and_exp_cost:"<<node_gen_and_exp_cost<<",sampling_time:"<<sampler_time<<",candidate_heur_time_cost:"<<candidate_heur_time_cost<<",current_heur_time_cost:"<<current_heur_time_cost<<",best_prev_time:"<<total_SS_gen_nodes*(node_gen_and_exp_cost+best_pdb_collections.size()*heur_time_cost)<<",new_time:"<<(total_SS_gen_nodes-pruned_states)*(node_gen_and_exp_cost+heur_time_cost*(best_pdb_collections.size()+1))<<",saved_time:"<<saved_time<<"total_SS_gen_nodes:"<<total_SS_gen_nodes<<",new_nodes:"<<total_SS_gen_nodes-pruned_states<<",initial_h:"<<candidate.get_value(initial_state)<<endl;
     }
@@ -360,13 +366,13 @@ void PatterCollectionEvaluatorSS::sample_states(std::shared_ptr<PatternCollectio
       utils::Timer heur_timer;
       int counter_temp=0;
       for (auto sample=unique_samples.begin();sample!=unique_samples.end();sample++){
+	counter_temp++;
 	current_result->get_value(sample->second.first);
 	if(counter_temp>20000){
 	  break;
 	}
-	counter_temp++;
       }
-      current_heur_time_cost=heur_timer.stop()/SS_states_vector.size();
+      current_heur_time_cost=heur_timer.stop()/counter_temp;
     }
     DEBUG_MSG(cout<<"time:,"<<utils::g_timer()<<",finished randomzing SS states vector,size:"<<SS_states.size()<<",best_heur_dead_ends"<<best_heur_dead_ends<<endl;);
     cout<<"ss,time:,"<<utils::g_timer()<<",finished randomzing SS states vector,size:"<<SS_states.size()<<",best_heur_dead_ends"<<best_heur_dead_ends<<endl;
@@ -796,9 +802,88 @@ double PatterCollectionEvaluatorSS::probe_best_only(std::shared_ptr<PatternColle
 }
 
 
-  void PatterCollectionEvaluatorSS::clear_dominated_heuristics(std::shared_ptr<PatternCollectionInformation> current_result,std::shared_ptr<PatternCollectionInformation> &new_result){
-    new_result=current_result;
+  void PatterCollectionEvaluatorSS::clear_dominated_heuristics(std::shared_ptr<PatternCollectionInformation> current_result,std::shared_ptr<PatternCollectionInformation> &new_result,
+      shared_ptr<ModularZeroOnePDBs> candidate_ptr){
+	double start_time=utils::g_timer();
+	vector<int> current_best_h_values;
+	current_best_h_values.reserve(unique_samples.size());
+
+	//cout<<"calling clear_dominated_heuristics with "<<current_result->get_max_additive_subsets()->size()+1<<" best heuristics and unique_samples:"<<unique_samples.size()<<endl;
+	
+	//First we get all the values for sampled states with the latest PC
+	int i=0;
+	for(map<size_t,pair<State,int> >::iterator it=unique_samples.begin(); it!=unique_samples.end();it++){
+	  current_best_h_values[i++]=candidate_ptr->get_value(it->second.first);
+	}
+	cout<<"\ttime to populate current_best_h_values:"<<utils::g_timer()-start_time<<",unique_samples:"<<i<<endl;
+
+	//Now go through each additive subset and check if they are dominated for the sampled set of states
+	shared_ptr<MaxAdditivePDBSubsets> current_max_additive_subsets=current_result->get_max_additive_subsets();
+
+
+	int h=0;
+	i=0;
+	for(auto additive_subset : *current_max_additive_subsets){
+	  bool dominated_heur=true;
+	  int j=0;
+	 for(map<size_t,pair<State,int> >::iterator it=unique_samples.begin(); it!=unique_samples.end();it++){
+	    //If dead_end skip
+	    if(current_best_h_values[j]==INT_MAX){
+	      j++;
+	      continue;
+	    }
+	    h=calculate_max_additive_subset(additive_subset,it->second.first);
+	    //NO BREAKS BECAUSE WE WANT TO CALCULATE ALL THE NEW HIGHER H VALUES
+	    //IF HEUR IS NOT DOMINATED
+	    if (h == numeric_limits<int>::max()){
+	      dominated_heur=false;
+	      //cout<<"\tcolleciton ["<<i<<" is undominated because of dead_end, prev_val:"<<current_best_h_values[j]<<",h:"<<h<<endl;
+	      current_best_h_values[j]=INT_MAX;
+	    }
+	    else if(h>current_best_h_values[j]){
+	      dominated_heur=false;
+	      //cout<<"\tcolleciton ["<<i<<" is undominated because of higher_h, prev_val:"<<current_best_h_values[j]<<",h:"<<h<<endl;
+	      current_best_h_values[j]=h;
+	    }
+	    j++;
+	  }
+    
+	  if(!dominated_heur){
+	    //cout<<"adding heur["<<i<<"] to list of heurs"<<endl;
+
+	    shared_ptr<vector<shared_ptr<pdbs3::PatternDatabaseInterface> > > additive_subset_ptr;
+	    additive_subset_ptr=make_shared<vector<shared_ptr<pdbs3::PatternDatabaseInterface> > >(additive_subset);
+	    new_result->include_additive_pdbs(additive_subset_ptr);
+	    /*if(cleaned_best_pdb_collections.size()>15){
+	      cout<<"max of 15 pdb_collections, otherwise timewise takes too long"<<endl;
+	     break;
+	    } */
+	  }
+	  else{
+	    //cout<<"collection["<<i<<"] is dominated,eliminating "<<endl;
+	  }
+	  i++;
+	}
+
+	
+	//cout<<"clear_dominated_heuristics finished:"<<new_result->get_max_additive_subsets()->size()<<","<<",time:"<<utils::g_timer()-start_time<<endl;
   }
+  int PatterCollectionEvaluatorSS::calculate_max_additive_subset(PDBCollection max_subset,State current_state){
+    int h=0;
+    int h_temp=0;
+      for (auto pdb : max_subset){
+	h_temp=pdb->get_value(current_state);
+	if (h_temp == numeric_limits<int>::max()){
+	  h=numeric_limits<int>::max();
+	  break;
+	}
+	else{
+	  h+=h_temp;
+	}
+      }
+      return h;
+  }
+
 
 
 

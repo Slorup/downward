@@ -30,7 +30,8 @@ class PatternCollectionEvaluator {
     virtual void initialize(std::shared_ptr<AbstractTask> task) = 0;
     virtual bool evaluate(std::shared_ptr<ModularZeroOnePDBs> candidate_PC)=0;
     virtual void sample_states(std::shared_ptr<PatternCollectionInformation> current_result)=0;
-    virtual void clear_dominated_heuristics(std::shared_ptr<PatternCollectionInformation> current_result,std::shared_ptr<PatternCollectionInformation> &new_result) = 0;
+    virtual void clear_dominated_heuristics(std::shared_ptr<PatternCollectionInformation> current_result,std::shared_ptr<PatternCollectionInformation> &new_result,
+	std::shared_ptr<ModularZeroOnePDBs> candidate_ptr) = 0;
     void set_threshold(const unsigned thres){
       threshold=thres;
     }

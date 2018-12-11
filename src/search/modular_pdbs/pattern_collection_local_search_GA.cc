@@ -37,10 +37,12 @@ namespace pdbs3 {
     //cout<<"hello generate_next_candidate_GA"<<flush<<endl;
     //If more than one pattern, we only do local search on the first pattern
     new_patterns=candidate_collection;
-    int mutation_count=mutate(new_patterns);
+    //int mutation_count=mutate(new_patterns);
+    mutate(new_patterns);
     TaskProxy task_proxy2(*(g_root_task()));
-    int num_vars = task_proxy2.get_variables().size();
-    cout<<"\t\tmutations:"<<mutation_count<<",patterns:"<<candidate_collection.get_size()<<",num_vars:"<<num_vars<<endl;
+    //int num_vars = task_proxy2.get_variables().size();
+    task_proxy2.get_variables().size();
+    //cout<<"\t\tmutations:"<<mutation_count<<",patterns:"<<candidate_collection.get_size()<<",num_vars:"<<num_vars<<endl;
     // cout<<"old_patterns:";candidate_collection.print(); cout<<"new_patterns:";new_patterns.print();
     return new_patterns;//Not adding collection
   }
@@ -86,6 +88,9 @@ namespace pdbs3 {
 	new_collection=collection;
 	return 0;
       }
+    
+      //ALL PATTERNS NEED TO BE SORTED BEFORE PDBS ARE CREATED
+      sort(int_pattern.begin(), int_pattern.end());
       new_collection.push_back(int_pattern);
       //cout<<"\tadding clean_pattern:";for(auto i : int_pattern) cout<<i<<",";cout<<endl;
     }

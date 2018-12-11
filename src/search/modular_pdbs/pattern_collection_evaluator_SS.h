@@ -77,8 +77,10 @@ class PatterCollectionEvaluatorSS : public PatternCollectionEvaluator {
   explicit PatterCollectionEvaluatorSS(const options::Options &options);
   virtual bool evaluate(std::shared_ptr<ModularZeroOnePDBs> candidate_PC) override;
   virtual void sample_states(std::shared_ptr<PatternCollectionInformation> current_result) override;
-  virtual void clear_dominated_heuristics(std::shared_ptr<PatternCollectionInformation> current_result,std::shared_ptr<PatternCollectionInformation> &new_result) override;
+  virtual void clear_dominated_heuristics(std::shared_ptr<PatternCollectionInformation> current_result,std::shared_ptr<PatternCollectionInformation> &new_result,
+      std::shared_ptr<ModularZeroOnePDBs> candidate_ptr) override;
   virtual int get_reward() override {return increased_states;};//So metric is improved_states
+  int calculate_max_additive_subset(PDBCollection max_subset,State current_state);
   //virtual void set_reward(const PatternCollectionContainer & pc, double reward) = 0;
 };
 

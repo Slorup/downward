@@ -37,12 +37,15 @@ class ModularHeuristic : public Heuristic {
     int Disj_counter=0;
     int Not_Disj_counter=0;
     bool doing_local_search=false;
+    bool doing_dominated_sampling=false;
     std::shared_ptr<PDBFactory> pdb_factory;
     std::shared_ptr<PatternCollectionInformation> result;
     utils::CountdownTimer *modular_heuristic_timer;
     enum{GAMER_LOCAL_SEARCH=0,GA_LOCAL_SEARCH=1,IPDB_LOCAL_SEARCH=2};
     enum{GAMER_GENERATOR=0,RBP_CBP_GENERATOR=1};
     enum{ALWAYS_CBP=0,ALWAYS_RBP=1,ALWAYS_UCB=2,ALWAYS_50_50=3};
+    std::vector<std::shared_ptr<MaxAdditivePDBSubsets> > cleaned_best_pdb_collections; //Store PDB Collections for clean check
+    float clear_dominated_in_situ_spent_time=0;
 
 protected:
     virtual int compute_heuristic(const GlobalState &global_state) override;
@@ -64,7 +67,7 @@ public:
        empty, default operator costs are used.
     */
     ModularHeuristic(const options::Options &opts);
-    void clear_dominated_heuristics();
+    void clear_dominated_heuristics_in_situ_sampling(std::shared_ptr<ModularZeroOnePDBs> candidate_ptr);
     virtual ~ModularHeuristic() override = default;
     bool do_local_search (PatternCollectionContainer old_PC);
 };

@@ -229,6 +229,7 @@ ModularHeuristic::ModularHeuristic(const Options &opts)
       if(pdb_factory->is_solved()){
 	cout<<"Solution found while generating PDB candidate of type:"<<pdb_factory->name()<<", adding PDB and exiting generation at time"<<utils::g_timer()<<endl;
 	result->include_additive_pdbs(pdb_factory->terminate_creation(candidate_ptr->get_pattern_databases()));
+	result->set_dead_ends(pdb_factory->get_dead_ends());
 	return;
       }
       //cout<<"initial avg_h for Gamer-Style:"<<candidate_ptr->compute_approx_mean_finite_h();
@@ -305,6 +306,7 @@ ModularHeuristic::ModularHeuristic(const Options &opts)
       if(pdb_factory->is_solved()){
 	    cout<<"Solution found while generating PDB candidate of type:"<<pdb_factory->name()<<", adding PDB and exiting generation at time"<<utils::g_timer()<<endl;
 	    result->include_additive_pdbs(pdb_factory->terminate_creation(candidate_ptr->get_pattern_databases()));
+	    result->set_dead_ends(pdb_factory->get_dead_ends());
 	    return;
 	}
 	else{
@@ -324,6 +326,7 @@ ModularHeuristic::ModularHeuristic(const Options &opts)
       //bool terminate_or_not=true;
       bool generator_type=true;
       while(!modular_heuristic_timer->is_expired()){
+	//cout<<"\tcurrent_h_modular:"<<result->get_value(initial_state)<<endl;
 	if(always_CBP_or_RBP_or_UCB==ALWAYS_UCB){
 	  generator_type=UCB_RBP_vs_CBP.make_choice();
 	  if(generator_type==1){
@@ -434,6 +437,7 @@ ModularHeuristic::ModularHeuristic(const Options &opts)
           cout<<"Solution found while generating PDB candidate of type:"<<pdb_factory->name()<<", adding PDB and exiting generation at time"<<utils::g_timer()<<endl;
           //best_pdb_collections.push_back(pdb_factory->terminate_creation(candidate.get_pattern_databases()));
           result->include_additive_pdbs(pdb_factory->terminate_creation(candidate_ptr->get_pattern_databases()));
+	  result->set_dead_ends(pdb_factory->get_dead_ends());
           return;
         }
 	  
@@ -538,6 +542,7 @@ ModularHeuristic::ModularHeuristic(const Options &opts)
 	if(pdb_factory->is_solved()){
 		cout<<"Solution found while generating PDB candidate of type:"<<pdb_factory->name()<<", adding PDB and exiting generation at time"<<utils::g_timer()<<endl;
 		result->include_additive_pdbs(pdb_factory->terminate_creation(candidate_ptr->get_pattern_databases()));
+		result->set_dead_ends(pdb_factory->get_dead_ends());
 		return;
 	}
 
@@ -570,10 +575,14 @@ ModularHeuristic::ModularHeuristic(const Options &opts)
 	    }
             //int temp_initial_h=candidate_ptr->get_value(initial_state);
             //cout<<"time:"<<utils::g_timer()<<",Initial h value before terminate:"<<temp_initial_h<<endl;
+	    if(doing_dominated_sampling)
+	      clear_dominated_heuristics_in_situ_sampling(candidate_ptr);
+
             result->include_additive_pdbs(pdb_factory->terminate_creation(candidate_ptr->get_pattern_databases()));
 	    result->set_dead_ends(pdb_factory->get_dead_ends());
-            //cout<<"time:,"<<utils::g_timer()<<"pdb_max_size:,"<<pdb_max_size<<",generator_choice:,"<<generator_choice<<",goals_choice:"<<num_goals_to_group<<",disjoint:"<<disjunctive_choice<<",Selecting PC and resampling because initial_h has been raised from "<<initial_h<<"to "<<new_initial_h<<endl;
-            cout<<"time:,"<<utils::g_timer()<<"pdb_max_size:,"<<pdb_max_size<<",generator_choice:,"<<generator_choice<<",disjoint:"<<disjunctive_choice<<",Selecting PC and resampling because initial_h has been raised from "<<initial_h<<"to "<<new_initial_h<<endl;
+	
+            
+	    cout<<"time:,"<<utils::g_timer()<<"pdb_max_size:,"<<pdb_max_size<<",generator_choice:,"<<generator_choice<<",disjoint:"<<disjunctive_choice<<",Selecting PC and resampling because initial_h has been raised from "<<initial_h<<"to "<<new_initial_h<<endl;
             initial_h=result->get_value(initial_state);//Might be higher than simply new cadidate collection value due to max additive pattern combinations beyond current collection, unlikely but possible!
 	    
 	      
@@ -585,7 +594,9 @@ ModularHeuristic::ModularHeuristic(const Options &opts)
 	    }
             
 	    check_to_terminate=true;
-            pdb_ptr_collection.push_back(candidate_ptr);
+	    //Need to reorganize pdb_ptr_collection if choosing to terminate
+	    //whenever we clear_dominate heuristics
+            //pdb_ptr_collection.push_back(candidate_ptr);
 
             //UCB_Disjunctive_patterns[pdb_max_size].increase_reward(double(pattern_generator->get_disjunctive_patterns()),pdb_time);
             //UCB_goals_to_group[pdb_max_size].increase_reward(double(pattern_generator->get_goals_to_add()),pdb_time);
@@ -596,13 +607,14 @@ ModularHeuristic::ModularHeuristic(const Options &opts)
               UCB_sizes.increase_reward(log10(pdb_max_size),pdb_time);
 	      UCB_RBP_vs_CBP.increase_reward(generator_type,pdb_time);
             }
-            result->set_dead_ends(pdb_factory->get_dead_ends());
 	    //Always trying to further improve any already improving
 	    //pattern collection,set by doing_local_search
 	    if(doing_local_search){
 	      do_local_search(candidate_collection);
 	    }
-            pattern_evaluator->sample_states(result);
+	    else{//do_local_search does sample_states
+	      pattern_evaluator->sample_states(result);
+	    }
           }
           else{//OK,so lets check if candidate_PC is good enough to add to current collection
             if(pattern_evaluator->evaluate(candidate_ptr)){
@@ -619,7 +631,12 @@ ModularHeuristic::ModularHeuristic(const Options &opts)
               //NEED TO CHECK WITHOUT TERMINATING CREATION UNTIL ALL PDBs ARE SELECTED
               //cout<<"time:"<<utils::g_timer()<<"pdb_max_size:"<<pdb_max_size<<",generator_choice:"<<generator_choice<<",disjoint:"<<disjunctive_choice<<",goals_choice:"<<num_goals_to_group<<",modular_heuristic_selecting PC"<<endl;
               cout<<"time:"<<utils::g_timer()<<"pdb_max_size:"<<pdb_max_size<<",generator_choice:"<<generator_choice<<",disjoint:"<<disjunctive_choice<<",modular_heuristic_selecting PC"<<endl;
-              result->include_additive_pdbs(pdb_factory->terminate_creation(candidate_ptr->get_pattern_databases()));
+	      
+	      if(doing_dominated_sampling)
+		clear_dominated_heuristics_in_situ_sampling(candidate_ptr);
+              
+	      result->include_additive_pdbs(pdb_factory->terminate_creation(candidate_ptr->get_pattern_databases()));
+	      result->set_dead_ends(pdb_factory->get_dead_ends());
 	      
 	 
 	      //Clean dominated PDBs after addition of improving patterns
@@ -647,6 +664,9 @@ ModularHeuristic::ModularHeuristic(const Options &opts)
 	      //pattern collection,set by doing_local_search
 	      if(doing_local_search){
 		do_local_search(candidate_collection);
+	      }
+	      else{//do_local_search does sample_states
+		pattern_evaluator->sample_states(result);
 	      }
             }
             else{
@@ -701,16 +721,17 @@ ModularHeuristic::ModularHeuristic(const Options &opts)
           break;
         }
       }
-      //Check if any collection is useless because it is dominated
-      //pattern_evaluator->clear_dominated_heuristics(result,&);
 	    
       float terminate_time=utils::g_timer()-start_time;
-      cout<<"time:"<<utils::g_timer()<<",before_recompute_max_additive_subset,Testing modular_heuristic constructor finished,time:"<<utils::g_timer()<<",episodes:"<<num_episodes<<",PC created:"<<PC_counter<<",final_pdbs:"<<result->get_patterns()->size()<<",terminate_time:"<<terminate_time<<endl;
+      cout<<"time:"<<utils::g_timer()<<",before_recompute_max_additive_subset,Testing modular_heuristic constructor finished,episodes:"<<num_episodes<<",PC created:"<<PC_counter<<",final_pdbs:"<<result->get_patterns()->size()<<",terminate_time:"<<terminate_time<<endl;
       cout<<"CBP_counter:,"<<CBP_counter<<",RBP_counter:,"<<RBP_counter<<",Disj_counter:,"<<Disj_counter<<",Not_Disj_counter:"<<Not_Disj_counter<<endl;
 
+      //RECOMPUTE NOT WORKING HERE, INITIAL_H LOWER AFTER CALL, DEBUG!!!
+      //cout<<"initial_h before recompute:,"<<result->get_value(initial_state)<<endl;
       //result->recompute_max_additive_subsets();
-      //cout<<"time:"<<utils::g_timer()<<",after recompute_max_additive_subset,Testing modular_heuristic constructor finished,time:"<<utils::g_timer()<<",episodes:"<<num_episodes<<",PC created:"<<PC_counter<<",final_pdbs:"<<result->get_patterns()->size()<<",terminate_time:"<<terminate_time<<endl;
-
+            
+      //cout<<"time:"<<utils::g_timer()<<",after recompute_max_additive_subset,Testing modular_heuristic constructor finished,episodes:"<<num_episodes<<",PC created:"<<PC_counter<<",final_pdbs:"<<result->get_patterns()->size()<<",terminate_time:"<<terminate_time<<endl;
+      cout<<"initial_h after recompute:,"<<result->get_value(initial_state)<<endl;
     }
 
 int ModularHeuristic::compute_heuristic(const GlobalState &global_state) {
@@ -743,15 +764,17 @@ int ModularHeuristic::compute_heuristic(const GlobalState &global_state) {
 //This does a cannonical check, alternatively we
 //can clear quasi-dominated heuristics with in situ
 //sampling test
-void ModularHeuristic::clear_dominated_heuristics(){
+void ModularHeuristic::clear_dominated_heuristics_in_situ_sampling(shared_ptr<ModularZeroOnePDBs> candidate_ptr){
+  float start_time=utils::g_timer();
   //no point checking if we have only one collection
-  if(result->get_pdbs()->size()<2){
+  if(result->get_max_additive_subsets()->size()<2){
     return;
   }
-  std::shared_ptr<PatternCollectionInformation> new_result;
-	      
-  new_result=make_shared<PatternCollectionInformation>(task, make_shared<PatternCollection>());
-  pattern_evaluator->clear_dominated_heuristics(result,new_result);
+    std::shared_ptr<PatternCollectionInformation> new_result;
+    new_result=make_shared<PatternCollectionInformation>(task, make_shared<PatternCollection>());
+    pattern_evaluator->clear_dominated_heuristics(result,new_result,candidate_ptr);
+    cout<<"clear_dominated_heuristics,time_spent,"<<utils::g_timer()-start_time<<",Reduced number of collections from:,"<<result->get_max_additive_subsets()->size()<<",to:,"<<new_result->get_max_additive_subsets()->size()<<endl;
+    result=new_result;
 }
     
 bool ModularHeuristic::do_local_search (PatternCollectionContainer candidate_collection){
@@ -764,11 +787,15 @@ bool ModularHeuristic::do_local_search (PatternCollectionContainer candidate_col
   PatternCollectionContainer new_candidate_local_search;
   //cout<<"before local search, old initial_h value:,"<<result->get_value(initial_state)<<endl;
   int prev_local_search_h=result->get_value(initial_state);
+  int number_improv_found=0;
+  int episodes_tried=0;
 
   //cout<<"candidate_collection:";candidate_collection.print();
   if(pattern_local_search->get_name().find("LocalSearchGamerStyle")!=string::npos){
     pattern_local_search->reset_forbidden_vars();//all forbidden vars have to be cleared for new pattern!
     for(int i=0;i<num_vars;i++){
+      if(modular_heuristic_timer->is_expired())
+	break;
       prev_local_search_h=result->get_value(initial_state);
       new_candidate_local_search=pattern_local_search->generate_next_candidate(candidate_collection);
       //Check pattern has been changed if doing gamer-style search
@@ -795,10 +822,11 @@ bool ModularHeuristic::do_local_search (PatternCollectionContainer candidate_col
 	//so we have a good chance to improve further
 	//the overall time limit still applies
 	pattern_local_search->reset_forbidden_vars();//all forbidden vars are now available for the new improved pattern
+	pattern_evaluator->sample_states(result);
 	continue;
       }
       else if(pattern_evaluator->evaluate(candidate_ptr)){
-	cout<<"\tlocal_improv_found, initial_h unchanged"<<endl;
+	//cout<<"\tlocal_improv_found, initial_h unchanged"<<endl;
 	local_improv_found=true;
 	result->include_additive_pdbs(pdb_factory->terminate_creation(candidate_ptr->get_pattern_databases()));
 	result->set_dead_ends(pdb_factory->get_dead_ends());
@@ -806,15 +834,15 @@ bool ModularHeuristic::do_local_search (PatternCollectionContainer candidate_col
 	i=0;//restart loop, we got a new improved pattern
 	//so we have a good chance to improve further
 	//the overall time limit still applies
-	  cout<<"\tlocal_improv_found,new initial_h value after local Gamer search:"<<post_local_search_h<<",prev_h_val:,"<<prev_local_search_h<<endl;
-	  pattern_local_search->reset_forbidden_vars();//all forbidden vars are now available for the new improved pattern
-	}
-
-	if(utils::g_timer()-start_local_search_time>pattern_local_search->get_time_limit()){
-	  cout<<"\tlocal_search_time:,"<<utils::g_timer()-start_local_search_time<<",leaving local search GamerStyle after checking "<<i<<" vars, time_limit for local_search breached("<<pattern_local_search->get_time_limit()<<endl;
-	  break;
-	}
+	pattern_local_search->reset_forbidden_vars();//all forbidden vars are now available for the new improved pattern
+	pattern_evaluator->sample_states(result);
       }
+
+      if(utils::g_timer()-start_local_search_time>pattern_local_search->get_time_limit()){
+	cout<<"\tlocal_search_time:,"<<utils::g_timer()-start_local_search_time<<",leaving local search GamerStyle after checking "<<i<<" vars, time_limit for local_search breached("<<pattern_local_search->get_time_limit()<<endl;
+	break;
+      }
+    }
       //GAMER PDBs tend to dominate previous one, only case this does not happen is if new 
       //PDB is unterminated, so no point keeping most of previous PDBs around
       //We use Canonical recompute function to clear dominated PDBs
@@ -822,7 +850,13 @@ bool ModularHeuristic::do_local_search (PatternCollectionContainer candidate_col
     else if(pattern_local_search->get_name().find("LocalSearchGA")!=string::npos){
       //cout<<"before local search, old initial_h value:,"<<result->get_value(initial_state)<<endl;
       for(int i=0;i<pattern_local_search->get_episodes();i++){
+	
+	if(modular_heuristic_timer->is_expired())
+	  break;
+	
+	episodes_tried++;
 	prev_local_search_h=result->get_value(initial_state);
+	//cout<<"\t\t current_initial_h:"<<prev_local_search_h<<endl;
 	new_candidate_local_search=pattern_local_search->generate_next_candidate(candidate_collection);
  
 	//cout<<"new_candidate_collection:";new_candidate_local_search.print();
@@ -837,23 +871,30 @@ bool ModularHeuristic::do_local_search (PatternCollectionContainer candidate_col
 	candidate_ptr=make_shared<ModularZeroOnePDBs>(task_proxy, new_candidate_local_search.get_PC(), *pdb_factory);
 	int post_local_search_h=candidate_ptr->get_value(initial_state);
 	if(post_local_search_h>prev_local_search_h){
-	  cout<<"time:"<<utils::g_timer()<<",local_GA_improv_found,new initial_h value after local search:,"<<post_local_search_h<<",prev_h_val:,"<<prev_local_search_h<<endl;
+	  cout<<"\t\ttime:"<<utils::g_timer()<<",local_GA_improv_found,new initial_h value after local search:,"<<post_local_search_h<<",prev_h_val:,"<<prev_local_search_h<<endl;
 	  local_improv_found=true;
+	  number_improv_found++;
 	  result->include_additive_pdbs(pdb_factory->terminate_creation(candidate_ptr->get_pattern_databases()));
 	  result->set_dead_ends(pdb_factory->get_dead_ends());
 	  candidate_collection=new_candidate_local_search;
+	
+	  pattern_evaluator->sample_states(result);
 	  
 	  //Increasing rewards if the mutated parameter resulted in good choices
 	  //PENDING
 
 	}
 	else if(pattern_evaluator->evaluate(candidate_ptr)){
-	  cout<<"time:"<<utils::g_timer()<<",local_GA_improv_found, initial_h unchanged"<<endl;
+	  //cout<<"time:"<<utils::g_timer()<<",local_GA_improv_found, initial_h unchanged"<<endl;
 	  local_improv_found=true;
+	  number_improv_found++;
 	  candidate_collection=new_candidate_local_search;
 	  result->include_additive_pdbs(pdb_factory->terminate_creation(candidate_ptr->get_pattern_databases()));
 	  result->set_dead_ends(pdb_factory->get_dead_ends());
-	  candidate_collection=new_candidate_local_search;
+	  pattern_evaluator->sample_states(result);
+	}
+	else{
+	  //cout<<"local_GA_no_improv_found"<<endl;
 	}
 	//Check we do not run out of time
 	if(utils::g_timer()-start_local_search_time>pattern_local_search->get_time_limit()){
@@ -863,7 +904,7 @@ bool ModularHeuristic::do_local_search (PatternCollectionContainer candidate_col
       }
     }
 
-    cout<<"LocalSearch_type:"<<pattern_local_search->get_name()<<",improv_found:"<<local_improv_found<<endl;
+    cout<<"LocalSearch_type:,"<<pattern_local_search->get_name()<<",improv_founds:,"<<number_improv_found<<", out of:,"<<episodes_tried<<endl;
 
     return local_improv_found;
   }
@@ -926,6 +967,10 @@ bool ModularHeuristic::do_local_search (PatternCollectionContainer candidate_col
     parser.add_option<bool>(
         "doing_local_search",
         "Use local_search to try to furtherly improve any PCs we have selected.",
+	"false");
+    parser.add_option<bool>(
+        "doing_dominated_sampling",
+        "Use local sampling to eliminate quasi-dominated PCs.",
 	"false");
     
     Heuristic::add_options_to_parser(parser);
