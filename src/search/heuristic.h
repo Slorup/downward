@@ -100,6 +100,8 @@ public:
         return heuristic_cache[state].dirty;
     }
     virtual int count_pdbs() {return 1;}//1 in case no pdb, this is used to calculate avg_eval_time per heuristic 
+    virtual bool is_improved() const {return false; };
+    bool is_dead_end(GlobalState &state) const {if(heuristic_cache[state].h==DEAD_END) return true; return false;}
 };
 
 #endif

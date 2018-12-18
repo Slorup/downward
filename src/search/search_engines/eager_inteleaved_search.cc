@@ -102,20 +102,73 @@ SearchStatus EagerSearchInterleaved::step() {
         return FAILED;
     }
     SearchNode node = n.first;
-
+    
     GlobalState s = node.get_state();
     if (check_goal_and_set_plan(s))
         return SOLVED;
+
+    //In search_and_grow, heuristic value might have improved
+    //since node was inserted, so we need to check for re-evaluation
+    
+    //The reevaluate flag below can only be set to true if the heuristic
+    //knows that for the current state the h value is improved
+    //This makes sense when using symbolic online PDBs where a hash table is kept
+    //of any values re-evaluated.
+    
+    //int add_to_h=0;
+    bool re_insert=false;
+    for (Heuristic *heuristic : heuristics) {
+      //CHECK FOR UPDATED VALUE IN HASH TABLE
+      //Commented until it is implemented.
+      //is_there_improvement should
+      //1) check if there has been any improvements at all
+      //2) check hash table if state is affected by change in PDBs
+      //3) Hash table should store improvement upon previous value
+      //   so that we do not need to re-calculate all PDBs, only the improved ones.
+      if(heuristic->is_improved()){
+          if(heuristic->is_dead_end(s)){
+	    //improvement could detect dead_end, then we are finished
+	    //with this node.
+	    return IN_PROGRESS;
+	  }
+	  else{
+	    //add_to_h+=heuristic->calculate_improvement(s);
+	    re_insert=true;
+	    break;
+	  }
+      }
+    }
+       
+    //This used to be done by fetch next_node
+    //but only needs doing if node is not 
+    //re-inserted due to h improvement. 
+    node.close();
+    update_f_value_statistics(node);
+    statistics.inc_expanded();
+  
+    //Note: h values are stored in the open_list so nothing has 
+    //changed regarding search_space class itself, no reopen
+    //if(add_to_h>0)
+    if(re_insert){
+      EvaluationContext eval_context(
+	  node.get_state(), node.get_g(), false, &statistics);
+      int f_value = eval_context.get_heuristic_value(f_evaluator);
+      cout<<"\t REINSETING NODE, new f_value:"<<f_value<<",old_f_value:"<<statistics.get_lastjump_f_value()<<endl;
+      open_list->insert(eval_context, s.get_id());
+      return IN_PROGRESS;
+    }
+    //Back to normal a_star
+
 
     vector<const GlobalOperator *> applicable_ops;
     set<const GlobalOperator *> preferred_ops;
 
     g_successor_generator->generate_applicable_ops(s, applicable_ops);
 
-    /*
-      TODO: When preferred operators are in use, a preferred operator will be
-      considered by the preferred operator queues even when it is pruned.
-    */
+  /*
+    TODO: When preferred operators are in use, a preferred operator will be
+    considered by the preferred operator queues even when it is pruned.
+  */
     pruning_method->prune_operators(s, applicable_ops);
 
     // This evaluates the expanded state (again) to get preferred ops
@@ -283,10 +336,11 @@ pair<SearchNode, bool> EagerSearchInterleaved::fetch_next_node() {
             }
         }
 
-        node.close();
+	//Santiago: We only close the node if we know there are no improvements
+        //node.close();
         assert(!node.is_dead_end());
-        update_f_value_statistics(node);
-        statistics.inc_expanded();
+        //update_f_value_statistics(node);
+        //statistics.inc_expanded();
         return make_pair(node, true);
     }
 }
