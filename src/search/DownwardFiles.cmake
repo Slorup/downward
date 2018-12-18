@@ -238,6 +238,7 @@ fast_downward_plugin(
     HELP "Eager search algorithm"
     SOURCES
         search_engines/eager_search.cc
+	search_engines/eager_inteleaved_search.cc
     DEPENDS SEARCH_COMMON NULL_PRUNING_METHOD
 )
 
