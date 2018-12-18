@@ -567,16 +567,20 @@ ModularHeuristic::ModularHeuristic(const Options &opts)
 	      //We just added a new variable, so all previously 
 	      //tested vars had to be given a new chance
 	      pattern_local_search->reset_forbidden_vars();
-	      if(only_gamer){//recompute PDBs, very likely new collection fully dominates previous ones
-		cout<<"time:"<<utils::g_timer<<",calling recompute_max_additive_subsets"<<endl;
-		result->recompute_max_additive_subsets();
-		cout<<"time:"<<utils::g_timer<<",after recompute_max_additive_subsets"<<endl;
-	      }
+	      //RECOMPUTE_MAX_ADDITIVE_SUBSETS IS BUGGY
+	      //SO USE clear_dominated_heuristics_in_situ_sampling instead
+	      //if(only_gamer){//recompute PDBs, very likely new collection fully dominates previous ones
+		//cout<<"time:"<<utils::g_timer<<",calling recompute_max_additive_subsets"<<endl;
+		//result->recompute_max_additive_subsets();
+		//cout<<"time:"<<utils::g_timer<<",after recompute_max_additive_subsets"<<endl;
+	      //}
 	    }
             //int temp_initial_h=candidate_ptr->get_value(initial_state);
             //cout<<"time:"<<utils::g_timer()<<",Initial h value before terminate:"<<temp_initial_h<<endl;
 	    if(doing_dominated_sampling)
 	      clear_dominated_heuristics_in_situ_sampling(candidate_ptr);
+	    
+	    cout<<"time:,"<<utils::g_timer()<<"pdb_max_size:,"<<pdb_max_size<<",generator_choice:,"<<generator_choice<<",disjoint:,"<<disjunctive_choice<<",Selecting PC and resampling because initial_h has been raised from,"<<initial_h<<"to:,";
 
             result->include_additive_pdbs(pdb_factory->terminate_creation(candidate_ptr->get_pattern_databases()));
 	    result->set_dead_ends(pdb_factory->get_dead_ends());
@@ -587,11 +591,14 @@ ModularHeuristic::ModularHeuristic(const Options &opts)
 	    
 	      
 	    //Clean dominated PDBs after addition of improving patterns
-	    if(recompute_additive_sets){
-	      cout<<"time:"<<utils::g_timer<<",calling recompute_max_additive_subsets"<<endl;
-	      result->recompute_max_additive_subsets();
-	      cout<<"time:"<<utils::g_timer<<",after recompute_max_additive_subsets"<<endl;
-	    }
+	      //RECOMPUTE_MAX_ADDITIVE_SUBSETS IS BUGGY
+	      //SO USE clear_dominated_heuristics_in_situ_sampling instead
+	      //if(only_gamer){//recompute PDBs, very likely new collection fully dominates previous ones
+	    //if(recompute_additive_sets){
+	    //  cout<<"time:"<<utils::g_timer<<",calling recompute_max_additive_subsets"<<endl;
+	     // result->recompute_max_additive_subsets();
+	      //cout<<"time:"<<utils::g_timer<<",after recompute_max_additive_subsets"<<endl;
+	    //}
             
 	    check_to_terminate=true;
 	    //Need to reorganize pdb_ptr_collection if choosing to terminate
@@ -640,12 +647,13 @@ ModularHeuristic::ModularHeuristic(const Options &opts)
 	      
 	 
 	      //Clean dominated PDBs after addition of improving patterns
-
-	    if(recompute_additive_sets){
-	      cout<<"time:"<<utils::g_timer<<",calling recompute_max_additive_subsets"<<endl;
-	      result->recompute_max_additive_subsets();
-	      cout<<"time:"<<utils::g_timer<<",after recompute_max_additive_subsets"<<endl;
-	    }
+	      //RECOMPUTE_MAX_ADDITIVE_SUBSETS IS BUGGY
+	      //SO USE clear_dominated_heuristics_in_situ_sampling instead
+	    //if(recompute_additive_sets){
+	    //  cout<<"time:"<<utils::g_timer<<",calling recompute_max_additive_subsets"<<endl;
+	    //  result->recompute_max_additive_subsets();
+	    //  cout<<"time:"<<utils::g_timer<<",after recompute_max_additive_subsets"<<endl;
+	    //}
               check_to_terminate=true;
               if(generator_choice!=0){
                 UCB_sizes.increase_reward(log10(pdb_max_size),pdb_time);
@@ -727,11 +735,11 @@ ModularHeuristic::ModularHeuristic(const Options &opts)
       cout<<"CBP_counter:,"<<CBP_counter<<",RBP_counter:,"<<RBP_counter<<",Disj_counter:,"<<Disj_counter<<",Not_Disj_counter:"<<Not_Disj_counter<<endl;
 
       //RECOMPUTE NOT WORKING HERE, INITIAL_H LOWER AFTER CALL, DEBUG!!!
-      //cout<<"initial_h before recompute:,"<<result->get_value(initial_state)<<endl;
+      //cout<<"time:"<<utils::g_timer()<<",initial_h before recompute:,"<<result->get_value(initial_state)<<endl;
       //result->recompute_max_additive_subsets();
             
       //cout<<"time:"<<utils::g_timer()<<",after recompute_max_additive_subset,Testing modular_heuristic constructor finished,episodes:"<<num_episodes<<",PC created:"<<PC_counter<<",final_pdbs:"<<result->get_patterns()->size()<<",terminate_time:"<<terminate_time<<endl;
-      cout<<"initial_h after recompute:,"<<result->get_value(initial_state)<<endl;
+      //cout<<"time:"<<utils::g_timer()<<",initial_h after recompute:,"<<result->get_value(initial_state)<<endl;
     }
 
 int ModularHeuristic::compute_heuristic(const GlobalState &global_state) {
