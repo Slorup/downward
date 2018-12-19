@@ -115,8 +115,7 @@ SearchStatus EagerSearchInterleaved::step() {
     //This makes sense when using symbolic online PDBs where a hash table is kept
     //of any values re-evaluated.
     
-    //int add_to_h=0;
-    bool re_insert=false;
+    int add_to_h=0;
     for (Heuristic *heuristic : heuristics) {
       //CHECK FOR UPDATED VALUE IN HASH TABLE
       //Commented until it is implemented.
@@ -125,17 +124,13 @@ SearchStatus EagerSearchInterleaved::step() {
       //2) check hash table if state is affected by change in PDBs
       //3) Hash table should store improvement upon previous value
       //   so that we do not need to re-calculate all PDBs, only the improved ones.
-      if(heuristic->is_improved()){
-          if(heuristic->is_dead_end(s)){
-	    //improvement could detect dead_end, then we are finished
-	    //with this node.
+      
+      int partial_h=heuristic->recompute_heuristic(s);
+      if(partial_h==EvaluationResult::INFTY){//DEAD_END
 	    return IN_PROGRESS;
-	  }
-	  else{
-	    //add_to_h+=heuristic->calculate_improvement(s);
-	    re_insert=true;
-	    break;
-	  }
+      }
+      else{
+	add_to_h+=partial_h;
       }
     }
        
@@ -149,7 +144,7 @@ SearchStatus EagerSearchInterleaved::step() {
     //Note: h values are stored in the open_list so nothing has 
     //changed regarding search_space class itself, no reopen
     //if(add_to_h>0)
-    if(re_insert){
+    if(add_to_h>0){
       EvaluationContext eval_context(
 	  node.get_state(), node.get_g(), false, &statistics);
       int f_value = eval_context.get_heuristic_value(f_evaluator);
