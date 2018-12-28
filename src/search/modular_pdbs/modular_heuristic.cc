@@ -88,6 +88,12 @@ ModularHeuristic::ModularHeuristic(const Options &opts)
       cout<<"gamer_excluded:"<<gamer_excluded<<",always_cbp_or_rbp_or_ucb:"<<always_CBP_or_RBP_or_UCB<<endl;
       cout<<"doing_local_search:"<<doing_local_search<<endl;
       
+      if(doing_local_search&&only_gamer){
+       cerr<<"Both doing_local_search and only_gamer cannot be true at the same time"<<endl;
+       exit(1);
+      }
+      
+
 
       //unsigned num_goals_to_group=0;
       modular_heuristic_timer = new utils::CountdownTimer(modular_time_limit);
@@ -149,7 +155,7 @@ ModularHeuristic::ModularHeuristic(const Options &opts)
       pattern_generator->initialize(task);
       
       cout<<"initializing local_search"<<flush<<endl;
-      if(doing_local_search)     
+      if(doing_local_search||only_gamer)     
 	pattern_local_search->initialize(task);
       cout<<"finished initializing local_search"<<flush<<endl;
      

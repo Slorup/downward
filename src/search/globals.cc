@@ -393,5 +393,5 @@ std::map<size_t,pair<State,int> > unique_samples;
 utils::Log g_log;
 //64bitsfloat memory_limit=4000;//MB//,also need changes in the PDB individual limits, e.g. pdb_factory_symbolic.cc!
 //32bitsfloat memory_limit=2000;//MB//,also need changes in the PDB individual limits, e.g. pdb_factory_symbolic.cc!
-float memory_limit=4000;//MB//,also need changes in the PDB individual limits, e.g. pdb_factory_symbolic.cc!
+float memory_limit=2000;//MB//,also need changes in the PDB individual limits, e.g. pdb_factory_symbolic.cc!
 double overall_pdb_gen_time=0;
