@@ -718,6 +718,9 @@ ModularHeuristic::ModularHeuristic(const Options &opts)
           }
       }
       cout<<"CBP calls:,"<<pattern_generator->get_CBP_calls()<<",RBP calls:,"<<pattern_generator->get_RBP_calls()<<endl;
+
+
+
       //Now terminate creation of unfinished selected PDBs
       float start_time=utils::g_timer();
       auto pdb_collection=result->get_pdbs(); 
@@ -740,17 +743,33 @@ ModularHeuristic::ModularHeuristic(const Options &opts)
       cout<<"time:"<<utils::g_timer()<<",before_recompute_max_additive_subset,Testing modular_heuristic constructor finished,episodes:"<<num_episodes<<",PC created:"<<PC_counter<<",final_pdbs:"<<result->get_patterns()->size()<<",terminate_time:"<<terminate_time<<endl;
       cout<<"CBP_counter:,"<<CBP_counter<<",RBP_counter:,"<<RBP_counter<<",Disj_counter:,"<<Disj_counter<<",Not_Disj_counter:"<<Not_Disj_counter<<endl;
 
-      //RECOMPUTE NOT WORKING HERE, INITIAL_H LOWER AFTER CALL, DEBUG!!!
-      //cout<<"time:"<<utils::g_timer()<<",initial_h before recompute:,"<<result->get_value(initial_state)<<endl;
-      //result->recompute_max_additive_subsets();
+      
+
+      //Now recalculate additive subsets
+      cout<<"time:"<<utils::g_timer()<<",initial_h before recompute:,"<<result->get_value(initial_state)<<endl;
+      result->recompute_max_additive_subsets();
             
-      //cout<<"time:"<<utils::g_timer()<<",after recompute_max_additive_subset,Testing modular_heuristic constructor finished,episodes:"<<num_episodes<<",PC created:"<<PC_counter<<",final_pdbs:"<<result->get_patterns()->size()<<",terminate_time:"<<terminate_time<<endl;
-      //cout<<"time:"<<utils::g_timer()<<",initial_h after recompute:,"<<result->get_value(initial_state)<<endl;
+      cout<<"time:"<<utils::g_timer()<<",after recompute_max_additive_subset,Testing modular_heuristic constructor finished,episodes:"<<num_episodes<<",PC created:"<<PC_counter<<",final_pdbs:"<<result->get_patterns()->size()<<",terminate_time:"<<terminate_time<<endl;
+      cout<<"time:"<<utils::g_timer()<<",initial_h after recompute:,"<<result->get_value(initial_state)<<endl;
+      
+      //Now make canonical_symbolic_pdbs
+      //CanonicalSymbolicPDBs canonical_pdbs (PatternCollectionInformation & info,bool dominance_pruning, int compress_nodes, int compress_time);
+      cout<<"time:"<<utils::g_timer()<<",initial_h before canonical_pdbs:,"<<result->get_value(initial_state)<<endl;
+      canonical_pdbs=make_unique<CanonicalSymbolicPDBs>(result,true, 0, 0);
+      cout<<"time:"<<utils::g_timer()<<",initial_h after canonical_pdbs:,"<<canonical_pdbs->get_value(initial_state)<<endl;
+      cout<<"canonical_pdbs_count:"<<canonical_pdbs->count_pdbs()<<endl;
+
     }
 
 int ModularHeuristic::compute_heuristic(const GlobalState &global_state) {
     State state = convert_global_state(global_state);
-    int h = result->get_value(state);
+    int h=0;
+    if(canonical_pdbs->count_pdbs()>0){
+      h = canonical_pdbs->get_value(state);
+    }
+    else 
+      h = result->get_value(state);
+
     if (h == numeric_limits<int>::max()) {
         return DEAD_END;
     } else {
@@ -945,7 +964,7 @@ bool ModularHeuristic::do_local_search (PatternCollectionContainer candidate_col
       parser.add_option<shared_ptr<PatternCollectionLocalSearch>>(
 	  "local_search",
 	  "pattern Collection local search method",
-	  "local_search_gamer");
+	  "local_search_ga(time_limit=60)");
       parser.add_option<int>(
 	  "modular_time_limit",
 	  "time limit in seconds for modular_pdb_heuristic initialization cut off",

@@ -166,16 +166,16 @@ void PatternCollectionInformation::recompute_max_additive_subsets() {
 		  return;
     }  
     max_additive_subsets = compute_max_additive_subsets(*pdbs);
-    /*cout<<"after compute:"<<endl;
+    cout<<"\tafter compute:"<<endl;
       for (const PDBCollection &collection : *max_additive_subsets) {
 	  for (const shared_ptr<PatternDatabaseInterface> &pdb : collection) {
 	    cout<<*pdb<<",";
 	  }
 	  cout<<endl;
-      }*/
-    //cout<<"pdbs before Dominance prune:"<<pdbs->size()<<endl;
+      }
+    cout<<"pdbs before Dominance prune:"<<pdbs->size()<<endl;
     size_t last_size=max_additive_subsets->size();
-    //cout<<"max_additive subsets before Dominance prune"<<max_additive_subsets->size()<<endl;
+    cout<<"max_additive subsets before Dominance prune"<<max_additive_subsets->size()<<endl;
     max_additive_subsets = prune_dominated_subsets(*pdbs, *max_additive_subsets);
     //if(last_call%10==0){
     /* SANTIAGO_CHECK: Why not directly: 
@@ -185,6 +185,7 @@ void PatternCollectionInformation::recompute_max_additive_subsets() {
       std::shared_ptr<MaxAdditivePDBSubsets> max_additive_subsets2;
       max_additive_subsets2 = prune_dominated_subsets_sample_space(*pdbs, *max_additive_subsets);
       max_additive_subsets=max_additive_subsets2;
+
     //}
     //cout<<"last_size:"<<last_size<<",max_additive_subsets->size()"<<max_additive_subsets->size()<<endl;
     //cout<<"Peak memory2:"<<flush<<utils::get_peak_memory_in_kb()<<endl;fflush(stdout);

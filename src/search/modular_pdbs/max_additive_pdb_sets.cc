@@ -24,7 +24,7 @@ bool are_pdbs_additive(const PatternDatabaseInterface &pdb1,
 	    return false;
 	}   
     }
-    //cout<<"pdb1:"<<pdb1<<",pdb2:"<<pdb2<<"are additive"<<endl;
+    cout<<"pdb1:"<<pdb1<<",pdb2:"<<pdb2<<"are additive"<<endl;
     return true;
 }
 
@@ -61,7 +61,7 @@ VariableAdditivity compute_additive_vars(TaskProxy task_proxy) {
 shared_ptr<MaxAdditivePDBSubsets> compute_max_additive_subsets(const PDBCollection &pdbs,
 							       const vector<vector<int>> & cgraph) {
 
-    cout<<"compute_max_additive_subsets,pdbs"<<pdbs.size()<<flush<<endl;
+    cout<<"computing_max_additive_subsets,pdbs"<<pdbs.size()<<flush<<endl;
     vector<vector<int>> max_cliques;
     compute_max_cliques(cgraph, max_cliques);
     cout<<"after compute_max_cliques,size:"<<max_cliques.size()<<endl;

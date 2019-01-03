@@ -503,6 +503,7 @@ fast_downward_plugin(
 	NAME MODULAR_PDBS
     HELP "Plugin containing the code for modular PDBs"
   	SOURCES
+		modular_pdbs/canonical_symbolic_pdbs.cc
   		modular_pdbs/dominance_pruning.cc
   		modular_pdbs/pattern_collection_evaluator_RandWalk.cc
 		modular_pdbs/pattern_collection_evaluator_SS.cc

@@ -60,15 +60,17 @@ PDBRelation compute_superset_relation(const PDBCollection &pattern_databases) {
 		      PDBs use the same pattern, which violates the invariant that
 		      lists of patterns are sorted and unique.
 		    */
-		    std::cout<<"pdb1:";
-		    for(auto var : pattern1){
-		      std::cout<<var<<",";
+		    if(pdb1!=pdb2){
+		      std::cout<<"pdb1:";
+		      for(auto var : pattern1){
+			std::cout<<var<<",";
+		      }
+		      std::cout<<"pdb2:";
+		      for(auto var2 : pattern2){
+			std::cout<<var2<<",";
+		      }
+		      std::cout<<std::endl;
 		    }
-		    std::cout<<"pdb2:";
-		    for(auto var2 : pattern2){
-		      std::cout<<var2<<",";
-		    }
-		    std::cout<<std::endl;
 		    
 		    
 		    assert(pdb1 == pdb2 ||
@@ -216,7 +218,7 @@ shared_ptr<MaxAdditivePDBSubsets> prune_dominated_subsets_sample_space(
 	for(size_t j=0;j<collection_to_patterns[i].size();j++){
 	  if(collection_to_patterns[i][j]==pattern){
 	    collection_to_pdb_index[i].push_back(counter);
-	    cout<<"collection_to_pdb_index["<<i<<"]["<<collection_to_pdb_index[i].size()-1<<"]:"<<collection_to_pdb_index[i].back()<<flush<<endl;
+	    //cout<<"collection_to_pdb_index["<<i<<"]["<<collection_to_pdb_index[i].size()-1<<"]:"<<collection_to_pdb_index[i].back()<<flush<<endl;
 	  }
 	}
       }

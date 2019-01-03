@@ -7,6 +7,7 @@
 #include "pattern_collection_generator_complementary.h"
 #include "pattern_collection_evaluator.h"
 #include "pattern_collection_local_search.h"
+#include "canonical_symbolic_pdbs.h"
 //#include "pdb_factory.h"
 
 class GlobalState;
@@ -46,6 +47,7 @@ class ModularHeuristic : public Heuristic {
     enum{ALWAYS_CBP=0,ALWAYS_RBP=1,ALWAYS_UCB=2,ALWAYS_50_50=3};
     std::vector<std::shared_ptr<MaxAdditivePDBSubsets> > cleaned_best_pdb_collections; //Store PDB Collections for clean check
     float clear_dominated_in_situ_spent_time=0;
+    std::unique_ptr<CanonicalSymbolicPDBs> canonical_pdbs;
 
 protected:
     virtual int compute_heuristic(const GlobalState &global_state) override;
