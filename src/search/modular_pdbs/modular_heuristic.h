@@ -39,6 +39,7 @@ class ModularHeuristic : public Heuristic {
     int Not_Disj_counter=0;
     bool doing_local_search=false;
     bool doing_dominated_sampling=false;
+    bool doing_canonical_search=true;
     std::shared_ptr<PDBFactory> pdb_factory;
     std::shared_ptr<PatternCollectionInformation> result;
     utils::CountdownTimer *modular_heuristic_timer;

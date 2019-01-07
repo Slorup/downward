@@ -66,26 +66,35 @@ void EagerSearch::initialize() {
     for (Heuristic *heuristic : heuristics) {
         heuristic->notify_initial_state(initial_state);
     }
+    cout<<"after notify"<<flush<<endl;
 
     // Note: we consider the initial state as reached by a preferred
     // operator.
     EvaluationContext eval_context(initial_state, 0, true, &statistics);
+    cout<<"after eval_context"<<flush<<endl;
 
     statistics.inc_evaluated_states();
 
     if (open_list->is_dead_end(eval_context)) {
         cout << "Initial state is a dead end." << endl;
     } else {
+	cout<<"at else"<<flush<<endl;
         if (search_progress.check_progress(eval_context))
             print_checkpoint_line(0);
         start_f_value_statistics(eval_context);
+	cout<<"before node creation"<<flush<<endl;
         SearchNode node = search_space.get_node(initial_state);
+	cout<<"after node creation"<<flush<<endl;
         node.open_initial();
+	cout<<"after node open"<<flush<<endl;
 
         open_list->insert(eval_context, initial_state.get_id());
+	cout<<"after node insert"<<flush<<endl;
     }
 
+	cout<<"before print"<<flush<<endl;
     print_initial_h_values(eval_context);
+	cout<<"after print"<<flush<<endl;
     start_running_time=utils::g_timer();
 }
 

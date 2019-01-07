@@ -236,6 +236,9 @@ ModularHeuristic::ModularHeuristic(const Options &opts)
 	cout<<"Solution found while generating PDB candidate of type:"<<pdb_factory->name()<<", adding PDB and exiting generation at time"<<utils::g_timer()<<endl;
 	result->include_additive_pdbs(pdb_factory->terminate_creation(candidate_ptr->get_pattern_databases()));
 	result->set_dead_ends(pdb_factory->get_dead_ends());
+	if(doing_canonical_search){
+	  canonical_pdbs=make_unique<CanonicalSymbolicPDBs>(result,false, 0, 0);//no need to prune anything, solution found
+	}
 	return;
       }
       //cout<<"initial avg_h for Gamer-Style:"<<candidate_ptr->compute_approx_mean_finite_h();
@@ -313,6 +316,9 @@ ModularHeuristic::ModularHeuristic(const Options &opts)
 	    cout<<"Solution found while generating PDB candidate of type:"<<pdb_factory->name()<<", adding PDB and exiting generation at time"<<utils::g_timer()<<endl;
 	    result->include_additive_pdbs(pdb_factory->terminate_creation(candidate_ptr->get_pattern_databases()));
 	    result->set_dead_ends(pdb_factory->get_dead_ends());
+	    if(doing_canonical_search){
+	      canonical_pdbs=make_unique<CanonicalSymbolicPDBs>(result,false, 0, 0);//no need to prune anything, solution found
+	    }
 	    return;
 	}
 	else{
@@ -356,6 +362,18 @@ ModularHeuristic::ModularHeuristic(const Options &opts)
 	}
 	 if(double(utils::get_current_memory_in_kb())/1024.0>memory_limit){
 	    cout<<"break-3,memory limit breached,current_memory(MB):"<<utils::get_current_memory_in_kb()/1024.0<<",memory_limit:"<<memory_limit<<endl;
+	    if(doing_canonical_search){
+	      cout<<"time:"<<utils::g_timer()<<",initial_h before recompute:,"<<result->get_value(initial_state)<<endl;
+	      result->recompute_max_additive_subsets();
+	      cout<<"time:"<<utils::g_timer()<<",initial_h after recompute:,"<<result->get_value(initial_state)<<endl;
+		    
+	    //Now make canonical_symbolic_pdbs
+	    //CanonicalSymbolicPDBs canonical_pdbs (PatternCollectionInformation & info,bool dominance_pruning, int compress_nodes, int compress_time);
+	      cout<<"time:"<<utils::g_timer()<<",initial_h before canonical_pdbs:,"<<result->get_value(initial_state)<<endl;
+	      canonical_pdbs=make_unique<CanonicalSymbolicPDBs>(result,true, 0, 0);
+	      cout<<"time:"<<utils::g_timer()<<",initial_h after canonical_pdbs:,"<<canonical_pdbs->get_value(initial_state)<<endl;
+	      cout<<"canonical_pdbs_count:"<<canonical_pdbs->count_pdbs()<<endl;
+	    }
 	    return;
 	 }
         //First we decide whether to try improving existing pdbs or keep generating new ones
@@ -444,6 +462,9 @@ ModularHeuristic::ModularHeuristic(const Options &opts)
           //best_pdb_collections.push_back(pdb_factory->terminate_creation(candidate.get_pattern_databases()));
           result->include_additive_pdbs(pdb_factory->terminate_creation(candidate_ptr->get_pattern_databases()));
 	  result->set_dead_ends(pdb_factory->get_dead_ends());
+	  if(doing_canonical_search){
+	    canonical_pdbs=make_unique<CanonicalSymbolicPDBs>(result,false, 0, 0);//no need to prune anything, solution found
+	  }
           return;
         }
 	  
@@ -549,6 +570,9 @@ ModularHeuristic::ModularHeuristic(const Options &opts)
 		cout<<"Solution found while generating PDB candidate of type:"<<pdb_factory->name()<<", adding PDB and exiting generation at time"<<utils::g_timer()<<endl;
 		result->include_additive_pdbs(pdb_factory->terminate_creation(candidate_ptr->get_pattern_databases()));
 		result->set_dead_ends(pdb_factory->get_dead_ends());
+		if(doing_canonical_search){
+		  canonical_pdbs=make_unique<CanonicalSymbolicPDBs>(result,false, 0, 0);//no need to prune anything, solution found
+		}
 		return;
 	}
 
@@ -745,26 +769,27 @@ ModularHeuristic::ModularHeuristic(const Options &opts)
 
       
 
-      //Now recalculate additive subsets
-      cout<<"time:"<<utils::g_timer()<<",initial_h before recompute:,"<<result->get_value(initial_state)<<endl;
-      result->recompute_max_additive_subsets();
-            
-      cout<<"time:"<<utils::g_timer()<<",after recompute_max_additive_subset,Testing modular_heuristic constructor finished,episodes:"<<num_episodes<<",PC created:"<<PC_counter<<",final_pdbs:"<<result->get_patterns()->size()<<",terminate_time:"<<terminate_time<<endl;
-      cout<<"time:"<<utils::g_timer()<<",initial_h after recompute:,"<<result->get_value(initial_state)<<endl;
+      if(doing_canonical_search){
+	//Now recalculate additive subsets
+	cout<<"time:"<<utils::g_timer()<<",initial_h before recompute:,"<<result->get_value(initial_state)<<endl;
+	result->recompute_max_additive_subsets();
+	      
+	cout<<"time:"<<utils::g_timer()<<",after recompute_max_additive_subset,Testing modular_heuristic constructor finished,episodes:"<<num_episodes<<",PC created:"<<PC_counter<<",final_pdbs:"<<result->get_patterns()->size()<<",terminate_time:"<<terminate_time<<endl;
+	cout<<"time:"<<utils::g_timer()<<",initial_h after recompute:,"<<result->get_value(initial_state)<<endl;
       
       //Now make canonical_symbolic_pdbs
       //CanonicalSymbolicPDBs canonical_pdbs (PatternCollectionInformation & info,bool dominance_pruning, int compress_nodes, int compress_time);
-      cout<<"time:"<<utils::g_timer()<<",initial_h before canonical_pdbs:,"<<result->get_value(initial_state)<<endl;
-      canonical_pdbs=make_unique<CanonicalSymbolicPDBs>(result,true, 0, 0);
-      cout<<"time:"<<utils::g_timer()<<",initial_h after canonical_pdbs:,"<<canonical_pdbs->get_value(initial_state)<<endl;
-      cout<<"canonical_pdbs_count:"<<canonical_pdbs->count_pdbs()<<endl;
-
+	cout<<"time:"<<utils::g_timer()<<",initial_h before canonical_pdbs:,"<<result->get_value(initial_state)<<endl;
+	canonical_pdbs=make_unique<CanonicalSymbolicPDBs>(result,true, 0, 0);
+	cout<<"time:"<<utils::g_timer()<<",initial_h after canonical_pdbs:,"<<canonical_pdbs->get_value(initial_state)<<endl;
+	cout<<"canonical_pdbs_count:"<<canonical_pdbs->count_pdbs()<<endl;
+      }
     }
 
 int ModularHeuristic::compute_heuristic(const GlobalState &global_state) {
     State state = convert_global_state(global_state);
     int h=0;
-    if(canonical_pdbs->count_pdbs()>0){
+    if(doing_canonical_search){
       h = canonical_pdbs->get_value(state);
     }
     else 
@@ -1005,6 +1030,10 @@ bool ModularHeuristic::do_local_search (PatternCollectionContainer candidate_col
         "doing_dominated_sampling",
         "Use local sampling to eliminate quasi-dominated PCs.",
 	"false");
+    parser.add_option<bool>(
+        "doing_canonical_search",
+        "Combining PDBs in a canonical set",
+	"true");
     
     Heuristic::add_options_to_parser(parser);
 

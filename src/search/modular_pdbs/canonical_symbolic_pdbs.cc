@@ -24,9 +24,11 @@ CanonicalSymbolicPDBs::CanonicalSymbolicPDBs(
     int compress_nodes, int compress_time) : dead_ends(info->get_dead_ends()), 
 					     valid_cache(info->get_pdbs()->size()), 
 					     cache(info->get_pdbs()->size()) {
-
-
 					       
+
+
+					 
+    cout<<"canonical,dominance_prunning:,"<<dominance_pruning<<",compress_nodes:,"<<compress_nodes<<",compress_time:,"<<compress_time<<endl;    
     auto pattern_databases = info->get_pdbs();
     auto max_additive_subsets_ = info->get_max_additive_subsets();
 
