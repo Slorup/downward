@@ -151,12 +151,6 @@ PatterCollectionEvaluatorRandWalk::PatterCollectionEvaluatorRandWalk(const optio
     }
       cout<<"We are finished,random_walk,random_walk_time:"<<utils::g_timer()-start_time<<",samples:"<<samples.size()<<flush<<endl;
   }
-  void PatterCollectionEvaluatorRandWalk::clear_dominated_heuristics(std::shared_ptr<PatternCollectionInformation> current_result,std::shared_ptr<PatternCollectionInformation> &new_result,
-      shared_ptr<ModularZeroOnePDBs> candidate_ptr){
-    //cout<<"pdb_factory_name:"<<pdb_factory->name()<<endl;
-    candidate_ptr->print();
-    new_result=current_result;
-  }
 
 
 

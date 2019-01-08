@@ -74,8 +74,8 @@ class Learning {
       //cout<<" to:"<<search->second.get_score()<<endl;
     }
     else{
-      cout<<"Reference "<<ref<<" not in existing choices in learning, pls debug me!!!"<<endl;
-      exit(0);
+      cerr<<"Reference "<<ref<<" not in existing choices in learning, pls debug me!!!"<<endl;
+      exit(1);
     }
   }
   void increase_cost(double reference,double increase=1.0){
@@ -87,7 +87,7 @@ class Learning {
       total_cost+=increase;
     }
     else {
-        std::cout << "reference value: " << reference << "Does not exist in set of data points, debug me!!!"<<endl;
+        std::cerr << "reference value: " << reference << "Does not exist in set of data points, debug me!!!"<<endl;
         exit(1);
     }
   }
@@ -101,7 +101,7 @@ void increase_reward(double reference,double increase=1){
     search->second.increase_reward(increase);
   }
   else{
-    std::cout << "reference value: " << reference << "Does not exist in set of data points, debug me!!!"<<endl;
+    std::cerr << "reference value: " << reference << "Does not exist in set of data points, debug me!!!"<<endl;
     exit(1);
   }
 }
@@ -109,7 +109,7 @@ void increase_reward(double reference,double increase=1){
 double make_choice(bool print=false){
   DEBUG_COMP(cout<<"making_choice,avaliable choices:"<<choices.size()<<endl;);
   if(choices.size()==0){
-    cout<<"PLS DEBUG ME, making a choice but none are available!!!"<<endl;
+    cerr<<"PLS DEBUG ME, making a choice but none are available!!!"<<endl;
     exit(1);
   }
   if(total_cost>0)

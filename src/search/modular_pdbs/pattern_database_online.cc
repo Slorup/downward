@@ -471,7 +471,7 @@ int PatternDatabaseOnline::OnlineDistanceCalculator2(const State current_state,i
 	    //create_pdb_time_limit(void_operator_costs,2.0);
 	    //exit(0);
 	    if((double(utils::get_current_memory_in_kb())/1024)<2500){
-	      cout<<"USE SYMBOLIC PDBS FOR BACKWARD SEARCH"<<endl;exit(0);
+	      cerr<<"USE SYMBOLIC PDBS FOR BACKWARD SEARCH"<<endl;exit(0);
 	      //cout<<"call_create_pdb_time_limit, memory:"<<utils::get_current_memory_in_kb()<<endl;
 	      //vector<int> void_operator_costs;
 	      //create_pdb_time_limit(void_operator_costs,2.0);

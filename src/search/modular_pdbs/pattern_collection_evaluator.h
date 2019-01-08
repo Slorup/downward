@@ -31,7 +31,7 @@ class PatternCollectionEvaluator {
     virtual bool evaluate(std::shared_ptr<ModularZeroOnePDBs> candidate_PC)=0;
     virtual void sample_states(std::shared_ptr<PatternCollectionInformation> current_result)=0;
     virtual void clear_dominated_heuristics(std::shared_ptr<PatternCollectionInformation> current_result,std::shared_ptr<PatternCollectionInformation> &new_result,
-	std::shared_ptr<ModularZeroOnePDBs> candidate_ptr) = 0;
+	std::shared_ptr<ModularZeroOnePDBs> candidate_ptr); 
     void set_threshold(const unsigned thres){
       threshold=thres;
     }
@@ -45,6 +45,7 @@ class PatternCollectionEvaluator {
       return num_samples;
     }
     virtual int get_reward() = 0;//How much better is than current heuristic in whichever metric we are using
+    virtual int calculate_max_additive_subset(PDBCollection max_subset,State current_state);
     //virtual void set_reward(const PatternCollectionContainer & pc, double reward) = 0;
 };
 

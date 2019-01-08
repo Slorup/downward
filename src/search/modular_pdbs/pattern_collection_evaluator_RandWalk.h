@@ -44,8 +44,6 @@ class PatterCollectionEvaluatorRandWalk : public PatternCollectionEvaluator {
 	explicit PatterCollectionEvaluatorRandWalk(const options::Options &options);
   virtual bool evaluate(std::shared_ptr<ModularZeroOnePDBs> candidate_PC) override;
   virtual void sample_states(std::shared_ptr<PatternCollectionInformation> current_result) override;
-  virtual void clear_dominated_heuristics(std::shared_ptr<PatternCollectionInformation> current_result,std::shared_ptr<PatternCollectionInformation> &new_result,
-      std::shared_ptr<ModularZeroOnePDBs> candidate_ptr) override;
   virtual int get_reward() override {return increased_states;};//So metric is improved_states
   //virtual void set_reward(const PatternCollectionContainer & pc, double reward) = 0;
 };

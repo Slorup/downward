@@ -250,7 +250,7 @@ namespace pdbs3 {
               PC.add_pc(pattern_int);
             }
             else{
-              cout<<"candidate_pattern size is empty!"<<endl;exit(1);
+              cerr<<"candidate_pattern size is empty!"<<endl;exit(1);
             }
 
             if(pattern_int.size()>0){

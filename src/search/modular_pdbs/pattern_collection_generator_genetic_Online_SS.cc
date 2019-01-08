@@ -928,7 +928,7 @@ void PatternCollectionGeneratorGeneticSS::evaluate(vector<double> &fitness_value
 		  for(SS_iter=SS_states_vector.begin();SS_iter!=SS_states_vector.end();){
 		      //cout<<"time:,"<<utils::g_timer<<",working on state:"<<sampled_states<<endl;
 		      if(unique_samples.find(SS_iter->id)==unique_samples.end()){
-			  cout<<"state not in unique_samples!!!"<<endl;exit(22);
+			  cerr<<"state not in unique_samples!!!"<<endl;exit(22);
 		      }
 
 		      if(sampled_states%1000==0){
@@ -1898,7 +1898,7 @@ void PatternCollectionGeneratorGeneticSS::bin_packing_no_rel_analysis() {
 	    //cout<<"\tprobe_best_only,initial_h:"<<initial_h<<endl;
 	}
 	else{
-	    cout<<"cant call probe_best_only if best_heuristic is empty,DEBUG ME!!!"<<endl;
+	    cerr<<"cant call probe_best_only if best_heuristic is empty,DEBUG ME!!!"<<endl;
 	    exit(0);
 	}	  
 	//cout<<"initial_GA_h:"<<current_heur->compute_heuristic(g_initial_state())<<endl;
@@ -2056,7 +2056,7 @@ void PatternCollectionGeneratorGeneticSS::bin_packing_no_rel_analysis() {
 	    vector<OperatorProxy> applicable_ops;
 	    map<size_t,pair<State,int> >::iterator it=unique_samples.find(s.get_id());
 	    if (it == unique_samples.end()){
-		cout<<"any retrieved state should be on the queue, FIX ME!!!!"<<endl;exit(0);
+		cerr<<"any retrieved state should be on the queue, FIX ME!!!!"<<endl;exit(0);
 	    }
 
 	    State* current_state=&(it->second.first);
@@ -2658,7 +2658,7 @@ void PatternCollectionGeneratorGeneticSS::bin_packing_no_rel_analysis() {
 	vector<OperatorProxy> applicable_ops; 
 	successor_generator->generate_applicable_ops(initial_state,applicable_ops); //count nodes generated
 	if(applicable_ops.size()==0){
-	  cout<<"Initial state is dead_end,probably unsolvable in preprocessor,";
+	  cerr<<"Initial state is dead_end,probably unsolvable in preprocessor,";
 	  exit(1);
 	}
 

@@ -83,7 +83,7 @@ shared_ptr<MaxAdditivePDBSubsets> compute_max_additive_subsets(const PDBCollecti
 shared_ptr<MaxAdditivePDBSubsets> compute_max_additive_subsets(const PDBCollection &pdbs) {
   //cout<<"calling compute_max_additive_subsets"<<endl;
   if(pdbs.size()==0){
-    cout<<"pdbs is empty,compute_max_additive_subsets impossible!!!"<<endl;
+    cerr<<"pdbs is empty,compute_max_additive_subsets impossible!!!"<<endl;
     exit(1);
   }
   //cout<<"pdbs:"<<pdbs.size()<<flush<<endl;

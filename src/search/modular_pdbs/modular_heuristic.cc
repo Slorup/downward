@@ -619,7 +619,7 @@ ModularHeuristic::ModularHeuristic(const Options &opts)
           }
           
           if (initial_h == numeric_limits<int>::max()) {
-            cout<<"initial state is dead_end according to PDB, problem unsolvable!!!"<<endl;
+            cerr<<"initial state is dead_end according to PDB, problem unsolvable!!!"<<endl;
             exit(1);
           }
           else if(new_initial_h>initial_h){//we always add the collection and re-sample if initial_h increased
