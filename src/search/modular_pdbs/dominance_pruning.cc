@@ -170,10 +170,18 @@ shared_ptr<MaxAdditivePDBSubsets> prune_dominated_subsets(
 shared_ptr<MaxAdditivePDBSubsets> prune_dominated_subsets_sample_space(
     const PDBCollection &pattern_databases,
     const MaxAdditivePDBSubsets &max_additive_subsets){
+      
+
     utils::Timer timer;
 
     shared_ptr<MaxAdditivePDBSubsets> nondominated_subsets =
         make_shared<MaxAdditivePDBSubsets>();
+  
+    if(unique_samples.size()<100){//no pruning if sample_space too small
+      nondominated_subsets=make_shared<MaxAdditivePDBSubsets>(max_additive_subsets);
+      return nondominated_subsets;
+    }
+
     cout<<"pattern databases:"<<pattern_databases.size()<<",max_additive_subsets:"<<max_additive_subsets.size()<<endl;
 
     

@@ -135,11 +135,16 @@ PatterCollectionEvaluatorRandWalk::PatterCollectionEvaluatorRandWalk(const optio
     //DEBUG_MSG(cout<<"adding to samples, unique_size prior:"<<unique_samples.size()<<",sampled_states:"<<samples.size()<<endl;);
     cout<<"adding to samples, unique_size prior:"<<unique_samples.size()<<",sampled_states:"<<samples.size()<<endl;
     
-    //Always clear unique_samples before sampling again
-    unique_samples.clear();
+    //Keeping lists of unique_states sampled, used for domination detecting
+    //both in canonical(prune_dominated_subsets_sample_space) and in clear_dominated_heuristics
+    //Which needs implementing as well for RandWalk, currently it does not do anything in RandWalk.
     for(auto state : samples){
       size_t state_id = state.hash();
-      unique_samples.insert(make_pair(state_id,make_pair(state,current_result->get_value(state))));
+      pair<map<size_t,pair<State,int> >::iterator,bool> ret;
+      ret=unique_samples.insert(make_pair(state_id,make_pair(state,current_result->get_value(state))));
+      if(!ret.second){//keep max h value stored when state was previously sampled.
+	ret.first->second.second=max(current_result->get_value(state),ret.first->second.second);
+      }
 	    
       //map<size_t,pair<State,int> >::iterator it=unique_samples.find(state_id);
       //cout<<"state_id:"<<state_id<<",value:"<<it->second.second<<endl;

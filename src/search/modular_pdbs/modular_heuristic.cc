@@ -92,12 +92,50 @@ ModularHeuristic::ModularHeuristic(const Options &opts)
        cerr<<"Both doing_local_search and only_gamer cannot be true at the same time"<<endl;
        exit(1);
       }
+
+      TaskProxy task_proxy(*task);
+      const State &initial_state = task_proxy.get_initial_state();
+      //need result here to store final PDB collection
+      result=make_shared<PatternCollectionInformation>(task, make_shared<PatternCollection>());
+      shared_ptr<ModularZeroOnePDBs> candidate_ptr;
+
+      //DEBUG BLOCK, testing recompute//
+//      PatternCollectionContainer PC;
+//      Pattern temp_pattern1{2,3,4,5,6,7,8,9,10,11,12,13,14,15,17,18,20,21,22,23,25,26,27,28,29,30,31,32,33,34,35,36,37,38,40,41,42,44,45,46,48,50,51,52,53,54,55,56,57,58,59,60,61,62,63,64,65,66,67,68,69,70,72,73,74,75,76,79,80,81,82,83,84,85,86,88,89,90,91,92,93,94,95,96,98,100,101,102,104,105,106,107,109,110,111,112,113,115,116,117,118,119,120,121,122,123,124,125,126,127,128,129,130,131,132,133,134,135,136,138,139,140,141,142,144,145,146,147,148,149,150,151,152,153,154,155,156,157,158,159,160,161,162,163,164,167,168,169,170,171,172,173,174,175,176,177,178,179,180,181,182,183,184,185,186,187,188,190,191,192,193,194,195,196,197,198,199,200,201,203,204,205,206,207,208,209,210,211,213,214,215,216,217,218,219,220,221,222,223,224,225,226,227,228,231,233,234,235,236,237,238,239,240,242,243,244,245,246,247,248,249,250,251,252,253,255,256,258,261,262,263,264,265,266,268};
+//      Pattern temp_pattern2{1,16,19,24,39,43,47,49,71,77,78,87,97,99,103,108,114,137,143,165,166,189,202,212,229,230,232,241,254,257,259,260,267};
+//      Pattern temp_pattern3{1,2,3,4,5,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,24,26,27,29,30,31,32,33,34,35,36,37,38,40,43,44,45,46,47,48,49,51,52,54,55,56,58,59,60,61,62,63,64,65,66,68,70,71,73,74,75,76,77,79,80,81,82,83,84,87,88,90,91,92,93,94,95,96,97,99,100,101,102,103,104,105,106,107,108,109,110,111,113,114,115,116,117,118,119,120,121,122,123,124,125,126,127,128,129,130,131,132,133,134,135,136,137,138,139,140,141,142,143,144,145,146,147,148,150,151,152,153,154,155,156,158,159,162,163,164,166,167,168,169,170,171,172,173,174,175,176,177,178,179,180,181,182,183,184,185,186,187,188,189,190,191,192,193,194,195,196,197,198,199,201,202,203,204,205,206,207,208,209,210,211,212,213,214,215,216,218,219,220,222,223,224,225,226,227,228,229,230,231,232,233,234,235,236,239,240,241,242,243,244,246,247,249,251,252,253,254,255,256,257,258,259,260,261,262,263,264,265,266,267,268};
+//      Pattern temp_pattern4{6,7,23,25,28,39,41,42,50,53,57,67,69,72,78,85,86,89,98,112,149,157,160,161,165,200,217,221,237,238,245,248,250};
+//      Pattern temp_pattern5{1,2,4,5,8,9,11,12,13,14,15,17,18,19,20,22,24,26,27,29,30,31,32,33,34,35,36,37,38,40,42,43,44,45,46,47,48,49,51,52,54,55,58,59,60,61,62,63,64,66,68,70,73,74,75,76,77,79,80,81,82,83,84,87,88,89,90,91,92,93,94,95,96,97,99,101,102,103,104,106,107,108,109,110,114,115,116,117,118,119,120,121,122,123,124,125,126,127,128,129,131,132,133,134,135,136,137,139,141,143,144,145,146,147,148,150,151,152,153,154,155,156,158,159,162,164,166,167,169,170,171,172,173,174,175,176,177,178,179,180,181,182,183,185,186,187,189,190,191,193,194,195,196,197,198,199,201,202,203,204,205,206,208,209,210,211,212,213,214,215,216,218,219,220,222,224,225,226,227,228,229,230,231,232,233,234,236,239,240,241,242,243,244,246,247,249,251,252,254,255,256,257,258,259,260,261,262,263,265,266,267};
+//      Pattern temp_pattern6{6,7,16,23,25,27,41,42,50,52,53,57,67,69,73,78,83,85,86,88,90,93,98,107,112,118,124,139,141,149,157,160,161,165,200,204,207,213,217,220,221,222,237,238,246,248,249,258,261,264,266};
+//
+//      PC.clear();PC.add_pc(temp_pattern1);PC.add_pc(temp_pattern2);
+//      candidate_ptr=make_shared<ModularZeroOnePDBs>(task_proxy, PC.get_PC(), *pdb_factory);
+//      cout<<"PC1:,initial h_value before terminate:"<<candidate_ptr->get_value(initial_state)<<flush<<endl;
+//      result->include_additive_pdbs(pdb_factory->terminate_creation(candidate_ptr->get_pattern_databases()));
+//      cout<<"PC1:,initial h_value after terminate:"<<candidate_ptr->get_value(initial_state)<<",result:"<<result->get_value(initial_state)<<flush<<endl;
+//
+//      PC.clear();PC.add_pc(temp_pattern3);PC.add_pc(temp_pattern4);
+//      candidate_ptr=make_shared<ModularZeroOnePDBs>(task_proxy, PC.get_PC(), *pdb_factory);
+//      cout<<"PC2:,initial h_value before terminate:"<<candidate_ptr->get_value(initial_state)<<flush<<endl;
+//      result->include_additive_pdbs(pdb_factory->terminate_creation(candidate_ptr->get_pattern_databases()));
+//      cout<<"PC2:,initial h_value after terminate:"<<candidate_ptr->get_value(initial_state)<<",result:"<<result->get_value(initial_state)<<flush<<endl;
+//      
+//      PC.clear();PC.add_pc(temp_pattern5);PC.add_pc(temp_pattern6);
+//      candidate_ptr=make_shared<ModularZeroOnePDBs>(task_proxy, PC.get_PC(), *pdb_factory);
+//      cout<<"PC3:,initial h_value before terminate:"<<candidate_ptr->get_value(initial_state)<<flush<<endl;
+//      result->include_additive_pdbs(pdb_factory->terminate_creation(candidate_ptr->get_pattern_databases()));
+//      cout<<"PC3:,initial h_value after terminate:"<<candidate_ptr->get_value(initial_state)<<",result:"<<result->get_value(initial_state)<<flush<<endl;
+//
+//      cout<<"time:"<<utils::g_timer()<<",initial_h before recompute:,"<<result->get_value(initial_state)<<endl;
+//      result->recompute_max_additive_subsets();
+//      cout<<"time:"<<utils::g_timer()<<",initial_h after recompute:,"<<result->get_value(initial_state)<<endl;
+//      exit(1);
+
+      //DEBUG BLOCK FINISHED
       
-
-
+      
       //unsigned num_goals_to_group=0;
       modular_heuristic_timer = new utils::CountdownTimer(modular_time_limit);
-      TaskProxy task_proxy(*task);
       int initial_h=0;
       int new_initial_h=0;
       int num_episodes=0;
@@ -114,9 +152,6 @@ ModularHeuristic::ModularHeuristic(const Options &opts)
       opts5.set<int>("packer_selection",2);
       PatternCollectionGeneratorGamer alternative_pattern_generator(opts2);
       int increase_level=0;
-      
-
-
       vector<pair<double,Pattern > > improving_patterns;
       //double best_average_h_value=0;//For Gamer-Style selection
       //1 means Random split into two patterns, 0 means CBP
@@ -213,12 +248,9 @@ ModularHeuristic::ModularHeuristic(const Options &opts)
       cout<<"after goals_choice"<<endl;
       pdb_max_size=initial_pdb_size;
       cout<<"initial_pdb_size:"<<initial_pdb_size<<endl;
-      //need result here to store final PDB collection
-      result=make_shared<PatternCollectionInformation>(task, make_shared<PatternCollection>());
     
       cout<<"initial pdb type:"<<pdb_factory->name()<<endl;
 
-      const State &initial_state = task_proxy.get_initial_state();
       //ModularZeroOnePDBs candidate(task_proxy, Initial_collection.get_PC(), *pdb_factory);
       //best_collection=Initial_collection;
       //generate sample states:
@@ -227,7 +259,7 @@ ModularHeuristic::ModularHeuristic(const Options &opts)
       pattern_generator->set_disjunctive_patterns(initial_disjunctive);
       pattern_generator->set_goals_to_add(initial_goals_to_group);
       
-      shared_ptr<ModularZeroOnePDBs> candidate_ptr;
+      //shared_ptr<ModularZeroOnePDBs> candidate_ptr;
       
       //PatternCollectionContainer initial_Gamer_Collection=alternative_pattern_generator.generate();
       //cout<<"Initial Gamer PDB:";initial_Gamer_Collection.print();
