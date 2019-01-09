@@ -209,6 +209,10 @@ ModularHeuristic::ModularHeuristic(const Options &opts)
 	  break;
 	}
       }
+      //Need to at least have one option!
+      if(max_size_step<4||UCB_sizes.size()<1){
+	UCB_sizes.insert_choice(log10(overall_problem_size)+1);
+      }
 
       /*UCB_Disjunctive_patterns[pow(10,8)]=binary_choice;
       UCB_Disjunctive_patterns[pow(10,9)]=binary_choice;
@@ -410,8 +414,8 @@ ModularHeuristic::ModularHeuristic(const Options &opts)
 	 }
         //First we decide whether to try improving existing pdbs or keep generating new ones
         //0 means no terminate, 1 means to try terminating the pdbs
-          
         if(unterminated_pdbs){
+	  //cout<<"unterminated_pdbs"<<endl;
           int initial_terminate_time=utils::g_timer();
           bool terminate_or_not=terminate_choice.make_choice();
           terminate_or_not=false;
@@ -544,7 +548,7 @@ ModularHeuristic::ModularHeuristic(const Options &opts)
 	  //Now getting next pdb size
 	  //cout<<"previos pdb_max_size:"<<pdb_max_size;
 	  pdb_max_size=pow(10.0,UCB_sizes.make_choice());
-	  //cout<<"pdb_max_size_chosen;"<<pdb_max_size<<endl;
+	  cout<<"pdb_max_size_chosen;"<<pdb_max_size<<endl;
 	  //We add a random amount to pdb_max_size if the max_step_size>1 so that 
 	  //we increase the diversity of patterns generated in big problems
 	  if(max_size_step>1){
@@ -684,6 +688,14 @@ ModularHeuristic::ModularHeuristic(const Options &opts)
 	    else{//do_local_search does sample_states
 	      pattern_evaluator->sample_states(result);
 	    }
+	    if(pdb_factory->is_solved()){
+	      cout<<"local_search found Solution, exiting"<<endl;
+	      if(doing_canonical_search){
+		canonical_pdbs=make_unique<CanonicalSymbolicPDBs>(result,false, 0, 0);//no need to prune anything, solution found
+	      }
+	      return;
+	    }
+
           }
           else{//OK,so lets check if candidate_PC is good enough to add to current collection
             if(pattern_evaluator->evaluate(candidate_ptr)){
@@ -959,6 +971,17 @@ bool ModularHeuristic::do_local_search (PatternCollectionContainer candidate_col
 	  continue;
 	}
 	candidate_ptr=make_shared<ModularZeroOnePDBs>(task_proxy, new_candidate_local_search.get_PC(), *pdb_factory);
+	//Always a chance it might solve the problem
+	if(pdb_factory->is_solved()){
+	  cout<<"local_search,Solution found while generating PDB candidate of type:"<<pdb_factory->name()<<", adding PDB and exiting generation at time"<<utils::g_timer()<<endl;
+	  result->include_additive_pdbs(pdb_factory->terminate_creation(candidate_ptr->get_pattern_databases()));
+	  result->set_dead_ends(pdb_factory->get_dead_ends());
+	  if(doing_canonical_search){
+	    canonical_pdbs=make_unique<CanonicalSymbolicPDBs>(result,false, 0, 0);//no need to prune anything, solution found
+	  }
+	  return true;
+
+	}
 	int post_local_search_h=candidate_ptr->get_value(initial_state);
 	if(post_local_search_h>prev_local_search_h){
 	  cout<<"\t\ttime:"<<utils::g_timer()<<",local_GA_improv_found,new initial_h value after local search:,"<<post_local_search_h<<",prev_h_val:,"<<prev_local_search_h<<endl;

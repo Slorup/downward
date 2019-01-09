@@ -58,6 +58,9 @@ class Learning {
   double total_cost=0;
 
   public:
+  int size(){
+    return choices.size();
+  }
   void update_scores(){//Using UCB1 to update scores, need to call after each selection to update scores
     //for next selection
     for (auto& i : choices){
