@@ -176,9 +176,8 @@ namespace pdbs {
 	}
     }
 
-    int PatternDatabaseSymbolicOnline::compute_heuristic(const State & /*state*/) const {
-	//return 0;
-	return symbolic_pdb->get_hvalue_unseen_states();
+    int PatternDatabaseSymbolicOnline::compute_heuristic(const State & state) const {
+        return get_value(state);
     }
 
     int PatternDatabaseSymbolicOnline::get_goal_cost(const State & state) const {

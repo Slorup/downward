@@ -42,7 +42,7 @@ public:
 
 
 class SearchInfo {
-
+    
     struct LocalStateIDSemanticHash {
         const std::vector<int> &state_data_pool;
 	int numvars;
@@ -120,7 +120,7 @@ SearchInfo(int num_pdb_vars_, int num_allocated_states) :
 	return state_info[num_state];
     }
 
-    void get_state_values(LocalStateID id, std::vector<int> & values) {
+    void get_state_values(LocalStateID id, std::vector<int> & values) const {
 	for(int i = 0; i < num_pdb_vars; ++i) {
 	    values[i] = data_pool[id+i];
 	}
@@ -160,7 +160,7 @@ public:
 			      const TaskProxy &task_proxy, 
 			      const Pattern &pattern,
 			      const std::vector<int> &operator_costs,
-			      std::shared_ptr<extra_tasks::PDBTask> pdb_task,			    
+			      std::shared_ptr<extra_tasks::PDBTask> pdb_task, 
 			      std::shared_ptr<symbolic::SymVariables> vars, 
 			      std::shared_ptr<symbolic::SymStateSpaceManager> manager, 
 			      const symbolic::SymParamsSearch & params, 

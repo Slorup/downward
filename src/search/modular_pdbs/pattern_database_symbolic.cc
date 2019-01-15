@@ -143,15 +143,11 @@ namespace pdbs3 {
 	return (abs_cost == -1 ? numeric_limits<int>::max() : abs_cost);    
     }
 
-    int PatternDatabaseSymbolic::get_goal_cost(const vector<int> & state_pattern, const State & state) const {
+    std::pair<bool, int> PatternDatabaseSymbolic::get_goal_cost(const vector<int> & state_pattern, const State & state) const {
 	assert(std::includes(pattern.begin(), pattern.end(), state_pattern.begin(), state_pattern.end()));
 	auto bin = vars->getBinaryDescription(state_pattern, state.get_values());
 	int value = get_value (bin);
-	if(is_finished() || value < hvalue_unseen_states) {
-	    return value;
-	}else {
-	    return -1;
-	}
+        return make_pair(is_finished() || value < hvalue_unseen_states, value);
     }
 
     double PatternDatabaseSymbolic::compute_mean_finite_h() const {

@@ -92,7 +92,7 @@ class PatternDatabaseSymbolic : public PatternDatabaseInterface {
 	return hvalue_unseen_states;
     }
 
-    int get_goal_cost(const std::vector<int> &  pattern, const State & state) const;
+    std::pair<bool, int> get_goal_cost(const std::vector<int> &  pattern, const State & state) const;
 
     /*
       Returns the average h-value over all states, where dead-ends are

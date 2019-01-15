@@ -83,7 +83,7 @@ if(PLUGIN_SYMBOLIC_ENABLED)
 	SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/cudd-3.0.0
 	CONFIGURE_COMMAND aclocal && automake --add-missing && autoconf && ${CMAKE_CURRENT_SOURCE_DIR}/cudd-3.0.0/configure --enable-obj --build=i686-pc-linux-gnu "CFLAGS=-m32 -Wall -Wextra -g -O3" "CXXFLAGS=-m32 -Wall -Wextra -std=c++0x -g -O3" "LDFLAGS=-m32" && make clean
 	BUILD_COMMAND make
-	#INSTALL_COMMAND ls
+	INSTALL_COMMAND ls
 	BUILD_IN_SOURCE 1
       )
     elseif(${CMAKE_SIZEOF_VOID_P} EQUAL 8)
@@ -93,6 +93,7 @@ if(PLUGIN_SYMBOLIC_ENABLED)
 	PREFIX ${CMAKE_CURRENT_SOURCE_DIR}/cudd-3.0.0
 	SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/cudd-3.0.0
 	CONFIGURE_COMMAND aclocal && automake --add-missing && autoconf && ${CMAKE_CURRENT_SOURCE_DIR}/cudd-3.0.0/configure --enable-obj --build=i686-pc-linux-gnu "CFLAGS=-m64 -Wall -Wextra -g -O3" "CXXFLAGS=-m64 -Wall -Wextra -std=c++0x -g -O3" "LDFLAGS=-m64" && make clean
+        INSTALL_COMMAND ls
 	BUILD_IN_SOURCE 1
 	)
     else()

@@ -475,7 +475,7 @@ fast_downward_plugin(
         pdbs/pattern_database.cc
         pdbs/pattern_database_interface.cc
         pdbs/pattern_database_online.cc
-        pdbs/pattern_database_symbolic_online.cc
+        #pdbs/pattern_database_symbolic_online.cc
         pdbs/pattern_collection_generator_combo.cc
         #        pdbs/pattern_collection_generator_genetic.cc
 	#pdbs/pattern_collection_generator_genetic_Online_SS.cc
@@ -489,7 +489,7 @@ fast_downward_plugin(
 	pdbs/pdb_factory.cc
 	pdbs/pdb_factory_explicit.cc
 	pdbs/pdb_factory_online.cc
-	pdbs/pdb_factory_symbolic_online.cc
+	#pdbs/pdb_factory_symbolic_online.cc
         pdbs/pdb_heuristic.cc
 	pdbs/pdb_heuristic_online.cc
         pdbs/types.cc
@@ -517,6 +517,7 @@ fast_downward_plugin(
 		modular_pdbs/pattern_collection_generator_RBP.cc
 		modular_pdbs/pattern_collection_generator_GamerStyle.cc
 		modular_pdbs/pdb_factory_symbolic.cc
+                modular_pdbs/pdb_factory_symbolic_online.cc
 		modular_pdbs/max_cliques.cc
 		modular_pdbs/pattern_collection_information.cc
 		modular_pdbs/types.cc
@@ -530,6 +531,7 @@ fast_downward_plugin(
 		modular_pdbs/pattern_collection_local_search.cc
 		modular_pdbs/pattern_collection_local_search_GamerStyle.cc
 		modular_pdbs/pattern_collection_local_search_GA.cc
+                modular_pdbs/pattern_database_symbolic_online.cc
 		#	DEPENDS BinPacking
 # modular_pdbs/pattern_collection_generator_genetic_Online_SS.cc
 )
