@@ -29,6 +29,7 @@ namespace pdbs3 {
 //class PDBFactory;
 //class PatternCollectionContainer;
 class PatternCollectionLocalSearchGamerStyle : public PatternCollectionLocalSearch {
+  Pattern current_pattern;
   int time_limit=100;
   int last_var=0;
   std::shared_ptr<TaskProxy> task_proxy;

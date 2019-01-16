@@ -8,6 +8,7 @@
 #include "pattern_collection_evaluator.h"
 #include "pattern_collection_local_search.h"
 #include "canonical_symbolic_pdbs.h"
+#include "learning.h"
 //#include "pdb_factory.h"
 
 class GlobalState;
@@ -42,16 +43,34 @@ class ModularHeuristic : public Heuristic {
     bool doing_canonical_search=true;
     std::shared_ptr<PDBFactory> pdb_factory;
     std::shared_ptr<PatternCollectionInformation> result;
-    utils::CountdownTimer *modular_heuristic_timer;
+    std::unique_ptr<utils::CountdownTimer> modular_heuristic_timer;
     enum{GAMER_LOCAL_SEARCH=0,GA_LOCAL_SEARCH=1,IPDB_LOCAL_SEARCH=2};
     enum{GAMER_GENERATOR=0,RBP_CBP_GENERATOR=1};
     enum{ALWAYS_CBP=0,ALWAYS_RBP=1,ALWAYS_UCB=2,ALWAYS_50_50=3};
     std::vector<std::shared_ptr<MaxAdditivePDBSubsets> > cleaned_best_pdb_collections; //Store PDB Collections for clean check
     float clear_dominated_in_situ_spent_time=0;
     std::unique_ptr<CanonicalSymbolicPDBs> canonical_pdbs;
+    bool generator_type=true;
+    int initial_h=0;
+    int new_initial_h=0;
+    int num_episodes=0;
+    int PC_counter=0;
+    double pdb_max_size=0;
+    std::vector<std::shared_ptr<ModularZeroOnePDBs> > pdb_ptr_collection;
+    int increase_level=0;
+    std::vector<std::pair<double,Pattern > > improving_patterns;
+    Learning UCB_generator, binary_choice, UCB_RBP_vs_CBP, terminate_choice,UCB_local_search, UCB_sizes, goals_choice;
+    bool unterminated_pdbs=false;
+    bool check_to_terminate=false;
+    std::shared_ptr<ModularZeroOnePDBs> candidate_ptr;
+    PatternCollectionContainer gamer_current_pattern, new_candidate_Gamer;
+    PatternCollectionContainer selected_collection_Gamer;
+    double max_size_step=0;
+    PatternCollectionContainer candidate_collection;
 
 protected:
     virtual int compute_heuristic(const GlobalState &global_state) override;
+    virtual bool find_improvements(int time_limit) override;
     //virtual void initialize() override;
     /* TODO: we want to get rid of compute_heuristic(const GlobalState &state)
        and change the interface to only use State objects. While we are doing
