@@ -100,7 +100,7 @@ public:
         return heuristic_cache[state].dirty;
     }
     virtual int count_pdbs() {return 1;}//1 in case no pdb, this is used to calculate avg_eval_time per heuristic 
-    virtual int recompute_heuristic(GlobalState& /*state*/) const {return 0;};
+    virtual int recompute_heuristic(const GlobalState& /*state*/) {return 0;};
     virtual bool find_improvements(int ) {return false;};
 };
 

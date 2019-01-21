@@ -64,7 +64,7 @@ void Heuristic::add_options_to_parser(OptionParser &parser) {
         "Optional task transformation for the heuristic. "
         "Currently only adapt_costs is available.",
         OptionParser::NONE);
-    parser.add_option<bool>("cache_estimates", "cache heuristic estimates", "true");
+    parser.add_option<bool>("cache_estimates", "cache heuristic estimates", "false");
 }
 
 // This solution to get default values seems nonoptimal.

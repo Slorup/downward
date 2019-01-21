@@ -35,6 +35,11 @@ class EagerSearchInterleaved : public SearchEngine {
     void update_f_value_statistics(const SearchNode &node);
     void reward_progress();
     void print_checkpoint_line(int g) const;
+    int max_search_time=5;
+    int start_time=0;
+    int improvement_time=0;
+    bool improvement_found=false;
+    std::vector<int> last_key_removed;
 
 protected:
     virtual void initialize() override;

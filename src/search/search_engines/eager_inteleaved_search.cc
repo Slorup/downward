@@ -12,6 +12,8 @@
 
 #include "../open_lists/open_list_factory.h"
 
+#include "../utils/timer.h"
+
 #include <cassert>
 #include <cstdlib>
 #include <memory>
@@ -82,6 +84,7 @@ void EagerSearchInterleaved::initialize() {
     }
 
     print_initial_h_values(eval_context);
+    start_time=utils::g_timer();
 }
 
 void EagerSearchInterleaved::print_checkpoint_line(int g) const {
@@ -97,6 +100,16 @@ void EagerSearchInterleaved::print_statistics() const {
 }
 
 SearchStatus EagerSearchInterleaved::step() {
+  if(utils::g_timer()-start_time-improvement_time>max_search_time){
+    cout<<"Interleaved_search choosing to search for heuristic improvement,search_time:,"<<utils::g_timer()-start_time-improvement_time<<",max_search_time:,"<<max_search_time<<",improvement_time_till_now:"<<improvement_time;
+    max_search_time*=2;
+    cout<<",new max_search_time:"<<max_search_time<<endl;
+    int start_improvement_time=utils::g_timer();
+    for (Heuristic *heuristic : heuristics) {
+      improvement_found=heuristic->find_improvements(max_search_time);
+    }
+    improvement_time+=utils::g_timer()-start_improvement_time;
+  }
     pair<SearchNode, bool> n = fetch_next_node();
     if (!n.second) {
         return FAILED;
@@ -115,43 +128,54 @@ SearchStatus EagerSearchInterleaved::step() {
     //This makes sense when using symbolic online PDBs where a hash table is kept
     //of any values re-evaluated.
     
-    int add_to_h=0;
-    for (Heuristic *heuristic : heuristics) {
-      //CHECK FOR UPDATED VALUE IN HASH TABLE
-      //Commented until it is implemented.
-      //is_there_improvement should
-      //1) check if there has been any improvements at all
-      //2) check hash table if state is affected by change in PDBs
-      //3) Hash table should store improvement upon previous value
-      //   so that we do not need to re-calculate all PDBs, only the improved ones.
-      
-      int partial_h=heuristic->recompute_heuristic(s);
-      if(partial_h==EvaluationResult::INFTY){//DEAD_END
-	    return IN_PROGRESS;
-      }
-      else{
-	add_to_h+=partial_h;
-      }
+    //NOTE: THIS CODE ONLY WORKS FOR A SINGLE HEURISTIC AT THE MOMENT!!!!
+    if(improvement_found){
+	//CHECK FOR UPDATED VALUE IN HASH TABLE
+	//Commented until it is implemented.
+	//is_there_improvement should
+	//1) check if there has been any improvements at all
+	//2) check hash table if state is affected by change in PDBs
+	//3) Hash table should store improvement upon previous value
+	//   so that we do not need to re-calculate all PDBs, only the improved ones.
+	//int new_val2=heuristics[0]->recompute_heuristic(s);
+
+	EvaluationContext eval_context(
+	    s, node.get_g(), false, &statistics);
+        //ONLY WORKS FOR ONE HEURISTIC!!!!        
+	int new_val=eval_context.get_result(heuristics[0]).get_h_value();
+	if (open_list->is_dead_end(eval_context)) {
+	  node.mark_as_dead_end();
+	      return IN_PROGRESS;
+	}
+	
+	//Note: h values are stored in the open_list so nothing has 
+	//changed regarding search_space class itself, no reopen
+	//if(add_to_h>0)
+	if(new_val+node.get_g()>last_key_removed[0]){
+	  //int new_val2=heuristics[0]->recompute_heuristic(s);
+	  //int new_f_val2 = eval_context.get_heuristic_value(f_evaluator);
+	  //cout<<"new_val:"<<new_val<<",new_val2:,"<<new_val2<<",old_val:,"<<old_val<<",g:"<<node.get_g()<<",REINSETING NODE, new f_value:"<<new_val+node.get_g()<<",new_f_val2:"<<new_f_val2<<",old_f_value:"<<statistics.get_lastjump_f_value()<<endl;
+	  open_list->insert(eval_context, s.get_id());
+	  return IN_PROGRESS;
+	}
+	else if(new_val+node.get_g()<last_key_removed[0]){
+	  int new_val2=heuristics[0]->recompute_heuristic(s);
+	  cerr<<"new_val2:,"<<new_val2<<",old_val:,"<<last_key_removed[0]<<",new_val:,"<<new_val<<",g:"<<node.get_g()<<", how can improving a heuristic result in a lower h!!!, PLS DEBUG ME"<<endl;exit(1);
+	}
+	//else if(eval_context.get_heuristic_value(f_evaluator)==old_val){
+	//  cout<<"nlast_key_removed[0] change, new_val:,"<<new_val<<",old_val:,"<<old_val<<endl;
+	//}
     }
-       
+
+  
+
     //This used to be done by fetch next_node
     //but only needs doing if node is not 
     //re-inserted due to h improvement. 
     node.close();
     update_f_value_statistics(node);
     statistics.inc_expanded();
-  
-    //Note: h values are stored in the open_list so nothing has 
-    //changed regarding search_space class itself, no reopen
-    //if(add_to_h>0)
-    if(add_to_h>0){
-      EvaluationContext eval_context(
-	  node.get_state(), node.get_g(), false, &statistics);
-      int f_value = eval_context.get_heuristic_value(f_evaluator);
-      cout<<"\t REINSETING NODE, new f_value:"<<f_value<<",old_f_value:"<<statistics.get_lastjump_f_value()<<endl;
-      open_list->insert(eval_context, s.get_id());
-      return IN_PROGRESS;
-    }
+    
     //Back to normal a_star
 
 
@@ -295,9 +319,10 @@ pair<SearchNode, bool> EagerSearchInterleaved::fetch_next_node() {
             SearchNode dummy_node = search_space.get_node(initial_state);
             return make_pair(dummy_node, false);
         }
-        vector<int> last_key_removed;
+        //StateID id = open_list->remove_min(
+        //    use_multi_path_dependence ? &last_key_removed : nullptr);
         StateID id = open_list->remove_min(
-            use_multi_path_dependence ? &last_key_removed : nullptr);
+            &last_key_removed);//Need last_f_value!
         // TODO is there a way we can avoid creating the state here and then
         //      recreate it outside of this function with node.get_state()?
         //      One way would be to store GlobalState objects inside SearchNodes

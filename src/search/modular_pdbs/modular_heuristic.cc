@@ -367,45 +367,10 @@ ModularHeuristic::ModularHeuristic(const Options &opts)
 
 
 
-      //Now terminate creation of unfinished selected PDBs
-      float start_time=utils::g_timer();
-      auto pdb_collection=result->get_pdbs(); 
-      for(auto i : boost::adaptors::reverse(*pdb_collection)){//better to start terminating the best PDBs
-        //usually the last added, in case we run out of time
-        if(i){
-          int temp_h=i->get_value(initial_state);
-          cout<<"time:"<<utils::g_timer()<<",Initial pdb h value before Terminate:"<<temp_h<<endl;
-          i->terminate_creation(60000,20000,2000000,memory_limit);
-          temp_h=i->get_value(initial_state);
-          cout<<"time:"<<utils::g_timer()<<",Initial pdb h value after Terminate:"<<temp_h<<endl;
-        }
-        if((utils::g_timer()-start_time)>200.0){
-          cout<<"time:"<<utils::g_timer()<<",terminate_time:"<<utils::g_timer()-start_time<<",Interrupting terminate because it is taking too long"<<endl;
-          break;
-        }
-      }
-	    
-      float terminate_time=utils::g_timer()-start_time;
-      cout<<"time:"<<utils::g_timer()<<",before_recompute_max_additive_subset,Testing modular_heuristic constructor finished,episodes:"<<num_episodes<<",PC created:"<<PC_counter<<",final_pdbs:"<<result->get_patterns()->size()<<",terminate_time:"<<terminate_time<<endl;
       cout<<"CBP_counter:,"<<CBP_counter<<",RBP_counter:,"<<RBP_counter<<",Disj_counter:,"<<Disj_counter<<",Not_Disj_counter:"<<Not_Disj_counter<<endl;
 
       
 
-      if(doing_canonical_search){
-	//Now recalculate additive subsets
-	cout<<"time:"<<utils::g_timer()<<",initial_h before recompute:,"<<result->get_value(initial_state)<<endl;
-	result->recompute_max_additive_subsets();
-	      
-	cout<<"time:"<<utils::g_timer()<<",after recompute_max_additive_subset,Testing modular_heuristic constructor finished,episodes:"<<num_episodes<<",PC created:"<<PC_counter<<",final_pdbs:"<<result->get_patterns()->size()<<",terminate_time:"<<terminate_time<<endl;
-	cout<<"time:"<<utils::g_timer()<<",initial_h after recompute:,"<<result->get_value(initial_state)<<endl;
-      
-      //Now make canonical_symbolic_pdbs
-      //CanonicalSymbolicPDBs canonical_pdbs (PatternCollectionInformation & info,bool dominance_pruning, int compress_nodes, int compress_time);
-	cout<<"time:"<<utils::g_timer()<<",initial_h before canonical_pdbs:,"<<result->get_value(initial_state)<<endl;
-	canonical_pdbs=make_unique<CanonicalSymbolicPDBs>(result,true, 0, 0);
-	cout<<"time:"<<utils::g_timer()<<",initial_h after canonical_pdbs:,"<<canonical_pdbs->get_value(initial_state)<<endl;
-	cout<<"canonical_pdbs_count:"<<canonical_pdbs->count_pdbs()<<endl;
-      }
     }
 
 int ModularHeuristic::compute_heuristic(const GlobalState &global_state) {
@@ -422,6 +387,7 @@ int ModularHeuristic::compute_heuristic(const GlobalState &global_state) {
     }
 
     if (h == numeric_limits<int>::max()) {
+      cout<<"dead_end found"<<endl;
         return DEAD_END;
     } else {
         return h;
@@ -603,15 +569,20 @@ bool ModularHeuristic::do_local_search (PatternCollectionContainer candidate_col
 
     return local_improv_found;
   }
+
+int ModularHeuristic::recompute_heuristic(const GlobalState& current_state){
+  return compute_heuristic(current_state);
+}
 //This is to continue search for better patterns
 //Usually called when we have spent too long without finding solution 
 //To start with we pass search_time as limit to improvement_found
 bool ModularHeuristic::find_improvements(int time_limit) {
+  cout<<"helo find_impovements,time_limit:,"<<time_limit<<flush<<endl;
   modular_heuristic_timer =make_unique<utils::CountdownTimer>(time_limit);
-  cout<<"helo find_impovements,time_limit:,"<<time_limit<<endl;
       const State &initial_state = task_proxy.get_initial_state();
       bool improvement_found=false;
       while(!modular_heuristic_timer->is_expired()){
+	cout<<"find_improvements,remaining_time:"<<modular_heuristic_timer->get_remaining_time()<<",elapsed_time:,"<<modular_heuristic_timer->get_elapsed_time()<<endl;
 	//cout<<"\tcurrent_h_modular:"<<result->get_value(initial_state)<<endl;
 	if(always_CBP_or_RBP_or_UCB==ALWAYS_UCB){
 	  generator_type=UCB_RBP_vs_CBP.make_choice();
@@ -783,6 +754,13 @@ bool ModularHeuristic::find_improvements(int time_limit) {
 	      }
 	    }
             candidate_ptr=make_shared<ModularZeroOnePDBs>(task_proxy, new_candidate_Gamer.get_PC(), *pdb_factory);
+	    if(candidate_ptr->is_finished()){
+	      cout<<"last Gamer_PDB is finished"<<endl;
+	    }
+	    else{
+	      cout<<"last Gamer_PDB is unfinished"<<endl;
+	    }
+	      
 	}
 	else{
 	  DEBUG_COMP(cout<<"time:"<<utils::g_timer()<<",generator_choice:"<<generator_choice<<flush<<endl;);
@@ -879,11 +857,11 @@ bool ModularHeuristic::find_improvements(int time_limit) {
 	      pattern_local_search->reset_forbidden_vars();
 	      //RECOMPUTE_MAX_ADDITIVE_SUBSETS IS BUGGY
 	      //SO USE clear_dominated_heuristics_in_situ_sampling instead
-	      //if(only_gamer){//recompute PDBs, very likely new collection fully dominates previous ones
-		//cout<<"time:"<<utils::g_timer<<",calling recompute_max_additive_subsets"<<endl;
-		//result->recompute_max_additive_subsets();
-		//cout<<"time:"<<utils::g_timer<<",after recompute_max_additive_subsets"<<endl;
-	      //}
+	      if(only_gamer){//recompute PDBs, very likely new collection fully dominates previous ones
+		cout<<"time:"<<utils::g_timer<<",calling recompute_max_additive_subsets"<<endl;
+		result->recompute_max_additive_subsets();
+		cout<<"time:"<<utils::g_timer<<",after recompute_max_additive_subsets"<<endl;
+	      }
 	    }
             //int temp_initial_h=candidate_ptr->get_value(initial_state);
             //cout<<"time:"<<utils::g_timer()<<",Initial h value before terminate:"<<temp_initial_h<<endl;
@@ -1030,6 +1008,46 @@ bool ModularHeuristic::find_improvements(int time_limit) {
                 }
               }
           }
+      }
+      
+	 
+      //Now terminate creation of unfinished selected PDBs
+      float start_time=utils::g_timer();
+      auto pdb_collection=result->get_pdbs(); 
+      for(auto i : boost::adaptors::reverse(*pdb_collection)){//better to start terminating the best PDBs
+        //usually the last added, in case we run out of time
+        if(i){
+          int temp_h=i->get_value(initial_state);
+	  if(!i->is_finished()){//looking for first unfinished pdb
+	    cout<<"pdb unterminated,time:"<<utils::g_timer()<<",Initial pdb h value before Terminate:"<<temp_h<<endl;
+	    i->terminate_creation(60000,20000,2000000,memory_limit);
+	    temp_h=i->get_value(initial_state);
+	    cout<<"time:"<<utils::g_timer()<<",Initial pdb h value after Terminate:"<<temp_h<<endl;
+	  }
+        }
+        if((utils::g_timer()-start_time)>200.0){
+          cout<<"time:"<<utils::g_timer()<<",terminate_time:"<<utils::g_timer()-start_time<<",Interrupting terminate because it is taking too long"<<endl;
+          break;
+        }
+      }
+	    
+      float terminate_time=utils::g_timer()-start_time;
+      cout<<"time:"<<utils::g_timer()<<",before_recompute_max_additive_subset,Testing modular_heuristic constructor finished,episodes:"<<num_episodes<<",PC created:"<<PC_counter<<",final_pdbs:"<<result->get_patterns()->size()<<",terminate_time:"<<terminate_time<<endl;
+
+      if(doing_canonical_search){
+	//Now recalculate additive subsets
+	cout<<"time:"<<utils::g_timer()<<",initial_h before recompute:,"<<result->get_value(initial_state)<<endl;
+	result->recompute_max_additive_subsets();
+	      
+	cout<<"time:"<<utils::g_timer()<<",after recompute_max_additive_subset,Testing modular_heuristic constructor finished,episodes:"<<num_episodes<<",PC created:"<<PC_counter<<",final_pdbs:"<<result->get_patterns()->size()<<endl;
+	cout<<"time:"<<utils::g_timer()<<",initial_h after recompute:,"<<result->get_value(initial_state)<<endl;
+      
+      //Now make canonical_symbolic_pdbs
+      //CanonicalSymbolicPDBs canonical_pdbs (PatternCollectionInformation & info,bool dominance_pruning, int compress_nodes, int compress_time);
+	cout<<"time:"<<utils::g_timer()<<",initial_h before canonical_pdbs:,"<<result->get_value(initial_state)<<endl;
+	canonical_pdbs=make_unique<CanonicalSymbolicPDBs>(result,true, 0, 0);
+	cout<<"time:"<<utils::g_timer()<<",initial_h after canonical_pdbs:,"<<canonical_pdbs->get_value(initial_state)<<endl;
+	cout<<"canonical_pdbs_count:"<<canonical_pdbs->count_pdbs()<<endl;
       }
       return improvement_found;
 }

@@ -92,6 +92,7 @@ public:
     void clear_dominated_heuristics_in_situ_sampling(std::shared_ptr<ModularZeroOnePDBs> candidate_ptr);
     virtual ~ModularHeuristic() override = default;
     bool do_local_search (PatternCollectionContainer old_PC);
+    virtual int recompute_heuristic(const GlobalState& current_state) override; 
 };
 }
 
