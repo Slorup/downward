@@ -142,17 +142,19 @@ SearchStatus EagerSearchInterleaved::step() {
 	EvaluationContext eval_context(
 	    s, node.get_g(), false, &statistics);
         //ONLY WORKS FOR ONE HEURISTIC!!!!        
-	int new_val=eval_context.get_result(heuristics[0]).get_h_value();
 	if (open_list->is_dead_end(eval_context)) {
 	  node.mark_as_dead_end();
 	      return IN_PROGRESS;
 	}
+	int new_val=eval_context.get_result(heuristics[0]).get_h_value();
 	
 	//Note: h values are stored in the open_list so nothing has 
 	//changed regarding search_space class itself, no reopen
-	//if(add_to_h>0)
+	//  int new_val2=heuristics[0]->recompute_heuristic(s);
+	//  if(new_val2!=new_val){
+	//    cerr<<"new_val2!=new_val!!!"<<endl;exit(1);
+	//  }
 	if(new_val+node.get_g()>last_key_removed[0]){
-	  //int new_val2=heuristics[0]->recompute_heuristic(s);
 	  //int new_f_val2 = eval_context.get_heuristic_value(f_evaluator);
 	  //cout<<"new_val:"<<new_val<<",new_val2:,"<<new_val2<<",old_val:,"<<old_val<<",g:"<<node.get_g()<<",REINSETING NODE, new f_value:"<<new_val+node.get_g()<<",new_f_val2:"<<new_f_val2<<",old_f_value:"<<statistics.get_lastjump_f_value()<<endl;
 	  open_list->insert(eval_context, s.get_id());

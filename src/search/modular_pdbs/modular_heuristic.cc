@@ -355,6 +355,10 @@ ModularHeuristic::ModularHeuristic(const Options &opts)
 	cout<<"first pdb_max_size:"<<pattern_generator->get_pdb_max_size()<<endl;
       }
       
+      if(modular_heuristic_timer->is_expired()){
+	return;
+      }
+
       
       
       //bool terminate_or_not=true;
@@ -387,7 +391,6 @@ int ModularHeuristic::compute_heuristic(const GlobalState &global_state) {
     }
 
     if (h == numeric_limits<int>::max()) {
-      cout<<"dead_end found"<<endl;
         return DEAD_END;
     } else {
         return h;
