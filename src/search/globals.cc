@@ -25,6 +25,7 @@
 #include <string>
 #include <vector>
 #include <map>
+#include "state_registry.h"
 
 using namespace std;
 using utils::ExitCode;
@@ -395,3 +396,5 @@ utils::Log g_log;
 //32bitsfloat memory_limit=2000;//MB//,also need changes in the PDB individual limits, e.g. pdb_factory_symbolic.cc!
 float memory_limit=2000;//MB//,also need changes in the PDB individual limits, e.g. pdb_factory_symbolic.cc!
 double overall_pdb_gen_time=0;
+shared_ptr<vector<StateID> > states_loaded_from_open_list;//So we can access from pattern_collection_evaluator_open_list
+StateRegistry *g_state_registry;

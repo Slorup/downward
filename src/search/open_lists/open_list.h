@@ -3,12 +3,20 @@
 
 #include <set>
 #include <vector>
+#include <typeinfo>
+#include <cxxabi.h>
+#define quote(x) #x
+
+
+
 
 #include "../evaluation_context.h"
 
 class GlobalOperator;
 class Heuristic;
 class StateID;
+class EvaluationContext;
+
 
 
 
@@ -60,9 +68,17 @@ public:
       element there.
     */
     virtual Entry remove_min(std::vector<int> *key = 0) = 0;
+    virtual void load_states(int /*max_number*/, std::shared_ptr<std::vector<Entry> > /*state_list*/ ){
+      int status;
+      char * demangled = abi::__cxa_demangle(typeid(OpenList).name(),0,0,&status);
+      std::cout<<demangled<<"\t"<< quote(A) <<"\n";
+      free(demangled);
+      std::cerr<<"cannot call load_states without instantiating it!!!"<<std::endl;exit(1);
+    }; 
 
     // Return true if the open list is empty.
     virtual bool empty() const = 0;
+    
 
     /*
       Remove all elements from the open list.

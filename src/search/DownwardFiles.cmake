@@ -505,6 +505,7 @@ fast_downward_plugin(
   	SOURCES
 		modular_pdbs/canonical_symbolic_pdbs.cc
   		modular_pdbs/dominance_pruning.cc
+		modular_pdbs/pattern_collection_evaluator_OpenList.cc
   		modular_pdbs/pattern_collection_evaluator_RandWalk.cc
 		modular_pdbs/pattern_collection_evaluator_SS.cc
   		#modular_pdbs/pattern_database_online.cc

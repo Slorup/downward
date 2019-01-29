@@ -44,6 +44,7 @@ public:
         EvaluationContext &eval_context) const override;
     virtual bool is_reliable_dead_end(
         EvaluationContext &eval_context) const override;
+    virtual void load_states(int max_number, std::shared_ptr<vector<Entry> > state_list );
 };
 
 
@@ -82,6 +83,27 @@ Entry BucketOpenList<Entry>::remove_min(vector<int> *key) {
     Entry result = buckets[lowest_bucket].front();
     buckets[lowest_bucket].pop_front();
     return result;
+}
+template<class Entry>
+void BucketOpenList<Entry>::load_states(int max_number, std::shared_ptr<vector<Entry> > state_list ){
+  size_t states_to_collect=min(max_number,size);
+  if(states_to_collect<1){
+    cerr<<"can't call load_states from open_list when there are no states to collect!!"<<endl;exit(1);
+  }
+  states_loaded_from_open_list.reset();
+  cout<<"startes_to_collect:,"<<states_to_collect<<",states_in_open_list:,"<<size<<endl;
+  int counter=lowest_bucket;
+  for(auto it1=buckets.begin();it1!=buckets.end();it1++){
+    for(auto it2=it1->begin();it2!=it1->end();it2++){
+      state_list->push_back(it1->front());
+      cout<<"\tcollected state,f=,"<<counter<<endl;
+      if(state_list->size()>states_to_collect){
+	exit(1);
+	return;
+      }
+    }
+    counter++;
+  }
 }
 
 template<class Entry>

@@ -22,7 +22,7 @@ class EagerSearchInterleaved : public SearchEngine {
     const bool reopen_closed_nodes;
     const bool use_multi_path_dependence;
 
-    std::unique_ptr<StateOpenList> open_list;
+    std::shared_ptr<StateOpenList> open_list;
     ScalarEvaluator *f_evaluator;
 
     std::vector<Heuristic *> heuristics;

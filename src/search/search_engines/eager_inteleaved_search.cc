@@ -42,6 +42,7 @@ void EagerSearchInterleaved::initialize() {
         cout << "Using multi-path dependence (LM-A*)" << endl;
     assert(open_list);
 
+    g_state_registry=&state_registry;
     set<Heuristic *> hset;
     open_list->get_involved_heuristics(hset);
 
@@ -103,7 +104,19 @@ SearchStatus EagerSearchInterleaved::step() {
   if(utils::g_timer()-start_time-improvement_time>max_search_time){
     cout<<"Interleaved_search choosing to search for heuristic improvement,search_time:,"<<utils::g_timer()-start_time-improvement_time<<",max_search_time:,"<<max_search_time<<",improvement_time_till_now:"<<improvement_time;
     max_search_time*=2;
-    cout<<",new max_search_time:"<<max_search_time<<endl;
+    cout<<",new max_search_time:"<<max_search_time<<flush<<endl;
+    //load list of states for evaluation of improvements by the heuristic
+    //tried to pass the open_list into the heuristic, but it was a nightmare
+    //so doing ugly hack, updating global list of state_ids
+    shared_ptr<vector<StateID> > states_to_eval=make_shared<vector<StateID> >();
+    const GlobalState &initial_state = state_registry.get_initial_state();
+    states_to_eval->push_back(initial_state.get_id());
+    open_list->load_states(20000,states_to_eval);//So we can access from pattern_collection_evaluator_open_list
+    cout<<"states_to_eval size:"<<states_to_eval->size()<<flush<<endl;
+    states_loaded_from_open_list=states_to_eval;
+    cout<<"states_loaded_from_open_list:"<<states_loaded_from_open_list->size()<<flush<<endl;
+
+
     int start_improvement_time=utils::g_timer();
     for (Heuristic *heuristic : heuristics) {
       improvement_found=heuristic->find_improvements(max_search_time);
@@ -117,8 +130,9 @@ SearchStatus EagerSearchInterleaved::step() {
     SearchNode node = n.first;
     
     GlobalState s = node.get_state();
-    if (check_goal_and_set_plan(s))
+    if (check_goal_and_set_plan(s)){
         return SOLVED;
+    }
 
     //In search_and_grow, heuristic value might have improved
     //since node was inserted, so we need to check for re-evaluation
@@ -323,6 +337,7 @@ pair<SearchNode, bool> EagerSearchInterleaved::fetch_next_node() {
         }
         //StateID id = open_list->remove_min(
         //    use_multi_path_dependence ? &last_key_removed : nullptr);
+	last_key_removed.clear();
         StateID id = open_list->remove_min(
             &last_key_removed);//Need last_f_value!
         // TODO is there a way we can avoid creating the state here and then
@@ -359,8 +374,12 @@ pair<SearchNode, bool> EagerSearchInterleaved::fetch_next_node() {
         }
 
 	//Santiago: We only close the node if we know there are no improvements
+	//ALSO, NODE MAY BE DEAD_END IF WE HAVE HEURISTIC IMPROVEMENTS SINCE
+	//NODE WAS ADDED TO OPEN_LIST, WE R CHECKING FOR THIS IN STEP()
+	//
+	//
         //node.close();
-        assert(!node.is_dead_end());
+        //assert(!node.is_dead_end());
         //update_f_value_statistics(node);
         //statistics.inc_expanded();
         return make_pair(node, true);

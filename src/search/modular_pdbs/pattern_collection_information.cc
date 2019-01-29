@@ -29,15 +29,18 @@ PatternCollectionInformation::PatternCollectionInformation(
 
 bool PatternCollectionInformation::information_is_valid() const {
     if (!patterns) {
+      cout<<"\tno patterns!"<<endl;
         return false;
     }
     int num_patterns = patterns->size();
     if (pdbs) {
         if (patterns->size() != pdbs->size()) {
+	  cout<<"\tpatterns.size != pdbs.size !"<<endl;
             return false;
         }
         for (int i = 0; i < num_patterns; ++i) {
             if ((*patterns)[i] != (*pdbs)[i]->get_pattern()) {
+	      cout<<"\tpattern["<<i<<"] is not same as pdbs["<<i<<"]"<<endl;
                 return false;
             }
         }
@@ -56,6 +59,7 @@ bool PatternCollectionInformation::information_is_valid() const {
         unordered_set<Pattern> patterns_in_list(patterns->begin(),
                                                 patterns->end());
         if (patterns_in_list != patterns_in_union) {
+	  cout<<"max_additive_subsets, before pdbs, patterns_in_list != patterns_in_union!"<<endl;
             return false;
         }
         if (pdbs) {
@@ -64,6 +68,7 @@ bool PatternCollectionInformation::information_is_valid() const {
                 pdbs_in_list.insert(pdb.get());
             }
             if (pdbs_in_list != pdbs_in_union) {
+	      cout<<"max_additive_subsets,pdbs,patterns_in_list != patterns_in_union!"<<endl;
                 return false;
             }
         }
@@ -147,7 +152,9 @@ void PatternCollectionInformation::include_additive_pdbs(const shared_ptr<PDBCol
     for (auto & new_pdb : pdbs2) {
 	assert(!new_pdb->get_pattern().empty());
 	patterns->push_back(new_pdb->get_pattern());
+	cout<<"adding pattern:";for (auto j : new_pdb->get_pattern()) cout<<j<<",";cout<<endl;
     }
+    cout<<"after include_additive_pdbs, patterns.size:"<<patterns->size()<<",new_pdb.size:"<<pdbs->size()<<endl;
 
     max_additive_subsets->push_back(pdbs2);
     assert(information_is_valid());
@@ -190,7 +197,7 @@ void PatternCollectionInformation::recompute_max_additive_subsets() {
     max_additive_subsets=max_additive_subsets2;
 
 
-    if(last_size>max_additive_subsets->size()){
+    if(last_size>max_additive_subsets->size()){//WE PRUNED SOMETHING
 
       unordered_set<shared_ptr<PatternDatabaseInterface> > remaining_pdbs;
       for (const PDBCollection &collection : *max_additive_subsets) {
@@ -231,9 +238,15 @@ void PatternCollectionInformation::recompute_max_additive_subsets() {
     cout<<"recompute,pdbs after Dominance prune"<<pdbs->size()<<endl;
     cout<<"recompute,subsets after Dominance prune"<<max_additive_subsets->size()<<endl;
     i=0;
+
+    //Finally adjust list of  patterns if necessary
+    std::shared_ptr<PatternCollection> patterns2;
+    patterns2 = make_shared<PatternCollection> ();
     for(auto pdb : *pdbs){
-      cout<<"i:"<<i++<<",pdb_after_recompute,initial_h:,"<<pdb->get_value(initial_state)<<endl;
+      patterns2->push_back(pdb->get_pattern());
+      //cout<<"i:"<<i++<<",pdb_after_recompute,initial_h:,"<<pdb->get_value(initial_state)<<endl;
     }
+    patterns=patterns2;
     /*cout<<"remaining_subsets:"<<endl;
       for (const PDBCollection &collection : *max_additive_subsets) {
 	  for (const shared_ptr<PatternDatabaseInterface> &pdb : collection) {

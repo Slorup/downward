@@ -49,6 +49,7 @@ public:
         EvaluationContext &eval_context) const override;
     virtual bool is_reliable_dead_end(
         EvaluationContext &eval_context) const override;
+    virtual void load_states(int /*max_number*/, std::shared_ptr<std::vector<Entry> > /*state_list*/ ) override;
 };
 
 
@@ -88,6 +89,27 @@ Entry TieBreakingOpenList<Entry>::remove_min(vector<int> *key) {
     if (it->second.empty())
         buckets.erase(it);
     return result;
+}
+template<class Entry>
+void TieBreakingOpenList<Entry>::load_states(int max_number, std::shared_ptr<vector<Entry> > state_list ){
+  size_t states_to_collect=min(max_number,size);
+  int counter=0;
+  if(states_to_collect<1){
+    cerr<<"can't call load_states from open_list when there are no states to collect!!"<<endl;exit(1);
+  }
+  states_loaded_from_open_list.reset();
+  cout<<"startes_to_collect:,"<<states_to_collect<<",states_in_open_list:,"<<size<<endl;
+  typename map<const vector<int>, Bucket>::iterator it1;
+  for(auto it1=buckets.begin();it1!=buckets.end();it1++){
+    for(auto it2=it1->second.begin();it2!=it1->second.end();it2++){
+      //cout<<"\tcollected state,f=,"<<counter<<flush<<",state:"<<*it2<<flush<<endl;
+      if(state_list->size()>states_to_collect){
+	return;
+      }
+      state_list->push_back(*it2);
+    }
+    counter++;
+  }
 }
 
 template<class Entry>
