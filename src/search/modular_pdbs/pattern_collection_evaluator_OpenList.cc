@@ -72,9 +72,9 @@ PatterCollectionEvaluatorOpenList::PatterCollectionEvaluatorOpenList(const optio
   bool PatterCollectionEvaluatorOpenList::evaluate(std::shared_ptr<ModularZeroOnePDBs> candidate_PC){
     //cout<<"candidate_pc.size:"<<candidate_PC->get_size()<<endl;
     increased_states=0;
-    for(auto state_pair : unique_samples){
-      if(candidate_PC->get_value(state_pair.second.first)>state_pair.second.second){
-        DEBUG_MSG(cout<<"\th improved from "<<state_pair.second.second<<" to "<<candidate_PC->get_value(state_pair.second.first)<<endl;);
+    for(auto state_pair : samples){
+      if(candidate_PC->get_value(state_pair.first)>state_pair.second){
+        DEBUG_MSG(cout<<"\th improved from "<<state_pair.second<<" to "<<candidate_PC->get_value(state_pair.first)<<endl;);
         increased_states++;
       }
     }
@@ -85,6 +85,10 @@ PatterCollectionEvaluatorOpenList::PatterCollectionEvaluatorOpenList(const optio
         it->second.second=max(it->second.second,candidate_PC->get_value(it->second.first));
       }*/
 
+      //Updating both unique_samples, used for pruning dominated heuristics and samples, and samples, used to evaluate heuristics
+      //We should use samples to get a current view of the search, and unique_samples only to determine quasy-domination
+      //using unique_samples to evaluate a heuristic can use too many nodes and distorts the value of the threshold
+      //as the number of unique_samples keep growing
       unsigned count_dead_ends=0;
       std::map<size_t, std::pair<State,int> >::iterator itr = unique_samples.begin();
       int new_h=0;
@@ -103,10 +107,16 @@ PatterCollectionEvaluatorOpenList::PatterCollectionEvaluatorOpenList(const optio
           ++itr;
         }
       }
-      cout<<"deleted "<<count_dead_ends<<" from list of sampled_states, remaining states:"<<unique_samples.size()<<endl; 
+      //Need to update samples with new values as well
+      for(auto& state_pair : samples){
+	state_pair.second=candidate_PC->get_value(state_pair.first);
+      }
+      cout<<"deleted "<<count_dead_ends<<" from list of unique_sampled_states, remaining unique_states:"<<unique_samples.size()<<endl; 
       return true;//Add collection
     }
-    DEBUG_COMP(cout<<"time:"<<utils::g_timer()<<",Not_selecting PC,increased_states:"<<increased_states<<",threshold:"<<get_threshold()<<" out of "<<get_num_samples()<<endl;);
+    else if(increased_states>0){
+      cout<<"time:"<<utils::g_timer()<<",Not_Selecting PC,increased_states:"<<increased_states<<",threshold:"<<get_threshold()<<" out of "<<get_num_samples()<<endl;
+    }
     //cout<<"time:"<<utils::g_timer()<<",Not_selecting PC,increased_states:"<<increased_states<<",threshold:"<<get_threshold()<<" out of "<<get_num_samples()<<endl;
     return false;//Not adding collection
   }
@@ -131,8 +141,9 @@ PatterCollectionEvaluatorOpenList::PatterCollectionEvaluatorOpenList(const optio
       int init_h=current_result->get_value(initial_state);
       double average_operator_cost=get_average_operator_cost(*task_proxy);
       cout<<"calling sample_states_with_random_walks"<<flush<<endl;
+      vector<State> samples_just_states;
       try {
-	  samples = sample_states_with_random_walks(
+	  samples_just_states = sample_states_with_random_walks(
 	      *task_proxy, *successor_generator, get_num_samples(), init_h,
 	      average_operator_cost,
 	      [this](const State &state) {
@@ -142,20 +153,22 @@ PatterCollectionEvaluatorOpenList::PatterCollectionEvaluatorOpenList(const optio
       } catch (SamplingTimeout &) {
 	cout<<"We are finished,sampling_timeout in random_walk,random_walk_time:"<<utils::g_timer()-start_time<<endl;
       }
-      cout<<"samples size:"<<samples.size()<<flush<<endl;
 
-      for (auto state : samples){
+      for (auto state : samples_just_states){
 	int h_val=current_result->get_value(state);
 	unique_samples.insert(make_pair(state.hash(),make_pair(state,h_val)));
+	samples.push_back(make_pair(state,h_val));
       }
-      cout<<"finished with first run of sample_states"<<flush<<endl;
+      set_num_samples(samples.size());
+      set_threshold(samples.size()/50);
+      cout<<"adding to samples using RAND_WALK, unique_size prior:"<<unique_samples.size()<<flush<<",num_samples:,"<<get_num_samples()<<",threshold:,"<<get_threshold()<<endl;
       return;
     }
      
     //We adjust dynamically the number of samples and threshold to be 5% of states  
     set_num_samples(states_loaded_from_open_list->size());
     set_threshold(states_loaded_from_open_list->size()/50);
-    cout<<"adding to samples, unique_size prior:"<<unique_samples.size()<<flush<<",states_loaded_from_open_list:"<<states_loaded_from_open_list->size()<<",num_samples:,"<<get_num_samples()<<",threshold:,"<<get_threshold()<<endl;
+    cout<<"adding to samples using OPEN_LIST, unique_size prior:"<<unique_samples.size()<<flush<<",states_loaded_from_open_list:"<<states_loaded_from_open_list->size()<<",num_samples:,"<<get_num_samples()<<",threshold:,"<<get_threshold()<<endl;
     
     //Keeping lists of unique_states sampled, used for domination detecting
     //both in canonical(prune_dominated_subsets_sample_space) and in clear_dominated_heuristics
@@ -167,18 +180,20 @@ PatterCollectionEvaluatorOpenList::PatterCollectionEvaluatorOpenList(const optio
       State state(*g_root_task(), global_state.get_values());
       //////////////////////////////////////
       int val=current_result->get_value(state);
-      if(val==numeric_limits<int>::max()){
-	cerr<<"dead_end found in sampled open_list,ignoring it"<<endl;continue;
+      if(val==numeric_limits<int>::max()){//heuristic might have been improved since state was added to open list as non dead_end
+	DEBUG_MSG(cout<<"dead_end found in sampled open_list,ignoring it"<<endl;);
+	continue;
       }
       ret=unique_samples.insert(make_pair(state_id.hash(),make_pair(state,val)));
       if(!ret.second){//keep max h value stored when state was previously sampled.
 	ret.first->second.second=max(val,ret.first->second.second);
       }
+      samples.push_back(make_pair(state,val));
 	    
       //map<size_t,pair<State,int> >::iterator it=unique_samples.find(state_id);
       //cout<<"state_id:"<<state_id<<",value:"<<it->second.second<<endl;
     }
-      cout<<"We are finished, sampling with OpenList,time:"<<utils::g_timer()-start_time<<",samples:"<<unique_samples.size()<<flush<<endl;
+    cout<<"We are finished, sampling with OpenList,time:"<<utils::g_timer()-start_time<<",samples:"<<samples.size()<<",unique_samples:"<<unique_samples.size()<<endl;
   }
 
 

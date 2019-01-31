@@ -30,7 +30,7 @@ namespace pdbs3 {
 class PatterCollectionEvaluatorOpenList : public PatternCollectionEvaluator {
 	int time_limit=20;
   unsigned increased_states=0;//We keep this value so we can pass overall progress 
-  std::vector<State> samples;
+  std::vector<std::pair<State,int> > samples;
   //std::shared_ptr<AbstractTask> task;
   std::shared_ptr<TaskProxy> task_proxy;
   std::unique_ptr<SuccessorGenerator> successor_generator;

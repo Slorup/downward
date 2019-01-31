@@ -611,10 +611,9 @@ bool ModularHeuristic::find_improvements(int time_limit) {
 	    pattern_generator->set_InSituCausalCheck(false);
 	  }
 	}
-	cout<<"hello1"<<endl;
 	 if(double(utils::get_current_memory_in_kb())/1024.0>memory_limit){
-	    cout<<"break-3,memory limit breached,current_memory(MB):"<<utils::get_current_memory_in_kb()/1024.0<<",memory_limit:"<<memory_limit<<endl;
-	    if(doing_canonical_search){
+	    cout<<"time:"<<utils::g_timer()<<",break-3,memory limit breached,current_memory(MB):"<<utils::get_current_memory_in_kb()/1024.0<<",memory_limit:"<<memory_limit<<endl;
+	    if(doing_canonical_search&&improvement_found){//No point callling to recompute if no improvement has been found
 	      cout<<"time:"<<utils::g_timer()<<",initial_h before recompute:,"<<result->get_value(initial_state)<<endl;
 	      result->recompute_max_additive_subsets();
 	      cout<<"time:"<<utils::g_timer()<<",initial_h after recompute:,"<<result->get_value(initial_state)<<endl;
@@ -628,7 +627,6 @@ bool ModularHeuristic::find_improvements(int time_limit) {
 	    }
 	    return improvement_found;
 	 }
-	cout<<"hello2"<<endl;
         //First we decide whether to try improving existing pdbs or keep generating new ones
         //0 means no terminate, 1 means to try terminating the pdbs
         if(unterminated_pdbs){
@@ -707,7 +705,6 @@ bool ModularHeuristic::find_improvements(int time_limit) {
           }
         }
         }
-	cout<<"hello3"<<endl;
 
         num_episodes++;
 
@@ -721,7 +718,6 @@ bool ModularHeuristic::find_improvements(int time_limit) {
 	  }
           return true;
         }
-	cout<<"hello4"<<endl;
 	  
 	//Now choosing between RandomSplit and CBP pattern generation
 	int generator_choice=0;
@@ -731,7 +727,6 @@ bool ModularHeuristic::find_improvements(int time_limit) {
 	else{
 	  generator_choice=UCB_generator.make_choice();
 	}
-	cout<<"hello5"<<endl;
 
 	float pdb_time=0;
 	bool disjunctive_choice=false;
@@ -855,6 +850,13 @@ bool ModularHeuristic::find_improvements(int time_limit) {
           }
           else if(new_initial_h>initial_h){//we always add the collection and re-sample if initial_h increased
 	    improvement_found=true;
+	    cout<<"time:,"<<utils::g_timer()<<",improvement found"<<endl;
+	    
+	    cout<<"time:,"<<utils::g_timer()<<"pdb_max_size:,"<<pdb_max_size<<",generator_choice:,"<<generator_choice<<",disjoint:,"<<disjunctive_choice<<",Selecting PC and resampling because initial_h has been raised from,"<<initial_h<<"to:,";
+
+            result->include_additive_pdbs(pdb_factory->terminate_creation(candidate_ptr->get_pattern_databases()));
+	    result->set_dead_ends(pdb_factory->get_dead_ends());
+	
 	    if(generator_choice==0){
 	      cout<<"Gamer improved initial h value from:,"<<initial_h<<",to,"<<new_initial_h<<endl;
 	      gamer_current_pattern=new_candidate_Gamer;
@@ -873,15 +875,9 @@ bool ModularHeuristic::find_improvements(int time_limit) {
             //cout<<"time:"<<utils::g_timer()<<",Initial h value before terminate:"<<temp_initial_h<<endl;
 	    if(doing_dominated_sampling)
 	      clear_dominated_heuristics_in_situ_sampling(candidate_ptr);
-	    
-	    cout<<"time:,"<<utils::g_timer()<<"pdb_max_size:,"<<pdb_max_size<<",generator_choice:,"<<generator_choice<<",disjoint:,"<<disjunctive_choice<<",Selecting PC and resampling because initial_h has been raised from,"<<initial_h<<"to:,";
-
-            result->include_additive_pdbs(pdb_factory->terminate_creation(candidate_ptr->get_pattern_databases()));
-	    result->set_dead_ends(pdb_factory->get_dead_ends());
-	
             
-	    cout<<"time:,"<<utils::g_timer()<<"pdb_max_size:,"<<pdb_max_size<<",generator_choice:,"<<generator_choice<<",disjoint:"<<disjunctive_choice<<",Selecting PC and resampling because initial_h has been raised from "<<initial_h<<"to "<<new_initial_h<<endl;
             initial_h=result->get_value(initial_state);//Might be higher than simply new cadidate collection value due to max additive pattern combinations beyond current collection, unlikely but possible!
+	    cout<<initial_h;
 	    
 	      
 	    //Clean dominated PDBs after addition of improving patterns
@@ -926,9 +922,13 @@ bool ModularHeuristic::find_improvements(int time_limit) {
 
           }
           else{//OK,so lets check if candidate_PC is good enough to add to current collection
-	    improvement_found=true;
             if(pattern_evaluator->evaluate(candidate_ptr)){
-
+	      improvement_found=true;
+	      cout<<"time:,"<<utils::g_timer()<<",improvement found"<<endl;
+              
+	      result->include_additive_pdbs(pdb_factory->terminate_creation(candidate_ptr->get_pattern_databases()));
+	      result->set_dead_ends(pdb_factory->get_dead_ends());
+	      
 	      if(generator_choice==0){
 		gamer_current_pattern=new_candidate_Gamer;
 		pattern_local_search->reset_forbidden_vars();
@@ -945,9 +945,6 @@ bool ModularHeuristic::find_improvements(int time_limit) {
 	      
 	      if(doing_dominated_sampling)
 		clear_dominated_heuristics_in_situ_sampling(candidate_ptr);
-              
-	      result->include_additive_pdbs(pdb_factory->terminate_creation(candidate_ptr->get_pattern_databases()));
-	      result->set_dead_ends(pdb_factory->get_dead_ends());
 	      
 	 
 	      //Clean dominated PDBs after addition of improving patterns

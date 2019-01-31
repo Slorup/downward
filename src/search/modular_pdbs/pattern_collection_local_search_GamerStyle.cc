@@ -31,7 +31,7 @@ namespace pdbs3 {
   }
 
   PatternCollectionContainer PatternCollectionLocalSearchGamerStyle::generate_next_candidate(PatternCollectionContainer candidate_collection){
-    cout<<"starting generate_next_candidate"<<endl;
+    DEBUG_MSG(cout<<"starting generate_next_candidate"<<endl;);
     //If more than one pattern, we only do local search on the first pattern
     Pattern candidate_pattern=candidate_collection.get_top_pattern();
     current_pattern=candidate_pattern;//Keep stored for future improvement when interleaving search and heuristic improvement
@@ -44,7 +44,7 @@ namespace pdbs3 {
     vector<int> candidates;
     for (size_t var = 0; var < g_variable_domain.size(); ++var) {
         if (pattern.count(var)){ 
-          cout<<"\t\tGamer_local_search,skipping exisiting var:"<<var<<endl;
+          DEBUG_MSG(cout<<"\t\tGamer_local_search,skipping exisiting var:"<<var<<endl;);
           continue;
         }
 	else if(forbidden_vars.count(var)){//This pattern was proven to not improve search
@@ -53,7 +53,7 @@ namespace pdbs3 {
 
       for (int succ : cg.get_pre_to_eff(var)) {
         if (pattern.count(succ)) {
-          cout<<"\t\tGamer,connected variables:"<<succ<<"to var:"<<var<<" added."<<endl;
+          DEBUG_MSG(cout<<"\t\tGamer,connected variables:"<<succ<<"to var:"<<var<<" added."<<endl;);
           candidates.push_back(var); 
           break;
         }
