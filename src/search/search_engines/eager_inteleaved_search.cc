@@ -21,6 +21,8 @@
 
 using namespace std;
 
+Options opts2;
+
 namespace eager_interleaved_search {
 EagerSearchInterleaved::EagerSearchInterleaved(const Options &opts)
     : SearchEngine(opts),
@@ -31,6 +33,7 @@ EagerSearchInterleaved::EagerSearchInterleaved(const Options &opts)
       f_evaluator(opts.get<ScalarEvaluator *>("f_eval", nullptr)),
       preferred_operator_heuristics(opts.get_list<Heuristic *>("preferred")),
       pruning_method(opts.get<shared_ptr<PruningMethod>>("pruning")) {
+	opts2=opts;
 }
 
 void EagerSearchInterleaved::initialize() {
@@ -102,7 +105,7 @@ void EagerSearchInterleaved::print_statistics() const {
 
 SearchStatus EagerSearchInterleaved::step() {
   if(utils::g_timer()-start_time-improvement_time>max_search_time){
-    cout<<"Interleaved_search choosing to search for heuristic improvement,search_time:,"<<utils::g_timer()-start_time-improvement_time<<",max_search_time:,"<<max_search_time<<",improvement_time_till_now:"<<improvement_time;
+    cout<<"Interleaved_search choosing to search for heuristic improvement,start_time:,"<<start_time<<",search_time:,"<<utils::g_timer()-start_time-improvement_time<<",max_search_time:,"<<max_search_time<<",improvement_time_till_now:"<<improvement_time;
     max_search_time*=2;
     cout<<",new max_search_time:"<<max_search_time<<flush<<endl;
     //load list of states for evaluation of improvements by the heuristic
@@ -120,8 +123,18 @@ SearchStatus EagerSearchInterleaved::step() {
     int start_improvement_time=utils::g_timer();
     for (Heuristic *heuristic : heuristics) {
       improvement_found=heuristic->find_improvements(max_search_time);
+      //RESTARTING NOT WORKING, PROBABLY EASIEST TO CREATE A NEW SEARCH SPACE
+      //CURRENTLY COMPLAINING ABOUT DELETED CONSTRUCTOR
+      //if(improvement_found){
+	//cout<<"time:"<<utils::g_timer<<",RESTARTING SEARCH"<<endl;
+	//restart_search();
+	//improvement_found=false;
+	//reopened_once=true;
+	//return IN_PROGRESS;
+      //}
     }
     improvement_time+=utils::g_timer()-start_improvement_time;
+    start_time=utils::g_timer();
   }
     pair<SearchNode, bool> n = fetch_next_node();
     if (!n.second) {
@@ -415,6 +428,22 @@ void EagerSearchInterleaved::update_f_value_statistics(const SearchNode &node) {
         int f_value = eval_context.get_heuristic_value(f_evaluator);
         statistics.report_f_value_progress(f_value);
     }
+}
+//Need to think what to do about statistics when re-starting search
+//for now we re-start so we can follow the new f values
+//CURRENTLY NOT WORKING, NEED TO CHECK HOW UNSUBSCRIBING WORKS
+//TO CLEAR PER_STATE INFO OR CREATE A NEW SEARCH_STATE WITHOUT 
+//DELETED FUNCTION COMPLAINS
+void EagerSearchInterleaved::restart_search() {
+  SearchStatistics new_statistics;
+  statistics=new_statistics;
+  std::shared_ptr<StateOpenList> open_list2(opts2.get<shared_ptr<OpenListFactory>>("open")-> create_state_open_list());
+  open_list=open_list2;
+  //NEED TO MAKE A NEW STATE_REG AND
+  //A NEW SEARCH_SPACE
+  //state_registry.clear();
+  //search_space.clear();
+  initialize();
 }
 
 /* TODO: merge this into SearchEngine::add_options_to_parser when all search

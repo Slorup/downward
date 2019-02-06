@@ -52,6 +52,7 @@ public:
     virtual void print_statistics() const override;
 
     void dump_search_space() const;
+    void restart_search();
 };
 }
 
