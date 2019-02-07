@@ -23,12 +23,14 @@ namespace pdbs3 {
 							 int max_time_ms, int max_step_time_ms, int max_nodes, 
 							 int global_limit_memory_MB)
 	: PatternDatabaseInterface(task, pattern, operator_costs),
-	factory(factory_),  pdb_task(pdb_task_), task_proxy(task), 
+          factory(factory_),  pdb_task(pdb_task_), state_values_in_pattern(task.get_variables().size()),
+          task_proxy(task), 
 	successor_generator(pdb_task), search_info(pattern.size(), 1000), 
 	symbolic_pdb(make_unique<PatternDatabaseSymbolic>(task, pattern, operator_costs, 
 							  factory, vars, manager, params, 
 							  max_time_ms, max_step_time_ms,  max_nodes, 
 							  global_limit_memory_MB))  {
+        
 	pdb_task_proxy = make_unique<TaskProxy>(*pdb_task);
     }
 
@@ -52,11 +54,7 @@ namespace pdbs3 {
 	if (initial_h == std::numeric_limits<int>::max()) {
 	    return initial_h;
         }
-	
-	// if(heuristics.empty()) {
-	//     factory->get_heuristics_for(*this, heuristics);
-	// }
-
+        
 	const int max_online_time_ms = factory->get_online_time_ms();
 	//cout<<"\tmax_online_time_ms:"<<max_online_time_ms<<endl;
 	const int max_online_expansions = factory->get_online_expansions();
@@ -110,13 +108,6 @@ namespace pdbs3 {
 	    search_info.get_state_values(node.second, state.get_mutable_values());
 
 	    assert(state.get_abstract_task());
-            auto goal_cost = symbolic_pdb->get_goal_cost(pattern, state); // Check symbolic PDB 
-	    if (goal_cost.first) { //Goal cost could be determined
-                upper_bound = min(upper_bound, parent_g + goal_cost.second) ;
-		continue;
-	    }
-
-	    assert(state.get_abstract_task());
 
 	    vector<OperatorProxy> applicable_ops;
 	    successor_generator.generate_applicable_ops(state, applicable_ops);
@@ -124,7 +115,6 @@ namespace pdbs3 {
 	    for (const auto & op : applicable_ops) {
 		assert(state.get_abstract_task());
 
-		
                 int succ_g = parent_g + op.get_cost(); // get_adjusted_cost(op)
 		if (succ_g >= upper_bound) {
 		    continue;
@@ -143,7 +133,7 @@ namespace pdbs3 {
 		LocalStateID succ_id = search_info.get_id(succ_state); 
 	        SearchStateInfo & succ_node = search_info.get_state_info(succ_id);
 
-		if(succ_node.h ==  std::numeric_limits<int>::max()) {
+		if(succ_node.h  >= upper_bound) {
 		    continue;
 		}
 
@@ -152,12 +142,13 @@ namespace pdbs3 {
 		if (succ_node.g == -1) { //new node
 		    succ_node.g = succ_g;
 		    succ_node.h = compute_online_heuristic(succ_state, goal_cost.second);
-		    if (succ_node.h == std::numeric_limits<int>::max()) {
+		    if (succ_node.h >= upper_bound) {
 			continue;
 		    }
 		    open_list.push(succ_node.f(), succ_id);
 		} else if (succ_node.g > succ_g) {
 		    // We found a new cheapest path to an open or closed state.
+                    succ_node.g = succ_g;
 		    succ_node.closed = false;
 		    open_list.push(succ_node.f(), succ_id);
 		}
@@ -180,7 +171,19 @@ namespace pdbs3 {
 
     }
 
-    int PatternDatabaseSymbolicOnline::compute_online_heuristic(const State & , int h) const {
+    int PatternDatabaseSymbolicOnline::compute_online_heuristic(const State & s, int base_h) const {
+        vector<int> values;
+        int h = base_h;
+
+        if (!heuristics.empty()) {
+            for(size_t i = 0; i < pattern.size(); ++i) {
+                state_values_in_pattern [pattern[i]] = s[i].get_value();
+            }
+        }
+        for(const auto & heur : heuristics) {
+            int new_h =  heur->get_value(state_values_in_pattern);
+            h = std::max(h, new_h);
+        }
         return h;
     }
 

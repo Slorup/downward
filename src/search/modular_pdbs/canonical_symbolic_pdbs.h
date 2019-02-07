@@ -32,6 +32,7 @@ class CanonicalSymbolicPDBs {
 public:
     CanonicalSymbolicPDBs(std::shared_ptr<PatternCollectionInformation> info,
 			  bool dominance_pruning, int compress_nodes, int compress_time);
+
     ~CanonicalSymbolicPDBs() = default;
 
     int get_value(const State &state) const;

@@ -82,8 +82,25 @@ namespace pdbs3 {
 		utils::exit_with(utils::ExitCode::UNSOLVABLE);
 	    }
 	    manager->addDeadEndStates(true, new_pdb->get_dead_ends());
-
-	}
+            
+	} else if (use_pdbs_in_online_search) {
+            //TODO: Right now, the PDBs are introduced separately so we will take the
+            //      maximum. Instead, they could be combined with the canonical heuristic.
+            
+            //vector<shared_ptr<PatternDatabaseInterface>> pdb_collection;
+            for(const auto & stored_pdb : stored_pdbs) {
+                if(stored_pdb.first.is_pdb_for(pattern, operator_costs)) {
+                    //pdb_collection.push_back(stored_pdb.second->get_offline_pdb());
+                    new_pdb->add_heuristic(stored_pdb.second->get_offline_pdb());
+                }
+            }
+            // if(!pdb_collection.empty()) {
+            //     // new_pdb->add_heuristic(
+            //     //     make_shared<CanonicalPDBsHeuristic> (pdb_collection,
+            //     //                                          online_use_canonical_pdbs,
+            //     //                                          online_prune_dominated_pdbs));
+            // }            
+        }
 	
 	return new_pdb;
     }
@@ -183,25 +200,6 @@ namespace pdbs3 {
     
 	return dead_ends;
     }
-
-    void PDBFactorySymbolicOnline::get_heuristics_for (const PatternDatabaseSymbolicOnline & pdb, 
-						   std::vector<shared_ptr<Heuristic>> & // heuristics
-        ) {
-	if(!use_pdbs_in_online_search) {
-	    return;
-	}
-
-	vector<shared_ptr<PatternDatabaseInterface>> pdb_collection;
-	for(const auto & stored_pdb : stored_pdbs) {
-	    if(stored_pdb.first.is_pdb_for(pdb.get_pattern(), pdb.get_operator_costs())) {
-		pdb_collection.push_back(stored_pdb.second->get_offline_pdb());
-	    }
-	}
-	// if(!pdb_collection.empty()) { 
-	//     heuristics.push_back(make_shared<CanonicalPDBsHeuristic> (pdb_collection, online_use_canonical_pdbs, online_prune_dominated_pdbs));
-	// }
-    }
-
 
     static options::PluginShared<PDBFactory> _plugin("symbolic_online", _parse);
 

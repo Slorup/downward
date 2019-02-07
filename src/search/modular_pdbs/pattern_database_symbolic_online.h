@@ -143,7 +143,8 @@ class PatternDatabaseSymbolicOnline : public PatternDatabaseInterface {
     PDBFactorySymbolicOnline * factory;
     std::shared_ptr<extra_tasks::PDBTask> pdb_task;
     std::unique_ptr<TaskProxy> pdb_task_proxy;
-    mutable std::vector <std::shared_ptr<Heuristic>> heuristics;
+    mutable std::vector <std::shared_ptr<PatternDatabaseInterface>> heuristics;
+    mutable std::vector<int> state_values_in_pattern;
     TaskProxy task_proxy;
     SuccessorGenerator successor_generator;
 
@@ -191,6 +192,10 @@ public:
 
     virtual bool is_finished() const override { 
 	return symbolic_pdb->is_finished();
+    }
+
+    void add_heuristic(std::shared_ptr<PatternDatabaseInterface> heuristic) {
+        heuristics.push_back(heuristic);
     }
 };
 }
