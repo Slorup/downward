@@ -295,6 +295,7 @@ SearchStatus EagerSearchInterleaved::step() {
                       consistent heuristic).
                     */
                     statistics.inc_reopened();
+		    reopened_once=true;
                 }
                 succ_node.reopen(node, op);
 
@@ -359,7 +360,6 @@ pair<SearchNode, bool> EagerSearchInterleaved::fetch_next_node() {
         //      instead of StateIDs
         GlobalState s = state_registry.lookup_state(id);
         SearchNode node = search_space.get_node(s);
-
         if (node.is_closed())
             continue;
 

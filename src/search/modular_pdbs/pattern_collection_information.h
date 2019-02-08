@@ -6,6 +6,7 @@
 #include "../task_proxy.h"
 
 #include "../symbolic/sym_bucket.h"
+#include "../symbolic/sym_variables.h"
 
 #include <memory>
 
@@ -27,6 +28,7 @@ class PatternCollectionInformation {
     std::shared_ptr<MaxAdditivePDBSubsets> max_additive_subsets;
 
     symbolic::Bucket dead_ends;
+    std::shared_ptr <symbolic::SymVariables> symbolic_vars;
 
     void create_pdbs_if_missing();
     void create_max_additive_subsets_if_missing();

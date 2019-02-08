@@ -95,6 +95,7 @@ extern float memory_limit;//For PDB generation,global because it is used by seve
 extern double overall_pdb_gen_time;
 extern std::shared_ptr<std::vector<StateID> > states_loaded_from_open_list;//So we can access from pattern_collection_evaluator_open_list
 extern StateRegistry *g_state_registry;
+extern bool reopened_once;
 
 
 #endif

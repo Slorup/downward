@@ -398,3 +398,4 @@ float memory_limit=2000;//MB//,also need changes in the PDB individual limits, e
 double overall_pdb_gen_time=0;
 shared_ptr<vector<StateID> > states_loaded_from_open_list;//So we can access from pattern_collection_evaluator_open_list
 StateRegistry *g_state_registry;
+bool reopened_once=false;

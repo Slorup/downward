@@ -35,6 +35,7 @@ CanonicalSymbolicPDBs::CanonicalSymbolicPDBs(
     assert(max_additive_subsets_);
         
     for (const auto &pdb : *pattern_databases) {
+      cout<<"\tcanonical,adding pdb:"<<*pdb<<" to canonical_pdbs"<<endl;
 	if (pdb->get_symbolic_variables()) {
 	    symbolic_vars = pdb->get_symbolic_variables();
 	    break;
@@ -42,6 +43,7 @@ CanonicalSymbolicPDBs::CanonicalSymbolicPDBs(
     }
 
     if (dead_ends.empty()) { //If dead ends were not introduced in 
+      cout<<"canonical, dead_ends_empty"<<endl;
 	for (const auto &pdb : *pattern_databases) {
 	    const auto & new_dead_ends = pdb->get_dead_ends();
 	    if(!new_dead_ends.IsZero()) {
