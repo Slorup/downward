@@ -121,6 +121,14 @@ fast_downward_plugin(
 )
 
 fast_downward_plugin(
+    NAME BOOST
+    HELP "Boost dependency plugin"
+    SOURCES
+      utils/collections.cc
+    DEPENDENCY_ONLY
+)
+
+fast_downward_plugin(
     NAME UTILS
     HELP "System utilities"
     SOURCES

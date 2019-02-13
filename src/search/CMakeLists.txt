@@ -35,6 +35,12 @@ if(WIN32)
     target_link_libraries(downward psapi)
 endif()
 
+# if(PLUGIN_BOOST_ENABLED)
+#     find_package(Boost)
+#     include_directories(${Boost_INCLUDE_DIR})
+#     target_link_libraries(downward ${Boost_LIBRARIES})
+# endif()
+
 # If any enabled plugin requires an LP solver, compile with all
 # available LP solvers. If no solvers are installed, the planner will
 # still compile, but using heuristics that depend on an LP solver will
