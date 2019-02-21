@@ -132,7 +132,8 @@ ModularHeuristic::ModularHeuristic(const Options &opts)
 
       //DEBUG BLOCK FINISHED
       /*PatternCollectionContainer PC;
-      Pattern temp_pattern1{2,5,11,14,19,23,27,40,42,44,45,46,50,51,52,53,54,56,58,59,60,61};
+      //Pattern temp_pattern1{2,5,11,14,19,23,27,40,42,44,45,46,50,51,52,53,54,56,58,59,60,61};
+      Pattern temp_pattern1{7,8,9,10,11,12,13,14,15,16,17,18};
       PC.clear();PC.add_pc(temp_pattern1);
       candidate_ptr=make_shared<ModularZeroOnePDBs>(task_proxy, PC.get_PC(), *pdb_factory);
       result->include_additive_pdbs(pdb_factory->terminate_creation(candidate_ptr->get_pattern_databases()));

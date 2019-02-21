@@ -29,6 +29,7 @@ class PatternCollectionInformation {
 
     symbolic::Bucket dead_ends;
     std::shared_ptr <symbolic::SymVariables> symbolic_vars;
+    bool check_symbolic_dead_ends=true;
 
     void create_pdbs_if_missing();
     void create_max_additive_subsets_if_missing();

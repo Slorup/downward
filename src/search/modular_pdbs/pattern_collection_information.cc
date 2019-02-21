@@ -23,6 +23,7 @@ PatternCollectionInformation::PatternCollectionInformation(
       patterns(patterns),
       pdbs(nullptr),
       max_additive_subsets(nullptr) {
+    check_symbolic_dead_ends=true;
     assert(patterns);
     validate_and_normalize_patterns(task_proxy, *patterns);
 }
@@ -293,11 +294,11 @@ int PatternCollectionInformation::get_value(const State &state) const {
       //cout<<"max_additive_subsets size is 0, so returning 0"<<endl;
       return 0;
     }
-    if (!dead_ends.empty()) { //If dead ends were not introduced in 
+    if (check_symbolic_dead_ends&&!dead_ends.empty()) { //If dead ends were not introduced in 
       int * inputs = symbolic_vars->getBinaryDescription(state.get_values());
       for(const BDD & bdd : dead_ends){
      	if(!bdd.Eval(inputs).IsZero()){
-     	    return numeric_limits<int>::max();
+	  return numeric_limits<int>::max();
      	}
       }
     }
@@ -327,11 +328,11 @@ bool PatternCollectionInformation::is_dead_end(const State &state) const {
     if(!max_additive_subsets){
       return false;
     }
-    if (!dead_ends.empty()) { //If dead ends were not introduced in 
+    if (check_symbolic_dead_ends&&!dead_ends.empty()) { //If dead ends were not introduced in 
       int * inputs = symbolic_vars->getBinaryDescription(state.get_values());
       for(const BDD & bdd : dead_ends){
      	if(!bdd.Eval(inputs).IsZero()){
-     	    return true;
+	  return true;
      	}
       }
     }
