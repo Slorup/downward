@@ -16,7 +16,7 @@
 #include "../randomc/randomc.h"
 #include "../randomc/mersenne.cpp"
 //#include "../state_id.h"
-#include "../ext/boost/dynamic_bitset.hpp"
+#include <boost/dynamic_bitset.hpp>
 
 #include "../utils/timer.h"
 
