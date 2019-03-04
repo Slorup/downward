@@ -87,5 +87,5 @@ std::ostream & operator<<(std::ostream &os, vector<int> pattern){
     return make_shared<PatternCollectionGeneratorGamer>(opts);
   }
 
-  static options::PluginShared<PatternCollectionGeneratorComplementary> _plugin("GamerStyle", _parse);
+  static options::PluginShared<PatternCollectionGeneratorComplementary> _plugin("gamer", _parse);
 }

@@ -13,6 +13,7 @@
 #include "../task_proxy.h"
 #include "../successor_generator.h"
 #include "pattern_collection_information.h"
+#include "pattern_collection_evaluator.h"
 
 
 class AbstractTask;
@@ -32,18 +33,20 @@ class PatternCollectionLocalSearchGamerStyle : public PatternCollectionLocalSear
   Pattern current_pattern;
   int time_limit=100;
   int last_var=0;
+  bool improvement_found=false;
   std::shared_ptr<TaskProxy> task_proxy;
   //So we avoid re-trying vars which have already been fully tested,
   //forbiddent_vars is cleared whenever we add a variable because then
   //previously discarded vars might actually help the new pattern
-  std::set<int> forbidden_vars;
+  std::map<Pattern,std::set<int> > forbidden_vars;
+  std::set<Pattern> impossible_to_update_pattern;
   //utils::CountdownTimer *local_search_timer;
   public:
   explicit PatternCollectionLocalSearchGamerStyle(const options::Options &options);
   //explicit PatternCollectionLocalSearchGamerStyle();
+  virtual bool do_local_search(std::shared_ptr<PatternCollectionInformation> current_result, std::shared_ptr<PatternCollectionEvaluator> evaluation_method,
+     std::shared_ptr<PDBFactory> pdb_factory);
   virtual PatternCollectionContainer generate_next_candidate(PatternCollectionContainer candidate_pattern) override;
-  virtual void forbid_last_var() override;
-  virtual void reset_forbidden_vars() override;
   virtual void print_last_var() override{std::cout<<"last_var:,"<<last_var<<std::endl;}
   virtual int get_time_limit() override {return time_limit;};
   virtual void print_name() override {std::cout<<"Doing LocalSearchGamerStyle"<<std::endl;}

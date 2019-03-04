@@ -11,6 +11,7 @@
 #include <random>
 #include <iostream>
 #include <iterator>
+#include <string>
 
 
 
@@ -51,6 +52,10 @@ class PatternCollectionContainer {
     void restart_pc(Pattern input){//For generators like Gamer, which keep a single PC
       pc.clear();
       pc.push_back(input);
+    }
+    void set_top(Pattern input){//For generators like Gamer, which keep a single PC
+      assert(pc.size()>0);
+      pc.at(0)=input;
     }
     void clear(){
       pc.clear();
@@ -131,9 +136,7 @@ class PatternCollectionGeneratorComplementary {
     //std::shared_ptr<PatternCollection> patterns;
   
   public:
-    
-
-
+  virtual std::string get_name(){return "undefined PatternCollectionGenerator name";}
   PatternCollectionContainer generate_perimeter(){
       PatternCollectionContainer PC;
       Pattern temp_pattern;
@@ -170,115 +173,115 @@ class PatternCollectionGeneratorComplementary {
     InSituCausalCheck=status;
   }
 
-    virtual void initialize(std::shared_ptr<AbstractTask> task) {
-      num_vars= task->get_num_variables();
-      std::cout<<"num_vars:"<<num_vars<<std::endl;
+  virtual void initialize(std::shared_ptr<AbstractTask> task) {
+    num_vars= task->get_num_variables();
+    std::cout<<"num_vars:"<<num_vars<<std::endl;
+  }
+
+  virtual PatternCollectionContainer generate() = 0;
+  //virtual void set_reward(const PatternCollectionContainer & pc, double reward) = 0;
+  
+  double get_pattern_size(Pattern pattern){
+    if(pattern.size()==0){
+      return 0;
     }
 
-    virtual PatternCollectionContainer generate() = 0;
-    //virtual void set_reward(const PatternCollectionContainer & pc, double reward) = 0;
-    
-    double get_pattern_size(Pattern pattern){
-      if(pattern.size()==0){
-        return 0;
+  double mem = 1;
+  for (size_t j = 0; j < pattern.size(); ++j) {
+    //cout<<"g_variable_domain[pattern["<<j<<"]]:"<<g_variable_domain[pattern[j]]<<",mem:"<<mem<<endl;
+    double domain_size = g_variable_domain[pattern[j]];
+    mem *= domain_size;
+  }   
+  return mem;
+  }
+  
+  //Moved from pattern_collection_generator_genetic_online so they are available
+  //to all pattern generation methods
+  void transform_to_pattern_bitvector_form(std::vector<bool> &bitvector,const std::vector<int> &pattern) const {
+    bitvector.assign(g_variable_name.size(), false);
+    for (size_t i = 0; i < pattern.size(); ++i) {
+      bitvector[pattern[i]]=true;
+    }
+  }
+
+  Pattern transform_to_pattern_normal_form(const std::vector<bool> &bitvector) const {
+    Pattern pattern;
+    for (size_t i = 0; i < bitvector.size(); ++i) {
+	if (bitvector[i]){
+      pattern.push_back(i);
+	}
+    }
+    return pattern;
+  }
+
+  /*
+  void PatternCollectionGeneratorGeneticSS::remove_irrelevant_variables( Pattern &pattern) const {
+    TaskProxy task_proxy(*task);
+
+    unordered_set<int> in_original_pattern(pattern.begin(), pattern.end());
+    unordered_set<int> in_pruned_pattern;
+
+    vector<int> vars_to_check;
+    for (FactProxy goal : task_proxy.get_goals()) {
+      int var_id = goal.get_variable().get_id();
+      if (in_original_pattern.count(var_id)) {
+    // Goals are causally relevant.
+    vars_to_check.push_back(var_id);
+    in_pruned_pattern.insert(var_id);
+      }
+    }
+
+      while (!vars_to_check.empty()) {
+	  int var = vars_to_check.back();
+	  vars_to_check.pop_back();
+	  *//*
+	    A variable is relevant to the pattern if it is a goal variable or if
+	    there is a pre->eff arc from the variable to a relevant variable.
+	    Note that there is no point in considering eff->eff arcs here.
+	  *//*
+	  const CausalGraph &cg = task_proxy.get_causal_graph();
+
+	  const vector<int> &rel = cg.get_eff_to_pre(var);
+	  for (size_t i = 0; i < rel.size(); ++i) {
+	      int var_no = rel[i];
+	      if (in_original_pattern.count(var_no) &&
+		  !in_pruned_pattern.count(var_no)) {
+		  // Parents of relevant variables are causally relevant.
+		  vars_to_check.push_back(var_no);
+		  in_pruned_pattern.insert(var_no);
+	      }
+	  }
       }
 
-    double mem = 1;
-    for (size_t j = 0; j < pattern.size(); ++j) {
-      //cout<<"g_variable_domain[pattern["<<j<<"]]:"<<g_variable_domain[pattern[j]]<<",mem:"<<mem<<endl;
-      double domain_size = g_variable_domain[pattern[j]];
-      mem *= domain_size;
-    }   
-    return mem;
-    }
-    
-    //Moved from pattern_collection_generator_genetic_online so they are available
-    //to all pattern generation methods
-    void transform_to_pattern_bitvector_form(std::vector<bool> &bitvector,const std::vector<int> &pattern) const {
-      bitvector.assign(g_variable_name.size(), false);
-      for (size_t i = 0; i < pattern.size(); ++i) {
-        bitvector[pattern[i]]=true;
-      }
-    }
+      pattern.assign(in_pruned_pattern.begin(), in_pruned_pattern.end());
+      sort(pattern.begin(), pattern.end());
+  }
 
-    Pattern transform_to_pattern_normal_form(const std::vector<bool> &bitvector) const {
-      Pattern pattern;
-      for (size_t i = 0; i < bitvector.size(); ++i) {
-          if (bitvector[i]){
-        pattern.push_back(i);
-          }
-      }
-      return pattern;
-    }
-
-    /*
-    void PatternCollectionGeneratorGeneticSS::remove_irrelevant_variables( Pattern &pattern) const {
+  bool PatternCollectionGeneratorGeneticSS::is_pattern_too_large(const Pattern &pattern) const {
+      // Test if the pattern respects the memory limit.
       TaskProxy task_proxy(*task);
-
-      unordered_set<int> in_original_pattern(pattern.begin(), pattern.end());
-      unordered_set<int> in_pruned_pattern;
-
-      vector<int> vars_to_check;
-      for (FactProxy goal : task_proxy.get_goals()) {
-        int var_id = goal.get_variable().get_id();
-        if (in_original_pattern.count(var_id)) {
-      // Goals are causally relevant.
-      vars_to_check.push_back(var_id);
-      in_pruned_pattern.insert(var_id);
-        }
+      VariablesProxy variables = task_proxy.get_variables();
+      double mem = 1;
+      for (size_t i = 0; i < pattern.size(); ++i) {
+	  VariableProxy var = variables[pattern[i]];
+	  double domain_size = var.get_domain_size();
+	  if (!utils::is_product_within_limit(mem, domain_size, pdb_max_size))
+	      return true;
+	  mem *= domain_size;
       }
+      return false;
+  }
 
-	while (!vars_to_check.empty()) {
-	    int var = vars_to_check.back();
-	    vars_to_check.pop_back();
-	    *//*
-	      A variable is relevant to the pattern if it is a goal variable or if
-	      there is a pre->eff arc from the variable to a relevant variable.
-	      Note that there is no point in considering eff->eff arcs here.
-	    *//*
-	    const CausalGraph &cg = task_proxy.get_causal_graph();
-
-	    const vector<int> &rel = cg.get_eff_to_pre(var);
-	    for (size_t i = 0; i < rel.size(); ++i) {
-		int var_no = rel[i];
-		if (in_original_pattern.count(var_no) &&
-		    !in_pruned_pattern.count(var_no)) {
-		    // Parents of relevant variables are causally relevant.
-		    vars_to_check.push_back(var_no);
-		    in_pruned_pattern.insert(var_no);
-		}
-	    }
-	}
-
-	pattern.assign(in_pruned_pattern.begin(), in_pruned_pattern.end());
-	sort(pattern.begin(), pattern.end());
-    }
-
-    bool PatternCollectionGeneratorGeneticSS::is_pattern_too_large(const Pattern &pattern) const {
-	// Test if the pattern respects the memory limit.
-	TaskProxy task_proxy(*task);
-	VariablesProxy variables = task_proxy.get_variables();
-	double mem = 1;
-	for (size_t i = 0; i < pattern.size(); ++i) {
-	    VariableProxy var = variables[pattern[i]];
-	    double domain_size = var.get_domain_size();
-	    if (!utils::is_product_within_limit(mem, domain_size, pdb_max_size))
-		return true;
-	    mem *= domain_size;
-	}
-	return false;
-    }
-
-    bool PatternCollectionGeneratorGeneticSS::mark_used_variables(
-	const Pattern &pattern, vector<bool> &variables_used) const {
-	for (size_t i = 0; i < pattern.size(); ++i) {
-	    int var_id = pattern[i];
-	    if (variables_used[var_id])
-		return true;
-	    variables_used[var_id] = true;
-	}
-	return false;
-    }*/
+  bool PatternCollectionGeneratorGeneticSS::mark_used_variables(
+      const Pattern &pattern, vector<bool> &variables_used) const {
+      for (size_t i = 0; i < pattern.size(); ++i) {
+	  int var_id = pattern[i];
+	  if (variables_used[var_id])
+	      return true;
+	  variables_used[var_id] = true;
+      }
+      return false;
+  }*/
 void print_vect_int(const std::vector<int>& values)
 {
   std::cout << "[ ";

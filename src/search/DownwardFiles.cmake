@@ -539,7 +539,7 @@ fast_downward_plugin(
 		modular_pdbs/zero_one_pdbs.cc
 		modular_pdbs/pattern_collection_local_search.cc
 		modular_pdbs/pattern_collection_local_search_GamerStyle.cc
-		modular_pdbs/pattern_collection_local_search_GA.cc
+		#modular_pdbs/pattern_collection_local_search_GA.cc
                 modular_pdbs/pattern_database_symbolic_online.cc
 		#	DEPENDS BinPacking
 # modular_pdbs/pattern_collection_generator_genetic_Online_SS.cc

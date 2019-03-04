@@ -8,6 +8,7 @@
 #include <vector>
 #include <random>
 #include <set>
+#include <string>
 
 
 class AbstractTask;
@@ -30,6 +31,7 @@ class PatternCollectionGeneratorGamer : public PatternCollectionGeneratorComplem
   
   explicit PatternCollectionGeneratorGamer(const options::Options &options);
   virtual PatternCollectionContainer generate() override;
+  virtual std::string get_name() override{return "GamerStyle";};
 };
 
 }

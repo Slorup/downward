@@ -4,6 +4,7 @@
 #include "types.h"
 #include "pattern_collection_generator_complementary.h"
 #include "pattern_collection_information.h"
+#include "pattern_collection_evaluator.h"
 #include "zero_one_pdbs.h"
 #include <memory>
 #include <vector>
@@ -43,6 +44,10 @@ class PatternCollectionLocalSearch {
     void remove_irrelevant_variables(Pattern &pattern,Pattern &removed_vars);
     virtual void print_name() = 0;
     virtual std::string get_name() = 0;
+    virtual bool do_local_search(std::shared_ptr<PatternCollectionInformation> current_result, 
+	std::shared_ptr<PatternCollectionEvaluator> evaluation_method,
+	std::shared_ptr<PDBFactory> pdb_factory) = 0;
+
 };
 
 }

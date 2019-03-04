@@ -53,7 +53,7 @@ bool PatternDatabaseInterface::is_operator_relevant(const OperatorProxy &op) con
 
     std::ostream& operator<<(ostream& os, const PatternDatabaseInterface & pdb) {
 	os << "[";
-	for (int v : pdb.pattern) os << " " << v;
+	for (int v : pdb.pattern) os << "," << v;
 	return os << "]";
     }
 
