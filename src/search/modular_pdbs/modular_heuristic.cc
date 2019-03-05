@@ -626,24 +626,14 @@ bool ModularHeuristic::find_improvements(int time_limit) {
       //Now generating next set of patterns and PDB
       if(pattern_generator->get_name()=="GamerStyle"){
 	if(doing_local_search){
-	  bool improv_found=pattern_local_search->do_local_search(result,pattern_evaluator,pdb_factory);
+	  bool possible_improv=pattern_local_search->do_local_search(result,pattern_evaluator,pdb_factory);
 	  if(check_for_solution()){
 	    return true;
 	  }
 	  //Check if any PDB is unfinished
-	  //Otherwise no improvement possible
-	  bool possible_improv=false;
-	  if(!improv_found){
-	    auto pdb_collection=result->get_pdbs(); 
-	    for(auto i : boost::adaptors::reverse(*pdb_collection)){
-	      if(!i->is_finished()){//looking for first unfinished pdb
-		possible_improv=true;
-	      }
-	    }
-	  }
 	  if(!possible_improv){
 	    cout<<"CANT IMPROVE USING GAMER, GAMER_ONLY SITUATION SO WE ARE FINISHED"<<endl;
-	    return improv_found;
+	    return possible_improv;
 	  }
 	}
       }
