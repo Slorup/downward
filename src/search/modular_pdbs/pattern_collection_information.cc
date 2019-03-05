@@ -115,7 +115,9 @@ void PatternCollectionInformation::include_additive_pdbs(const shared_ptr<PDBCol
     
 
     PDBCollection pdbs2;
+    bool first_call=false;
     if(!pdbs) {
+      first_call=true;//Sometimes we need to add dummy PDB to seed algorithm
       cout<<"First call, pdbs empty"<<endl;
 	pdbs = make_shared<PDBCollection> ();
     } 
@@ -134,7 +136,7 @@ void PatternCollectionInformation::include_additive_pdbs(const shared_ptr<PDBCol
 	const auto & costs1 = new_pdb->get_operator_costs();
 	bool empty_cost=true;
 	for (size_t i = 0; i < costs1.size(); ++i) {
-	  if(costs1[i]>0) {
+	  if(costs1[i]>0||first_call) {
 	    cout<<"adding :"<<*new_pdb<<endl;
 	    pdbs2.push_back(new_pdb);
 	    pdbs->push_back(new_pdb);
@@ -142,11 +144,11 @@ void PatternCollectionInformation::include_additive_pdbs(const shared_ptr<PDBCol
 	    break;
 	  }
 	}
-	if(empty_cost)
+	if(empty_cost)//Sometimes we need to add dummy initial PDB to seed algorithm
 	  cout<<"pdb:"<<*new_pdb<<"had empty costs, so not adding!"<<endl;
       }
     if(pdbs2.empty()){
-     cout<<"all pdbs in collection improving h values have empty costs!!!,DEBUG ME"<<endl;
+     cerr<<"all pdbs in collection improving h values have empty costs!!!,DEBUG ME"<<endl;
      exit(1);
     }
 
