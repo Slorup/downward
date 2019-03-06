@@ -94,7 +94,7 @@ void SymVariables::init(const vector <int> &v_order) {
         throw BDDError();
         }*/
 
-    _manager->setHandler(exceptionError);
+    // _manager->setHandler(exceptionError);
     _manager->setTimeoutHandler(exceptionError);
     _manager->setNodesExceededHandler(exceptionError);
 
