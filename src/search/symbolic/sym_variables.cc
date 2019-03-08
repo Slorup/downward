@@ -94,7 +94,7 @@ void SymVariables::init(const vector <int> &v_order) {
         throw BDDError();
         }*/
 
-    // _manager->setHandler(exceptionError);
+    _manager->setHandler(exceptionError);
     _manager->setTimeoutHandler(exceptionError);
     _manager->setNodesExceededHandler(exceptionError);
 
@@ -263,10 +263,15 @@ BDD SymVariables::getCube(const set <int> &vars, const vector<vector<int>> &v_in
 
 
 void
-exceptionError(string /*message*/) {
+exceptionError(string message) {
+
+    if (message == "Out of memory." || message == "Maximum memory exceeded.") {
+        utils::exit_with(utils::ExitCode::OUT_OF_MEMORY);
+    }
     //cout << message << endl;
     throw BDDError();
 }
+
 
 
 void SymVariables::print() {
