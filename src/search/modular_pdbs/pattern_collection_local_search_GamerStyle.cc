@@ -21,6 +21,7 @@
 #include "../utils/debug_macros.h"
 #include "pattern_collection_generator_complementary.h"
 #include "pattern_database_interface.h"
+#include<algorithm>
 
     
 using namespace std;
@@ -42,10 +43,18 @@ inline std::ostream& operator << (std::ostream& os, const std::vector<T>& v)
 }
 
   PatternCollectionLocalSearchGamerStyle::PatternCollectionLocalSearchGamerStyle(const options::Options & opts)
-  :time_limit (opts.get<int>("time_limit")){
+  :time_limit(opts.get<int>("time_limit")),
+      verbose(opts.get<bool>("verbose")){
   //PatternCollectionLocalSearchGamerStyle::PatternCollectionLocalSearchGamerStyle() 
       cout<<"hello LocalSearchGamerStyle"<<endl;
+    local_search_timer = make_unique<utils::CountdownTimer>(time_limit);
     //num_vars=task->get_num_variables();
+   //Setting up costs for top_patterns
+      TaskProxy task_proxy(*(g_root_task()));
+      OperatorsProxy operators = task_proxy.get_operators();
+      operator_costs.reserve(operators.size());
+      for (OperatorProxy op : operators)
+	operator_costs.push_back(op.get_cost());
   }
     
   
@@ -59,8 +68,11 @@ inline std::ostream& operator << (std::ostream& os, const std::vector<T>& v)
     shared_ptr<ModularZeroOnePDBs> candidate_ptr;
     PatternCollectionContainer new_candidate_local_search;
     const State &initial_state = task_proxy.get_initial_state();
+
+
+    cout<<"eval_method threshold:"<<evaluation_method->get_threshold()<<endl;
     
-    cout<<"Starting do_local_search:"<<get_name()<<",num_vars:"<<num_vars<<",local_episodes:"<<get_episodes()<<",time_limit:"<<get_time_limit()<<endl;
+    cout<<"Starting do_local_search:"<<get_name()<<",num_vars:"<<num_vars<<",local_episodes:"<<get_episodes()<<",time_limit:"<<local_search_timer->get_remaining_time()<<endl;
     //FIRST GET TOP PDBs IN EACH MAX_ADDITIVE_SUBSETS, SO THEY HAVE FULL COSTS
     //std::shared_ptr<PatternCollection> current_patterns=make_shared<PatternCollection>(*current_result->get_patterns());
     std::shared_ptr<MaxAdditivePDBSubsets> current_subsets=current_result->get_max_additive_subsets();
@@ -86,84 +98,18 @@ inline std::ostream& operator << (std::ostream& os, const std::vector<T>& v)
 
     //THEN GET EACH CANDIDATE PC BY ADDING A SINGLE VAR TO TOP PDB 
     //AND RECALCULATING COSTS FOR REMAINING PDBS IF ANY
-    bool possible_improvement=false;
+    bool improvement_found=false;
 
-    for(size_t pattern=0;pattern<top_patterns.size();pattern++){
-      vector<size_t> vars_to_reset;
-      vector<size_t> improving_vars;
-      bool all_pdbs_finished=true;
-      PatternCollectionContainer PC_old=max_subsets_container.at(pattern);
-      PatternCollectionContainer PC_new;
-      Pattern old_pattern=top_patterns.at(pattern);
-      if(impossible_to_update_pattern.find(old_pattern)!=impossible_to_update_pattern.end()){
-	cout<<"do_local_search, impossible to update"<<old_pattern<<endl;
+    for(auto pattern : top_patterns){
+      if(local_search_timer->is_expired()){
+	return improvement_found;
+      }
+      if(impossible_to_update_pattern.find(pattern)!=impossible_to_update_pattern.end()){
+	cout<<"do_local_search, impossible to update"<<pattern<<endl;
 	continue;
       }
-
-      
-      for (auto var : old_pattern) 
-	forbidden_vars[old_pattern].insert(var);
-      
-      size_t adjust=0;
-      for(size_t var=0;var<num_vars-forbidden_vars[old_pattern].size()-adjust;var++){
-	PC_new=generate_next_candidate(PC_old);
-	candidate_ptr=make_shared<ModularZeroOnePDBs>(task_proxy, PC_new.get_PC(), *pdb_factory);
-	//DEBUG
-	if(!candidate_ptr->is_finished()){
-	  all_pdbs_finished=false;
-	  possible_improvement=true;
-	  cout<<",candidate PC unfinished,";cout<<"PC_new:,";PC_new.print();
-	  vars_to_reset.push_back(last_var);
-	  adjust++;
-	}
-	else{
-	  cout<<",candidate PC finished,";cout<<"PC_new:,";PC_new.print();
-	}
-
-	if(pdb_factory->is_solved()){
-	      cout<<"Solution found while generating PDB candidate of type:"<<pdb_factory->name()<<", adding PDB and exiting generation at time"<<utils::g_timer()<<endl;
-	      current_result->include_additive_pdbs(pdb_factory->terminate_creation(candidate_ptr->get_pattern_databases()));
-	      current_result->set_dead_ends(pdb_factory->get_dead_ends());
-	      return true;
-	}
-	if(evaluation_method->evaluate(candidate_ptr)){
-	  //UPDATE PC_old to improved PC&add New_PC to result&resample
-	  possible_improvement=true;
-	  improving_vars.push_back(last_var);
-	  PC_old=PC_new;
-	  cout<<"time:,"<<utils::g_timer()<<",improvement found while doing local_search,var:,"<<var<<",type:"<<get_name();cout<<"PC_new:,";PC_new.print();
-	  //improvement_found=true;
-	  current_result->include_additive_pdbs(pdb_factory->terminate_creation(candidate_ptr->get_pattern_databases()));
-	  current_result->set_dead_ends(pdb_factory->get_dead_ends());
-	  //GAMER NEEDS TO PRUNE PREVIOUS PATTERN OR IT WOULD END UP WITH LOTS OF DOMINATED PDBs
-	  cout<<"time:"<<utils::g_timer()<<",initial_h before recompute additive sets:,"<<current_result->get_value(initial_state)<<endl;
-	  current_result->recompute_max_additive_subsets();
-	  cout<<"time:"<<utils::g_timer()<<",initial_h after recompute:,"<<current_result->get_value(initial_state)<<endl;
-	  evaluation_method->sample_states(current_result);
-	}
-	else{
-	  cout<<"time:,"<<utils::g_timer()<<",no improvement found while doing local_search,var:,"<<var<<",type:"<<get_name();cout<<"PC_new:,";
-	  PC_new.print();
-	}
-
-	if(utils::g_timer()-start_local_search_time>time_limit){
-	  cout<<"Interrupting do_local_search:,"<<get_name()<<",time_spent:,"<<utils::g_timer()-start_local_search_time<<",time_limit:"<<time_limit<<endl;
-	  cout<<"improving_vars:";for (auto var : improving_vars) cout<<var<<",";cout<<endl;
-	  for(auto i : vars_to_reset)
-	    forbidden_vars[old_pattern].erase(i);
-	  return true;//Even if no improv found, we have not checked all possible vars
-	}
-      }
-    
-      for(auto i : vars_to_reset)
-	forbidden_vars[old_pattern].erase(i);
-      vars_to_reset.clear();
-
-      if(improving_vars.size()==0&&all_pdbs_finished==true){
-	cout<<"Impossible for do_local_search to improve pattern:"<<old_pattern<<"by adding a single var"<<endl;
-	impossible_to_update_pattern.insert(old_pattern);
-      }
-      cout<<"improving_vars:";for (auto var : improving_vars) cout<<var<<",";cout<<endl;
+      if(do_local_search_pattern(pattern,current_result,evaluation_method,pdb_factory))
+	  improvement_found=true;
     }
     
 
@@ -172,8 +118,141 @@ inline std::ostream& operator << (std::ostream& os, const std::vector<T>& v)
     cout<<"Current samples:"<<evaluation_method->get_num_samples()<<endl;
     cout<<"Finished do_local_search:,"<<get_name()<<",time_spent:,"<<utils::g_timer()-start_local_search_time<<endl;
     
-    return possible_improvement;
+    return improvement_found;
   }
+ bool PatternCollectionLocalSearchGamerStyle::do_local_search_pattern(Pattern old_pattern,shared_ptr<PatternCollectionInformation> current_result,
+     shared_ptr<PatternCollectionEvaluator> evaluation_method, shared_ptr<PDBFactory> pdb_factory){
+   //Pattern temp2={0,3,6,7,28,32,33,37,38,42,43,47,58,60,63,64,65,66,67,68,69,70,71,72,73,74,76,77,78,79};
+   //old_pattern=temp2;
+   vector<int> candidates;
+   set<int> input_pattern(old_pattern.begin(), old_pattern.end());
+   TaskProxy task_proxy(*(g_root_task()));
+   const CausalGraph &cg = task_proxy.get_causal_graph();
+    
+   shared_ptr<PatternDatabaseInterface> old_pdb = pdb_factory->compute_pdb(task_proxy, old_pattern,operator_costs);
+   double best_score=old_pdb->compute_mean_finite_h();
+
+   bool all_pdbs_finished=true;
+    
+   cout<<"starting_best_score:"<<best_score<<",eval_method threshold:"<<evaluation_method->get_threshold()<<endl;
+   //First get connected variables 
+   for (size_t var = 0; var < g_variable_domain.size(); ++var) {
+        if (input_pattern.count(var)){ 
+          DEBUG_MSG(cout<<"\t\tGamer_local_search,skipping exisiting var:"<<var<<endl;);
+          continue;
+        }
+      for (int succ : cg.get_pre_to_eff(var)) {
+        if (input_pattern.count(succ)) {
+          DEBUG_MSG(cout<<"\t\tGamer,connected variables:"<<succ<<"to var:"<<var<<" added."<<endl;);
+          candidates.push_back(var); 
+          break;
+        }
+      }
+    }
+    if(candidates.size()==0){
+      impossible_to_update_pattern.insert(old_pattern);
+      if(verbose)
+	cout<<"input_pattern:"<<old_pattern<<"cannot be updated, no connected variables"<<endl;
+      return false;
+    }
+    if(verbose){
+      cout<<"input_pattern:";for (auto i : old_pattern) cout<<i<<",";
+      cout<<"candidates:";for (auto i : candidates) cout<<i<<",";cout<<endl;
+    }
+    assert(candidates.size()>0);
+    std::random_shuffle(candidates.begin(), candidates.end());//to aboid biases on repeat runs with partial PDBs
+    vector<pair<int,double> > improving_vars;//var,score
+   
+    //Now create candidate patterns to evaluate which vars to add
+    while(candidates.size()){
+      if(local_search_timer->is_expired()){
+	all_pdbs_finished=false;
+	if(verbose)
+	  cout<<"Breaking out of candidate loop, local_search_timer is expired"<<endl;
+	break;
+      }
+      last_var=candidates.back();
+      candidates.pop_back();
+      Pattern candidate_pattern=old_pattern;
+      candidate_pattern.push_back(last_var);
+      sort(candidate_pattern.begin(), candidate_pattern.end());
+      shared_ptr<PatternDatabaseInterface> candidate_pdb = pdb_factory->compute_pdb(task_proxy, candidate_pattern, operator_costs);
+      PDBCollection temp;temp.push_back(candidate_pdb);
+      pdb_factory->terminate_creation(temp, 250000, 50000, 10000000);
+      temp.clear();
+	
+      if(candidate_pdb->is_finished()){
+	if(verbose)
+	  cout<<"candidate_pattern:"<<candidate_pattern<<", is finished"<<endl;
+      }
+      else{
+	if(verbose)
+	  cout<<"candidate_pattern:"<<candidate_pattern<<", is unfinished"<<endl;
+	all_pdbs_finished=false;
+      }
+      //Now evaluate PDB
+      //if(evaluation_method->evaluate(pdb))
+      if(candidate_pdb->compute_mean_finite_h()>=0.999*best_score){//If we find 2 equal improvements to best known we add both
+	improvement_found=true;
+	//improving_vars.push_back(make_pair<int,double>(last_var,evaluation_method->get_reward()));
+	improving_vars.push_back(make_pair<int,double>(int(last_var),candidate_pdb->compute_mean_finite_h()));
+	//best_score=max(best_score,evaluation_method->get_reward());
+	best_score=max(best_score,candidate_pdb->compute_mean_finite_h());
+	if(verbose)
+	  cout<<"best_score:"<<best_score<<",new_score:"<<candidate_pdb->compute_mean_finite_h()<<",last_var:"<<last_var<<endl;
+      }
+    }
+    if(improving_vars.size()==0){
+      if(all_pdbs_finished){
+	impossible_to_update_pattern.insert(old_pattern);
+      }
+      return false;
+    }
+    
+    //Now find those var(s) with the best improvement
+    //We remove from improving vars all variables 
+    //whose score is 0.999 or lower of best_score
+    //Same as CGAMER
+    cout<<"Improving vars before prune:"<<endl;
+    for (auto var : improving_vars) cout<<"before_prune_var:,"<<var.first<<",score:,"<<var.second<<endl;
+    improving_vars.erase(std::remove_if(
+	  improving_vars.begin(), 
+	  improving_vars.end(),
+	  [best_score](pair<int,double> x){
+	      return x.second < 0.999*best_score;
+	  }), improving_vars.end());
+    cout<<"Improving vars after prune:"<<endl;
+
+    Pattern new_pattern=old_pattern;
+    for (auto var : improving_vars) {
+      cout<<"after_prune_var:,"<<var.first<<",score:,"<<var.second<<endl;
+      new_pattern.push_back(var.first);
+    }
+    sort(new_pattern.begin(),new_pattern.end());
+    cout<<"time:,"<<utils::g_timer()<<",Final PDB:,"<<new_pattern<<endl;
+    shared_ptr<PatternDatabaseInterface> new_pdb = pdb_factory->compute_pdb(task_proxy, new_pattern, operator_costs);
+    PDBCollection temp;temp.push_back(new_pdb);
+    pdb_factory->terminate_creation(temp, 250000, 50000, 10000000);
+    temp.clear();
+    if(!new_pdb->is_finished()){
+	  cout<<"Final PDB was unfinished"<<endl;
+    }
+    cout<<"time:,"<<utils::g_timer()<<",Final PDB constructed"<<endl;
+    //Now update the current result
+    PDBCollection new_Coll;
+    new_Coll.push_back(new_pdb);
+    current_result->include_additive_pdbs(pdb_factory->terminate_creation(new_Coll));
+    current_result->set_dead_ends(pdb_factory->get_dead_ends());
+    //Now get rid of old PDBs
+		
+    const State &initial_state = task_proxy.get_initial_state();
+    cout<<"time:"<<utils::g_timer()<<",initial_h before recompute:,"<<current_result->get_value(initial_state)<<endl;
+    current_result->recompute_max_additive_subsets();
+    cout<<"time:"<<utils::g_timer()<<",initial_h after recompute:,"<<current_result->get_value(initial_state)<<endl;
+    
+    return true;
+ }
+
 
   PatternCollectionContainer PatternCollectionLocalSearchGamerStyle::generate_next_candidate(PatternCollectionContainer candidate_collection){
     DEBUG_MSG(cout<<"starting generate_next_candidate"<<endl;);
@@ -227,6 +306,7 @@ inline std::ostream& operator << (std::ostream& os, const std::vector<T>& v)
 
   static shared_ptr<PatternCollectionLocalSearch>_parse(options::OptionParser &parser) {
     parser.add_option<int> ("time_limit", "If populated,stop construction on first node past boundary and time limit", "100");
+    parser.add_option<bool> ("verbose", "debug_mode from command line", "false");
     options::Options options = parser.parse();
     parser.document_synopsis(
         "Pattern Generator Local Search module",

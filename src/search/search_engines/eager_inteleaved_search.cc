@@ -156,46 +156,34 @@ SearchStatus EagerSearchInterleaved::step() {
     //of any values re-evaluated.
     
     //NOTE: THIS CODE ONLY WORKS FOR A SINGLE HEURISTIC AT THE MOMENT!!!!
-    if(improvement_found){
-	//CHECK FOR UPDATED VALUE IN HASH TABLE
-	//Commented until it is implemented.
-	//is_there_improvement should
-	//1) check if there has been any improvements at all
-	//2) check hash table if state is affected by change in PDBs
-	//3) Hash table should store improvement upon previous value
-	//   so that we do not need to re-calculate all PDBs, only the improved ones.
-	//int new_val2=heuristics[0]->recompute_heuristic(s);
-
-	EvaluationContext eval_context(
-	    s, node.get_g(), false, &statistics);
-        //ONLY WORKS FOR ONE HEURISTIC!!!!        
-	if (open_list->is_dead_end(eval_context)) {
-	  node.mark_as_dead_end();
-	      return IN_PROGRESS;
-	}
-	int new_val=eval_context.get_result(heuristics[0]).get_h_value();
-	
-	//Note: h values are stored in the open_list so nothing has 
-	//changed regarding search_space class itself, no reopen
-	//  int new_val2=heuristics[0]->recompute_heuristic(s);
-	//  if(new_val2!=new_val){
-	//    cerr<<"new_val2!=new_val!!!"<<endl;exit(1);
-	//  }
-	if(new_val+node.get_g()>last_key_removed[0]){
-	  //int new_f_val2 = eval_context.get_heuristic_value(f_evaluator);
-	  //cout<<"new_val:"<<new_val<<",new_val2:,"<<new_val2<<",old_val:,"<<old_val<<",g:"<<node.get_g()<<",REINSETING NODE, new f_value:"<<new_val+node.get_g()<<",new_f_val2:"<<new_f_val2<<",old_f_value:"<<statistics.get_lastjump_f_value()<<endl;
-	  open_list->insert(eval_context, s.get_id());
-	  return IN_PROGRESS;
-	}
-	else if(new_val+node.get_g()<last_key_removed[0]){
-	  int new_val2=heuristics[0]->recompute_heuristic(s);
-	  cerr<<"new_val2:,"<<new_val2<<",old_val:,"<<last_key_removed[0]<<",new_val:,"<<new_val<<",g:"<<node.get_g()<<", how can improving a heuristic result in a lower h!!!, PLS DEBUG ME"<<endl;exit(1);
-	}
-	//else if(eval_context.get_heuristic_value(f_evaluator)==old_val){
-	//  cout<<"nlast_key_removed[0] change, new_val:,"<<new_val<<",old_val:,"<<old_val<<endl;
-	//}
+    //CHECK FOR UPDATED VALUE IN HASH TABLE
+    EvaluationContext eval_context(s, node.get_g(), false, &statistics);
+    //ONLY WORKS FOR ONE HEURISTIC!!!!        
+    if (open_list->is_dead_end(eval_context)) {
+      node.mark_as_dead_end();
+      return IN_PROGRESS;
     }
-
+    int new_val=eval_context.get_result(heuristics[0]).get_h_value();
+	
+    //Note: h values are not stored in the open_list so nothing has 
+    //changed regarding search_space class itself, no reopen
+    //  int new_val2=heuristics[0]->recompute_heuristic(s);
+    //  if(new_val2!=new_val){
+    //    cerr<<"new_val2!=new_val!!!"<<endl;exit(1);
+    //  }
+    if(new_val+node.get_g()>last_key_removed[0]){
+      //int new_f_val2 = eval_context.get_heuristic_value(f_evaluator);
+      //cout<<"new_val:"<<new_val<<",new_val2:,"<<new_val2<<",old_val:,"<<old_val<<",g:"<<node.get_g()<<",REINSETING NODE, new f_value:"<<new_val+node.get_g()<<",new_f_val2:"<<new_f_val2<<",old_f_value:"<<statistics.get_lastjump_f_value()<<endl;
+      open_list->insert(eval_context, s.get_id());
+      return IN_PROGRESS;
+    }
+    else if(new_val+node.get_g()<last_key_removed[0]){
+      int new_val2=heuristics[0]->recompute_heuristic(s);
+      cerr<<"new_val2:,"<<new_val2<<",old_val:,"<<last_key_removed[0]<<",new_val:,"<<new_val<<",g:"<<node.get_g()<<", how can improving a heuristic result in a lower h!!!, PLS DEBUG ME"<<endl;exit(1);
+    }
+    //else if(eval_context.get_heuristic_value(f_evaluator)==old_val){
+    //  cout<<"nlast_key_removed[0] change, new_val:,"<<new_val<<",old_val:,"<<old_val<<endl;
+    //}
   
 
     //This used to be done by fetch next_node
@@ -220,7 +208,7 @@ SearchStatus EagerSearchInterleaved::step() {
     pruning_method->prune_operators(s, applicable_ops);
 
     // This evaluates the expanded state (again) to get preferred ops
-    EvaluationContext eval_context(s, node.get_g(), false, &statistics, true);
+    EvaluationContext eval_context2(s, node.get_g(), false, &statistics, true);
     for (Heuristic *heur : preferred_operator_heuristics) {
         /* In an alternation search with unreliable heuristics, it is
            possible that this heuristic considers the state a dead

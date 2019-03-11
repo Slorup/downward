@@ -28,6 +28,10 @@ double CountdownTimer::get_elapsed_time() const {
 double CountdownTimer::get_remaining_time() const {
     return max_time - get_elapsed_time();
 }
+void CountdownTimer::restart_timer(double new_max_time) {
+    max_time=new_max_time;
+    timer.reset();
+}
 
 ostream &operator<<(ostream &os, const CountdownTimer &cd_timer) {
     os << cd_timer.timer;

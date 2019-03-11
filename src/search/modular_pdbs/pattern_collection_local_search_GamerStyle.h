@@ -16,7 +16,6 @@
 #include "pattern_collection_evaluator.h"
 
 
-class AbstractTask;
 
 namespace options {
 class OptionParser;
@@ -30,25 +29,29 @@ namespace pdbs3 {
 //class PDBFactory;
 //class PatternCollectionContainer;
 class PatternCollectionLocalSearchGamerStyle : public PatternCollectionLocalSearch {
-  Pattern current_pattern;
   int time_limit=100;
+  bool verbose=false;
+  Pattern current_pattern;
   int last_var=0;
   bool improvement_found=false;
+  std::vector<int> candidates;
   std::shared_ptr<TaskProxy> task_proxy;
   //So we avoid re-trying vars which have already been fully tested,
   //forbiddent_vars is cleared whenever we add a variable because then
   //previously discarded vars might actually help the new pattern
   std::map<Pattern,std::set<int> > forbidden_vars;
   std::set<Pattern> impossible_to_update_pattern;
-  //utils::CountdownTimer *local_search_timer;
+  std::vector<int> operator_costs;
   public:
   explicit PatternCollectionLocalSearchGamerStyle(const options::Options &options);
   //explicit PatternCollectionLocalSearchGamerStyle();
   virtual bool do_local_search(std::shared_ptr<PatternCollectionInformation> current_result, std::shared_ptr<PatternCollectionEvaluator> evaluation_method,
      std::shared_ptr<PDBFactory> pdb_factory);
+  bool do_local_search_pattern(Pattern pattern,std::shared_ptr<PatternCollectionEvaluator> evaluation_method, std::shared_ptr<PDBFactory> pdb_factory);
+  bool do_local_search_pattern(Pattern old_pattern,std::shared_ptr<PatternCollectionInformation> current_result,
+      std::shared_ptr<PatternCollectionEvaluator> evaluation_method, std::shared_ptr<PDBFactory> pdb_factory);
   virtual PatternCollectionContainer generate_next_candidate(PatternCollectionContainer candidate_pattern) override;
   virtual void print_last_var() override{std::cout<<"last_var:,"<<last_var<<std::endl;}
-  virtual int get_time_limit() override {return time_limit;};
   virtual void print_name() override {std::cout<<"Doing LocalSearchGamerStyle"<<std::endl;}
   virtual std::string get_name() override {std::string output="LocalSearchGamerStyle";return output;};
   std::shared_ptr<ModularZeroOnePDBs> compound_local_search(PatternCollectionContainer old_PC,std::shared_ptr<PatternCollectionInformation> current_result,std::shared_ptr<PDBFactory> pdb_factory);

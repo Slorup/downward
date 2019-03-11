@@ -37,7 +37,7 @@ namespace pdbs3 {
 
     void PatternDatabaseSymbolic::create_pdb(SymController * engine, const SymParamsSearch & params, 
 					     int max_time_ms, int max_step_time_ms, int max_nodes, int global_limit_memory_MB) {
-//	float start_time=utils::g_timer();
+	//float start_time=utils::g_timer();
 	//cout<<"start_time_create_pdb:"<<utils::g_timer()<<",";
 	search= make_unique<symbolic::UniformCostSearch> (engine, params);
 	search->set_limits(max_step_time_ms, max_nodes);
@@ -86,7 +86,7 @@ namespace pdbs3 {
 
 	finished = search->finished();
 	hvalue_unseen_states = search->getHNotClosed();
-	average = search->getClosed()->average_hvalue();
+	//average = search->getClosed()->average_hvalue();
 	DEBUG_MSG(for (int v : pattern) cout << v << " ";);
 	/*cout<<"g_timer:"<<utils::g_timer<<",Pattern:";for (auto var : pattern) cout<<","<<var;
 	cout<<",finished:"<<search->finished();
@@ -101,7 +101,8 @@ namespace pdbs3 {
 	//cout << "Solved: " << engine->solved() << " Finished: " << search->finished() <<  ", max_time_ms: " << max_time_ms << endl;
 
 	if(engine->solved()) {
-    solved = true;
+	  //cout<<"engine solved"<<endl;
+	  solved = true;
 	    heuristic = engine->get_solution()->getADD();
 	    search.reset();
 	} else {
@@ -117,11 +118,15 @@ namespace pdbs3 {
 		//IF WE NEED THE AVG_H_VALUE
 		//E.G. COMPARISON PURPOSES
 		//OF FITNESS FUNCTIONS
-		//compute_mean_finite_h();
+		compute_mean_finite_h();
         search.reset();
 	    }
+	    else
+	      average = search->getClosed()->average_hvalue();
 	}
-  //cout<<"Overall generationTime:,"<<utils::g_timer()-start_time<<endl;
+	//DEBUG_MSG(cout<<"\t\tOverall generationTime:,"<<utils::g_timer()-start_time<<",avg_h_val:"<<average<<",pattern:";);
+	//for (auto v : pattern) cout << v << " ";
+	//cout<<endl;
     }
 
     int PatternDatabaseSymbolic::get_value(const State & state) const {
@@ -193,7 +198,7 @@ namespace pdbs3 {
 	} 
     
   if(!search->finished()&&search->is_solved()) {
-    cout<<"search was solved but not finished, so running until perimeter PDB is finished or not searchable anymore"<<endl;
+    //cout<<"search was solved but not finished, so running until perimeter PDB is finished or not searchable anymore"<<endl;
     solved=true;
     search->set_limits(INT_MAX, INT_MAX);
     while (!search->finished()&&search->isSearchable()&&!search->getEngine()->solved() ){//sometimes Solution was found but getEngine->solved() does not get updated, need to investigate, this is a hack!  I also hacked is_solved n uniform_cost_search

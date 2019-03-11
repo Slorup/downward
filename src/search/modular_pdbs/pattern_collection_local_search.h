@@ -12,6 +12,7 @@
 #include <random>
 #include "../globals.h"
 #include "../task_tools.h"
+#include "../utils/countdown_timer.h"
 
 
 class AbstractTask;
@@ -32,21 +33,27 @@ class PatternCollectionLocalSearch {
   protected:
   PatternCollectionContainer new_patterns;
   int num_vars;
+  std::unique_ptr<utils::CountdownTimer> local_search_timer;
   public:
-    void initialize(std::shared_ptr<AbstractTask> task);
-    //virtual void initialize(std::shared_ptr<AbstractTask> task) = 0;
-    virtual PatternCollectionContainer generate_next_candidate(PatternCollectionContainer candidate_pattern) = 0;
-    virtual void forbid_last_var(){};
-    virtual void reset_forbidden_vars(){};
-    virtual void print_last_var(){};
-    virtual int get_time_limit(){ return 0;};
-    virtual int get_episodes(){ return 0;};
-    void remove_irrelevant_variables(Pattern &pattern,Pattern &removed_vars);
-    virtual void print_name() = 0;
-    virtual std::string get_name() = 0;
-    virtual bool do_local_search(std::shared_ptr<PatternCollectionInformation> current_result, 
-	std::shared_ptr<PatternCollectionEvaluator> evaluation_method,
-	std::shared_ptr<PDBFactory> pdb_factory) = 0;
+  void initialize(std::shared_ptr<AbstractTask> task);
+  //virtual void initialize(std::shared_ptr<AbstractTask> task) = 0;
+  virtual PatternCollectionContainer generate_next_candidate(PatternCollectionContainer candidate_pattern) = 0;
+  virtual void forbid_last_var(){};
+  virtual void reset_forbidden_vars(){};
+  virtual void print_last_var(){};
+  virtual int get_episodes(){ return 0;};
+  void remove_irrelevant_variables(Pattern &pattern,Pattern &removed_vars);
+  virtual void print_name() = 0;
+  virtual std::string get_name() = 0;
+  virtual bool do_local_search(std::shared_ptr<PatternCollectionInformation> current_result, 
+      std::shared_ptr<PatternCollectionEvaluator> evaluation_method,
+      std::shared_ptr<PDBFactory> pdb_factory) = 0;
+  virtual bool do_local_search(std::shared_ptr<PatternCollectionInformation> current_result, 
+      std::shared_ptr<PatternCollectionEvaluator> evaluation_method,
+      std::shared_ptr<PDBFactory> pdb_factory,double new_time_limit){
+    local_search_timer->restart_timer(new_time_limit);
+    return do_local_search(current_result,evaluation_method,pdb_factory);
+    }
 
 };
 

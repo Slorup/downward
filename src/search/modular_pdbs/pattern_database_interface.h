@@ -78,6 +78,7 @@ public:
 
     virtual int get_value(const State &state, int cache_id) const {
 	if (cache_id != evaluation_cache_id) {
+	  std::cout<<"NOT USING CACHE for interleaved_search experiments!"<<std::endl;exit(1);
 	    evaluation_cache_id  = cache_id;
 	    evaluation_cache_value = get_value (state);
 	}

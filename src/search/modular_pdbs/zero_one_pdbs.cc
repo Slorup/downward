@@ -49,7 +49,7 @@ ModularZeroOnePDBs::ModularZeroOnePDBs(TaskProxy task_proxy, const PatternCollec
 			
 	float start_gen_time=utils::g_timer();
 	//cout<<"start_gen_time:"<<start_gen_time<<endl;
-	//cout<<"\tcreating pdb with pattern:"<<pattern<<flush<<endl;
+	cout<<"\tcreating pdb with pattern:"<<pattern<<flush<<endl;
 	shared_ptr<PatternDatabaseInterface> pdb = pdb_factory.compute_pdb(task_proxy, pattern, 
 									   operator_costs);
 	DEBUG_COMP(cout<<"compute_pdb_time:"<<utils::g_timer()-start_gen_time<<endl;);
@@ -73,6 +73,7 @@ ModularZeroOnePDBs::ModularZeroOnePDBs(TaskProxy task_proxy, const PatternCollec
         }
         if(costs_zeroed==operators.size()){
           DEBUG_COMP(cout<<"\tall costs are zero, no more PDB generation after pattern["<<counter<<"]:"<<pattern<<endl;);
+          cout<<"\tall costs are zero, no more PDB generation after pattern["<<counter<<"]:"<<pattern<<endl;
           break;
         }
           counter++;

@@ -124,12 +124,17 @@ ModularHeuristic::ModularHeuristic(const Options &opts)
 //      exit(1);
 
       //DEBUG BLOCK FINISHED
-      /*PatternCollectionContainer PC;
+      PatternCollectionContainer PC;
       //Pattern temp_pattern1{2,5,11,14,19,23,27,40,42,44,45,46,50,51,52,53,54,56,58,59,60,61};
-      Pattern temp_pattern1{7,8,9,10,11,12,13,14,15,16,17,18};
+      //Pattern temp_pattern1{7,8,9,10,11,12,13,14,15,16,17,18};
+      //Pattern temp_pattern1{0,1,2,3,4,5,6,7,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50,51,52,53,54,55,56,57,58,59,60,61,62,63,64,65,66,67,68,69,70,71,72,73,74,75,76,77,78,79};
+      //Pattern temp_pattern1{0,1,2,3,4,5,6,7,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50,51,52,53,54,55,56,57,58,59,60,61,62,63,64,65,66,67,68,69,70,71,72,73,74,75,76,77,78,79};
+      /*Pattern temp_pattern1{0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50};
       PC.clear();PC.add_pc(temp_pattern1);
       candidate_ptr=make_shared<ModularZeroOnePDBs>(task_proxy, PC.get_PC(), *pdb_factory);
+      cout<<"initial h value for Gamer-Style before_terminate:"<<candidate_ptr->get_value(initial_state)<<endl;
       result->include_additive_pdbs(pdb_factory->terminate_creation(candidate_ptr->get_pattern_databases()));
+      cout<<"initial h value for Gamer-Style after:"<<candidate_ptr->get_value(initial_state)<<endl;
       result->set_dead_ends(pdb_factory->get_dead_ends());
       if(doing_canonical_search){
 	canonical_pdbs=make_unique<CanonicalSymbolicPDBs>(result,false, 0, 0);//no need to prune anything, solution found
@@ -626,14 +631,9 @@ bool ModularHeuristic::find_improvements(int time_limit) {
       //Now generating next set of patterns and PDB
       if(pattern_generator->get_name()=="GamerStyle"){
 	if(doing_local_search){
-	  bool possible_improv=pattern_local_search->do_local_search(result,pattern_evaluator,pdb_factory);
+	  pattern_local_search->do_local_search(result,pattern_evaluator,pdb_factory,modular_heuristic_timer->get_remaining_time());
 	  if(check_for_solution()){
 	    return true;
-	  }
-	  //Check if any PDB is unfinished
-	  if(!possible_improv){
-	    cout<<"CANT IMPROVE USING GAMER, GAMER_ONLY SITUATION SO WE ARE FINISHED"<<endl;
-	    return possible_improv;
 	  }
 	}
       }
@@ -733,7 +733,7 @@ bool ModularHeuristic::find_improvements(int time_limit) {
 	      //Always trying to further improve any already improving
 	      //pattern collection,set by doing_local_search
 	      if(doing_local_search){
-		pattern_local_search->do_local_search(result,pattern_evaluator,pdb_factory);
+		pattern_local_search->do_local_search(result,pattern_evaluator,pdb_factory,modular_heuristic_timer->get_remaining_time());
 		if(check_for_solution()){
 		  return true;
 		}
@@ -780,7 +780,7 @@ bool ModularHeuristic::find_improvements(int time_limit) {
 		//Always trying to further improve any already improving
 		//pattern collection,set by doing_local_search
 		if(doing_local_search){
-		  pattern_local_search->do_local_search(result,pattern_evaluator,pdb_factory);
+		  pattern_local_search->do_local_search(result,pattern_evaluator,pdb_factory,modular_heuristic_timer->get_remaining_time());
 		  if(check_for_solution()){
 		    return true;
 		  }
