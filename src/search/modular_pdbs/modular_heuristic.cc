@@ -129,9 +129,13 @@ ModularHeuristic::ModularHeuristic(const Options &opts)
       //Pattern temp_pattern1{7,8,9,10,11,12,13,14,15,16,17,18};
       //Pattern temp_pattern1{0,1,2,3,4,5,6,7,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50,51,52,53,54,55,56,57,58,59,60,61,62,63,64,65,66,67,68,69,70,71,72,73,74,75,76,77,78,79};
       //Pattern temp_pattern1{0,1,2,3,4,5,6,7,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50,51,52,53,54,55,56,57,58,59,60,61,62,63,64,65,66,67,68,69,70,71,72,73,74,75,76,77,78,79};
-      /*Pattern temp_pattern1{0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50};
-      PC.clear();PC.add_pc(temp_pattern1);
-      candidate_ptr=make_shared<ModularZeroOnePDBs>(task_proxy, PC.get_PC(), *pdb_factory);
+	//Pattern temp1a{0,3,6,7,28,32,33,37,38,42,43,47,58,60,63,64,65,66,67,69,71,73,74,76,77,78,79};
+	//Pattern temp2a{0,3,6,7,28,32,33,37,38,42,43,47,58,60,63,64,65,67,68,69,71,73,74,76,77,78,79};
+	//Pattern temp3a{,3,6,7,28,32,33,37,38,42,43,47,58,60,63,64,65,67,69,70,71,73,74,76,77,78,79};
+	//Pattern temp_pattern1{0,3,6,7,28,32,33,37,38,42,43,47,58,60,63,64,65,66,67,68,69,70,71,72,73,74,76,77,78,79};
+        //Pattern temp_pattern1{0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50};
+        /*PC.clear();PC.add_pc(temp_pattern1);
+      cndidate_ptr=make_shared<ModularZeroOnePDBs>(task_proxy, PC.get_PC(), *pdb_factory);
       cout<<"initial h value for Gamer-Style before_terminate:"<<candidate_ptr->get_value(initial_state)<<endl;
       result->include_additive_pdbs(pdb_factory->terminate_creation(candidate_ptr->get_pattern_databases()));
       cout<<"initial h value for Gamer-Style after:"<<candidate_ptr->get_value(initial_state)<<endl;

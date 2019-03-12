@@ -133,7 +133,7 @@ inline std::ostream& operator << (std::ostream& os, const std::vector<T>& v)
    double best_score=old_pdb->compute_mean_finite_h();
 
    bool all_pdbs_finished=true;
-    
+   double starting_best_score=best_score;
    cout<<"starting_best_score:"<<best_score<<",eval_method threshold:"<<evaluation_method->get_threshold()<<endl;
    //First get connected variables 
    for (size_t var = 0; var < g_variable_domain.size(); ++var) {
@@ -163,6 +163,7 @@ inline std::ostream& operator << (std::ostream& os, const std::vector<T>& v)
     std::random_shuffle(candidates.begin(), candidates.end());//to aboid biases on repeat runs with partial PDBs
     vector<pair<int,double> > improving_vars;//var,score
    
+    vector<shared_ptr<PatternDatabaseInterface> > improving_pdbs;
     //Now create candidate patterns to evaluate which vars to add
     while(candidates.size()){
       if(local_search_timer->is_expired()){
@@ -171,6 +172,9 @@ inline std::ostream& operator << (std::ostream& os, const std::vector<T>& v)
 	  cout<<"Breaking out of candidate loop, local_search_timer is expired"<<endl;
 	break;
       }
+      double max_pdb_time=min(250000.0,local_search_timer->get_remaining_time()*1000.0);
+      if(verbose)
+	cout<<"\tmax_pdb_time="<<max_pdb_time<<endl;
       last_var=candidates.back();
       candidates.pop_back();
       Pattern candidate_pattern=old_pattern;
@@ -178,28 +182,37 @@ inline std::ostream& operator << (std::ostream& os, const std::vector<T>& v)
       sort(candidate_pattern.begin(), candidate_pattern.end());
       shared_ptr<PatternDatabaseInterface> candidate_pdb = pdb_factory->compute_pdb(task_proxy, candidate_pattern, operator_costs);
       PDBCollection temp;temp.push_back(candidate_pdb);
-      pdb_factory->terminate_creation(temp, 250000, 50000, 10000000);
+      
+      if(local_search_timer->is_expired()){
+	all_pdbs_finished=false;
+	if(verbose)
+	  cout<<"Breaking out of candidate loop, local_search_timer is expired"<<endl;
+	break;
+      }
+
+      pdb_factory->terminate_creation(temp, max_pdb_time, 50000, 10000000);
       temp.clear();
 	
       if(candidate_pdb->is_finished()){
 	if(verbose)
-	  cout<<"candidate_pattern:"<<candidate_pattern<<", is finished"<<endl;
+	  cout<<"time,"<<utils::g_timer()<<",candidate_pattern:"<<candidate_pattern<<", is finished"<<endl;
       }
       else{
 	if(verbose)
-	  cout<<"candidate_pattern:"<<candidate_pattern<<", is unfinished"<<endl;
+	  cout<<"time:,"<<utils::g_timer()<<",candidate_pattern:"<<candidate_pattern<<", is unfinished"<<endl;
 	all_pdbs_finished=false;
       }
       //Now evaluate PDB
       //if(evaluation_method->evaluate(pdb))
-      if(candidate_pdb->compute_mean_finite_h()>=0.999*best_score){//If we find 2 equal improvements to best known we add both
+      if(candidate_pdb->compute_mean_finite_h()>starting_best_score){//If we find 2 equal improvements to best known we add both
+	if(verbose)
+	  cout<<"best_score:"<<best_score<<",new_best_score:"<<candidate_pdb->compute_mean_finite_h()<<",last_var:"<<last_var<<endl;
 	improvement_found=true;
 	//improving_vars.push_back(make_pair<int,double>(last_var,evaluation_method->get_reward()));
 	improving_vars.push_back(make_pair<int,double>(int(last_var),candidate_pdb->compute_mean_finite_h()));
+	improving_pdbs.push_back(candidate_pdb);
 	//best_score=max(best_score,evaluation_method->get_reward());
 	best_score=max(best_score,candidate_pdb->compute_mean_finite_h());
-	if(verbose)
-	  cout<<"best_score:"<<best_score<<",new_score:"<<candidate_pdb->compute_mean_finite_h()<<",last_var:"<<last_var<<endl;
       }
     }
     if(improving_vars.size()==0){
@@ -222,20 +235,67 @@ inline std::ostream& operator << (std::ostream& os, const std::vector<T>& v)
 	      return x.second < 0.999*best_score;
 	  }), improving_vars.end());
     cout<<"Improving vars after prune:"<<endl;
-
     Pattern new_pattern=old_pattern;
     for (auto var : improving_vars) {
       cout<<"after_prune_var:,"<<var.first<<",score:,"<<var.second<<endl;
       new_pattern.push_back(var.first);
     }
+    
+    //Note: if we have gone past time limit, we simply add
+    //the best improving PDB, we have run out of time
+    //to do any merges
+    if(local_search_timer->is_expired()){
+      cout<<"time:,"<<utils::g_timer()<<",local_search_time is expired,last best candidate PDB is Final PDB:"<<*improving_pdbs.back()<<endl;
+      PDBCollection new_Coll;
+      new_Coll.push_back(improving_pdbs.back());//last improving PDB will be have the best found avg_h_value(ignoring ties for now)
+      current_result->include_additive_pdbs(pdb_factory->terminate_creation(new_Coll,0,0,0));
+      current_result->set_dead_ends(pdb_factory->get_dead_ends());
+      //Recompute as usual
+      const State &initial_state = task_proxy.get_initial_state();
+      cout<<"time:"<<utils::g_timer()<<",initial_h before recompute:,"<<current_result->get_value(initial_state)<<endl;
+      current_result->recompute_max_additive_subsets();
+      cout<<"time:"<<utils::g_timer()<<",initial_h after recompute:,"<<current_result->get_value(initial_state)<<endl;
+      return true;
+    }
+
+
+
+
+
+
     sort(new_pattern.begin(),new_pattern.end());
     cout<<"time:,"<<utils::g_timer()<<",Final PDB:,"<<new_pattern<<endl;
     shared_ptr<PatternDatabaseInterface> new_pdb = pdb_factory->compute_pdb(task_proxy, new_pattern, operator_costs);
+
+
+    //Repeat timer_check before going to terminate final PDB
+    if(local_search_timer->is_expired()){
+      PDBCollection new_Coll;
+      if(new_pdb->compute_mean_finite_h()>=best_score){
+	new_Coll.push_back(new_pdb);//
+	cout<<"time:,"<<utils::g_timer()<<",local_search_time is expired,last best candidate PDB is Final PDB:"<<*improving_pdbs.back()<<endl;
+      }
+      else{
+	new_Coll.push_back(improving_pdbs.back());
+	cout<<"time:,"<<utils::g_timer()<<",local_search_time is expired before terminate, Final PDB:"<<*new_pdb<<endl;
+      }
+      current_result->include_additive_pdbs(pdb_factory->terminate_creation(new_Coll,0,0,0));
+      current_result->set_dead_ends(pdb_factory->get_dead_ends());
+      //Recompute as usual
+      const State &initial_state = task_proxy.get_initial_state();
+      cout<<"time:"<<utils::g_timer()<<",initial_h before recompute:,"<<current_result->get_value(initial_state)<<endl;
+      current_result->recompute_max_additive_subsets();
+      cout<<"time:"<<utils::g_timer()<<",initial_h after recompute:,"<<current_result->get_value(initial_state)<<endl;
+      return true;
+    }
+
+
     PDBCollection temp;temp.push_back(new_pdb);
     pdb_factory->terminate_creation(temp, 250000, 50000, 10000000);
     temp.clear();
     if(!new_pdb->is_finished()){
 	  cout<<"Final PDB was unfinished"<<endl;
+
     }
     cout<<"time:,"<<utils::g_timer()<<",Final PDB constructed"<<endl;
     //Now update the current result

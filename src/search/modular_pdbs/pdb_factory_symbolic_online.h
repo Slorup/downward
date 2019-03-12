@@ -80,6 +80,7 @@ class PDBFactorySymbolicOnline : public PDBFactory, public symbolic::SymControll
     int  get_online_expansions() const {
 	return online_expansions;
     }
+    virtual void continue_creation (PatternDatabaseInterface & pdb);
 };
 }
 

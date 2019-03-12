@@ -37,7 +37,7 @@ namespace pdbs3 {
 
     int PatternDatabaseSymbolicOnline::get_value(const State & original_state) const {
 
-        cout << "get_value on symbolic online. Perimeter (hvalue_unseen) = " << symbolic_pdb->get_hvalue_unseen_states() << endl;
+        //cout << "get_value on symbolic online. Perimeter (hvalue_unseen) = " << symbolic_pdb->get_hvalue_unseen_states() << endl;
         //original_state.dump_pddl();
 	State initial_state = pdb_task_proxy->convert_ancestor_state(original_state); 
 
@@ -45,12 +45,13 @@ namespace pdbs3 {
         //intiial_state.dump_pddl();
 	
 	auto goal_cost = symbolic_pdb->get_goal_cost(pattern, initial_state); // Check symbolic PDB 
-	cout<<"\tgoal_cost:"<<goal_cost.second<<endl;
+	//cout<<"\tgoal_cost:"<<goal_cost.second<<endl;
 	if(goal_cost.first) {
 	    return goal_cost.second;
 	}
         
 	int initial_h = compute_online_heuristic(initial_state, goal_cost.second); 
+	cout<<"\t\tinitial_h:"<<initial_h;
 	if (initial_h == std::numeric_limits<int>::max()) {
 	    return initial_h;
         }
@@ -154,7 +155,7 @@ namespace pdbs3 {
 		}
 	    }
 	}
-	//cout<<"finished, time:"<<time()<<",upper bound:"<<upper_bound<<",lower bound:"<<lower_bound<<endl;
+	cout<<",finished, time:"<<time()<<",upper bound:"<<upper_bound<<",lower bound:"<<initial_h<<",";
 	search_info.clear();
 	
 	//DEBUG_MSG(cout << "Upper bound: " << upper_bound << " expanded: " << expanded_states << endl;);
@@ -166,7 +167,7 @@ namespace pdbs3 {
             //no more nodes in open list
 	    final_value = upper_bound;
 	}
-        cout << "Upper bound: " << upper_bound << " expanded: " << expanded_states << " value: " << final_value   << endl;
+        cout << ",Upper bound: " << upper_bound << " expanded: " << expanded_states << " value: " << final_value   << endl;
         return final_value;
 
     }

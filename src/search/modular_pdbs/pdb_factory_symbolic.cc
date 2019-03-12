@@ -102,15 +102,17 @@ namespace pdbs3 {
 					    int min_max_step_time, 
 					    int min_max_nodes) {
       //cout<<"calling terminate_creation symbolic"<<endl;
-	auto result = std::make_shared<PDBCollection> ();
-	for(auto & pdb : pdb_collection) {
-	    pdb->terminate_creation(std::max(termination_time_ms, min_max_time),
-				    std::max(termination_step_time_ms, min_max_step_time), 
-				    std::max(termination_nodes, min_max_nodes), 
-				    global_limit_memory_MB);
-	    result->push_back(pdb);
+      auto result = std::make_shared<PDBCollection> ();
+      for(auto & pdb : pdb_collection) {
+	if(min_max_time>0){
+	  pdb->terminate_creation(std::max(termination_time_ms, min_max_time),
+				  std::max(termination_step_time_ms, min_max_step_time), 
+				  std::max(termination_nodes, min_max_nodes), 
+				  global_limit_memory_MB);
 	}
-	return result;
+	result->push_back(pdb);
+      }
+      return result;
     }
 
 
