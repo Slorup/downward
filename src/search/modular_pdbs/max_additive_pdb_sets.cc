@@ -16,14 +16,34 @@ bool are_pdbs_additive(const PatternDatabaseInterface &pdb1,
     assert(costs1.size() == costs2.size());
     assert(!costs1.empty());
  
+    bool zero_cost1=false;
+    bool zero_cost2=false;
     for (size_t i = 0; i < costs1.size(); ++i) {
       //if(costs1[i]>0||costs2[i]>0){
 	//cout<<"costs1["<<i<<"]:"<<costs1[i]<<",costs2["<<i<<"]:"<<costs2[i]<<endl;
      // }
-	if (costs1[i] > 0 && costs2[i] > 0) {
+	if (costs1[i] > 0){
+	  zero_cost1=true;
+	 if(costs2[i] > 0) {
 	    return false;
-	}   
+	 }
+	}	 
     }
+    if(zero_cost1){
+      cout<<"not_additive,zero_costs for:"<<pdb1<<endl;
+      return false;
+    }
+    for (size_t i = 0; i < costs2.size(); ++i) {
+	if (costs2[i] > 0){
+	  zero_cost2=true;
+	  break;
+	}
+    }
+    if(zero_cost2){
+      cout<<"not_additive,zero_costs for:"<<pdb2<<endl;
+      return false;
+    }
+
     cout<<"pdb1:"<<pdb1<<",pdb2:"<<pdb2<<"are additive"<<endl;
     return true;
 }

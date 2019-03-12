@@ -859,10 +859,13 @@ bool ModularHeuristic::find_improvements(int time_limit) {
       return improvement_found;
 }
 bool ModularHeuristic::check_for_solution(){
+  //if do_local_search came up with a Solution
+  //we do not need to change anything regarding the result
+  //PDBs already added
   if(pdb_factory->is_solved()){
-    cout<<"Solution found while generating PDB candidate of type:"<<pdb_factory->name()<<", adding PDB and exiting generation at time"<<utils::g_timer()<<endl;
-    result->include_additive_pdbs(pdb_factory->terminate_creation(candidate_ptr->get_pattern_databases()));
-    result->set_dead_ends(pdb_factory->get_dead_ends());
+    cout<<"check_for_solution,Solution found while generating PDB candidate of type:"<<pdb_factory->name()<<", adding PDB and exiting generation at time"<<utils::g_timer()<<endl;
+    //result->include_additive_pdbs(pdb_factory->terminate_creation(candidate_ptr->get_pattern_databases()));
+    //result->set_dead_ends(pdb_factory->get_dead_ends());
     if(doing_canonical_search){
       canonical_pdbs=make_unique<CanonicalSymbolicPDBs>(result,false, 0, 0);//no need to prune anything, solution found
     }
