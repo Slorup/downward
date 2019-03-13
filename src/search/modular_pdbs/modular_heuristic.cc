@@ -72,6 +72,7 @@ ModularHeuristic::ModularHeuristic(const Options &opts)
     always_CBP_or_RBP_or_UCB(opts.get<int>("always_cbp_or_rbp_or_ucb")), 
     terminate_creation(opts.get<bool>("terminate_creation")),
     create_perimeter(opts.get<bool>("create_perimeter")), 
+    only_gamer(opts.get<bool>("only_gamer")), 
     gamer_classic(opts.get<bool>("gamer_classic")), 
     gamer_excluded(opts.get<bool>("gamer_excluded")), 
     doing_local_search(opts.get<bool>("doing_local_search")), 
@@ -84,6 +85,7 @@ ModularHeuristic::ModularHeuristic(const Options &opts)
       cout<<"gamer_excluded:"<<gamer_excluded<<",always_cbp_or_rbp_or_ucb:"<<always_CBP_or_RBP_or_UCB<<endl;
       cout<<"doing_local_search:"<<doing_local_search<<endl;
       cout<<"doing_canonical_search:"<<doing_canonical_search<<endl;
+      cout<<"only_gamer:"<<only_gamer<<endl;
       
 
       TaskProxy task_proxy(*task);
@@ -443,11 +445,17 @@ int ModularHeuristic::recompute_heuristic(const GlobalState& current_state){
 //Usually called when we have spent too long without finding solution 
 //To start with we pass search_time as limit to improvement_found
 bool ModularHeuristic::find_improvements(int time_limit) {
-  cout<<"helo find_impovements,time_limit:,"<<time_limit<<flush<<endl;
+  cout<<"hello find_impovements,time_limit:,"<<time_limit<<",only_gamer="<<only_gamer<<flush<<endl;
   modular_heuristic_timer =make_unique<utils::CountdownTimer>(time_limit);
       const State &initial_state = task_proxy.get_initial_state();
       bool improvement_found=false;
       while(!modular_heuristic_timer->is_expired()){
+	if(only_gamer){
+	  if(pattern_local_search->impossible_to_improve(result)){
+	    cout<<"time:,:"<<utils::g_timer()<<",Finished building modular_heuristic,only_gamer and improvement impossible by adding one variable to any of the patterns in result"<<endl;
+	    return improvement_found;
+	  }
+	}
 	cout<<"find_improvements,remaining_time:"<<modular_heuristic_timer->get_remaining_time()<<",elapsed_time:,"<<modular_heuristic_timer->get_elapsed_time()<<endl;
 	//cout<<"\tcurrent_h_modular:"<<result->get_value(initial_state)<<endl;
 	if(always_CBP_or_RBP_or_UCB==ALWAYS_UCB){
@@ -634,19 +642,9 @@ bool ModularHeuristic::find_improvements(int time_limit) {
 
       //Now generating next set of patterns and PDB
       if(pattern_generator->get_name()=="GamerStyle"){
-	if(doing_local_search){
-	  
-	  if(only_gamer){
-	    if(pattern_local_search->impossible_to_improve(result)){
-	      cout<<"time:,:"<<utils::g_timer()<<",Finished building modular_heuristic,only_gamer and improvement impossible by adding one variable to any of the patterns in result"<<endl;
-	      return improvement_found;
-	    }
-	  }
-	      
-	  pattern_local_search->do_local_search(result,pattern_evaluator,pdb_factory,modular_heuristic_timer->get_remaining_time());
-	  if(check_for_solution()){
-	    return true;
-	  }
+	pattern_local_search->do_local_search(result,pattern_evaluator,pdb_factory,modular_heuristic_timer->get_remaining_time());
+	if(check_for_solution()){
+	  return true;
 	}
       }
       else{

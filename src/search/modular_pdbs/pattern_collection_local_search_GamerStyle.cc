@@ -365,21 +365,25 @@ inline std::ostream& operator << (std::ostream& os, const std::vector<T>& v)
     return new_patterns;//Not adding collection
   }
   bool PatternCollectionLocalSearchGamerStyle::impossible_to_improve(shared_ptr<PatternCollectionInformation> current_result){//with regards to adding one variable
-    bool possible_improvement=false;
+    bool impossible_to_improve=true;
     std::shared_ptr<MaxAdditivePDBSubsets> current_subsets=current_result->get_max_additive_subsets();
-    
+    if(current_subsets->size()==0){//no PDBs in result, so impossible to improve!
+      if(verbose) cout<<"no patterns in results, so impossible to improve!!!"<<endl;
+      return true;
+    }
     for(size_t subset=0;subset<current_subsets->size();subset++){
       auto pdb=current_subsets->at(subset).at(0);
       auto pattern = pdb->get_pattern();
       if(impossible_to_update_pattern.find(pattern)==impossible_to_update_pattern.end()){
-	possible_improvement=true;
+	if(verbose) cout<<"pattern:"<<pattern<<"is possible to improve as far as we know"<<endl;
+	impossible_to_improve=false;
 	break;
       }
     }
     
     if(verbose)
-      cout<<"do_local_search, posible_improvement:"<<possible_improvement<<endl;
-    return possible_improvement;
+      cout<<"do_local_search, posible_improvement:"<<impossible_to_improve<<endl;
+    return impossible_to_improve;
   }
 
   static shared_ptr<PatternCollectionLocalSearch>_parse(options::OptionParser &parser) {
