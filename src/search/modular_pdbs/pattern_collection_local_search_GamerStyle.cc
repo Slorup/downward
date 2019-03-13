@@ -70,9 +70,10 @@ inline std::ostream& operator << (std::ostream& os, const std::vector<T>& v)
     const State &initial_state = task_proxy.get_initial_state();
 
 
-    cout<<"eval_method threshold:"<<evaluation_method->get_threshold()<<endl;
-    
-    cout<<"Starting do_local_search:"<<get_name()<<",num_vars:"<<num_vars<<",local_episodes:"<<get_episodes()<<",time_limit:"<<local_search_timer->get_remaining_time()<<endl;
+    if(verbose){
+      cout<<"eval_method threshold:"<<evaluation_method->get_threshold()<<endl;
+      cout<<"Starting do_local_search:"<<get_name()<<",num_vars:"<<num_vars<<",local_episodes:"<<get_episodes()<<",time_limit:"<<local_search_timer->get_remaining_time()<<endl;
+    }
     //FIRST GET TOP PDBs IN EACH MAX_ADDITIVE_SUBSETS, SO THEY HAVE FULL COSTS
     //std::shared_ptr<PatternCollection> current_patterns=make_shared<PatternCollection>(*current_result->get_patterns());
     std::shared_ptr<MaxAdditivePDBSubsets> current_subsets=current_result->get_max_additive_subsets();
@@ -362,6 +363,23 @@ inline std::ostream& operator << (std::ostream& os, const std::vector<T>& v)
     new_patterns.restart_pc(candidate_pattern);
     //cout<<"new_patterns:";new_patterns.print();
     return new_patterns;//Not adding collection
+  }
+  bool PatternCollectionLocalSearchGamerStyle::impossible_to_improve(shared_ptr<PatternCollectionInformation> current_result){//with regards to adding one variable
+    bool possible_improvement=false;
+    std::shared_ptr<MaxAdditivePDBSubsets> current_subsets=current_result->get_max_additive_subsets();
+    
+    for(size_t subset=0;subset<current_subsets->size();subset++){
+      auto pdb=current_subsets->at(subset).at(0);
+      auto pattern = pdb->get_pattern();
+      if(impossible_to_update_pattern.find(pattern)==impossible_to_update_pattern.end()){
+	possible_improvement=true;
+	break;
+      }
+    }
+    
+    if(verbose)
+      cout<<"do_local_search, posible_improvement:"<<possible_improvement<<endl;
+    return possible_improvement;
   }
 
   static shared_ptr<PatternCollectionLocalSearch>_parse(options::OptionParser &parser) {

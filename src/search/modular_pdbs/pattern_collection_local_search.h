@@ -54,6 +54,7 @@ class PatternCollectionLocalSearch {
     local_search_timer->restart_timer(new_time_limit);
     return do_local_search(current_result,evaluation_method,pdb_factory);
     }
+  virtual bool impossible_to_improve(std::shared_ptr<PatternCollectionInformation> /*current_result*/){return false;}
 
 };
 

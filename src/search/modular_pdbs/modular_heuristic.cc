@@ -635,6 +635,14 @@ bool ModularHeuristic::find_improvements(int time_limit) {
       //Now generating next set of patterns and PDB
       if(pattern_generator->get_name()=="GamerStyle"){
 	if(doing_local_search){
+	  
+	  if(only_gamer){
+	    if(pattern_local_search->impossible_to_improve(result)){
+	      cout<<"time:,:"<<utils::g_timer()<<",Finished building modular_heuristic,only_gamer and improvement impossible by adding one variable to any of the patterns in result"<<endl;
+	      return improvement_found;
+	    }
+	  }
+	      
 	  pattern_local_search->do_local_search(result,pattern_evaluator,pdb_factory,modular_heuristic_timer->get_remaining_time());
 	  if(check_for_solution()){
 	    return true;
