@@ -479,8 +479,9 @@ bool ModularHeuristic::find_improvements(int time_limit) {
 	    pattern_generator->set_InSituCausalCheck(false);
 	  }
 	}
-	 if(double(pdb_factory->get_current_memory_in_kb())/1024.0>memory_limit){
-	    cout<<"time:"<<utils::g_timer()<<",break-3,memory limit breached,current_memory(MB):"<<utils::get_current_memory_in_kb()/1024.0<<",memory_limit:"<<memory_limit<<endl;
+	//NOTE:PDB_FACTORY->GET_CURRENT_MEMORY_IN_KB IS RETURNING BYTES!!!
+	 if(double(pdb_factory->get_current_memory_in_kb())/(1024.0*1024.0)>memory_limit){
+	    cout<<"time:"<<utils::g_timer()<<",break-3,memory limit breached,current_memory(MB):"<<utils::get_current_memory_in_kb()/1024.0<<",pdbs_memory:"<<pdb_factory->get_current_memory_in_kb()/1024.0<<",memory_limit:"<<memory_limit<<endl;
 	    if(doing_canonical_search&&improvement_found){//No point callling to recompute if no improvement has been found
 	      if(recompute_additive_sets){
 		cout<<"time:"<<utils::g_timer()<<",initial_h before recompute:,"<<result->get_value(initial_state)<<endl;
