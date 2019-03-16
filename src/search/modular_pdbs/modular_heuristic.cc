@@ -27,24 +27,24 @@
 
 using namespace std;
 std::ostream & operator<<(std::ostream &os, set<int> pattern){
-    for (int v : pattern) os << "," << v;  
+    for (int v : pattern) os << "," << v;
     return os;
 }
 std::ostream & operator<<(std::ostream &os, vector<int> pattern){
-    for (int v : pattern) os << "," << v;  
+    for (int v : pattern) os << "," << v;
     return os;
 }
 
 bool recompute_additive_sets=false;
 
 //PatternCollectionGeneratorComplementary is to be the driver for 8 PDB-based options
-//RandomCollectionGeneration: CBP, RBP, CGamer, the one used by *Pommerening et al. 
+//RandomCollectionGeneration: CBP, RBP, CGamer, the one used by *Pommerening et al.
 //Local Search: iPDB, gaPDB, CGamer, VPN, *none, *changing order of patterns in gaPDB mutation. (this one matters to 0-1 greedy cost partitioning).
 //GenPDB: Symbolic, Explicit, Online, expressed on pdb_factory class
 //PDBEval: AvgH, Random sampling, Stratified sampling, *original iPDB method
 //CombPDBs->Canonical, hPO, Max
-//CostPartition->*None, Saturated, 0-1 greedy 
-//Learning: UCB1 to choose bin packing, pdb size. 
+//CostPartition->*None, Saturated, 0-1 greedy
+//Learning: UCB1 to choose bin packing, pdb size.
 //Re-evaluate: None, RemovedPDBsDominated, Run GHS (note: I think if we run GHS here, it may help to generate PDBs that are complementary to LM-cut)
 // And the pseudo-code logic for it:
 //While (time < 900 seconds)
@@ -69,14 +69,14 @@ ModularHeuristic::ModularHeuristic(const Options &opts)
     pattern_evaluator(opts.get<shared_ptr<PatternCollectionEvaluator>>("evaluator")),
     pattern_local_search(opts.get<shared_ptr<PatternCollectionLocalSearch>>("local_search")),
     modular_time_limit(opts.get<int>("modular_time_limit")),
-    always_CBP_or_RBP_or_UCB(opts.get<int>("always_cbp_or_rbp_or_ucb")), 
+    always_CBP_or_RBP_or_UCB(opts.get<int>("always_cbp_or_rbp_or_ucb")),
     terminate_creation(opts.get<bool>("terminate_creation")),
-    create_perimeter(opts.get<bool>("create_perimeter")), 
-    only_gamer(opts.get<bool>("only_gamer")), 
-    gamer_classic(opts.get<bool>("gamer_classic")), 
-    gamer_excluded(opts.get<bool>("gamer_excluded")), 
-    doing_local_search(opts.get<bool>("doing_local_search")), 
-    doing_canonical_search(opts.get<bool>("doing_canonical_search")), 
+    create_perimeter(opts.get<bool>("create_perimeter")),
+    only_gamer(opts.get<bool>("only_gamer")),
+    gamer_classic(opts.get<bool>("gamer_classic")),
+    gamer_excluded(opts.get<bool>("gamer_excluded")),
+    doing_local_search(opts.get<bool>("doing_local_search")),
+    doing_canonical_search(opts.get<bool>("doing_canonical_search")),
     pdb_factory (opts.get<shared_ptr<PDBFactory>>("pdb_factory")) {
       cout<<"Hi nonagnostic_v2"<<endl;
       cout<<"modular_time_limit:"<<modular_time_limit<<endl;
@@ -86,7 +86,7 @@ ModularHeuristic::ModularHeuristic(const Options &opts)
       cout<<"doing_local_search:"<<doing_local_search<<endl;
       cout<<"doing_canonical_search:"<<doing_canonical_search<<endl;
       cout<<"only_gamer:"<<only_gamer<<endl;
-      
+
 
       TaskProxy task_proxy(*task);
       const State &initial_state = task_proxy.get_initial_state();
@@ -113,7 +113,7 @@ ModularHeuristic::ModularHeuristic(const Options &opts)
 //      cout<<"PC2:,initial h_value before terminate:"<<candidate_ptr->get_value(initial_state)<<flush<<endl;
 //      result->include_additive_pdbs(pdb_factory->terminate_creation(candidate_ptr->get_pattern_databases()));
 //      cout<<"PC2:,initial h_value after terminate:"<<candidate_ptr->get_value(initial_state)<<",result:"<<result->get_value(initial_state)<<flush<<endl;
-//      
+//
 //      PC.clear();PC.add_pc(temp_pattern5);PC.add_pc(temp_pattern6);
 //      candidate_ptr=make_shared<ModularZeroOnePDBs>(task_proxy, PC.get_PC(), *pdb_factory);
 //      cout<<"PC3:,initial h_value before terminate:"<<candidate_ptr->get_value(initial_state)<<flush<<endl;
@@ -146,8 +146,8 @@ ModularHeuristic::ModularHeuristic(const Options &opts)
 	canonical_pdbs=make_unique<CanonicalSymbolicPDBs>(result,false, 0, 0);//no need to prune anything, solution found
       }
       return;*/
-      
-      
+
+
       //unsigned num_goals_to_group=0;
       modular_heuristic_timer =make_unique<utils::CountdownTimer>(modular_time_limit);
       Options opts2=opts;
@@ -175,28 +175,28 @@ ModularHeuristic::ModularHeuristic(const Options &opts)
       binary_choice.increase_reward(1);binary_choice.increase_reward(0);
       size_t overall_num_goals=task_proxy.get_goals().size();
       cout<<"overall_num_goals:"<<overall_num_goals<<endl;
-      
+
       for (size_t i=0;i<overall_num_goals;i++){
         goals_choice.insert_choice(i+1);
       //Initialize reward to 2 so it does not go too fast for initial selection
         goals_choice.increase_reward(i+1);
       }
       map<double,Learning> UCB_goals_to_group;//Disjunctive (or not) pattern selector,one per size;
-      
+
       terminate_choice.insert_choice(1);terminate_choice.insert_choice(0);
       //terminate_choice.increase_reward(0,10);//biasing towards not terminating in the begining
-      
-      //We divide the pdb_max_size limit in 10 groups, each a 10% bigger relative to 
+
+      //We divide the pdb_max_size limit in 10 groups, each a 10% bigger relative to
       //the overall problem_size, and we round up.  if problem size<10, we add as many categories
       //until we reach the max size limit
       double overall_problem_size=0;
       pattern_generator->initialize(task);
-      
+
       cout<<"initializing local_search"<<flush<<endl;
       if(doing_local_search)
 	pattern_local_search->initialize(task);
       cout<<"finished initializing local_search"<<flush<<endl;
-     
+
       PatternCollectionContainer perimeter_collection=pattern_generator->generate_perimeter();
       PatternCollectionContainer candidate_collection;
       overall_problem_size=perimeter_collection.get_overall_size();
@@ -230,7 +230,7 @@ ModularHeuristic::ModularHeuristic(const Options &opts)
       UCB_Disjunctive_patterns[pow(10,18)]=binary_choice;
       UCB_Disjunctive_patterns[pow(10,19)]=binary_choice;
       //UCB_Disjunctive_patterns[pow(10,20)]=binary_choice;
-      
+
       UCB_goals_to_group[pow(10,8)]=goals_choice;
       UCB_goals_to_group[pow(10,9)]=goals_choice;
       UCB_goals_to_group[pow(10,10)]=goals_choice;
@@ -254,7 +254,7 @@ ModularHeuristic::ModularHeuristic(const Options &opts)
       cout<<"after goals_choice"<<endl;
       pdb_max_size=initial_pdb_size;
       cout<<"initial_pdb_size:"<<initial_pdb_size<<endl;
-    
+
       cout<<"initial pdb type:"<<pdb_factory->name()<<endl;
 
       //ModularZeroOnePDBs candidate(task_proxy, Initial_collection.get_PC(), *pdb_factory);
@@ -264,9 +264,9 @@ ModularHeuristic::ModularHeuristic(const Options &opts)
       pattern_generator->set_pdb_max_size(initial_pdb_size);
       pattern_generator->set_disjunctive_patterns(initial_disjunctive);
       pattern_generator->set_goals_to_add(initial_goals_to_group);
-      
+
       //shared_ptr<ModularZeroOnePDBs> candidate_ptr;
-      
+
       //PatternCollectionContainer initial_Gamer_Collection=alternative_pattern_generator.generate();
       //cout<<"Initial Gamer PDB:";initial_Gamer_Collection.print();
       //candidate_ptr=make_shared<ModularZeroOnePDBs>(task_proxy, initial_Gamer_Collection.get_PC(), *pdb_factory);
@@ -283,25 +283,25 @@ ModularHeuristic::ModularHeuristic(const Options &opts)
       //cout<<"initial h value for Gamer-Style:"<<candidate_ptr->get_value(initial_state)<<endl;
       //alternative_pattern_generator.check_improv(candidate_ptr->compute_approx_mean_finite_h());//This way we populate initial h value
 
-      
+
       //result included in sample_states call because needed for dead_end detection
       //set_dead_ends add dead_ends for symbolic, NEED TO ASK ALVARO ABOUT THIS
       //OK, so this was a call to collapse de dead_ends so adding new symbolic PDBs
-      //Would not take ages or something like that, needs to check on it and see what 
+      //Would not take ages or something like that, needs to check on it and see what
       //we do now.
       //result->set_dead_ends(pdb_factory->get_dead_ends());
-      
+
       ///DISCUSS WITH ALVARO:adding pdbs to current set if evaluator says new collection is helpful
       //WHEN ADDING THE PDB, terminate_creation makes comparisons biased
-      //because new candidate has less time to generate pdb, should we wait for 
+      //because new candidate has less time to generate pdb, should we wait for
       //terminate_pdb till the end of subset selection???
       //result->include_additive_pdbs(candidate_ptr->get_pattern_databases());
-      
-      //For Gamer-like local search when doing gamer only we store last successful pattern 
+
+      //For Gamer-like local search when doing gamer only we store last successful pattern
       //in gamer_current_pattern, new_candidate_gamer is the local_search generated
       //pattern which needs to be evaluated
       //separate so clearing it for other bin packing algorithms does not clear partial gamer collections which we might want to try
-      
+
       if(create_perimeter){
         create_perimeter=false;
         cout<<"seeding with creating_perimeter,time:"<<utils::g_timer<<endl;
@@ -340,7 +340,7 @@ ModularHeuristic::ModularHeuristic(const Options &opts)
 	if(initial_h_post_terminate>initial_h_pre_terminate){
 	  cout<<"terminate when adding PDB has raised initial h value from:"<<initial_h_pre_terminate<<",to:,"<<initial_h_post_terminate<<endl;
 	}
-      
+
       if(pdb_factory->is_solved()){
 	    cout<<"Solution found while generating PDB candidate of type:"<<pdb_factory->name()<<", adding PDB and exiting generation at time"<<utils::g_timer()<<endl;
 	    result->include_additive_pdbs(pdb_factory->terminate_creation(candidate_ptr->get_pattern_databases()));
@@ -353,14 +353,14 @@ ModularHeuristic::ModularHeuristic(const Options &opts)
 	else{
 	  cout<<"Sadly,solution not found yet after first PDB ;-) so we keep going"<<endl;
 	}
-      
+
 	initial_h=result->get_value(initial_state);
 	cout<<"Initial collection zero-one h value:"<<initial_h<<endl;
 	PC_counter++;
 	pattern_evaluator->sample_states(result);
 	cout<<"first pdb_max_size:"<<pattern_generator->get_pdb_max_size()<<endl;
       }
-      
+
       if(modular_heuristic_timer->is_expired()){
 	if(doing_canonical_search){
 	  canonical_pdbs=make_unique<CanonicalSymbolicPDBs>(result,true, 0, 0);
@@ -368,8 +368,8 @@ ModularHeuristic::ModularHeuristic(const Options &opts)
 	return;
       }
 
-      
-      
+
+
       //bool terminate_or_not=true;
       generator_type=true;
 
@@ -437,12 +437,12 @@ void ModularHeuristic::clear_dominated_heuristics_in_situ_sampling(shared_ptr<Mo
     cout<<"clear_dominated_heuristics,time_spent,"<<utils::g_timer()-start_time<<",Reduced number of collections from:,"<<result->get_max_additive_subsets()->size()<<",to:,"<<new_result->get_max_additive_subsets()->size()<<endl;
     result=new_result;
 }
-    
+
 int ModularHeuristic::recompute_heuristic(const GlobalState& current_state){
   return compute_heuristic(current_state);
 }
 //This is to continue search for better patterns
-//Usually called when we have spent too long without finding solution 
+//Usually called when we have spent too long without finding solution
 //To start with we pass search_time as limit to improvement_found
 bool ModularHeuristic::find_improvements(int time_limit) {
   cout<<"hello find_impovements,time_limit:,"<<time_limit<<",only_gamer="<<only_gamer<<flush<<endl;
@@ -479,7 +479,7 @@ bool ModularHeuristic::find_improvements(int time_limit) {
 	    pattern_generator->set_InSituCausalCheck(false);
 	  }
 	}
-	 if(double(utils::get_current_memory_in_kb())/1024.0>memory_limit){
+	 if(double(pdb_factory->get_current_memory_in_kb())/1024.0>memory_limit){
 	    cout<<"time:"<<utils::g_timer()<<",break-3,memory limit breached,current_memory(MB):"<<utils::get_current_memory_in_kb()/1024.0<<",memory_limit:"<<memory_limit<<endl;
 	    if(doing_canonical_search&&improvement_found){//No point callling to recompute if no improvement has been found
 	      if(recompute_additive_sets){
@@ -487,7 +487,7 @@ bool ModularHeuristic::find_improvements(int time_limit) {
 		result->recompute_max_additive_subsets();
 		cout<<"time:"<<utils::g_timer()<<",initial_h after recompute:,"<<result->get_value(initial_state)<<endl;
 	      }
-		    
+
 	    //Now make canonical_symbolic_pdbs
 	    //CanonicalSymbolicPDBs canonical_pdbs (PatternCollectionInformation & info,bool dominance_pruning, int compress_nodes, int compress_time);
 	      cout<<"time:"<<utils::g_timer()<<",initial_h before canonical_pdbs:,"<<result->get_value(initial_state)<<endl;
@@ -511,7 +511,7 @@ bool ModularHeuristic::find_improvements(int time_limit) {
             bool success=false;
             int pdb_counter=0;
             int finished_counter=0;
-              auto pdb_collection=result->get_pdbs(); 
+              auto pdb_collection=result->get_pdbs();
               for (auto pdb : *pdb_collection){
                 pdb_counter++;
                 if(pdb->is_finished()){//looking for first unfinished pdb
@@ -560,7 +560,7 @@ bool ModularHeuristic::find_improvements(int time_limit) {
               //Now check if there are more unterminated pdbs
               unterminated_pdbs=false;
             for(auto i : pdb_ptr_collection){
-              const PDBCollection & pdb_collection=i->get_pattern_databases(); 
+              const PDBCollection & pdb_collection=i->get_pattern_databases();
               for (auto pdb : pdb_collection){
                 if(pdb->is_finished()){
                   unterminated_pdbs=true;
@@ -589,7 +589,7 @@ bool ModularHeuristic::find_improvements(int time_limit) {
 	  }
           return true;
         }
-	  
+
 	//Now choosing between RandomSplit and CBP pattern generation
 	int generator_choice=0;
 	if(gamer_excluded){
@@ -601,15 +601,15 @@ bool ModularHeuristic::find_improvements(int time_limit) {
 
 	float pdb_time=0;
 	bool disjunctive_choice=false;
-	
+
       DEBUG_COMP(cout<<"time:"<<utils::g_timer()<<",generator_choice:"<<generator_choice<<flush<<endl;);
       float start_time=utils::g_timer();
-    
+
       //Now getting next pdb size
       //cout<<"previos pdb_max_size:"<<pdb_max_size;
       pdb_max_size=pow(10.0,UCB_sizes.make_choice());
       cout<<"pdb_max_size_chosen;"<<pdb_max_size<<endl;
-      //We add a random amount to pdb_max_size if the max_step_size>1 so that 
+      //We add a random amount to pdb_max_size if the max_step_size>1 so that
       //we increase the diversity of patterns generated in big problems
       if(max_size_step>1){
 	increase_level=floor((float(rand()%100)/100.0)*max_size_step);
@@ -628,9 +628,9 @@ bool ModularHeuristic::find_improvements(int time_limit) {
       /*if(disjunctive_choice){//1 goal per pattern
 	//Note that we may end up with more than one goal per disjunctive patern,
 	//All this does is to disable greedy goal grouping, which makes sense to try when
-	//variables are reusable among patterns but not if grouping all the goal variables 
+	//variables are reusable among patterns but not if grouping all the goal variables
 	//in one patern means discarding most of variables not in first pattern due to inability
-	//to reuse.  However, if goals happen to be dividide between a few patterns, that is not a 
+	//to reuse.  However, if goals happen to be dividide between a few patterns, that is not a
 	//problem either, can happen if goal variables get chosen randomly into patterns with existing goals
 	num_goals_to_group=1;
       }
@@ -648,10 +648,10 @@ bool ModularHeuristic::find_improvements(int time_limit) {
 	}
       }
       else{
-	candidate_collection=pattern_generator->generate(); 
+	candidate_collection=pattern_generator->generate();
 	candidate_ptr=make_shared<ModularZeroOnePDBs>(task_proxy, candidate_collection.get_PC(), *pdb_factory);
 	pdb_time=utils::g_timer()-start_time;
-	
+
 	DEBUG_COMP(cout<<"pdb_max_size:"<<pdb_max_size<<",pdb_time:"<<pdb_time<<endl;);
 	UCB_sizes.increase_cost(log10(pdb_max_size),pdb_time);
 	binary_choice.increase_cost(double(pattern_generator->get_disjunctive_patterns()),pdb_time);
@@ -681,13 +681,13 @@ bool ModularHeuristic::find_improvements(int time_limit) {
 	    new_initial_h=candidate_ptr->get_value(initial_state);
 	    initial_h=result->get_value(initial_state);
 	    //cout<<"Initial value before evaluations:,"<<initial_h<<",new_initial_h:"<<new_initial_h<<endl;
-	    
+
 	    if(generator_choice==0){
 	      if(new_initial_h>initial_h){
 		cout<<"Gamer,increased initial_h from:,"<<initial_h<<",to,"<<new_initial_h<<endl;
 	      }
 	    }
-	    
+
 	    if (initial_h == numeric_limits<int>::max()) {
 	      cerr<<"initial state is dead_end according to PDB, problem unsolvable!!!"<<endl;
 	      exit(1);
@@ -695,12 +695,12 @@ bool ModularHeuristic::find_improvements(int time_limit) {
 	    else if(new_initial_h>initial_h){//we always add the collection and re-sample if initial_h increased
 	      improvement_found=true;
 	      cout<<"time:,"<<utils::g_timer()<<",improvement found"<<endl;
-	      
+
 	      cout<<"time:,"<<utils::g_timer()<<"pdb_max_size:,"<<pdb_max_size<<",generator_choice:,"<<generator_choice<<",disjoint:,"<<disjunctive_choice<<",Selecting PC and resampling because initial_h has been raised from,"<<initial_h<<"to:,";
 
 	      result->include_additive_pdbs(pdb_factory->terminate_creation(candidate_ptr->get_pattern_databases()));
 	      result->set_dead_ends(pdb_factory->get_dead_ends());
-	  
+
 	      if(recompute_additive_sets){//recompute PDBs, very likely new collection fully dominates previous ones
 		cout<<"time:"<<utils::g_timer<<",calling recompute_max_additive_subsets"<<endl;
 		result->recompute_max_additive_subsets();
@@ -710,12 +710,12 @@ bool ModularHeuristic::find_improvements(int time_limit) {
 	      //cout<<"time:"<<utils::g_timer()<<",Initial h value before terminate:"<<temp_initial_h<<endl;
 	      if(doing_dominated_sampling)
 		clear_dominated_heuristics_in_situ_sampling(candidate_ptr);
-	      
+
 	      initial_h=result->get_value(initial_state);//Might be higher than simply new cadidate collection value due to max additive pattern combinations beyond current collection, unlikely but possible!
-	      
+
 	      cout<<initial_h;
-	      
-		
+
+
 	      //Clean dominated PDBs after addition of improving patterns
 		//RECOMPUTE_MAX_ADDITIVE_SUBSETS IS BUGGY
 		//SO USE clear_dominated_heuristics_in_situ_sampling instead
@@ -725,7 +725,7 @@ bool ModularHeuristic::find_improvements(int time_limit) {
 	       // result->recompute_max_additive_subsets();
 		//cout<<"time:"<<utils::g_timer<<",after recompute_max_additive_subsets"<<endl;
 	      //}
-	      
+
 	      check_to_terminate=true;
 	      //Need to reorganize pdb_ptr_collection if choosing to terminate
 	      //whenever we clear_dominate heuristics
@@ -765,10 +765,10 @@ bool ModularHeuristic::find_improvements(int time_limit) {
 	      if(pattern_evaluator->evaluate(candidate_ptr)){
 		improvement_found=true;
 		cout<<"time:,"<<utils::g_timer()<<",improvement found"<<endl;
-		
+
 		result->include_additive_pdbs(pdb_factory->terminate_creation(candidate_ptr->get_pattern_databases()));
 		result->set_dead_ends(pdb_factory->get_dead_ends());
-		
+
 		if(recompute_additive_sets){//recompute PDBs, very likely new collection fully dominates previous ones
 		  cout<<"time:"<<utils::g_timer<<",calling recompute_max_additive_subsets"<<endl;
 		  result->recompute_max_additive_subsets();
@@ -777,16 +777,16 @@ bool ModularHeuristic::find_improvements(int time_limit) {
 		//NEED TO CHECK WITHOUT TERMINATING CREATION UNTIL ALL PDBs ARE SELECTED
 		//cout<<"time:"<<utils::g_timer()<<"pdb_max_size:"<<pdb_max_size<<",generator_choice:"<<generator_choice<<",disjoint:"<<disjunctive_choice<<",goals_choice:"<<num_goals_to_group<<",modular_heuristic_selecting PC"<<endl;
 		cout<<"time:"<<utils::g_timer()<<"pdb_max_size:"<<pdb_max_size<<",generator_choice:"<<generator_choice<<",disjoint:"<<disjunctive_choice<<",modular_heuristic_selecting PC"<<endl;
-		
+
 		//IN SITU SAMPLING DOMINATION CHECK
 		if(doing_dominated_sampling)
 		  clear_dominated_heuristics_in_situ_sampling(candidate_ptr);
-		
+
 		check_to_terminate=true;
 		result->set_dead_ends(pdb_factory->get_dead_ends());
 		//should we always re-sample or only if number of improved states is large enough?
 		pattern_evaluator->sample_states(result);
-		
+
 		//Always trying to further improve any already improving
 		//pattern collection,set by doing_local_search
 		if(doing_local_search){
@@ -808,7 +808,7 @@ bool ModularHeuristic::find_improvements(int time_limit) {
 	    if(check_to_terminate&&unterminated_pdbs==false){
 	      check_to_terminate=false;
 	      unterminated_pdbs=false;
-		auto pdb_collection=result->get_pdbs(); 
+		auto pdb_collection=result->get_pdbs();
 		for (auto pdb : *pdb_collection){
 		  if(!pdb->is_finished()){
 		    unterminated_pdbs=true;
@@ -820,11 +820,11 @@ bool ModularHeuristic::find_improvements(int time_limit) {
 	    }
 	}
       }
-      
-	 
+
+
       //Now terminate creation of unfinished selected PDBs
       float start_time=utils::g_timer();
-      auto pdb_collection=result->get_pdbs(); 
+      auto pdb_collection=result->get_pdbs();
       for(auto i : boost::adaptors::reverse(*pdb_collection)){//better to start terminating the best PDBs
         //usually the last added, in case we run out of time
         if(i){
@@ -841,7 +841,7 @@ bool ModularHeuristic::find_improvements(int time_limit) {
           break;
         }
       }
-	    
+
       float terminate_time=utils::g_timer()-start_time;
       cout<<"time:"<<utils::g_timer()<<",before_recompute_max_additive_subset,Testing modular_heuristic constructor finished,episodes:"<<num_episodes<<",PC created:"<<PC_counter<<",final_pdbs:"<<result->get_patterns()->size()<<",terminate_time:"<<terminate_time<<endl;
 
@@ -853,7 +853,7 @@ bool ModularHeuristic::find_improvements(int time_limit) {
 	  cout<<"time:"<<utils::g_timer()<<",after recompute_max_additive_subset,Testing modular_heuristic constructor finished,episodes:"<<num_episodes<<",PC created:"<<PC_counter<<",final_pdbs:"<<result->get_patterns()->size()<<endl;
 	  cout<<"time:"<<utils::g_timer()<<",initial_h after recompute:,"<<result->get_value(initial_state)<<endl;
 	}
-	
+
       //Now make canonical_symbolic_pdbs
       //CanonicalSymbolicPDBs canonical_pdbs (PatternCollectionInformation & info,bool dominance_pruning, int compress_nodes, int compress_time);
 	cout<<"time:"<<utils::g_timer()<<",initial_h before canonical_pdbs:,"<<result->get_value(initial_state)<<endl;
@@ -910,8 +910,8 @@ bool ModularHeuristic::check_for_solution(){
 	  "time limit in seconds for modular_pdb_heuristic initialization cut off",
 	  "900");
       parser.add_option<int> (
-	  "always_cbp_or_rbp_or_ucb", 
-  "If 0,ensure any added variable is causally connected(CBP), if 1, only check causal connection after all patterns are selected(RBP), if 2, use UCB to learn which is better, if 3 do 50/50", 
+	  "always_cbp_or_rbp_or_ucb",
+  "If 0,ensure any added variable is causally connected(CBP), if 1, only check causal connection after all patterns are selected(RBP), if 2, use UCB to learn which is better, if 3 do 50/50",
 	  "0");
       parser.add_option<shared_ptr<PDBFactory>>(
 	  "pdb_factory",
@@ -949,7 +949,7 @@ bool ModularHeuristic::check_for_solution(){
         "doing_canonical_search",
         "Combining PDBs in a canonical set",
 	"true");
-    
+
     Heuristic::add_options_to_parser(parser);
 
     Options opts = parser.parse();

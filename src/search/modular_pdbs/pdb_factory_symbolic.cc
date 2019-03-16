@@ -19,50 +19,50 @@ using namespace symbolic;
 
 namespace pdbs3 {
 
-    PDBFactorySymbolic::PDBFactorySymbolic(const options::Options & opts) : 
-	SymController(opts), 
-	precomputation_time_ms(opts.get<int>("precomputation_time_ms")), 
-	precomputation_step_time_ms(opts.get<int>("precomputation_step_time_ms")), 
-	precomputation_nodes(opts.get<int>("precomputation_nodes")), 
-	termination_time_ms(opts.get<int>("termination_time_ms")), 
-	termination_step_time_ms(opts.get<int>("termination_step_time_ms")), 
+    PDBFactorySymbolic::PDBFactorySymbolic(const options::Options & opts) :
+	SymController(opts),
+	precomputation_time_ms(opts.get<int>("precomputation_time_ms")),
+	precomputation_step_time_ms(opts.get<int>("precomputation_step_time_ms")),
+	precomputation_nodes(opts.get<int>("precomputation_nodes")),
+	termination_time_ms(opts.get<int>("termination_time_ms")),
+	termination_step_time_ms(opts.get<int>("termination_step_time_ms")),
 	termination_nodes(opts.get<int>("termination_nodes")),
 	global_limit_memory_MB(opts.get<int>("global_limit_memory_MB")),
 	increase_factor(opts.get<double>("increase_factor")),
 	dump (opts.get<bool>("dump")) {
-	  
+
 	manager = make_shared<OriginalStateSpace>(vars.get(), mgrParams,
 						  OperatorCostFunction::get_cost_function());
     }
 
-    std::shared_ptr<PatternDatabaseInterface> 
-    PDBFactorySymbolic::create_pdb(const TaskProxy & task, 
-				   const Pattern &pattern, 
+    std::shared_ptr<PatternDatabaseInterface>
+    PDBFactorySymbolic::create_pdb(const TaskProxy & task,
+				   const Pattern &pattern,
 				   const std::vector<int> &operator_costs) {
-	
+
 	assert(!pattern.empty());
 	assert(!solved());
 	DEBUG_MSG(cout << "COMPUTE SYMBOLIC PDB" << endl;);
-	std::set<int> pattern_set (pattern.begin(), pattern.end()); 
+	std::set<int> pattern_set (pattern.begin(), pattern.end());
 	DEBUG_COMP(cout << "Pattern: "; for (int v : pattern_set) { cout << " " << v; }cout << endl;);
 	//cout << "Pattern: "; for (int v : pattern_set) { cout << " " << v; }cout << endl;
-	
+
 	assert(manager);
 
 	shared_ptr<SymStateSpaceManager> state_space_mgr;
 	if (pattern.size() == g_variable_domain.size()) {
 	    state_space_mgr = manager;
 	} else  {
-	    state_space_mgr = make_shared<SymPDB> (*manager, pattern_set, 
+	    state_space_mgr = make_shared<SymPDB> (*manager, pattern_set,
 						   OperatorCostFunction::get_cost_function(operator_costs).get());
 	}
 	DEBUG_MSG(cout << "INIT PatternDatabaseSymbolic" << endl;);
-	
+
 	auto new_pdb = make_shared<PatternDatabaseSymbolic> (task, pattern, operator_costs,
-							     this, vars, state_space_mgr, 
+							     this, vars, state_space_mgr,
 							     searchParams, precomputation_time_ms,
 							     precomputation_step_time_ms,
-							     precomputation_nodes, 
+							     precomputation_nodes,
 							     global_limit_memory_MB);
 
 	if(new_pdb->is_finished()) {
@@ -78,15 +78,20 @@ namespace pdbs3 {
 	else{
 	  finished=false;
 	}
-	
+
 	return new_pdb;
     }
 
 
+    unsigned long PDBFactorySymbolic::get_current_memory_in_kb() {
+        return manager->totalMemoryKB();
+    }
+
+
     void PDBFactorySymbolic::increase_computational_limits() {
-	precomputation_time_ms *= increase_factor; 
+	precomputation_time_ms *= increase_factor;
 	precomputation_time_ms = std::min(precomputation_time_ms, termination_time_ms);
-	precomputation_step_time_ms *= increase_factor; 
+	precomputation_step_time_ms *= increase_factor;
 	precomputation_step_time_ms = std::min(precomputation_step_time_ms, termination_step_time_ms);
 	precomputation_nodes *= increase_factor;
 	precomputation_nodes = std::min(precomputation_nodes, termination_nodes);
@@ -96,18 +101,18 @@ namespace pdbs3 {
 
     }
 
-    std::shared_ptr<PDBCollection> 
-    PDBFactorySymbolic::terminate_creation (const PDBCollection & pdb_collection, 
-					    int min_max_time, 
-					    int min_max_step_time, 
+    std::shared_ptr<PDBCollection>
+    PDBFactorySymbolic::terminate_creation (const PDBCollection & pdb_collection,
+					    int min_max_time,
+					    int min_max_step_time,
 					    int min_max_nodes) {
       //cout<<"calling terminate_creation symbolic"<<endl;
       auto result = std::make_shared<PDBCollection> ();
       for(auto & pdb : pdb_collection) {
 	if(min_max_time>0){
 	  pdb->terminate_creation(std::max(termination_time_ms, min_max_time),
-				  std::max(termination_step_time_ms, min_max_step_time), 
-				  std::max(termination_nodes, min_max_nodes), 
+				  std::max(termination_step_time_ms, min_max_step_time),
+				  std::max(termination_nodes, min_max_nodes),
 				  global_limit_memory_MB);
 	}
 	result->push_back(pdb);
@@ -118,7 +123,7 @@ namespace pdbs3 {
 
 
     void PDBFactorySymbolic::continue_creation (PatternDatabaseInterface & pdb) {
-	pdb.terminate_creation(precomputation_time_ms, precomputation_step_time_ms, 
+	pdb.terminate_creation(precomputation_time_ms, precomputation_step_time_ms,
 				precomputation_nodes, global_limit_memory_MB);
     }
 
@@ -189,10 +194,11 @@ symbolic::Bucket PDBFactorySymbolic::get_dead_ends() const {
     for (const auto & bdd  : non_mutex) {
 	dead_ends.push_back(!bdd);
     }
-    
+
     return dead_ends;
 }
 
 static options::PluginShared<PDBFactory> _plugin("modular_symbolic", _parse);
+
 
 }

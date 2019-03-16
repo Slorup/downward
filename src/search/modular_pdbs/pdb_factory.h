@@ -25,8 +25,8 @@ class PDBKey {
     std::vector<int> operator_costs;
 
 public:
-    PDBKey (Pattern pattern_, 
-	    std::vector<int> operator_costs_) : 
+    PDBKey (Pattern pattern_,
+	    std::vector<int> operator_costs_) :
     pattern(pattern_), operator_costs(operator_costs_) {
 
     }
@@ -57,25 +57,25 @@ public:
 	}
 	return true;
     }
-    
+
     bool is_pdb_for (const std::vector<int> & other_pattern, const std::vector<int> & other_operator_costs) const {
 	if (!std::includes(other_pattern.begin(), other_pattern.end(), pattern.begin(), pattern.end())) {
 	    return false;
-	} 
+	}
 
 	for(size_t i = 0; i < operator_costs.size(); i++) {
-	    if (operator_costs[i] > other_operator_costs[i]) return false;	    
+	    if (operator_costs[i] > other_operator_costs[i]) return false;
 	}
-	
+
 	return true;
-    } 
+    }
 };
 class PDBFactory {
     //std::map <PDBKey, std::weak_ptr<PatternDatabaseInterface>> stored_pdbs;
-    
+
 
     int num_patterns_created;
-    int num_patterns_requested; 
+    int num_patterns_requested;
     int num_patterns_regenerated;
 protected:
     std::map <PDBKey, std::shared_ptr<PatternDatabaseInterface>> stored_pdbs;
@@ -83,20 +83,20 @@ protected:
     virtual void dump_strategy_specific_options() const = 0;
 
     // Type is shared because, in certain configurations, the factories
-    // might want to store a copy of the result. 
-    virtual std::shared_ptr<PatternDatabaseInterface> 
-	create_pdb(const TaskProxy & task, 
-		    const Pattern &pattern, 
+    // might want to store a copy of the result.
+    virtual std::shared_ptr<PatternDatabaseInterface>
+	create_pdb(const TaskProxy & task,
+		    const Pattern &pattern,
 		   const std::vector<int> &operator_costs = std::vector<int>()
-	    ) = 0;    
+	    ) = 0;
 public:
 PDBFactory() : num_patterns_created(0), num_patterns_requested(0), num_patterns_regenerated(0) {}
     virtual ~PDBFactory() = default;
     void dump_options() const;
-    
-    std::shared_ptr<PatternDatabaseInterface> 
-	compute_pdb(const TaskProxy & task, 
-		    const Pattern &pattern, 
+
+    std::shared_ptr<PatternDatabaseInterface>
+	compute_pdb(const TaskProxy & task,
+		    const Pattern &pattern,
 		    const std::vector<int> &operator_costs = std::vector<int>()
                     /*, double time_limit = std::numeric_limits<int>::max(),
 		    double memory_limit = 2000 */
@@ -109,7 +109,7 @@ PDBFactory() : num_patterns_created(0), num_patterns_requested(0), num_patterns_
     virtual int get_time_limit() {
       return 0;
     }
-    
+
     virtual bool is_solved () const {
 	return false;
     }
@@ -119,7 +119,7 @@ PDBFactory() : num_patterns_created(0), num_patterns_requested(0), num_patterns_
 		//For explicit, to know if pattern is duplicated
 		//Note that currently, continue explicit generation is not implemented
 		virtual bool is_started_pattern (
-			   const Pattern &pattern, 
+			   const Pattern &pattern,
 				 const std::vector<int> &operator_costs) const {
 			auto item = stored_pdbs.find(PDBKey(pattern, operator_costs));
 			if (item != stored_pdbs.end()) {
@@ -130,18 +130,18 @@ PDBFactory() : num_patterns_created(0), num_patterns_requested(0), num_patterns_
 
     virtual symbolic::Bucket get_dead_ends() const {
 	return symbolic::Bucket();
-    } 
+    }
 
-    virtual std::shared_ptr<PDBCollection> terminate_creation (const PDBCollection & pdb_collection, 
-							       int /*min_max_time*/ = 0, 
-							       int /*min_max_step_time*/ = 0, 
+    virtual std::shared_ptr<PDBCollection> terminate_creation (const PDBCollection & pdb_collection,
+							       int /*min_max_time*/ = 0,
+							       int /*min_max_step_time*/ = 0,
 							       int /*min_max_nodes*/ = 0) {
 	//By default we just make a copy
 	//std::cout<<"calling default terminate_creation"<<std::endl;
 	return std::make_shared<PDBCollection>(pdb_collection);
     }
    //in case we want to just get the PDBs
-    std::shared_ptr<PDBCollection> no_terminate_creation (const PDBCollection & pdb_collection){ 
+    std::shared_ptr<PDBCollection> no_terminate_creation (const PDBCollection & pdb_collection){
       return std::make_shared<PDBCollection>(pdb_collection);
     }
 
@@ -151,6 +151,8 @@ PDBFactory() : num_patterns_created(0), num_patterns_requested(0), num_patterns_
 
 
     bool release_memory_below_limit_mb(double memory_limit_mb);
+
+    virtual unsigned long get_current_memory_in_kb() = 0;
 };
 }
 

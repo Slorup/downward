@@ -25,15 +25,15 @@ namespace symbolic {
 
 PDBSearch::PDBSearch (GamerPDBsHeuristic * spdbheuristic_,
 		      shared_ptr<SymStateSpaceManager> originalStateSpace) :
-    spdbheuristic(spdbheuristic_),    state_space(originalStateSpace), 
+    spdbheuristic(spdbheuristic_),    state_space(originalStateSpace),
     average_hval(-1) {
     for(size_t i = 0; i < g_variable_domain.size(); ++i) {
 	pattern.insert(i);
-    }   
+    }
 }
 
 
-PDBSearch::PDBSearch (const set<int> & pattern_, 
+PDBSearch::PDBSearch (const set<int> & pattern_,
 		      GamerPDBsHeuristic * spdbheuristic_,
 		      const shared_ptr<OriginalStateSpace> & originalStateSpace) :
     spdbheuristic(spdbheuristic_), pattern(pattern_),
@@ -42,45 +42,45 @@ PDBSearch::PDBSearch (const set<int> & pattern_,
 	state_space = make_shared<SymPDB>(*originalStateSpace, pattern_);
     } else {
 	state_space = originalStateSpace;
-    }    
+    }
 }
 
 std::ostream & operator<<(std::ostream &os, const PDBSearch & pdb){
-    for (int v : pdb.get_pattern()) os << " " << v;  
+    for (int v : pdb.get_pattern()) os << " " << v;
     return os;
 }
 
 std::ostream & operator<<(std::ostream &os, const set<int> & pattern){
-    for (int v : pattern) os << " " << v;  
+    for (int v : pattern) os << " " << v;
     return os;
 }
 std::ostream & operator<<(std::ostream &os, const vector<int> & pattern){
-    for (int v : pattern) os << " " << v;  
+    for (int v : pattern) os << " " << v;
     return os;
 }
 
 
-void PDBSearch::search(const SymParamsSearch & params, 
+void PDBSearch::search(const SymParamsSearch & params,
 		       int generationTime, double generationMemory) {
 
     uc_search = make_unique<UniformCostSearch> (spdbheuristic, params);
     uc_search->init(state_space, false);
 
-    while (!uc_search->finished() && 
-	   (generationTime == 0 || utils::g_timer() < generationTime) && 
-	   (generationMemory == 0 || (spdbheuristic->getVars()->totalMemory()) < generationMemory) && 
+    while (!uc_search->finished() &&
+	   (generationTime == 0 || utils::g_timer() < generationTime) &&
+	   (generationMemory == 0 || (spdbheuristic->getVars()->totalMemoryBytes()) < generationMemory) &&
 	   !spdbheuristic->solved()) {
-	
-	if(!uc_search->step()) break;
-    } 
 
-    assert(!uc_search->finished() || 
-	   spdbheuristic->solved() || 
+	if(!uc_search->step()) break;
+    }
+
+    assert(!uc_search->finished() ||
+	   spdbheuristic->solved() ||
 	   uc_search->isAbstracted());
-	        
+
     average_hval = uc_search->getClosed()->average_hvalue();
 
-    //cout << "Finished PDB: " << *this << flush << "   Average value: "  << average_hval << " g_time: " << utils::g_timer() << endl; 
+    //cout << "Finished PDB: " << *this << flush << "   Average value: "  << average_hval << " g_time: " << utils::g_timer() << endl;
 }
 
 
@@ -93,7 +93,7 @@ vector<int> PDBSearch::candidate_vars() const {
 
 	for (int succ : cg.get_pre_to_eff(var)) {
 	    if (pattern.count(succ)) {
-		candidates.push_back(var); 
+		candidates.push_back(var);
 		break;
 	    }
 	}
@@ -123,10 +123,10 @@ ADD PDBSearch::getHeuristic() const {
 
 
 GamerPDBsHeuristic::GamerPDBsHeuristic(const Options &opts)
-  : Heuristic(opts), SymController(opts), 
-    generationTime (opts.get<int> ("generation_time")), 
-    generationMemory (opts.get<double> ("generation_memory")), 
-    useSuperPDB (opts.get<bool> ("super_pdb")), 
+  : Heuristic(opts), SymController(opts),
+    generationTime (opts.get<int> ("generation_time")),
+    generationMemory (opts.get<double> ("generation_memory")),
+    useSuperPDB (opts.get<bool> ("super_pdb")),
     perimeter (opts.get<bool> ("perimeter")) {
 
 }
@@ -140,7 +140,7 @@ void GamerPDBsHeuristic::initialize() {
     //Get mutex fw BDDs to detect spurious states as dead ends
 
     cout << "Initialize original search" << endl;
-    auto originalStateSpace = make_shared<OriginalStateSpace> (vars.get(), mgrParams, 
+    auto originalStateSpace = make_shared<OriginalStateSpace> (vars.get(), mgrParams,
 							       OperatorCostFunction::get_cost_function());
 
 
@@ -153,7 +153,7 @@ void GamerPDBsHeuristic::initialize() {
 	PDBSearch pdb_search (this, originalStateSpace);
 
 	pdb_search.search(searchParams, generationTime, generationMemory);
-	cout << "Finished super PDB: " << endl; 
+	cout << "Finished super PDB: " << endl;
 
 	if(solved()) {
      	cout << "Problem solved during heuristic generation" << endl;
@@ -165,7 +165,7 @@ void GamerPDBsHeuristic::initialize() {
 	    max_perimeter_heuristic = search->getClosed()->getHNotClosed();
 	}
     }
-    
+
     //1) Get initial abstraction
     set<int> pattern;
     for (auto goal : g_goal) pattern.insert(goal.first);
@@ -174,24 +174,24 @@ void GamerPDBsHeuristic::initialize() {
 
     //Create first pdb with only goal variables
     // if(perimeter) {
-	// best_pdb.reset(new PDBSearch(pattern, this, 
-	// 			     originalSearch, g_timer() - generationTime, searchParams.maxStepNodes, 
+	// best_pdb.reset(new PDBSearch(pattern, this,
+	// 			     originalSearch, g_timer() - generationTime, searchParams.maxStepNodes,
 	// 			     mgrParams, searchParams, originalStateSpace.get()));
-    // } else 
+    // } else
     auto best_pdb = make_unique<PDBSearch>(pattern, this, originalStateSpace);
 
     best_pdb->search(searchParams, generationTime, generationMemory);
     DEBUG_MSG(cout << "inital PDB (only goals):"<<*best_pdb<<",avg_value:"<<best_pdb->average_value()<<endl;);
     cout << "time:"<<utils::g_timer()<<",Finished Initialize initial abstraction" << endl;
 
-    while((generationTime == 0 || utils::g_timer() < generationTime) && 
-	  (generationMemory == 0 || vars->totalMemory() < generationMemory) && 
+    while((generationTime == 0 || utils::g_timer() < generationTime) &&
+	  (generationMemory == 0 || vars->totalMemoryBytes() < generationMemory) &&
 	  !solved()) {
 
  	vector<unique_ptr<PDBSearch>> new_bests;
-	double new_best_value = -1; 
-	
-	//2) For every possible child of the abstraction       
+	double new_best_value = -1;
+
+	//2) For every possible child of the abstraction
 	//For each element interface empty partitions influencing our
 	//already chosen partitions we try to remove it and generate a new PDB
 	for (int var : best_pdb->candidate_vars()) {
@@ -202,14 +202,14 @@ void GamerPDBsHeuristic::initialize() {
 	    // 2b) Check if it is the best child so far
 	    // unique_ptr<PDBSearch> new_pdb;
 	    // if(perimeter) {
-	    // 	new_pdb.reset(new PDBSearch(child_pattern, this, 
-	    // 				    originalSearch, utils::g_timer() - generationTime, searchParams.maxStepNodes, 
+	    // 	new_pdb.reset(new PDBSearch(child_pattern, this,
+	    // 				    originalSearch, utils::g_timer() - generationTime, searchParams.maxStepNodes,
 	    // 				    mgrParams, searchParams, originalStateSpace.get()));
-	    // } else 
+	    // } else
 	    auto new_pdb = make_unique<PDBSearch>(child_pattern, this, originalStateSpace);
-	
+
 	    new_pdb->search(searchParams, generationTime, generationMemory);
-    	    
+
 	    DEBUG_MSG(cout << "Search ended. Solution found: " << solution.solved() << endl;);
 
 	    if (solved()) {
@@ -219,7 +219,7 @@ void GamerPDBsHeuristic::initialize() {
 		break;
 	    }
 
-	    assert(child_pattern.size () < g_variable_domain.size() || 
+	    assert(child_pattern.size () < g_variable_domain.size() ||
 		   lower_bound >= new_pdb->get_search()->getF());
 
 	    if (new_pdb->average_value() > best_pdb->average_value()) {
@@ -235,7 +235,7 @@ void GamerPDBsHeuristic::initialize() {
 
 	if (new_bests.empty()) break;
 	new_bests.erase(std::remove_if(
-			    new_bests.begin(), 
+			    new_bests.begin(),
 			    new_bests.end(),
 			    [new_best_value](unique_ptr<PDBSearch> & x){
 				return x->average_value() < 0.999*new_best_value;
@@ -244,20 +244,20 @@ void GamerPDBsHeuristic::initialize() {
     cout<<"GamerPDBs,selected new_bests["<<i<<"]:"<<*new_bests[i]<<endl;
 
 	if (!solved() && new_bests.size() > 1) {
-	    set<int> new_pattern; 
+	    set<int> new_pattern;
 	    for (auto & pdb : new_bests) {
 		new_pattern.insert(pdb->get_pattern().begin(), pdb->get_pattern().end());
 	    }
 	    // if(perimeter) {
-	    // 	best_pdb.reset(new PDBSearch(new_pattern, this, 
+	    // 	best_pdb.reset(new PDBSearch(new_pattern, this,
 	    // 				     originalSearch, utils::g_timer() - generationTime, searchParams.maxStepNodes,
 	    // 				     mgrParams, searchParams, originalStateSpace.get()));
 	    // } else {
 	    best_pdb = make_unique<PDBSearch>(new_pattern, this, originalStateSpace);
-	    
+
 	    best_pdb->search(searchParams, generationTime, generationMemory);
 
-	    assert(new_pattern.size () < g_variable_domain.size() || 
+	    assert(new_pattern.size () < g_variable_domain.size() ||
 		   lower_bound >= best_pdb->get_search()->getF());
 
 	    if(!solved() && best_pdb->average_value() < new_best_value) {
@@ -285,7 +285,7 @@ void GamerPDBsHeuristic::initialize() {
 	//else
 	heuristic = make_unique<ADD>(best_pdb->getHeuristic());
     }
-    cout << "Done initializing Gamer PDB heuristic [" << timer << "] total memory: " << vars->totalMemory() << endl << endl;    
+    cout << "Done initializing Gamer PDB heuristic [" << timer << "] total memory: " << vars->totalMemoryBytes() << endl << endl;
 
     if(!heuristic) cout << "Warning: heuristic could not be computed" << endl;
 }
@@ -310,11 +310,11 @@ int GamerPDBsHeuristic::compute_heuristic(const GlobalState &state) {
 	}
     }
 
-    if(heuristic) { 
+    if(heuristic) {
     ADD evalNode = heuristic->Eval(inputs);
     int abs_cost = Cudd_V(evalNode.getRegularNode());
 //	cout << "Heuristic: " << res << endl;
-    
+
 	if (abs_cost == -1) return DEAD_END;
 	else if (abs_cost > res) res = abs_cost;
     }
@@ -330,10 +330,10 @@ void GamerPDBsHeuristic::dump_options() const {
 static ScalarEvaluator *_parse(OptionParser &parser) {
     Heuristic::add_options_to_parser(parser);
     SymController::add_options_to_parser(parser, 30e3, 1e7);
-  
+
     parser.add_option<int>("generation_time", "maximum time used in heuristic generation", "900");
 
-    parser.add_option<double>("generation_memory", 
+    parser.add_option<double>("generation_memory",
 			      "maximum memory used in heuristic generation", to_string(3e9));
     parser.add_option<bool>("super_pdb", "construct super pdb", "false");
 

@@ -20,57 +20,57 @@ using namespace symbolic;
 
 namespace pdbs3 {
 
-    PDBFactorySymbolicOnline::PDBFactorySymbolicOnline(const options::Options & opts) : 
-	SymController(opts), 
-	precomputation_time_ms(opts.get<int>("precomputation_time_ms")), 
-	precomputation_step_time_ms(opts.get<int>("precomputation_step_time_ms")), 
-	precomputation_nodes(opts.get<int>("precomputation_nodes")), 
-	termination_time_ms(opts.get<int>("termination_time_ms")), 
-	termination_step_time_ms(opts.get<int>("termination_step_time_ms")), 
+    PDBFactorySymbolicOnline::PDBFactorySymbolicOnline(const options::Options & opts) :
+	SymController(opts),
+	precomputation_time_ms(opts.get<int>("precomputation_time_ms")),
+	precomputation_step_time_ms(opts.get<int>("precomputation_step_time_ms")),
+	precomputation_nodes(opts.get<int>("precomputation_nodes")),
+	termination_time_ms(opts.get<int>("termination_time_ms")),
+	termination_step_time_ms(opts.get<int>("termination_step_time_ms")),
 	termination_nodes(opts.get<int>("termination_nodes")),
-	online_time_ms(opts.get<int>("online_time_ms")), 
-	online_expansions(opts.get<int>("online_expansions")), 
+	online_time_ms(opts.get<int>("online_time_ms")),
+	online_expansions(opts.get<int>("online_expansions")),
 	global_limit_memory_MB(opts.get<int>("global_limit_memory_MB")),
 	increase_factor(opts.get<double>("increase_factor")),
-	use_pdbs_in_online_search (opts.get<bool>("use_pdbs_in_online_search")), 
-	// online_use_canonical_pdbs (opts.get<bool>("online_use_canonical_pdbs")), 
-	online_prune_dominated_pdbs(opts.get<bool>("online_prune_dominated_pdbs")), 
-	use_online_during_search(opts.get<bool>("use_online_during_search")), 
+	use_pdbs_in_online_search (opts.get<bool>("use_pdbs_in_online_search")),
+	// online_use_canonical_pdbs (opts.get<bool>("online_use_canonical_pdbs")),
+	online_prune_dominated_pdbs(opts.get<bool>("online_prune_dominated_pdbs")),
+	use_online_during_search(opts.get<bool>("use_online_during_search")),
 	dump (opts.get<bool>("dump")) {
 	manager = make_shared<OriginalStateSpace>(vars.get(), mgrParams,
 						  OperatorCostFunction::get_cost_function());
     }
 
-    std::shared_ptr<PatternDatabaseInterface> 
-    PDBFactorySymbolicOnline::create_pdb(const TaskProxy & task, const Pattern &pattern, 
+    std::shared_ptr<PatternDatabaseInterface>
+    PDBFactorySymbolicOnline::create_pdb(const TaskProxy & task, const Pattern &pattern,
 				     const std::vector<int> &operator_costs) {
-	
+
 	assert(!pattern.empty());
 	assert(!solved());
 	DEBUG_MSG(cout << "COMPUTE SYMBOLIC PDB" << endl;);
-	std::set<int> pattern_set (pattern.begin(), pattern.end()); 
+	std::set<int> pattern_set (pattern.begin(), pattern.end());
 	DEBUG_MSG(cout << "Pattern: "; for (int v : pattern_set) { cout << " " << v; }cout << endl;);
-	
+
 	assert(manager);
 
 	shared_ptr<SymStateSpaceManager> state_space_mgr;
 	if (pattern.size() == g_variable_domain.size()) {
 	    state_space_mgr = manager;
 	} else  {
-	    state_space_mgr = make_shared<SymPDB> (*manager, pattern_set, 
+	    state_space_mgr = make_shared<SymPDB> (*manager, pattern_set,
 						   OperatorCostFunction::get_cost_function(operator_costs).get());
 	}
 	DEBUG_MSG(cout << "INIT PatternDatabaseSymbolic" << endl;);
 
-	auto pdb_task = make_shared<extra_tasks::PDBTask> (g_root_task(), pattern, operator_costs); 
+	auto pdb_task = make_shared<extra_tasks::PDBTask> (g_root_task(), pattern, operator_costs);
 
 	DEBUG_MSG(cout << "PDB Task created" << endl;);
-	auto new_pdb = 
-	    make_shared<PatternDatabaseSymbolicOnline> (this, task, pattern, operator_costs, 
-						    pdb_task, vars, state_space_mgr, 
-						    searchParams, 
-						    precomputation_time_ms, 
-						    precomputation_step_time_ms, 
+	auto new_pdb =
+	    make_shared<PatternDatabaseSymbolicOnline> (this, task, pattern, operator_costs,
+						    pdb_task, vars, state_space_mgr,
+						    searchParams,
+						    precomputation_time_ms,
+						    precomputation_step_time_ms,
 						    precomputation_nodes,
 						    global_limit_memory_MB);
 
@@ -82,11 +82,11 @@ namespace pdbs3 {
 		utils::exit_with(utils::ExitCode::UNSOLVABLE);
 	    }
 	    manager->addDeadEndStates(true, new_pdb->get_dead_ends());
-            
+
 	} else if (use_pdbs_in_online_search) {
             //TODO: Right now, the PDBs are introduced separately so we will take the
             //      maximum. Instead, they could be combined with the canonical heuristic.
-            
+
             //vector<shared_ptr<PatternDatabaseInterface>> pdb_collection;
             for(const auto & stored_pdb : stored_pdbs) {
                 if(stored_pdb.first.is_pdb_for(pattern, operator_costs)) {
@@ -99,31 +99,31 @@ namespace pdbs3 {
             //     //     make_shared<CanonicalPDBsHeuristic> (pdb_collection,
             //     //                                          online_use_canonical_pdbs,
             //     //                                          online_prune_dominated_pdbs));
-            // }            
+            // }
         }
-	
+
 	return new_pdb;
     }
     void PDBFactorySymbolicOnline::continue_creation (PatternDatabaseInterface & pdb) {
-	pdb.terminate_creation(precomputation_time_ms, precomputation_step_time_ms, 
+	pdb.terminate_creation(precomputation_time_ms, precomputation_step_time_ms,
 				precomputation_nodes, global_limit_memory_MB);
     }
 
-    std::shared_ptr<PDBCollection> PDBFactorySymbolicOnline::terminate_creation (const PDBCollection & pdb_collection, 
-										 int min_max_time, int min_max_step_time, 
+    std::shared_ptr<PDBCollection> PDBFactorySymbolicOnline::terminate_creation (const PDBCollection & pdb_collection,
+										 int min_max_time, int min_max_step_time,
 										 int min_max_nodes) {
       cout<<"calling terminate_creation symbolic_online"<<endl;
 	auto result = std::make_shared<PDBCollection> ();
 
 	for(auto & pdb : pdb_collection ) {
 	    pdb->terminate_creation(std::max(termination_time_ms, min_max_time),
-				    std::max(termination_step_time_ms, min_max_step_time), 
-				    std::max(termination_nodes, min_max_nodes), 
+				    std::max(termination_step_time_ms, min_max_step_time),
+				    std::max(termination_nodes, min_max_nodes),
 				    global_limit_memory_MB);
 	    if(use_online_during_search) {
 		result->push_back(pdb);
 	    } else {
-	      cout<<"getting offline_pdb for selected pattern:";for (int v : pdb->get_pattern()) { cout << " " << v; }cout << endl; 
+	      cout<<"getting offline_pdb for selected pattern:";for (int v : pdb->get_pattern()) { cout << " " << v; }cout << endl;
 	      result->push_back(pdb->get_offline_pdb());
 	    }
 	}
@@ -131,9 +131,9 @@ namespace pdbs3 {
     }
 
     void PDBFactorySymbolicOnline::increase_computational_limits() {
-	precomputation_time_ms *= increase_factor; 
+	precomputation_time_ms *= increase_factor;
 	precomputation_time_ms = std::min(precomputation_time_ms, termination_time_ms);
-	precomputation_step_time_ms *= increase_factor; 
+	precomputation_step_time_ms *= increase_factor;
 	precomputation_step_time_ms = std::min(precomputation_step_time_ms, termination_step_time_ms);
 	precomputation_nodes *= increase_factor;
 	precomputation_nodes = std::min(precomputation_nodes, termination_nodes);
@@ -201,10 +201,14 @@ namespace pdbs3 {
 	for (const auto & bdd  : non_mutex) {
 	    dead_ends.push_back(!bdd);
 	}
-    
+
 	return dead_ends;
     }
 
     static options::PluginShared<PDBFactory> _plugin("symbolic_online", _parse);
+
+    unsigned long PDBFactorySymbolicOnline::get_current_memory_in_kb() {
+        return manager->totalMemoryKB();
+    }
 
 }

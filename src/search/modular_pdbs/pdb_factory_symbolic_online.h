@@ -29,16 +29,16 @@ namespace pdbs3 {
     class PatternDatabaseSymbolicOnline;
 
 class PDBFactorySymbolicOnline : public PDBFactory, public symbolic::SymController {
-    int precomputation_time_ms, precomputation_step_time_ms, precomputation_nodes; 
+    int precomputation_time_ms, precomputation_step_time_ms, precomputation_nodes;
     int termination_time_ms, termination_step_time_ms, termination_nodes;
     const int online_time_ms, online_expansions;
     const int global_limit_memory_MB;
 
-    const double increase_factor; 
+    const double increase_factor;
 
     const bool use_pdbs_in_online_search;
     /* const bool online_use_canonical_pdbs; */
-    const bool online_prune_dominated_pdbs; 
+    const bool online_prune_dominated_pdbs;
 
     const bool use_online_during_search;
     const bool dump;
@@ -52,12 +52,12 @@ class PDBFactorySymbolicOnline : public PDBFactory, public symbolic::SymControll
 	virtual ~PDBFactorySymbolicOnline() override = default;
 
 	// Type is shared because, in certain configurations, the factories
-	// might want to store a copy of the result. 
-	virtual std::shared_ptr<PatternDatabaseInterface> 
-	    create_pdb(const TaskProxy & task, 
-		       const Pattern &pattern, 
+	// might want to store a copy of the result.
+	virtual std::shared_ptr<PatternDatabaseInterface>
+	    create_pdb(const TaskProxy & task,
+		       const Pattern &pattern,
 		       const std::vector<int> &operator_costs = std::vector<int>()) override;
-	
+
     virtual void increase_computational_limits() override;
     virtual int get_time_limit() override { return precomputation_time_ms;}
 
@@ -66,12 +66,12 @@ class PDBFactorySymbolicOnline : public PDBFactory, public symbolic::SymControll
     virtual bool is_solved () const override {
 	return solved();
     }
-    
+
     virtual symbolic::Bucket get_dead_ends() const override;
 
-    virtual std::shared_ptr<PDBCollection> terminate_creation 
-	(const PDBCollection & pdb_collection, 
-	 int min_max_time, int min_max_step_time, int min_max_nodes) override; 
+    virtual std::shared_ptr<PDBCollection> terminate_creation
+	(const PDBCollection & pdb_collection,
+	 int min_max_time, int min_max_step_time, int min_max_nodes) override;
 
     int  get_online_time_ms() const {
 	return online_time_ms;
@@ -81,8 +81,9 @@ class PDBFactorySymbolicOnline : public PDBFactory, public symbolic::SymControll
 	return online_expansions;
     }
     virtual void continue_creation (PatternDatabaseInterface & pdb);
+
+    virtual unsigned long get_current_memory_in_kb() override;
 };
 }
 
 #endif
-

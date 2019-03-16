@@ -89,7 +89,7 @@ protected:
 
 
 public:
-    SymStateSpaceManager(SymVariables *v, const SymParamsMgr &params, 
+    SymStateSpaceManager(SymVariables *v, const SymParamsMgr &params,
 			 const std::set<int> & relevant_vars_ = std::set<int> ());
 
     inline bool isAbstracted() const {
@@ -161,8 +161,13 @@ public:
         return vars->totalNodes();
     }
 
-    inline unsigned long totalMemory() const {
-        return vars->totalMemory();
+
+    inline unsigned long totalMemoryBytes() const {
+        return vars->totalMemoryKB();
+    }
+
+    inline unsigned long totalMemoryKB() const {
+        return vars->totalMemoryKB();
     }
 
     inline const BDD &getGoal() {
@@ -284,7 +289,7 @@ public:
 
     //For plan solution reconstruction. Only avaialble in original state space
     virtual const std::map<int, std::vector <TransitionRelation>> &getIndividualTRs() const {
-	std::cerr << "Error: trying to get individual TRs from an invalid state space type" 
+	std::cerr << "Error: trying to get individual TRs from an invalid state space type"
 		  << std::endl;
 	utils::exit_with(utils::ExitCode::CRITICAL_ERROR);
     }

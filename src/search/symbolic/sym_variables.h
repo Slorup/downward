@@ -48,7 +48,7 @@ class SymVariables {
     //The variable order must be complete.
     std::vector <int> var_order; //Variable(FD) order in the BDD
     std::vector <std::vector <int>> bdd_index_pre, bdd_index_eff, bdd_index_abs; //vars(BDD) for each var(FD)
-    
+
     std::vector <std::vector <BDD>> preconditionBDDs; // BDDs associated with the precondition of a predicate
     std::vector <std::vector <BDD>> effectBDDs;      // BDDs associated with the effect of a predicate
     std::vector<BDD> biimpBDDs;  //BDDs associated with the biimplication of one variable(FD)
@@ -153,7 +153,11 @@ public:
         return getBDDVars(vars, bdd_index_abs);
     }
 
-    inline unsigned long totalMemory() const {
+    inline unsigned long totalMemoryBytes() const {
+        return _manager->ReadMemoryInUse();
+    }
+
+    inline unsigned long totalMemoryKB() const {
         return _manager->ReadMemoryInUse();
     }
 
@@ -196,10 +200,10 @@ public:
     }
 
     void print();
-    
-    template <class T> 
+
+    template <class T>
     int *getBinaryDescription(const T &state) {
-	//if (!state_cached) { 
+	//if (!state_cached) {
 	    int pos = 0;
 	    //  cout << "State " << endl;
 	    for (int v : var_order) {
@@ -221,16 +225,16 @@ public:
         return &(binState[0]);
     }
 
-    
 
-template <class T> 
+
+template <class T>
     int *getBinaryDescription(const std::vector<int> & pattern, const T &state) {
 
     assert(pattern.size() == state.size());
-    
+
     for(size_t i = 0; i < pattern.size(); ++i) {
 	state_values_in_pattern [pattern[i]] = state[i];
-    } 
+    }
 
     return getBinaryDescription(state_values_in_pattern);
 }
