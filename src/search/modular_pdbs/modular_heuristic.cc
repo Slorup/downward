@@ -77,7 +77,9 @@ ModularHeuristic::ModularHeuristic(const Options &opts)
     gamer_excluded(opts.get<bool>("gamer_excluded")),
     doing_local_search(opts.get<bool>("doing_local_search")),
     doing_canonical_search(opts.get<bool>("doing_canonical_search")),
+    pdb_memory_limit(opts.get<int>("pdb_memory_limit")),
     pdb_factory (opts.get<shared_ptr<PDBFactory>>("pdb_factory")) {
+      
       cout<<"Hi nonagnostic_v2"<<endl;
       cout<<"modular_time_limit:"<<modular_time_limit<<endl;
       cout<<"terminate_creation:"<<terminate_creation<<endl;
@@ -86,6 +88,11 @@ ModularHeuristic::ModularHeuristic(const Options &opts)
       cout<<"doing_local_search:"<<doing_local_search<<endl;
       cout<<"doing_canonical_search:"<<doing_canonical_search<<endl;
       cout<<"only_gamer:"<<only_gamer<<endl;
+      
+      if(pdb_memory_limit>0){
+        memory_limit=pdb_memory_limit;
+	cout<<"pdb_memory_limit switched to user_input:"<<memory_limit<<endl;
+      }
 
 
       TaskProxy task_proxy(*task);
@@ -950,6 +957,10 @@ bool ModularHeuristic::check_for_solution(){
         "doing_canonical_search",
         "Combining PDBs in a canonical set",
 	"true");
+      parser.add_option<int> (
+	  "pdb_memory_limit",
+          "overwrite PDBs default memory-limit, usually half of available memory",
+	  "0");
 
     Heuristic::add_options_to_parser(parser);
 
