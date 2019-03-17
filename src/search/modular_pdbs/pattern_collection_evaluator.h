@@ -26,6 +26,8 @@ class PatternCollectionEvaluator {
     //std::shared_ptr<PatternCollection> patterns;
   unsigned threshold=100;
   unsigned num_samples=20000;
+  protected:
+  double score=0;
   public:
     virtual void initialize(std::shared_ptr<AbstractTask> task) = 0;
     virtual bool evaluate(std::shared_ptr<ModularZeroOnePDBs> candidate_PC)=0;
@@ -47,6 +49,13 @@ class PatternCollectionEvaluator {
     virtual int get_reward() = 0;//How much better is than current heuristic in whichever metric we are using
     virtual int calculate_max_additive_subset(PDBCollection max_subset,State current_state);
     //virtual void set_reward(const PatternCollectionContainer & pc, double reward) = 0;
+    void set_score(double _score){
+      score=_score;
+    }
+    double get_score(){
+      return score;
+    }
+
 };
 
 }

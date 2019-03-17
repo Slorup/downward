@@ -14,6 +14,7 @@ class ModularZeroOnePDBs {
     bool dead_end=false;
 public:
     ModularZeroOnePDBs(TaskProxy task_proxy, const PatternCollection &patterns, PDBFactory & factory);
+    ModularZeroOnePDBs(const std::shared_ptr<PatternDatabaseInterface> Start_PDB);//Mostly to pass to pattern_collection_evaluator::evaluate
     ~ModularZeroOnePDBs() = default;
 
     int get_value(const State &state) const;

@@ -65,7 +65,6 @@ inline std::ostream& operator << (std::ostream& os, const std::vector<T>& v)
     //bool improvement_found=false;
     TaskProxy task_proxy(*(g_root_task()));
     size_t num_vars = task_proxy.get_variables().size();
-    shared_ptr<ModularZeroOnePDBs> candidate_ptr;
     PatternCollectionContainer new_candidate_local_search;
     const State &initial_state = task_proxy.get_initial_state();
 
@@ -134,8 +133,13 @@ inline std::ostream& operator << (std::ostream& os, const std::vector<T>& v)
    double best_score=old_pdb->compute_mean_finite_h();
 
    bool all_pdbs_finished=true;
-   double starting_best_score=best_score;
-   cout<<"starting_best_score:"<<best_score<<",eval_method threshold:"<<evaluation_method->get_threshold()<<endl;
+   //double starting_best_score=best_score;
+   //We get baseline to compare every time we do local_search_pattern
+   //For some methods sample changes constantly, for others it is a function of 
+   //whether there has been improvements, we should add a marker to determine whether 
+   //a new sample is necessary
+   evaluation_method->sample_states(current_result);
+   //cout<<"starting_best_score:"<<best_score<<",eval_method threshold:"<<evaluation_method->get_threshold()<<endl;
    //First get connected variables 
    for (size_t var = 0; var < g_variable_domain.size(); ++var) {
         if (input_pattern.count(var)){ 
@@ -204,8 +208,9 @@ inline std::ostream& operator << (std::ostream& os, const std::vector<T>& v)
 	all_pdbs_finished=false;
       }
       //Now evaluate PDB
-      //if(evaluation_method->evaluate(pdb))
-      if(candidate_pdb->compute_mean_finite_h()>starting_best_score){//If we find 2 equal improvements to best known we add both
+      shared_ptr<ModularZeroOnePDBs> candidate_ptr=make_shared<ModularZeroOnePDBs>(candidate_pdb);
+      if(evaluation_method->evaluate(candidate_ptr)){
+        //if(candidate_pdb->compute_mean_finite_h()>starting_best_score)//If we find 2 equal improvements to best known we add both
 	if(verbose)
 	  cout<<"best_score:"<<best_score<<",new_best_score:"<<candidate_pdb->compute_mean_finite_h()<<",last_var:"<<last_var<<endl;
 	improvement_found=true;
