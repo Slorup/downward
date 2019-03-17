@@ -80,6 +80,9 @@ ModularZeroOnePDBs::ModularZeroOnePDBs(TaskProxy task_proxy, const PatternCollec
     }
 		//DEBUG_MSG(cout<<"\t new pdbs:"<<new_pdbs<<endl);
 }
+ModularZeroOnePDBs::ModularZeroOnePDBs(const shared_ptr<PatternDatabaseInterface> Start_PDB) {
+  pattern_databases.push_back(Start_PDB);
+}
 
 
 int ModularZeroOnePDBs::get_value(const State &state) const {
