@@ -30,6 +30,7 @@ namespace symbolic {
  */
 struct BDDError {};
 extern void exceptionError(std::string message);
+extern void exitOutOfMemory(size_t memory);
 
 class SymVariables {
     // Var order used by the algorithm.

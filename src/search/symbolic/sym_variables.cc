@@ -97,7 +97,7 @@ void SymVariables::init(const vector <int> &v_order) {
     _manager->setHandler(exceptionError);
     _manager->setTimeoutHandler(exceptionError);
     _manager->setNodesExceededHandler(exceptionError);
-
+    _manager->RegisterOutOfMemoryCallback(exitOutOfMemory);
     cout << "Generating binary variables" << endl;
     //Generate binary_variables
     for (int i = 0; i < _numBDDVars; i++) {
@@ -270,6 +270,12 @@ exceptionError(string message) {
     }
     //cout << message << endl;
     throw BDDError();
+}
+
+
+void
+exitOutOfMemory(size_t) {
+    utils::exit_with(utils::ExitCode::OUT_OF_MEMORY);
 }
 
 
