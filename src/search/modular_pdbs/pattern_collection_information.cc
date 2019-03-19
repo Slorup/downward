@@ -105,14 +105,12 @@ void PatternCollectionInformation::set_pdbs(shared_ptr<PDBCollection> pdbs_) {
 
 void PatternCollectionInformation::include_additive_pdbs(const shared_ptr<PDBCollection> & pdbs_) {
 
-    pdbs_->erase(std::remove_if(pdbs_->begin(), 
+    pdbs_->erase(std::remove_if(pdbs_->begin(),
 				pdbs_->end(),
 				[](const shared_ptr<PatternDatabaseInterface> & x){return x->get_pattern().empty();}),
 		 pdbs_->end());
 
     if(pdbs_->empty()) return;
-    
-    
 
     PDBCollection pdbs2;
     bool first_call=false;
@@ -120,7 +118,7 @@ void PatternCollectionInformation::include_additive_pdbs(const shared_ptr<PDBCol
       first_call=true;//Sometimes we need to add dummy PDB to seed algorithm
       cout<<"First call, pdbs empty"<<endl;
 	pdbs = make_shared<PDBCollection> ();
-    } 
+    }
     else{
       cout<<"prev pdbs:"<<pdbs->size()<<endl;
     }
@@ -130,31 +128,30 @@ void PatternCollectionInformation::include_additive_pdbs(const shared_ptr<PDBCol
     }
     else{
       cout<<"prev max_additive_subsets::"<<max_additive_subsets->size()<<endl;
-    } 
+    }
 
-      for (const auto & new_pdb : *pdbs_) {
+    for (const auto & new_pdb : *pdbs_) {
 	const auto & costs1 = new_pdb->get_operator_costs();
 	bool empty_cost=true;
 	for (size_t i = 0; i < costs1.size(); ++i) {
-	  if(costs1[i]>0||first_call) {
-	    cout<<"adding :"<<*new_pdb<<endl;
-	    pdbs2.push_back(new_pdb);
-	    pdbs->push_back(new_pdb);
-	    empty_cost=false;
-	    break;
-	  }
+            if(costs1[i]>0||first_call) {
+                cout<<"adding :"<<*new_pdb<<endl;
+                pdbs2.push_back(new_pdb);
+                pdbs->push_back(new_pdb);
+                empty_cost=false;
+                break;
+            }
 	}
 	if(empty_cost)//Sometimes we need to add dummy initial PDB to seed algorithm
-	  cout<<"pdb:"<<*new_pdb<<"had empty costs, so not adding!"<<endl;
-      }
+            cout<<"pdb:"<<*new_pdb<<"had empty costs, so not adding!"<<endl;
+    }
     if(pdbs2.empty()){
-     cerr<<"all pdbs in collection improving h values have empty costs!!!,DEBUG ME"<<endl;
-     exit(1);
+        cerr<<"all pdbs in collection improving h values have empty costs!!!,DEBUG ME"<<endl;
+        exit(1);
     }
 
     for (auto & new_pdb : pdbs2) {
-	if (new_pdb->get_symbolic_variables()) {
-	  if(!symbolic_vars)
+	if (!symbolic_vars && new_pdb->get_symbolic_variables()) {
 	    symbolic_vars = new_pdb->get_symbolic_variables();
 	}
 	assert(!new_pdb->get_pattern().empty());
@@ -167,7 +164,7 @@ void PatternCollectionInformation::include_additive_pdbs(const shared_ptr<PDBCol
     assert(information_is_valid());
 }
 
-//void PatternCollectionInformation::incremental_recompute_max_additive_subsets() { 
+//void PatternCollectionInformation::incremental_recompute_max_additive_subsets() {
 //    max_additive_subsets = compute_max_additive_subsets(*pdbs);
 //}
 
@@ -175,12 +172,12 @@ void PatternCollectionInformation::include_additive_pdbs(const shared_ptr<PDBCol
 void PatternCollectionInformation::recompute_max_additive_subsets() {
   //static int last_call=1;
   //last_call++;
-      
+
   const State &initial_state = task_proxy.get_initial_state();
     if(!pdbs){
 	DEBUG_MSG(cout<<"pdbs is empty, no recompute!!!"<<endl;);
 		  return;
-    }  
+    }
     size_t i=0;
     for(auto pdb : *pdbs){
       cout<<"i:"<<i++<<",pdb_before_recompute,initial_h:"<<pdb->get_value(initial_state)<<endl;
@@ -197,8 +194,8 @@ void PatternCollectionInformation::recompute_max_additive_subsets() {
     size_t last_size=max_additive_subsets->size();
     cout<<"recompute,max_additive subsets before Dominance prune"<<max_additive_subsets->size()<<endl;
     max_additive_subsets = prune_dominated_subsets(*pdbs, *max_additive_subsets);
-    
-      
+
+
     std::shared_ptr<MaxAdditivePDBSubsets> max_additive_subsets2;
     max_additive_subsets2 = prune_dominated_subsets_sample_space(*pdbs, *max_additive_subsets);
     max_additive_subsets=max_additive_subsets2;
@@ -217,7 +214,7 @@ void PatternCollectionInformation::recompute_max_additive_subsets() {
 	    //}
 	  }
       }
-      
+
       size_t adjust=0;
       unordered_set<shared_ptr<PatternDatabaseInterface> > new_pdbs;
       pair<unordered_set<shared_ptr<PatternDatabaseInterface> >::iterator, bool> ret;
@@ -262,7 +259,7 @@ void PatternCollectionInformation::recompute_max_additive_subsets() {
 	  cout<<endl;
       }*/
 }
-size_t PatternCollectionInformation::pdb_counts() {   
+size_t PatternCollectionInformation::pdb_counts() {
   //cout<<"pdbs:"<<pdbs->size()<<endl;
   return pdbs->size();
 }
@@ -296,16 +293,17 @@ int PatternCollectionInformation::get_value(const State &state) const {
       //cout<<"max_additive_subsets size is 0, so returning 0"<<endl;
       return 0;
     }
-    if (check_symbolic_dead_ends&&!dead_ends.empty()) { //If dead ends were not introduced in 
-      int * inputs = symbolic_vars->getBinaryDescription(state.get_values());
-      for(const BDD & bdd : dead_ends){
-     	if(!bdd.Eval(inputs).IsZero()){
-	  return numeric_limits<int>::max();
-     	}
-      }
+    if (check_symbolic_dead_ends&&!dead_ends.empty()) { //If dead ends were not introduced in
+        assert(symbolic_vars);
+        int * inputs = symbolic_vars->getBinaryDescription(state.get_values());
+        for(const BDD & bdd : dead_ends){
+            if(!bdd.Eval(inputs).IsZero()){
+                return numeric_limits<int>::max();
+            }
+        }
     }
     //else{
-      //cout<<"max_additive_subsets_size:"<<max_additive_subsets->size()<<flush<<endl;
+    //cout<<"max_additive_subsets_size:"<<max_additive_subsets->size()<<flush<<endl;
     //}
 
     int max_h = 0;
@@ -330,7 +328,7 @@ bool PatternCollectionInformation::is_dead_end(const State &state) const {
     if(!max_additive_subsets){
       return false;
     }
-    if (check_symbolic_dead_ends&&!dead_ends.empty()) { //If dead ends were not introduced in 
+    if (check_symbolic_dead_ends&&!dead_ends.empty()) { //If dead ends were not introduced in
       int * inputs = symbolic_vars->getBinaryDescription(state.get_values());
       for(const BDD & bdd : dead_ends){
      	if(!bdd.Eval(inputs).IsZero()){
