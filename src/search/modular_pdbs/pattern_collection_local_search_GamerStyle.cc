@@ -129,8 +129,7 @@ inline std::ostream& operator << (std::ostream& os, const std::vector<T>& v)
    TaskProxy task_proxy(*(g_root_task()));
    const CausalGraph &cg = task_proxy.get_causal_graph();
     
-   shared_ptr<PatternDatabaseInterface> old_pdb = pdb_factory->compute_pdb(task_proxy, old_pattern,operator_costs);
-   double best_score=old_pdb->compute_mean_finite_h();
+   //shared_ptr<PatternDatabaseInterface> old_pdb = pdb_factory->compute_pdb(task_proxy, old_pattern,operator_costs);
 
    bool all_pdbs_finished=true;
    //double starting_best_score=best_score;
@@ -139,6 +138,7 @@ inline std::ostream& operator << (std::ostream& os, const std::vector<T>& v)
    //whether there has been improvements, we should add a marker to determine whether 
    //a new sample is necessary
    evaluation_method->sample_states(current_result);
+   double best_score=evaluation_method->get_sample_score();
    //cout<<"starting_best_score:"<<best_score<<",eval_method threshold:"<<evaluation_method->get_threshold()<<endl;
    //First get connected variables 
    for (size_t var = 0; var < g_variable_domain.size(); ++var) {
@@ -195,7 +195,12 @@ inline std::ostream& operator << (std::ostream& os, const std::vector<T>& v)
 	break;
       }
 
-      pdb_factory->terminate_creation(temp, max_pdb_time, 50000, 10000000);
+      //No calling terminate creation when using online_pdbs
+      if(pdb_factory->name().find("online")==string::npos){
+	if(verbose)
+	  cout<<"calling terminate_creation for each candidate in do_local_search, adding 50 secs"<<endl;
+	pdb_factory->terminate_creation(temp, max_pdb_time, 50000, 10000000);
+      }
       temp.clear();
 	
       if(candidate_pdb->is_finished()){
@@ -209,20 +214,28 @@ inline std::ostream& operator << (std::ostream& os, const std::vector<T>& v)
       }
       //Now evaluate PDB
       shared_ptr<ModularZeroOnePDBs> candidate_ptr=make_shared<ModularZeroOnePDBs>(candidate_pdb);
-      if(evaluation_method->evaluate(candidate_ptr)){
+      evaluation_method->evaluate(candidate_ptr);
+      if(evaluation_method->get_eval_score()>=0.999*best_score){
         //if(candidate_pdb->compute_mean_finite_h()>starting_best_score)//If we find 2 equal improvements to best known we add both
 	if(verbose)
-	  cout<<"best_score:"<<best_score<<",new_best_score:"<<candidate_pdb->compute_mean_finite_h()<<",last_var:"<<last_var<<endl;
+	  cout<<"Selected,previous_best_score:,"<<best_score<<",eval_score:,"<<evaluation_method->get_eval_score()<<",last_var:"<<last_var<<endl;
 	improvement_found=true;
 	//improving_vars.push_back(make_pair<int,double>(last_var,evaluation_method->get_reward()));
-	improving_vars.push_back(make_pair<int,double>(int(last_var),candidate_pdb->compute_mean_finite_h()));
+	improving_vars.push_back(make_pair<int,double>(int(last_var),evaluation_method->get_eval_score()));
 	improving_pdbs.push_back(candidate_pdb);
 	//best_score=max(best_score,evaluation_method->get_reward());
-	best_score=max(best_score,candidate_pdb->compute_mean_finite_h());
+	best_score=max(best_score,evaluation_method->get_eval_score());
+      }
+      else{
+	if(verbose)
+	  cout<<"Unselected,best_score:"<<best_score<<",eval_score:"<<evaluation_method->get_eval_score()<<",last_var:"<<last_var<<endl;
       }
     }
+
     if(improving_vars.size()==0){
       if(all_pdbs_finished){
+	if(verbose)
+	  cout<<"adding to impossible_to_update,pattern:"<<old_pattern<<",all_pdbs were finished"<<endl;
 	impossible_to_update_pattern.insert(old_pattern);
       }
       return false;
@@ -251,10 +264,12 @@ inline std::ostream& operator << (std::ostream& os, const std::vector<T>& v)
     //the best improving PDB, we have run out of time
     //to do any merges
     if(local_search_timer->is_expired()){
+      assert(improving_pdbs.size()>0);//we should at least have keept one improving_var or returned false previously
       cout<<"time:,"<<utils::g_timer()<<",local_search_time is expired,last best candidate PDB is Final PDB:"<<*improving_pdbs.back()<<endl;
       PDBCollection new_Coll;
       new_Coll.push_back(improving_pdbs.back());//last improving PDB will be have the best found avg_h_value(ignoring ties for now)
-      current_result->include_additive_pdbs(pdb_factory->terminate_creation(new_Coll,0,0,0));
+      //current_result->include_additive_pdbs(pdb_factory->terminate_creation(new_Coll,0,0,0));
+      current_result->include_additive_pdbs(pdb_factory->terminate_creation(new_Coll,250000, 50000, 10000000));
       current_result->set_dead_ends(pdb_factory->get_dead_ends());
       //Recompute as usual
       const State &initial_state = task_proxy.get_initial_state();
@@ -277,15 +292,18 @@ inline std::ostream& operator << (std::ostream& os, const std::vector<T>& v)
     //Repeat timer_check before going to terminate final PDB
     if(local_search_timer->is_expired()){
       PDBCollection new_Coll;
-      if(new_pdb->compute_mean_finite_h()>=best_score){
+      shared_ptr<ModularZeroOnePDBs> temp_ptr=make_shared<ModularZeroOnePDBs>(new_pdb);
+      if(evaluation_method->evaluate(temp_ptr)){
 	new_Coll.push_back(new_pdb);//
-	cout<<"time:,"<<utils::g_timer()<<",local_search_time is expired,last best candidate PDB is Final PDB:"<<*improving_pdbs.back()<<endl;
+	cout<<"time:,"<<utils::g_timer()<<",local_search_time is expired,last best candidate PDB is Final PDB:"<<*new_pdb<<endl;
       }
       else{
 	new_Coll.push_back(improving_pdbs.back());
-	cout<<"time:,"<<utils::g_timer()<<",local_search_time is expired before terminate, Final PDB:"<<*new_pdb<<endl;
+	cout<<"time:,"<<utils::g_timer()<<",local_search_time is expired before terminate, Final PDB is last improving PDB:"<<*improving_pdbs.back()<<endl;
       }
-      current_result->include_additive_pdbs(pdb_factory->terminate_creation(new_Coll,0,0,0));
+      //We will go past time limit but this is the last PDB
+      current_result->include_additive_pdbs(pdb_factory->terminate_creation(new_Coll,250000, 50000, 10000000));
+      //current_result->include_additive_pdbs(pdb_factory->terminate_creation(new_Coll,0,0,0));
       current_result->set_dead_ends(pdb_factory->get_dead_ends());
       //Recompute as usual
       const State &initial_state = task_proxy.get_initial_state();

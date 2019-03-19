@@ -114,7 +114,7 @@ SearchStatus EagerSearchInterleaved::step() {
     shared_ptr<vector<StateID> > states_to_eval=make_shared<vector<StateID> >();
     const GlobalState &initial_state = state_registry.get_initial_state();
     states_to_eval->push_back(initial_state.get_id());
-    open_list->load_states(20000,states_to_eval);//So we can access from pattern_collection_evaluator_open_list
+    open_list->load_states(1000,states_to_eval);//So we can access from pattern_collection_evaluator_open_list
     cout<<"states_to_eval size:"<<states_to_eval->size()<<flush<<endl;
     states_loaded_from_open_list=states_to_eval;
     cout<<"states_loaded_from_open_list:"<<states_loaded_from_open_list->size()<<flush<<endl;

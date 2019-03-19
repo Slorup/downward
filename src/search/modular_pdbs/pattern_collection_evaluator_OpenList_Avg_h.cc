@@ -72,22 +72,29 @@ PatterCollectionEvaluatorOpenList_Avg_H::PatterCollectionEvaluatorOpenList_Avg_H
   bool PatterCollectionEvaluatorOpenList_Avg_H::evaluate(std::shared_ptr<ModularZeroOnePDBs> candidate_PC){
     //cout<<"candidate_pc.size:"<<candidate_PC->get_size()<<endl;
     increased_states=0;
-    double new_score=0;
+    double sum_h=0;
     size_t additions=0;
     for(auto state_pair : samples){
       if(candidate_PC->get_value(state_pair.first)>state_pair.second){
         DEBUG_MSG(cout<<"\th improved from "<<state_pair.second<<" to "<<candidate_PC->get_value(state_pair.first)<<endl;);
         increased_states++;
         if (candidate_PC->get_value(state_pair.first)!=numeric_limits<int>::max()){
-	  new_score+=candidate_PC->get_value(state_pair.first);
+	  sum_h+=candidate_PC->get_value(state_pair.first);
+	  additions++;
+	}
+	else{//Found new dead_end, adding 1 for reflecting beneficial_impact
+	  sum_h+=state_pair.second+1.0;
 	  additions++;
 	}
       }
+      else{
+	sum_h+=state_pair.second;
+	additions++;
+      }
     }
-    new_score/=double(additions);
-    //UPDATING UNIQUE_SAMPLES h VALUES ONLY IF COLLECTION WILL BE ADDED
-    if(new_score>score){
-      cout<<"time:"<<utils::g_timer()<<",Improving PC,increased_states:"<<increased_states<<",score:"<<get_score()<<",new_score"<<new_score<<endl;
+    set_eval_score(sum_h/double(additions));
+    if(get_eval_score()>get_sample_score()){
+      cout<<"time:"<<utils::g_timer()<<",Improving PC,increased_states:"<<increased_states<<",eval_score:"<<get_eval_score()<<",sample_score"<<sample_score<<endl;
       /*for(std::map<size_t,std::pair<State,int> >::iterator it=unique_samples.begin(); it!=unique_samples.end(); ++it){
         it->second.second=max(it->second.second,candidate_PC->get_value(it->second.first));
       }*/
@@ -98,9 +105,13 @@ PatterCollectionEvaluatorOpenList_Avg_H::PatterCollectionEvaluatorOpenList_Avg_H
       //as the number of unique_samples keep growing
       return true;//Add collection
     }
-    else if(increased_states>0){
-      cout<<"time:"<<utils::g_timer()<<",Not_Improving PC,increased_states:"<<increased_states<<",score:"<<get_score()<<",new_score:"<<new_score<<endl;
-    }
+    //else if(increased_states>0)
+      //cout<<"time:"<<utils::g_timer()<<",Not_Improving PC,increased_states:"<<increased_states<<",sample_score:"<<get_sample_score()<<",eval_score:"<<get_eval_score()<<",additions:"<<additions<<"samples:,"<<samples.size()<<endl;
+      if(additions==0){
+          cerr<<"No additions for calculating avg_h_val, debug me!!!")<<endl;
+	  exit(1);
+      }
+    //
     return false;//Not adding collection
   }
 
@@ -152,10 +163,10 @@ PatterCollectionEvaluatorOpenList_Avg_H::PatterCollectionEvaluatorOpenList_Avg_H
 	samples.push_back(make_pair(state,h_val));
       }
       set_num_samples(samples.size());
-      set_score(sum_h/double(additions));
-      cout<<"Sampled_score:"<<get_score()<<endl;
+      set_sample_score(sum_h/double(additions));
+      //cout<<"Sampled_score:"<<get_sample_score()<<endl;
       set_threshold(samples.size()/50);
-      cout<<"adding to samples using RAND_WALK, unique_size prior:"<<unique_samples.size()<<flush<<",num_samples:,"<<get_num_samples()<<",score:"<<get_score()<<endl;
+      cout<<"adding to samples using RAND_WALK, unique_size prior:"<<unique_samples.size()<<flush<<",num_samples:,"<<get_num_samples()<<",sample_score:,"<<get_sample_score()<<endl;
       return;
     }
      
@@ -167,7 +178,7 @@ PatterCollectionEvaluatorOpenList_Avg_H::PatterCollectionEvaluatorOpenList_Avg_H
     //Keeping lists of unique_states sampled, used for domination detecting
     //both in canonical(prune_dominated_subsets_sample_space) and in clear_dominated_heuristics
     //Which needs implementing as well for OpenList_Avg_H, currently it does not do anything in OpenList_Avg_H.
-    set_score(0);
+    set_sample_score(0);
     for(auto state_id : *states_loaded_from_open_list){
       pair<map<size_t,pair<State,int> >::iterator,bool> ret;
       //NEED TO FIND A MORE EFFICIENT WAY!!!
@@ -183,16 +194,17 @@ PatterCollectionEvaluatorOpenList_Avg_H::PatterCollectionEvaluatorOpenList_Avg_H
       if(!ret.second){//keep max h value stored when state was previously sampled.
 	ret.first->second.second=max(val,ret.first->second.second);
       }
-      samples.push_back(make_pair(state,val));
+      samples.push_back(make_pair(state,max(val,ret.first->second.second)));
+
       additions++;
       sum_h+=val;
 	    
       //map<size_t,pair<State,int> >::iterator it=unique_samples.find(state_id);
       //cout<<"state_id:"<<state_id<<",value:"<<it->second.second<<endl;
     }
-    set_score(sum_h/double(additions));
-    cout<<"Open_list_sampled_score:,"<<get_score()<<endl;
-    cout<<"We are finished, sampling with OpenList_Avg_H,time:"<<utils::g_timer()-start_time<<",samples:"<<samples.size()<<",unique_samples:"<<unique_samples.size()<<endl;
+    set_sample_score(sum_h/double(additions));
+    //cout<<"Open_list_sampled_score:,"<<get_sample_score()<<endl;
+    //cout<<"We are finished, sampling with OpenList_Avg_H,time:"<<utils::g_timer()-start_time<<",samples:"<<samples.size()<<",unique_samples:"<<unique_samples.size()<<endl;
   }
 
 

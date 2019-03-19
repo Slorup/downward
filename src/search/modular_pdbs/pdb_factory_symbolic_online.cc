@@ -65,6 +65,7 @@ namespace pdbs3 {
 	auto pdb_task = make_shared<extra_tasks::PDBTask> (g_root_task(), pattern, operator_costs);
 
 	DEBUG_MSG(cout << "PDB Task created" << endl;);
+	cout<<"precomputation_step_time_ms:"<<precomputation_time_ms<<endl;
 	auto new_pdb =
 	    make_shared<PatternDatabaseSymbolicOnline> (this, task, pattern, operator_costs,
 						    pdb_task, vars, state_space_mgr,
@@ -75,6 +76,7 @@ namespace pdbs3 {
 						    global_limit_memory_MB);
 
 	if(new_pdb->is_finished()) {
+	  cout<<"\t\t online_pdb was finished"<<endl;
 	    DEBUG_MSG(cout << "Dead end states discovered: " << new_pdb->get_dead_ends().nodeCount() << endl;);
 
 	    if(!(new_pdb->get_dead_ends()*manager->getInitialState()).IsZero()) {
@@ -84,14 +86,24 @@ namespace pdbs3 {
 	    manager->addDeadEndStates(true, new_pdb->get_dead_ends());
 
 	} else if (use_pdbs_in_online_search) {
+	  cout<<"\t\t online_pdb was unfinished"<<endl;
             //TODO: Right now, the PDBs are introduced separately so we will take the
             //      maximum. Instead, they could be combined with the canonical heuristic.
 
             //vector<shared_ptr<PatternDatabaseInterface>> pdb_collection;
+	    size_t max_degree=0;
             for(const auto & stored_pdb : stored_pdbs) {
-                if(stored_pdb.first.is_pdb_for(pattern, operator_costs)) {
+	      if(stored_pdb.first.is_pdb_for(pattern, operator_costs)) {
+		size_t temp_degree=stored_pdb.first.get_size();
+		max_degree=max(max_degree,temp_degree);
+	      }
+	    }
+
+            for(const auto & stored_pdb : stored_pdbs) {
+                if(stored_pdb.first.is_pdb_for(pattern, operator_costs)&&stored_pdb.first.get_size()==max_degree) {
                     //pdb_collection.push_back(stored_pdb.second->get_offline_pdb());
                     new_pdb->add_heuristic(stored_pdb.second->get_offline_pdb());
+		    cout<<"\t added as heuristic pdb:"<<*stored_pdb.second->get_offline_pdb()<<"for online pdb:"<<*new_pdb<<endl;
                 }
             }
             // if(!pdb_collection.empty()) {

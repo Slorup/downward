@@ -51,7 +51,7 @@ namespace pdbs3 {
 	}
         
 	int initial_h = compute_online_heuristic(initial_state, goal_cost.second); 
-	cout<<"\t\tinitial_h:"<<initial_h;
+	//cout<<"\t\tinitial_h:"<<initial_h;
 	if (initial_h == std::numeric_limits<int>::max()) {
 	    return initial_h;
         }
@@ -155,7 +155,7 @@ namespace pdbs3 {
 		}
 	    }
 	}
-	cout<<",finished, time:"<<time()<<",upper bound:"<<upper_bound<<",lower bound:"<<initial_h<<",";
+	//cout<<",finished, time:"<<time()<<",upper bound:"<<upper_bound<<",lower bound:"<<initial_h<<",";
 	search_info.clear();
 	
 	//DEBUG_MSG(cout << "Upper bound: " << upper_bound << " expanded: " << expanded_states << endl;);
@@ -167,7 +167,7 @@ namespace pdbs3 {
             //no more nodes in open list
 	    final_value = upper_bound;
 	}
-        cout << ",Upper bound: " << upper_bound << " expanded: " << expanded_states << " value: " << final_value   << endl;
+        //cout << ",Upper bound: " << upper_bound << " expanded: " << expanded_states << " value: " << final_value   << endl;
         return final_value;
 
     }

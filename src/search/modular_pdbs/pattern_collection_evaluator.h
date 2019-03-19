@@ -25,9 +25,10 @@ namespace pdbs3 {
 class PatternCollectionEvaluator {
     //std::shared_ptr<PatternCollection> patterns;
   unsigned threshold=100;
-  unsigned num_samples=20000;
+  unsigned num_samples=1000;
   protected:
-  double score=0;
+  double sample_score=0;
+  double eval_score=0;
   public:
     virtual void initialize(std::shared_ptr<AbstractTask> task) = 0;
     virtual bool evaluate(std::shared_ptr<ModularZeroOnePDBs> candidate_PC)=0;
@@ -49,11 +50,17 @@ class PatternCollectionEvaluator {
     virtual int get_reward() = 0;//How much better is than current heuristic in whichever metric we are using
     virtual int calculate_max_additive_subset(PDBCollection max_subset,State current_state);
     //virtual void set_reward(const PatternCollectionContainer & pc, double reward) = 0;
-    void set_score(double _score){
-      score=_score;
+    void set_sample_score(double _score){
+      sample_score=_score;
     }
-    double get_score(){
-      return score;
+    double get_sample_score(){
+      return sample_score;
+    }
+    void set_eval_score(double _score){
+      eval_score=_score;
+    }
+    double get_eval_score(){
+      return eval_score;
     }
 
 };

@@ -69,6 +69,7 @@ public:
 
 	return true;
     }
+    size_t get_size() const {return pattern.size();};
 };
 class PDBFactory {
     //std::map <PDBKey, std::weak_ptr<PatternDatabaseInterface>> stored_pdbs;
