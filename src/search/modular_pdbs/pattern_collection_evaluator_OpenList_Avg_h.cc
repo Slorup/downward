@@ -108,7 +108,7 @@ PatterCollectionEvaluatorOpenList_Avg_H::PatterCollectionEvaluatorOpenList_Avg_H
     //else if(increased_states>0)
       //cout<<"time:"<<utils::g_timer()<<",Not_Improving PC,increased_states:"<<increased_states<<",sample_score:"<<get_sample_score()<<",eval_score:"<<get_eval_score()<<",additions:"<<additions<<"samples:,"<<samples.size()<<endl;
       if(additions==0){
-          cerr<<"No additions for calculating avg_h_val, debug me!!!")<<endl;
+          cerr<<"No additions for calculating avg_h_val, debug me!!!"<<endl;
 	  exit(1);
       }
     //
