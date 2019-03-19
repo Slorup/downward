@@ -5,19 +5,25 @@ import itertools
 import os
 import subprocess
 
-from lab.environments import LocalEnvironment, BaselSlurmEnvironment
+from lab.environments import LocalEnvironment
 from lab.reports import Attribute, geometric_mean
 
 from downward.reports.compare import ComparativeReport
+from downward import machines
 
 from common_setup import IssueConfig, IssueExperiment, DEFAULT_OPTIMAL_SUITE, is_test_run, get_experiment_name
 
 REVISION = 'ab305ba7fa1f'
 
+BENCHMARKS_DIR = "/mnt/data_server/franco/benchmarks/"
+REVISION_CACHE = "/mnt/data_server/franco/lab-data/cache/"
+
+REPO = "/mnt/data_server/franco/nonagnosticpdbs_interleaved/"
+
 def main(revisions=None):
-    benchmarks_dir=os.path.expanduser('~/repos/downward/benchmarks')
+    benchmarks_dir=os.path.expanduser('/mnt/data_server/franco/benchmarks')
     suite = DEFAULT_OPTIMAL_SUITE
-    environment = BaselSlurmEnvironment(email="silvan.sievers@unibas.ch", export=["PATH"], partition='infai_2')
+    environment = machines.OLD_SERVERS
 
     if is_test_run():
         suite = ['gripper:prob01.pddl', 'depot:p01.pddl', 'mystery:prob07.pddl']
@@ -25,14 +31,6 @@ def main(revisions=None):
 
     configs = {
         IssueConfig('astar-hmax-transform-atomic', ["--search", "astar(hmax)"]),
-        IssueConfig('astar-hmax-transform-atomic-labelreduction', ["--transform", "transform_merge_and_shrink(label_reduction=exact(max_time=300,atomic_fts=true,before_shrinking=true,before_merging=false),shrink_atomic_fts=false,run_main_loop=false)", "--search", "astar(hmax)"]),
-        IssueConfig('astar-hmax-transform-atomic-bisim-labelreduction', ["--transform", "transform_merge_and_shrink(shrink_strategy=shrink_bisimulation(greedy=false),label_reduction=exact(max_time=300,atomic_fts=true,before_shrinking=true,before_merging=false),shrink_atomic_fts=true,run_main_loop=false)", "--search", "astar(hmax)"]),
-        IssueConfig('astar-hmax-transform-full-bisim-labelreduction-dfp100-t900', ["--transform", "transform_merge_and_shrink(shrink_strategy=shrink_bisimulation(greedy=false),merge_strategy=merge_stateless(merge_selector=score_based_filtering(scoring_functions=[product_size(100),goal_relevance,dfp,total_order(atomic_ts_order=reverse_level,product_ts_order=new_to_old,atomic_before_product=false)])),label_reduction=exact(max_time=300,atomic_fts=true,before_shrinking=true,before_merging=false),shrink_atomic_fts=true,run_main_loop=true,max_time=900)", "--search", "astar(hmax)"]),
-        IssueConfig('astar-hmax-transform-full-bisim-labelreduction-dfp1000-t900', ["--transform", "transform_merge_and_shrink(shrink_strategy=shrink_bisimulation(greedy=false),merge_strategy=merge_stateless(merge_selector=score_based_filtering(scoring_functions=[product_size(1000),goal_relevance,dfp,total_order(atomic_ts_order=reverse_level,product_ts_order=new_to_old,atomic_before_product=false)])),label_reduction=exact(max_time=300,atomic_fts=true,before_shrinking=true,before_merging=false),shrink_atomic_fts=true,run_main_loop=true,max_time=900)", "--search", "astar(hmax)"]),
-        IssueConfig('astar-hmax-transform-full-bisim-labelreduction-dfp10000-t900', ["--transform", "transform_merge_and_shrink(shrink_strategy=shrink_bisimulation(greedy=false),merge_strategy=merge_stateless(merge_selector=score_based_filtering(scoring_functions=[product_size(10000),goal_relevance,dfp,total_order(atomic_ts_order=reverse_level,product_ts_order=new_to_old,atomic_before_product=false)])),label_reduction=exact(max_time=300,atomic_fts=true,before_shrinking=true,before_merging=false),shrink_atomic_fts=true,run_main_loop=true,max_time=900)", "--search", "astar(hmax)"]),
-        IssueConfig('astar-hmax-transform-full-bisim-labelreduction-miasm100-t900', ["--transform", "transform_merge_and_shrink(shrink_strategy=shrink_bisimulation(greedy=false),merge_strategy=merge_stateless(merge_selector=score_based_filtering(scoring_functions=[product_size(100),sf_miasm(shrink_strategy=shrink_bisimulation(greedy=false),max_states=100,threshold_before_merge=1),total_order(atomic_ts_order=reverse_level,product_ts_order=new_to_old,atomic_before_product=false)])),label_reduction=exact(max_time=300,atomic_fts=true,before_shrinking=true,before_merging=false),shrink_atomic_fts=true,run_main_loop=true,max_time=900)", "--search", "astar(hmax)"]),
-        IssueConfig('astar-hmax-transform-full-bisim-labelreduction-miasm1000-t900', ["--transform", "transform_merge_and_shrink(shrink_strategy=shrink_bisimulation(greedy=false),merge_strategy=merge_stateless(merge_selector=score_based_filtering(scoring_functions=[product_size(1000),sf_miasm(shrink_strategy=shrink_bisimulation(greedy=false),max_states=1000,threshold_before_merge=1),total_order(atomic_ts_order=reverse_level,product_ts_order=new_to_old,atomic_before_product=false)])),label_reduction=exact(max_time=300,atomic_fts=true,before_shrinking=true,before_merging=false),shrink_atomic_fts=true,run_main_loop=true,max_time=900)", "--search", "astar(hmax)"]),
-        IssueConfig('astar-hmax-transform-full-bisim-labelreduction-miasm10000-t900', ["--transform", "transform_merge_and_shrink(shrink_strategy=shrink_bisimulation(greedy=false),merge_strategy=merge_stateless(merge_selector=score_based_filtering(scoring_functions=[product_size(10000),sf_miasm(shrink_strategy=shrink_bisimulation(greedy=false),max_states=10000,threshold_before_merge=1),total_order(atomic_ts_order=reverse_level,product_ts_order=new_to_old,atomic_before_product=false)])),label_reduction=exact(max_time=300,atomic_fts=true,before_shrinking=true,before_merging=false),shrink_atomic_fts=true,run_main_loop=true,max_time=900)", "--search", "astar(hmax)"]),
     }
 
     exp = IssueExperiment(
