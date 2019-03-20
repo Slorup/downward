@@ -130,25 +130,33 @@ void PatternCollectionInformation::include_additive_pdbs(const shared_ptr<PDBCol
       cout<<"prev max_additive_subsets::"<<max_additive_subsets->size()<<endl;
     }
 
-    for (const auto & new_pdb : *pdbs_) {
+      for (const auto & new_pdb : *pdbs_) {
 	const auto & costs1 = new_pdb->get_operator_costs();
 	bool empty_cost=true;
+	//ALLOWING EMPTY PDB IN CASE IS NEEDED TO GET TO PDBS WITH COSTS
+	//E.G. GAMER MIGHT NOT GET TO A VARIABLE WITH COSTS UNTIL IT ADDS ANOTHER VARIABLE
+	//WITHOUT COSTS WHICH CONNECTS TO IT, OPENSTACKS HAD THIS ISSUE
+	//THIS IS ONLY ALLOWED FOR FIRST PATTERN, IF WE HAVER A PDB WITH COSTS ALREADY, NO NEED
+	//FOR OTHER PDBS WITH ZERO COSTS
 	for (size_t i = 0; i < costs1.size(); ++i) {
-            if(costs1[i]>0||first_call) {
-                cout<<"adding :"<<*new_pdb<<endl;
-                pdbs2.push_back(new_pdb);
-                pdbs->push_back(new_pdb);
-                empty_cost=false;
-                break;
-            }
+	  if(pdbs2.size()==0||costs1[i]>0||first_call) {
+	    cout<<"adding :"<<*new_pdb<<endl;
+	    pdbs2.push_back(new_pdb);
+	    pdbs->push_back(new_pdb);
+	    empty_cost=false;
+	    break;
+	  }
 	}
 	if(empty_cost)//Sometimes we need to add dummy initial PDB to seed algorithm
-            cout<<"pdb:"<<*new_pdb<<"had empty costs, so not adding!"<<endl;
-    }
-    if(pdbs2.empty()){
-        cerr<<"all pdbs in collection improving h values have empty costs!!!,DEBUG ME"<<endl;
-        exit(1);
-    }
+	  cout<<"pdb:"<<*new_pdb<<"had empty costs, so not adding!"<<endl;
+      }
+    //if(pdbs2.empty()){
+      //NO CRASHING ANYMORE, WITH OPENLIST SAMPLING WE COULD END UP WITH ALL OPTIONS HAVING ZERRO COSTS
+      //DUE TO NO CONNECTED VARIABLE HAVING COSTS, E.G. OPENSTACKS WITH GAMER SO IN ORDER TO GET TO PDBS
+      //WITH COSTS WE NEED TO ADD THE ONES WITHOUT
+     //cerr<<"all pdbs in collection improving h values have empty costs!!!,DEBUG ME"<<endl;
+     //exit(1);
+    //}
 
     for (auto & new_pdb : pdbs2) {
 	if (!symbolic_vars && new_pdb->get_symbolic_variables()) {
