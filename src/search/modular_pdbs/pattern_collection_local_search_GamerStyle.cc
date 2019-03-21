@@ -316,6 +316,10 @@ inline std::ostream& operator << (std::ostream& os, const std::vector<T>& v)
 
     PDBCollection temp;temp.push_back(new_pdb);
     pdb_factory->terminate_creation(temp, 250000, 50000, 10000000);
+    //WE DO NOT ALLOW TO TRY THE SAME INPUT PATTERN TWICE AS LONG AS WE GOT TO THE STAGE
+    //OF DOING A 250 SECS TERMINATE ONCE
+    impossible_to_update_pattern.insert(old_pattern);
+   
     temp.clear();
     if(!new_pdb->is_finished()){
 	  cout<<"Final PDB was unfinished"<<endl;
