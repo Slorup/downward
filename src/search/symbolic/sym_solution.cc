@@ -25,12 +25,13 @@ namespace symbolic {
 		vector<int> s = g_initial_state_data;
 		//Get state
 		for (auto op : path) {
-		  
-		    for (const GlobalEffect &eff : op->get_effects()) {
-			if (eff.does_fire(s)) {
-			    s[eff.var] = eff.val;
-			}
+		  vector<int> new_s = s;
+		  for (const GlobalEffect &eff : op->get_effects()) {
+		    if (eff.does_fire(s)) {
+		      new_s[eff.var] = eff.val;
 		    }
+		  }
+		  s.swap(new_s);
 		}
 		newCut = exp_bw->getStateSpace()->getVars()->getStateBDD(s);
 	    } else {
@@ -80,11 +81,13 @@ namespace symbolic {
 	hADD += sBDD.Add() * (vars->getADD(h_val + 1));
 	for (auto op : path) {
 	    h_val -= op->get_cost();
+	    vector<int> new_s = s;
 	    for (const GlobalEffect &eff : op->get_effects()) {
-		if (eff.does_fire(s)) {
-		    s[eff.var] = eff.val;
-		}
+	      if (eff.does_fire(s)) {
+		new_s[eff.var] = eff.val;
+	      }
 	    }
+	    s.swap(new_s);
 	    sBDD = vars->getStateBDD(s);
 	    hADD += sBDD.Add() * (vars->getADD(h_val + 1));
 	}
