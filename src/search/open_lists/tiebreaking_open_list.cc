@@ -108,7 +108,9 @@ void TieBreakingOpenList<Entry>::load_states(int max_number, std::shared_ptr<vec
   while(it1->first.front()==current_f_bound){
     cout<<"TieBreakingOpenList,states_to_collect:,"<<max_number<<",states_in_open_list:,"<<size<<",partial_bucket.size:"<<it1->second.size()<<endl;
     bucket_size+=it1->second.size();
-    it1++;
+    if(++it1==buckets.end()){
+      break;
+    }
   }
   cout<<"overall_bucket_size:"<<bucket_size<<endl;
   it1 = buckets.begin();
@@ -134,7 +136,9 @@ void TieBreakingOpenList<Entry>::load_states(int max_number, std::shared_ptr<vec
       counter++;
     }
     if(++it2==it1->second.end()){
-      it1++;
+      if(++it1==buckets.end()){
+	break;
+      }
       it2=it1->second.begin();
       //cout<<"updated it1,new sub-bucket size:"<<it1->second.size()<<endl;
     }
