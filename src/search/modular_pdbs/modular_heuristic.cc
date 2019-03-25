@@ -452,6 +452,10 @@ int ModularHeuristic::recompute_heuristic(const GlobalState& current_state){
 //Usually called when we have spent too long without finding solution
 //To start with we pass search_time as limit to improvement_found
 bool ModularHeuristic::find_improvements(int time_limit) {
+  if(pdb_factory->is_solved()){
+    cout << "Error: Trying to improve when I have already the perfect heuristic." << endl;
+    utils::exit_with(utils::ExitCode::CRITICAL_ERROR);
+  }
   cout<<"hello find_impovements,time_limit:,"<<time_limit<<",only_gamer="<<only_gamer<<flush<<endl;
   modular_heuristic_timer =make_unique<utils::CountdownTimer>(time_limit);
       const State &initial_state = task_proxy.get_initial_state();
