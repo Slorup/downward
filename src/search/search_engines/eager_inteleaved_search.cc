@@ -89,6 +89,7 @@ void EagerSearchInterleaved::initialize() {
 
     print_initial_h_values(eval_context);
     start_time=utils::g_timer();
+    max_search_time=max(max_search_time,start_time);
 }
 
 void EagerSearchInterleaved::print_checkpoint_line(int g) const {

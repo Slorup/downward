@@ -189,7 +189,10 @@ inline std::ostream& operator << (std::ostream& os, const std::vector<T>& v)
       Pattern candidate_pattern=old_pattern;
       candidate_pattern.push_back(last_var);
       sort(candidate_pattern.begin(), candidate_pattern.end());
+      int start_pdb_time=utils::g_timer();
       shared_ptr<PatternDatabaseInterface> candidate_pdb = pdb_factory->compute_pdb(task_proxy, candidate_pattern, operator_costs);
+      if(verbose)
+	cout<<"candidate:"<<candidate_pattern<<",construction time:"<<utils::g_timer()-start_pdb_time<<endl;
       PDBCollection temp;temp.push_back(candidate_pdb);
       
       if(local_search_timer->is_expired()){
