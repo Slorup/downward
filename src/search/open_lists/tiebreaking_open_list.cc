@@ -124,7 +124,7 @@ void TieBreakingOpenList<Entry>::load_states(int max_number, std::shared_ptr<vec
   int bucket_counter=0;
   size_t max_number_s=size_t(max_number);
   while(state_list->size()<max_number_s){
-    //cout<<"counter:"<<counter<<flush<<",random_selections:"<<random_selections[counter]<<",state_list->size:"<<state_list->size()<<endl;
+    //cout<<"counter:"<<counter<<flush<<",random_selections:"<<random_selections[counter]<<"bucket_counter:"<<bucket_counter<<endl;
     while(random_selections[counter]==bucket_counter){//allow repetition
       //cout<<"\tcollected state["<<counter<<"],(f,g):"<<flush;
       //for (auto x: it1->first)
@@ -133,12 +133,15 @@ void TieBreakingOpenList<Entry>::load_states(int max_number, std::shared_ptr<vec
       state_list->push_back(*it2);
       counter++;
     }
-    if(it2!=it1->second.end()){
-      it2++;
-    }
-    else{
+    if(++it2==it1->second.end()){
       it1++;
-      it2 = it1->second.begin();
+      it2=it1->second.begin();
+      //cout<<"updated it1,new sub-bucket size:"<<it1->second.size()<<endl;
+    }
+      
+    if(it1->first.front()!=current_f_bound){
+	cout<<"finished sampling open_list,updated current_f_bound to:"<<it1->first.front()<<endl;
+	break;
     }
     bucket_counter++;
   }

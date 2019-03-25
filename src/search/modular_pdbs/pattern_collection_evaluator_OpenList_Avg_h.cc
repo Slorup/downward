@@ -198,6 +198,7 @@ PatterCollectionEvaluatorOpenList_Avg_H::PatterCollectionEvaluatorOpenList_Avg_H
     //Which needs implementing as well for OpenList_Avg_H, currently it does not do anything in OpenList_Avg_H.
     set_sample_score(0);
     for(auto state_id : *states_loaded_from_open_list){
+      //cout<<"state_id:"<<state_id<<flush<<endl;
       pair<map<size_t,pair<State,int> >::iterator,bool> ret;
       //NEED TO FIND A MORE EFFICIENT WAY!!!
       GlobalState global_state = g_state_registry->lookup_state(state_id);
@@ -212,13 +213,13 @@ PatterCollectionEvaluatorOpenList_Avg_H::PatterCollectionEvaluatorOpenList_Avg_H
       if(!ret.second){//keep max h value stored when state was previously sampled.
 	ret.first->second.second=max(val,ret.first->second.second);
       }
-      samples.push_back(make_pair(state,max(val,ret.first->second.second)));
+      samples.push_back(make_pair(state,val));
 
       additions++;
       sum_h+=val;
 	    
       //map<size_t,pair<State,int> >::iterator it=unique_samples.find(state_id);
-      //cout<<"state_id:"<<state_id<<",value:"<<it->second.second<<endl;
+      //cout<<"state_id:"<<state_id<<",value:"<<val<<endl;
     }
     set_sample_score(sum_h/double(additions));
     //cout<<"Open_list_sampled_score:,"<<get_sample_score()<<endl;
