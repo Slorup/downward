@@ -55,7 +55,8 @@ using namespace std;
 //ComPDBs (Hl)
 namespace pdbs3 {
 PatterCollectionEvaluatorOpenList_Avg_H::PatterCollectionEvaluatorOpenList_Avg_H(const options::Options & opts) :
-	time_limit (opts.get<int>("time_limit")){
+	time_limit (opts.get<int>("time_limit")),
+	using_random_walks (opts.get<bool>("using_random_walks")){
     cout<<"hello EvaluatorOpenList_Avg_H"<<flush<<endl;
   //num_vars=task->get_num_variables();
 }
@@ -65,6 +66,7 @@ PatterCollectionEvaluatorOpenList_Avg_H::PatterCollectionEvaluatorOpenList_Avg_H
     TaskProxy task_proxy_temp(*task);
     task_proxy=make_shared<TaskProxy>(task_proxy_temp);
     successor_generator=utils::make_unique_ptr<SuccessorGenerator>(task);
+    average_operator_cost=get_average_operator_cost(*task_proxy);
     //result=make_shared<PatternCollectionInformation>(task, make_shared<PatternCollection>());
 //    cout << "Manual pattern collection: " << *patterns << endl;
 //    return PatternCollectionInformation(task, patterns);
@@ -74,12 +76,26 @@ PatterCollectionEvaluatorOpenList_Avg_H::PatterCollectionEvaluatorOpenList_Avg_H
     increased_states=0;
     double sum_h=0;
     size_t additions=0;
+    evaluator_timer = new utils::CountdownTimer(10);
     for(auto state_pair : samples){
       if(candidate_PC->get_value(state_pair.first)>state_pair.second){
         DEBUG_MSG(cout<<"\th improved from "<<state_pair.second<<" to "<<candidate_PC->get_value(state_pair.first)<<endl;);
         increased_states++;
         if (candidate_PC->get_value(state_pair.first)!=numeric_limits<int>::max()){
-	  sum_h+=candidate_PC->get_value(state_pair.first);
+	  if(using_random_walks){
+	    vector<State> samples_just_states;
+	    samples_just_states = sample_states_with_random_walks2(
+		*successor_generator, 1,candidate_PC->get_value(state_pair.first),
+		average_operator_cost,
+		[this](const State &state) {
+		    return result->is_dead_end(state);
+		},
+		evaluator_timer,&(state_pair.first));
+	    sum_h+=candidate_PC->get_value(samples_just_states.front());
+	  }
+	  else{
+	    sum_h+=candidate_PC->get_value(state_pair.first);
+	  }
 	  additions++;
 	}
 	else{//Found new dead_end, adding 1 for reflecting beneficial_impact
@@ -107,6 +123,8 @@ PatterCollectionEvaluatorOpenList_Avg_H::PatterCollectionEvaluatorOpenList_Avg_H
     }
     //else if(increased_states>0)
       //cout<<"time:"<<utils::g_timer()<<",Not_Improving PC,increased_states:"<<increased_states<<",sample_score:"<<get_sample_score()<<",eval_score:"<<get_eval_score()<<",additions:"<<additions<<"samples:,"<<samples.size()<<endl;
+      if(additions<samples.size())
+	cout<<"additions:"<<additions<<endl;
       if(additions==0){
           cerr<<"No additions for calculating avg_h_val, debug me!!!"<<endl;
 	  exit(1);
@@ -132,10 +150,10 @@ PatterCollectionEvaluatorOpenList_Avg_H::PatterCollectionEvaluatorOpenList_Avg_H
 
     if(!states_loaded_from_open_list){
       cout<<"NOT USING OPENLIST ON FIRST RUN BECAUSE states_loaded_from_open_list UNPOPULATED, THIS MUST BE FIRST RUN IN INTERLEAVED SEARCH, BEFORE ANY REAL SEARCH HAS BEEN DONE, DOING RANDOM WALK INSTEAD"<<flush<<endl;
-      evaluator_timer = new utils::CountdownTimer(time_limit);
+      //evaluator_timer = new utils::CountdownTimer(time_limit);
+      evaluator_timer = new utils::CountdownTimer(10);
       const State &initial_state = task_proxy->get_initial_state();
       int init_h=current_result->get_value(initial_state);
-      double average_operator_cost=get_average_operator_cost(*task_proxy);
       cout<<"calling sample_states_with_random_walks"<<flush<<endl;
       vector<State> samples_just_states;
       try {
@@ -211,6 +229,7 @@ PatterCollectionEvaluatorOpenList_Avg_H::PatterCollectionEvaluatorOpenList_Avg_H
 
   static shared_ptr<PatternCollectionEvaluator>_parse(options::OptionParser &parser) {
     parser.add_option<int> ("time_limit", "If populated,stop construction on first node past boundary and time limit", "100");
+    parser.add_option<bool> ("using_random_walks", "launch random_walk from each open_state to get each sample value,adapts as h value improves", "true");
     options::Options options = parser.parse();
     parser.document_synopsis(
         "Pattern Generator RBP",

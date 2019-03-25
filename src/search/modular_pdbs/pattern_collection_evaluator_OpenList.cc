@@ -200,6 +200,7 @@ PatterCollectionEvaluatorOpenList::PatterCollectionEvaluatorOpenList(const optio
 
   static shared_ptr<PatternCollectionEvaluator>_parse(options::OptionParser &parser) {
     parser.add_option<int> ("time_limit", "If populated,stop construction on first node past boundary and time limit", "100");
+    parser.add_option<bool> ("random_walks", "launch random_walk from each open_list state", "false");
     options::Options options = parser.parse();
     parser.document_synopsis(
         "Pattern Generator RBP",

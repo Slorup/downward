@@ -35,5 +35,15 @@ std::vector<State> sample_states_with_random_walks(
                                                  return false;
                                              },
     const utils::CountdownTimer *timer = nullptr);
+std::vector<State> sample_states_with_random_walks2(
+    const SuccessorGenerator &successor_generator,
+    int num_samples,
+    int init_h,
+    double average_operator_cost,
+    std::function<bool(State)> is_dead_end = [] (const State &) {
+                                                 return false;
+                                             },
+    const utils::CountdownTimer *timer = nullptr,
+    State *initial_state=nullptr);
 
 #endif

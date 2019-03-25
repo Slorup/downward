@@ -92,24 +92,66 @@ Entry TieBreakingOpenList<Entry>::remove_min(vector<int> *key) {
 }
 template<class Entry>
 void TieBreakingOpenList<Entry>::load_states(int max_number, std::shared_ptr<vector<Entry> > state_list ){
-  size_t states_to_collect=min(max_number,size);
-  int counter=0;
-  if(states_to_collect<1){
+  //We will allow repetitions if open_list is too small
+  //size_t states_to_collect=min(max_number,size);
+  if(size<1){
     cerr<<"can't call load_states from open_list when there are no states to collect!!"<<endl;exit(1);
   }
   states_loaded_from_open_list.reset();
-  cout<<"startes_to_collect:,"<<states_to_collect<<",states_in_open_list:,"<<size<<endl;
+  //get states randomly
   typename map<const vector<int>, Bucket>::iterator it1;
-  for(auto it1=buckets.begin();it1!=buckets.end();it1++){
-    for(auto it2=it1->second.begin();it2!=it1->second.end();it2++){
-      //cout<<"\tcollected state,f=,"<<counter<<flush<<",state:"<<*it2<<flush<<endl;
-      if(state_list->size()>states_to_collect){
-	return;
-      }
-      state_list->push_back(*it2);
-    }
-    counter++;
+  it1 = buckets.begin();
+  auto it2 = it1->second.begin();
+  //Get total count of buckets with current f bound 
+  int current_f_bound=it1->first.front();
+  int bucket_size=0;
+  while(it1->first.front()==current_f_bound){
+    cout<<"TieBreakingOpenList,states_to_collect:,"<<max_number<<",states_in_open_list:,"<<size<<",partial_bucket.size:"<<it1->second.size()<<endl;
+    bucket_size+=it1->second.size();
+    it1++;
   }
+  cout<<"overall_bucket_size:"<<bucket_size<<endl;
+  it1 = buckets.begin();
+  vector<int> random_selections;
+  for(int i=0;i<max_number;i++){
+    random_selections.push_back(rand()%bucket_size);
+  }
+  sort(random_selections.begin(),random_selections.end());
+  //cout<<"random_selection:";for(auto i :random_selections) cout<<i<<",";
+  //cout<<endl;
+
+  int counter=0;
+  int bucket_counter=0;
+  size_t max_number_s=size_t(max_number);
+  while(state_list->size()<max_number_s){
+    //cout<<"counter:"<<counter<<flush<<",random_selections:"<<random_selections[counter]<<",state_list->size:"<<state_list->size()<<endl;
+    while(random_selections[counter]==bucket_counter){//allow repetition
+      //cout<<"\tcollected state["<<counter<<"],(f,g):"<<flush;
+      //for (auto x: it1->first)
+	//cout<<x<<",";
+      //cout<<endl;
+      state_list->push_back(*it2);
+      counter++;
+    }
+    if(it2!=it1->second.end()){
+      it2++;
+    }
+    else{
+      it1++;
+      it2 = it1->second.begin();
+    }
+    bucket_counter++;
+  }
+  //for(auto it1=buckets.begin();it1!=buckets.end();it1++){
+  //  for(auto it2=it1->second.begin();it2!=it1->second.end();it2++){
+      //cout<<"\tcollected state,f=,"<<counter<<flush<<",state:"<<*it2<<flush<<endl;
+      //if(state_list->size()>states_to_collect){
+	//return;
+      //}
+      //state_list->push_back(*it2);
+  //  }
+  //  counter++;
+  //}
 }
 
 template<class Entry>

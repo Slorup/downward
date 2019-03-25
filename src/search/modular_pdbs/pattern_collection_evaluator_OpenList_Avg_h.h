@@ -29,6 +29,7 @@ namespace pdbs3 {
 //class PatternCollectionContainer;
 class PatterCollectionEvaluatorOpenList_Avg_H : public PatternCollectionEvaluator {
 	int time_limit=20;
+	bool using_random_walks=false;
   unsigned increased_states=0;//We keep this value so we can pass overall progress 
   std::vector<std::pair<State,int> > samples;
   //std::shared_ptr<AbstractTask> task;
@@ -37,6 +38,7 @@ class PatterCollectionEvaluatorOpenList_Avg_H : public PatternCollectionEvaluato
   std::shared_ptr<PatternCollectionInformation> result;
   utils::CountdownTimer *evaluator_timer;
   std::map<size_t,std::pair<State,int> > unique_samples;
+  double average_operator_cost=0;
 //  std::shared_ptr<StateOpenList_Avg_H> open_list;
   
   public:

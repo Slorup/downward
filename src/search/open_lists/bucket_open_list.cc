@@ -86,6 +86,8 @@ Entry BucketOpenList<Entry>::remove_min(vector<int> *key) {
 }
 template<class Entry>
 void BucketOpenList<Entry>::load_states(int max_number, std::shared_ptr<vector<Entry> > state_list ){
+  cerr<<"NEED TO IMPLEMENT LOAD_STATES IN bucket_open_list.cc!!!"<<endl;
+  exit(1);
   size_t states_to_collect=min(max_number,size);
   if(states_to_collect<1){
     cerr<<"can't call load_states from open_list when there are no states to collect!!"<<endl;exit(1);
@@ -98,7 +100,6 @@ void BucketOpenList<Entry>::load_states(int max_number, std::shared_ptr<vector<E
       state_list->push_back(it1->front());
       cout<<"\tcollected state,f=,"<<counter<<endl;
       if(state_list->size()>states_to_collect){
-	exit(1);
 	return;
       }
     }
