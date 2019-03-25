@@ -122,6 +122,10 @@ inline std::ostream& operator << (std::ostream& os, const std::vector<T>& v)
   }
  bool PatternCollectionLocalSearchGamerStyle::do_local_search_pattern(Pattern old_pattern,shared_ptr<PatternCollectionInformation> current_result,
      shared_ptr<PatternCollectionEvaluator> evaluation_method, shared_ptr<PDBFactory> pdb_factory){
+   if(pdb_factory->is_solved()){
+     cout<<"calling do_local_search_pattern with problem already solved!"<<endl;
+     return false;
+   }
    //Pattern temp2={0,3,6,7,28,32,33,37,38,42,43,47,58,60,63,64,65,66,67,68,69,70,71,72,73,74,76,77,78,79};
    //old_pattern=temp2;
    vector<int> candidates;
@@ -200,6 +204,11 @@ inline std::ostream& operator << (std::ostream& os, const std::vector<T>& v)
 	if(verbose)
 	  cout<<"calling terminate_creation for each candidate in do_local_search, adding 50 secs"<<endl;
 	pdb_factory->terminate_creation(temp, max_pdb_time, 50000, 10000000);
+	if(pdb_factory->is_solved()){
+	  current_result->include_additive_pdbs(pdb_factory->terminate_creation(temp,0, 0, 0));
+	  current_result->set_dead_ends(pdb_factory->get_dead_ends());
+	  return false;
+	}
       }
       temp.clear();
 	
@@ -233,6 +242,9 @@ inline std::ostream& operator << (std::ostream& os, const std::vector<T>& v)
     }
 
     if(improving_vars.size()==0){
+	if(pdb_factory->is_solved()){
+	  cerr<<"no_improving_vars,problem solved with candidate PDB!"<<endl;exit(1);
+	}
       if(all_pdbs_finished){
 	if(verbose)
 	  cout<<"adding to impossible_to_update,pattern:"<<old_pattern<<",all_pdbs were finished"<<endl;

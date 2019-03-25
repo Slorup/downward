@@ -122,6 +122,9 @@ SearchStatus EagerSearchInterleaved::step() {
 
     int start_improvement_time=utils::g_timer();
     for (Heuristic *heuristic : heuristics) {
+      if(heuristic->check_for_solution()){//in case solution already found via perimeter PDB
+	break;
+      }
       improvement_found=heuristic->find_improvements(max_search_time);
       //RESTARTING NOT WORKING, PROBABLY EASIEST TO CREATE A NEW SEARCH SPACE
       //CURRENTLY COMPLAINING ABOUT DELETED CONSTRUCTOR

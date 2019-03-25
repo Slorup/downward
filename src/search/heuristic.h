@@ -102,6 +102,7 @@ public:
     virtual int count_pdbs() {return 1;}//1 in case no pdb, this is used to calculate avg_eval_time per heuristic 
     virtual int recompute_heuristic(const GlobalState& /*state*/) {return 0;};
     virtual bool find_improvements(int ) {return false;};
+    virtual bool check_for_solution() {return false;};
 };
 
 #endif

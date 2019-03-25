@@ -94,7 +94,7 @@ public:
     virtual ~ModularHeuristic() override = default;
     bool do_local_search (PatternCollectionContainer old_PC);
     virtual int recompute_heuristic(const GlobalState& current_state) override; 
-    bool check_for_solution();
+    virtual bool check_for_solution() override;
 };
 }
 
