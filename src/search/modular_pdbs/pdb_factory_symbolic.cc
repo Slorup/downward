@@ -101,10 +101,10 @@ namespace pdbs3 {
 
     }
     void PDBFactorySymbolic::set_new_max_time(int min_max_time){
-      double ratio=min_max_time/precomputation_time_ms;
+      double ratio=double(min_max_time)/double(precomputation_time_ms);
       precomputation_time_ms=min_max_time;
-      precomputation_step_time_ms*=ratio;
-      precomputation_nodes*=ratio;
+      precomputation_step_time_ms=double(precomputation_step_time_ms)*ratio;
+      precomputation_nodes=double(precomputation_nodes)*ratio;
       cout<<"New limits, precomputation nodes:,"<<precomputation_nodes<<",precomputation_step_time_ms:,"<<precomputation_step_time_ms<<",precomputation nodes:,"<<precomputation_nodes<<endl;
     }
 

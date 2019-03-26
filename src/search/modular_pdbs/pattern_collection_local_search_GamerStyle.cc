@@ -175,7 +175,9 @@ inline std::ostream& operator << (std::ostream& os, const std::vector<T>& v)
     vector<shared_ptr<PatternDatabaseInterface> > improving_pdbs;
     
     //SET PRECONSTRUCTION TIME AS A FUNCTION OF NUMER OF VARIABLES AND AIALABLE TIME
+    //We set the minimum time to be 100 ms
     double pdb_preconst_time=1000.0*(double(local_search_timer->get_remaining_time())/double(candidates.size()))*0.6666;
+    pdb_preconst_time=max(100,int(pdb_preconst_time));
     cout<<"local_search_timer:"<<local_search_timer->get_remaining_time()<<",pdb_preconst_time:"<<pdb_preconst_time<<",num_candidates:"<<candidates.size()<<endl;
     pdb_factory->set_new_max_time(int(pdb_preconst_time));
 
