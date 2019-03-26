@@ -141,6 +141,7 @@ PDBFactory() : num_patterns_created(0), num_patterns_requested(0), num_patterns_
 	//std::cout<<"calling default terminate_creation"<<std::endl;
 	return std::make_shared<PDBCollection>(pdb_collection);
     }
+    virtual void set_new_max_time(int /*min_max_time*/){std::cerr<<"set_new_max_time not set up for thid factory method, pls DEBUG ME!!!"<<std::endl;exit(1);};
    //in case we want to just get the PDBs
     std::shared_ptr<PDBCollection> no_terminate_creation (const PDBCollection & pdb_collection){
       return std::make_shared<PDBCollection>(pdb_collection);

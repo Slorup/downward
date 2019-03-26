@@ -70,6 +70,7 @@ class PDBFactorySymbolic : public PDBFactory, public symbolic::SymController {
     virtual void continue_creation (PatternDatabaseInterface & pdb) override;
 
     virtual unsigned long get_current_memory_in_kb() override;
+    virtual void set_new_max_time(int min_max_time) override;
 };
 }
 

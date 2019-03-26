@@ -173,6 +173,12 @@ inline std::ostream& operator << (std::ostream& os, const std::vector<T>& v)
     vector<pair<int,double> > improving_vars;//var,score
    
     vector<shared_ptr<PatternDatabaseInterface> > improving_pdbs;
+    
+    //SET PRECONSTRUCTION TIME AS A FUNCTION OF NUMER OF VARIABLES AND AIALABLE TIME
+    double pdb_preconst_time=1000.0*(double(local_search_timer->get_remaining_time())/double(candidates.size()))*0.6666;
+    cout<<"local_search_timer:"<<local_search_timer->get_remaining_time()<<",pdb_preconst_time:"<<pdb_preconst_time<<",num_candidates:"<<candidates.size()<<endl;
+    pdb_factory->set_new_max_time(int(pdb_preconst_time));
+
     //Now create candidate patterns to evaluate which vars to add
     while(candidates.size()){
       if(local_search_timer->is_expired()){
@@ -195,6 +201,12 @@ inline std::ostream& operator << (std::ostream& os, const std::vector<T>& v)
 	cout<<"candidate:"<<candidate_pattern<<",construction time:"<<utils::g_timer()-start_pdb_time<<endl;
       PDBCollection temp;temp.push_back(candidate_pdb);
       
+      if(pdb_factory->is_solved()){
+	current_result->include_additive_pdbs(pdb_factory->terminate_creation(temp,0, 0, 0));
+	current_result->set_dead_ends(pdb_factory->get_dead_ends());
+	return false;
+      }
+
       if(local_search_timer->is_expired()){
 	all_pdbs_finished=false;
 	if(verbose)
@@ -203,16 +215,11 @@ inline std::ostream& operator << (std::ostream& os, const std::vector<T>& v)
       }
 
       //No calling terminate creation when using online_pdbs
-      if(pdb_factory->name().find("online")==string::npos){
+      /*if(pdb_factory->name().find("online")==string::npos){
 	if(verbose)
 	  cout<<"calling terminate_creation for each candidate in do_local_search, adding 50 secs"<<endl;
 	pdb_factory->terminate_creation(temp, max_pdb_time, 50000, 10000000);
-	if(pdb_factory->is_solved()){
-	  current_result->include_additive_pdbs(pdb_factory->terminate_creation(temp,0, 0, 0));
-	  current_result->set_dead_ends(pdb_factory->get_dead_ends());
-	  return false;
-	}
-      }
+      }*/
       temp.clear();
 	
       if(candidate_pdb->is_finished()){
@@ -385,11 +392,13 @@ inline std::ostream& operator << (std::ostream& os, const std::vector<T>& v)
         }
       }
     }
-    //cout<<"\t forbidden_vars_size:"<<forbidden_vars.size()<<",candidate_vars_size:"<<candidates.size()<<endl;
+
     if(candidates.size()==0){
       new_patterns.restart_pc(candidate_pattern);
       return new_patterns;
     }
+    
+
     //cout<<"input_pattern:";for (auto i : candidate_pattern) cout<<i<<",";
     //cout<<"candidates:";for (auto i : candidates) cout<<i<<",";cout<<endl;
     assert(candidates.size()>0);
