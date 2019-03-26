@@ -103,10 +103,12 @@ void TieBreakingOpenList<Entry>::load_states(int max_number, std::shared_ptr<vec
   it1 = buckets.begin();
   auto it2 = it1->second.begin();
   //Get total count of buckets with current f bound 
-  int current_f_bound=it1->first.front();
+  //int current_f_bound=it1->first.front();
   int bucket_size=0;
-  while(it1->first.front()==current_f_bound){
-    cout<<"TieBreakingOpenList,states_to_collect:,"<<max_number<<",states_in_open_list:,"<<size<<",partial_bucket.size:"<<it1->second.size()<<endl;
+  //Using all bounds
+  //while(it1->first.front()==current_f_bound)
+  while(it1!=buckets.end()){
+    //cout<<"TieBreakingOpenList,states_to_collect:,"<<max_number<<",states_in_open_list:,"<<size<<",partial_bucket.size:"<<it1->second.size()<<endl;
     bucket_size+=it1->second.size();
     if(++it1==buckets.end()){
       break;
@@ -143,10 +145,10 @@ void TieBreakingOpenList<Entry>::load_states(int max_number, std::shared_ptr<vec
       //cout<<"updated it1,new sub-bucket size:"<<it1->second.size()<<endl;
     }
       
-    if(it1->first.front()!=current_f_bound){
-	cout<<"finished sampling open_list,updated current_f_bound to:"<<it1->first.front()<<endl;
-	break;
-    }
+    //if(it1->first.front()!=current_f_bound){
+//	cout<<"finished sampling open_list,updated current_f_bound to:"<<it1->first.front()<<endl;
+//	break;
+//    }
     bucket_counter++;
   }
   //for(auto it1=buckets.begin();it1!=buckets.end();it1++){

@@ -142,7 +142,8 @@ inline std::ostream& operator << (std::ostream& os, const std::vector<T>& v)
    //whether there has been improvements, we should add a marker to determine whether 
    //a new sample is necessary
    evaluation_method->sample_states(current_result);
-   double best_score=evaluation_method->get_sample_score();
+   double starting_best_score=evaluation_method->get_sample_score();
+   double best_score=starting_best_score;
    //cout<<"starting_best_score:"<<best_score<<",eval_method threshold:"<<evaluation_method->get_threshold()<<endl;
    //First get connected variables 
    for (size_t var = 0; var < g_variable_domain.size(); ++var) {
@@ -189,9 +190,6 @@ inline std::ostream& operator << (std::ostream& os, const std::vector<T>& v)
 	  cout<<"Breaking out of candidate loop, local_search_timer is expired"<<endl;
 	break;
       }
-      double max_pdb_time=min(250000.0,local_search_timer->get_remaining_time()*1000.0);
-      if(verbose)
-	cout<<"\tmax_pdb_time="<<max_pdb_time<<endl;
       last_var=candidates.back();
       candidates.pop_back();
       Pattern candidate_pattern=old_pattern;
@@ -220,7 +218,6 @@ inline std::ostream& operator << (std::ostream& os, const std::vector<T>& v)
       /*if(pdb_factory->name().find("online")==string::npos){
 	if(verbose)
 	  cout<<"calling terminate_creation for each candidate in do_local_search, adding 50 secs"<<endl;
-	pdb_factory->terminate_creation(temp, max_pdb_time, 50000, 10000000);
       }*/
       temp.clear();
 	
@@ -236,10 +233,10 @@ inline std::ostream& operator << (std::ostream& os, const std::vector<T>& v)
       //Now evaluate PDB
       shared_ptr<ModularZeroOnePDBs> candidate_ptr=make_shared<ModularZeroOnePDBs>(candidate_pdb);
       evaluation_method->evaluate(candidate_ptr);
-      if(evaluation_method->get_eval_score()>=0.999*best_score){
+      if(evaluation_method->get_eval_score()>starting_best_score){
         //if(candidate_pdb->compute_mean_finite_h()>starting_best_score)//If we find 2 equal improvements to best known we add both
 	if(verbose)
-	  cout<<"Selected,previous_best_score:,"<<best_score<<",eval_score:,"<<evaluation_method->get_eval_score()<<",last_var:"<<last_var<<endl;
+	  cout<<"Selected,sample_score:"<<starting_best_score<<",previous_best_score:,"<<best_score<<",eval_score:,"<<evaluation_method->get_eval_score()<<",last_var:"<<last_var<<endl;
 	improvement_found=true;
 	//improving_vars.push_back(make_pair<int,double>(last_var,evaluation_method->get_reward()));
 	improving_vars.push_back(make_pair<int,double>(int(last_var),evaluation_method->get_eval_score()));
