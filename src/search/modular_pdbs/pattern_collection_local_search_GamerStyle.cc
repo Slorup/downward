@@ -45,7 +45,8 @@ inline std::ostream& operator << (std::ostream& os, const std::vector<T>& v)
   PatternCollectionLocalSearchGamerStyle::PatternCollectionLocalSearchGamerStyle(const options::Options & opts)
   :time_limit(opts.get<int>("time_limit")),
       verbose(opts.get<bool>("verbose")),
-      require_improv(opts.get<bool>("require_improv")){
+      require_improv(opts.get<bool>("require_improv")),
+      avg_dist_tiebreak(opts.get<bool>("avg_dist_tiebreak")){
   //PatternCollectionLocalSearchGamerStyle::PatternCollectionLocalSearchGamerStyle() 
       cout<<"hello LocalSearchGamerStyle"<<endl;
     local_search_timer = make_unique<utils::CountdownTimer>(time_limit);
@@ -130,6 +131,7 @@ inline std::ostream& operator << (std::ostream& os, const std::vector<T>& v)
    //Pattern temp2={0,3,6,7,28,32,33,37,38,42,43,47,58,60,63,64,65,66,67,68,69,70,71,72,73,74,76,77,78,79};
    //old_pattern=temp2;
    vector<int> candidates;
+   vector<int> candidates_backup;
    set<int> input_pattern(old_pattern.begin(), old_pattern.end());
    TaskProxy task_proxy(*(g_root_task()));
    const CausalGraph &cg = task_proxy.get_causal_graph();
@@ -184,6 +186,7 @@ inline std::ostream& operator << (std::ostream& os, const std::vector<T>& v)
     pdb_factory->set_new_max_time(int(pdb_preconst_time));
 
     //Now create candidate patterns to evaluate which vars to add
+    candidates_backup=candidates;
     while(candidates.size()){
       if(local_search_timer->is_expired()){
 	all_pdbs_finished=false;
@@ -252,15 +255,41 @@ inline std::ostream& operator << (std::ostream& os, const std::vector<T>& v)
     }
 
     if(improving_vars.size()==0){
+      cout<<"\t NO IMPROVING VARS"<<endl;
 	if(pdb_factory->is_solved()){
 	  cerr<<"no_improving_vars,problem solved with candidate PDB!"<<endl;exit(1);
 	}
-      if(all_pdbs_finished){
+	if(avg_dist_tiebreak){
+	  shared_ptr<PatternDatabaseInterface> old_pdb = current_result->get_pdbs()->front();
+	  double sample_avg_dist=old_pdb->compute_mean_finite_h();
+	  best_score=sample_avg_dist;
+	  cout<<"sample_avg_dist="<<sample_avg_dist<<endl;
+	  candidates=candidates_backup;
+	  while(candidates.size()){
+	    last_var=candidates.back();
+	    candidates.pop_back();
+	    Pattern candidate_pattern=old_pattern;
+	    candidate_pattern.push_back(last_var);
+	    sort(candidate_pattern.begin(), candidate_pattern.end());
+	    shared_ptr<PatternDatabaseInterface> candidate_pdb = pdb_factory->retrieve_pdb(task_proxy, candidate_pattern, operator_costs);
+	    if(candidate_pdb->compute_mean_finite_h()>sample_avg_dist){
+	      improvement_found=true;
+	      best_score=max(best_score,candidate_pdb->compute_mean_finite_h());
+	      improving_vars.push_back(make_pair<int,double>(int(last_var),candidate_pdb->compute_mean_finite_h()));
+	      improving_pdbs.push_back(candidate_pdb);
+	      if(verbose)
+		cout<<"Selected,sample_avg_dist:,"<<sample_avg_dist<<",candidate_avg_dist:,"<<candidate_pdb->compute_mean_finite_h()<<",last_var:"<<last_var<<endl;
+	    }
+	  }
+	}
+      if(all_pdbs_finished&&improving_vars.size()==0){
 	if(verbose)
 	  cout<<"adding to impossible_to_update,pattern:"<<old_pattern<<",all_pdbs were finished"<<endl;
 	impossible_to_update_pattern.insert(old_pattern);
       }
-      return false;
+      if(improving_vars.size()==0){
+	return false;
+      }
     }
     
     //Now find those var(s) with the best improvement
@@ -441,6 +470,7 @@ inline std::ostream& operator << (std::ostream& os, const std::vector<T>& v)
     parser.add_option<int> ("time_limit", "If populated,stop construction on first node past boundary and time limit", "100");
     parser.add_option<bool> ("verbose", "debug_mode from command line", "false");
     parser.add_option<bool> ("require_improv", "Require one improvement, otherwise add all variables", "true");
+    parser.add_option<bool> ("avg_dist_tiebreak", "if no improving vars using local_sampling, try avg_distance instead", "false");
     options::Options options = parser.parse();
     parser.document_synopsis(
         "Pattern Generator Local Search module",

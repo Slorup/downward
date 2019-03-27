@@ -74,14 +74,23 @@ PatterCollectionEvaluatorOpenList_Avg_H::PatterCollectionEvaluatorOpenList_Avg_H
   bool PatterCollectionEvaluatorOpenList_Avg_H::evaluate(std::shared_ptr<ModularZeroOnePDBs> candidate_PC){
     //cout<<"candidate_pc.size:"<<candidate_PC->get_size()<<endl;
     increased_states=0;
+    int new_dead_end_states=0;
     double sum_h=0;
+    double sample_sum_h=0;
     size_t additions=0;
     evaluator_timer = new utils::CountdownTimer(10);
     for(auto state_pair : samples){
-      if(candidate_PC->get_value(state_pair.first)>state_pair.second){
+      sample_sum_h+=state_pair.second;
+      additions++;
+      if (candidate_PC->get_value(state_pair.first)==numeric_limits<int>::max()){
+	  sum_h+=(state_pair.second+1);//We slightly improve if dead_end found
+	  //arguable, but better than not recognizing extra dead_end detection
+	  increased_states++;
+	  new_dead_end_states++;
+      }
+      else if(candidate_PC->get_value(state_pair.first)>state_pair.second){
         DEBUG_MSG(cout<<"\th improved from "<<state_pair.second<<" to "<<candidate_PC->get_value(state_pair.first)<<endl;);
         increased_states++;
-        if (candidate_PC->get_value(state_pair.first)!=numeric_limits<int>::max()){
 	  if(using_random_walks){
 	    vector<State> samples_just_states;
 	    samples_just_states = sample_states_with_random_walks2(
@@ -96,21 +105,15 @@ PatterCollectionEvaluatorOpenList_Avg_H::PatterCollectionEvaluatorOpenList_Avg_H
 	  else{
 	    sum_h+=candidate_PC->get_value(state_pair.first);
 	  }
-	  additions++;
 	}
-	else{//Found new dead_end, adding 1 for reflecting beneficial_impact
-	  sum_h+=state_pair.second+1.0;
-	  additions++;
+	else{
+	  sum_h+=state_pair.second;
 	}
-      }
-      else{
-	sum_h+=state_pair.second;
-	additions++;
-      }
     }
     set_eval_score(sum_h/double(additions));
+    //cout<<"sum_h:"<<sum_h<<",additions:"<<additions<<",avg_h:"<<sum_h/double(additions)<<",sample_sum_avg:"<<sample_sum_h/double(additions)<<endl;
     if(get_eval_score()>get_sample_score()){
-      cout<<"time:"<<utils::g_timer()<<",Improving PC,increased_states:"<<increased_states<<",eval_score:"<<get_eval_score()<<",sample_score"<<sample_score<<endl;
+      cout<<"time:"<<utils::g_timer()<<",Improving PC,increased_states:"<<increased_states<<",new_dead_end_states:"<<new_dead_end_states<<",additions:,"<<additions<<",eval_score:"<<get_eval_score()<<",sample_score"<<sample_score<<endl;
       /*for(std::map<size_t,std::pair<State,int> >::iterator it=unique_samples.begin(); it!=unique_samples.end(); ++it){
         it->second.second=max(it->second.second,candidate_PC->get_value(it->second.first));
       }*/
@@ -121,8 +124,7 @@ PatterCollectionEvaluatorOpenList_Avg_H::PatterCollectionEvaluatorOpenList_Avg_H
       //as the number of unique_samples keep growing
       return true;//Add collection
     }
-    //else if(increased_states>0)
-      //cout<<"time:"<<utils::g_timer()<<",Not_Improving PC,increased_states:"<<increased_states<<",sample_score:"<<get_sample_score()<<",eval_score:"<<get_eval_score()<<",additions:"<<additions<<"samples:,"<<samples.size()<<endl;
+      //cout<<"time:"<<utils::g_timer()<<",Not_Improving PC,increased_states:"<<increased_states<<",new_dead_end_states:"<<new_dead_end_states<<",additions:,"<<additions<<",eval_score:"<<get_eval_score()<<",sample_score"<<sample_score<<endl;
       if(additions<samples.size())
 	cout<<"additions:"<<additions<<endl;
       if(additions==0){
@@ -191,7 +193,7 @@ PatterCollectionEvaluatorOpenList_Avg_H::PatterCollectionEvaluatorOpenList_Avg_H
     //We adjust dynamically the number of samples and threshold to be 5% of states  
     set_num_samples(states_loaded_from_open_list->size());
     set_threshold(states_loaded_from_open_list->size()/50);
-    cout<<"adding to samples using OPEN_LIST, unique_size prior:"<<unique_samples.size()<<flush<<",states_loaded_from_open_list:"<<states_loaded_from_open_list->size()<<",num_samples:,"<<get_num_samples()<<",threshold:,"<<get_threshold()<<endl;
+    //cout<<"adding to samples using OPEN_LIST, unique_size prior:"<<unique_samples.size()<<flush<<",states_loaded_from_open_list:"<<states_loaded_from_open_list->size()<<",num_samples:,"<<get_num_samples()<<",threshold:,"<<get_threshold()<<endl;
     
     //Keeping lists of unique_states sampled, used for domination detecting
     //both in canonical(prune_dominated_subsets_sample_space) and in clear_dominated_heuristics
@@ -209,10 +211,10 @@ PatterCollectionEvaluatorOpenList_Avg_H::PatterCollectionEvaluatorOpenList_Avg_H
 	DEBUG_MSG(cout<<"dead_end found in sampled open_list,ignoring it"<<endl;);
 	continue;
       }
-      ret=unique_samples.insert(make_pair(state_id.hash(),make_pair(state,val)));
+      /*ret=unique_samples.insert(make_pair(state_id.hash(),make_pair(state,val)));
       if(!ret.second){//keep max h value stored when state was previously sampled.
 	ret.first->second.second=max(val,ret.first->second.second);
-      }
+      }*/
       samples.push_back(make_pair(state,val));
 
       additions++;
@@ -222,15 +224,14 @@ PatterCollectionEvaluatorOpenList_Avg_H::PatterCollectionEvaluatorOpenList_Avg_H
       //cout<<"state_id:"<<state_id<<",value:"<<val<<endl;
     }
     set_sample_score(sum_h/double(additions));
-    //cout<<"Open_list_sampled_score:,"<<get_sample_score()<<endl;
-    //cout<<"We are finished, sampling with OpenList_Avg_H,time:"<<utils::g_timer()-start_time<<",samples:"<<samples.size()<<",unique_samples:"<<unique_samples.size()<<endl;
+    cout<<"adding to samples using OPEN_LIST,states_loaded_from_open_list:,"<<states_loaded_from_open_list->size()<<",num_samples:,"<<get_num_samples()<<",sample_score:,"<<get_sample_score()<<endl;
   }
 
 
 
   static shared_ptr<PatternCollectionEvaluator>_parse(options::OptionParser &parser) {
     parser.add_option<int> ("time_limit", "If populated,stop construction on first node past boundary and time limit", "100");
-    parser.add_option<bool> ("using_random_walks", "launch random_walk from each open_state to get each sample value,adapts as h value improves", "true");
+    parser.add_option<bool> ("using_random_walks", "launch random_walk from each open_state to get each sample value,adapts as h value improves", "false");
     options::Options options = parser.parse();
     parser.document_synopsis(
         "Pattern Generator RBP",

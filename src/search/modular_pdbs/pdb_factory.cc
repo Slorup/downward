@@ -64,6 +64,26 @@ static options::PluginTypePlugin<PDBFactory> _type_plugin(
 	
 	return result;
     }
+    std::shared_ptr<PatternDatabaseInterface> 
+    PDBFactory::retrieve_pdb(const TaskProxy & task, 
+			   const Pattern &pattern, 
+			    const std::vector<int> &operator_costs) {
+	assert(!pattern.empty ());
+	auto item = stored_pdbs.find(PDBKey(pattern, operator_costs));
+	//HACK UNTIL EXPLICIT CONTINUE IS CODED
+	//FIX SOON!
+	if (item != stored_pdbs.end()) {
+	  return item->second;
+	}
+	else{
+	  cerr<<"PATTERN ";for (auto i :pattern) cout <<i<<",";
+	  cerr<<" DOES NOT HAVE A PDB, CANT RETURN PDB, DEBUG ME!!!"<<endl;
+	  exit(1);
+	}
+	shared_ptr<PatternDatabaseInterface> result = create_pdb(task, pattern, operator_costs); 
+	stored_pdbs[PDBKey(pattern, operator_costs)] = result;    
+	return result;
+    }
 
 
     bool PDBFactory::release_memory_below_limit_mb(double memory_limit_mb) {

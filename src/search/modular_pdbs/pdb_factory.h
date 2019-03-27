@@ -102,6 +102,11 @@ PDBFactory() : num_patterns_created(0), num_patterns_requested(0), num_patterns_
                     /*, double time_limit = std::numeric_limits<int>::max(),
 		    double memory_limit = 2000 */
 	    );
+    std::shared_ptr<PatternDatabaseInterface>
+	retrieve_pdb(const TaskProxy & task,
+		    const Pattern &pattern,
+		    const std::vector<int> &operator_costs = std::vector<int>()
+	    );
 
     virtual std::string name() const = 0;
     void statistics() const;
