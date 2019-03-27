@@ -31,6 +31,7 @@ namespace pdbs3 {
 class PatternCollectionLocalSearchGamerStyle : public PatternCollectionLocalSearch {
   int time_limit=100;
   bool verbose=false;
+  bool require_improv=true;
   Pattern current_pattern;
   int last_var=0;
   bool improvement_found=false;

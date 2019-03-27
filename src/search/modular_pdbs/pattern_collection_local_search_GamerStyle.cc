@@ -44,7 +44,8 @@ inline std::ostream& operator << (std::ostream& os, const std::vector<T>& v)
 
   PatternCollectionLocalSearchGamerStyle::PatternCollectionLocalSearchGamerStyle(const options::Options & opts)
   :time_limit(opts.get<int>("time_limit")),
-      verbose(opts.get<bool>("verbose")){
+      verbose(opts.get<bool>("verbose")),
+      require_improv(opts.get<bool>("require_improv")){
   //PatternCollectionLocalSearchGamerStyle::PatternCollectionLocalSearchGamerStyle() 
       cout<<"hello LocalSearchGamerStyle"<<endl;
     local_search_timer = make_unique<utils::CountdownTimer>(time_limit);
@@ -233,8 +234,8 @@ inline std::ostream& operator << (std::ostream& os, const std::vector<T>& v)
       //Now evaluate PDB
       shared_ptr<ModularZeroOnePDBs> candidate_ptr=make_shared<ModularZeroOnePDBs>(candidate_pdb);
       evaluation_method->evaluate(candidate_ptr);
-      if(evaluation_method->get_eval_score()>starting_best_score){
-        //if(candidate_pdb->compute_mean_finite_h()>starting_best_score)//If we find 2 equal improvements to best known we add both
+      if( (require_improv&&evaluation_method->get_eval_score()>starting_best_score)
+	  || !require_improv){
 	if(verbose)
 	  cout<<"Selected,sample_score:"<<starting_best_score<<",previous_best_score:,"<<best_score<<",eval_score:,"<<evaluation_method->get_eval_score()<<",last_var:"<<last_var<<endl;
 	improvement_found=true;
@@ -439,6 +440,7 @@ inline std::ostream& operator << (std::ostream& os, const std::vector<T>& v)
   static shared_ptr<PatternCollectionLocalSearch>_parse(options::OptionParser &parser) {
     parser.add_option<int> ("time_limit", "If populated,stop construction on first node past boundary and time limit", "100");
     parser.add_option<bool> ("verbose", "debug_mode from command line", "false");
+    parser.add_option<bool> ("require_improv", "Require one improvement, otherwise add all variables", "true");
     options::Options options = parser.parse();
     parser.document_synopsis(
         "Pattern Generator Local Search module",
