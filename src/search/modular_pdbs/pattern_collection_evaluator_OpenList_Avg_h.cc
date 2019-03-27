@@ -91,24 +91,11 @@ PatterCollectionEvaluatorOpenList_Avg_H::PatterCollectionEvaluatorOpenList_Avg_H
       else if(candidate_PC->get_value(state_pair.first)>state_pair.second){
         DEBUG_MSG(cout<<"\th improved from "<<state_pair.second<<" to "<<candidate_PC->get_value(state_pair.first)<<endl;);
         increased_states++;
-	  if(using_random_walks){
-	    vector<State> samples_just_states;
-	    samples_just_states = sample_states_with_random_walks2(
-		*successor_generator, 1,candidate_PC->get_value(state_pair.first),
-		average_operator_cost,
-		[this](const State &state) {
-		    return result->is_dead_end(state);
-		},
-		evaluator_timer,&(state_pair.first));
-	    sum_h+=candidate_PC->get_value(samples_just_states.front());
-	  }
-	  else{
-	    sum_h+=candidate_PC->get_value(state_pair.first);
-	  }
-	}
-	else{
-	  sum_h+=state_pair.second;
-	}
+	sum_h+=candidate_PC->get_value(state_pair.first);
+      }
+      else{
+	sum_h+=state_pair.second;
+      }
     }
     set_eval_score(sum_h/double(additions));
     //cout<<"sum_h:"<<sum_h<<",additions:"<<additions<<",avg_h:"<<sum_h/double(additions)<<",sample_sum_avg:"<<sample_sum_h/double(additions)<<endl;
@@ -171,17 +158,34 @@ PatterCollectionEvaluatorOpenList_Avg_H::PatterCollectionEvaluatorOpenList_Avg_H
       }
 
       for (auto state : samples_just_states){
-	int h_val=current_result->get_value(state);
-        if (h_val==numeric_limits<int>::max())//Skipping dead_ends when doing avg_h
+	int h_val=0;
+        if (current_result->get_value(state)==numeric_limits<int>::max())//Skipping dead_ends when doing avg_h
 	  continue;
-	additions++;
-	sum_h+=h_val;
-	auto ret=unique_samples.insert(make_pair(state.hash(),make_pair(state,h_val)));
+	/*auto ret=unique_samples.insert(make_pair(state.hash(),make_pair(state,h_val)));
 	if(ret.second==false){//Node already exist so update h_value
 	  ret.first->second.second=max(h_val,ret.first->second.second);
+	}*/
+	if(using_random_walks){
+	  vector<State> samples_just_states;
+	  samples_just_states = sample_states_with_random_walks2(
+	      *successor_generator, 1,current_result->get_value(state),
+	      average_operator_cost,
+	      [this](const State &state) {
+		  return result->is_dead_end(state);
+	      },
+	      evaluator_timer,&(state));
+	  h_val=current_result->get_value(samples_just_states.front());
+	  if(h_val==numeric_limits<int>::max())
+	    continue;
+	}
+	else{
+	  h_val=current_result->get_value(state);
 	}
 	samples.push_back(make_pair(state,h_val));
+	additions++;
+	sum_h+=h_val;
       }
+	
       set_num_samples(samples.size());
       set_sample_score(sum_h/double(additions));
       //cout<<"Sampled_score:"<<get_sample_score()<<endl;
