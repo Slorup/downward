@@ -271,6 +271,16 @@ inline std::ostream& operator << (std::ostream& os, const std::vector<T>& v)
 	    Pattern candidate_pattern=old_pattern;
 	    candidate_pattern.push_back(last_var);
 	    sort(candidate_pattern.begin(), candidate_pattern.end());
+	    
+	    if(!pdb_factory->is_pdb_stored(candidate_pattern, operator_costs)){
+				if(verbose)
+					cout<<"pdb associtated to pattern:"<<candidate_pattern<<"is not stored, skipping"<<endl;
+				continue;
+	    }
+			else if(verbose){
+					cout<<"retrieving pdb associtated to pattern:"<<candidate_pattern<<endl;
+			}
+
 	    shared_ptr<PatternDatabaseInterface> candidate_pdb = pdb_factory->retrieve_pdb(task_proxy, candidate_pattern, operator_costs);
 	    if(candidate_pdb->compute_mean_finite_h()>sample_avg_dist){
 	      improvement_found=true;
@@ -278,7 +288,7 @@ inline std::ostream& operator << (std::ostream& os, const std::vector<T>& v)
 	      improving_vars.push_back(make_pair<int,double>(int(last_var),candidate_pdb->compute_mean_finite_h()));
 	      improving_pdbs.push_back(candidate_pdb);
 	      if(verbose)
-		cout<<"Selected,sample_avg_dist:,"<<sample_avg_dist<<",candidate_avg_dist:,"<<candidate_pdb->compute_mean_finite_h()<<",last_var:"<<last_var<<endl;
+					cout<<"Selected,sample_avg_dist:,"<<sample_avg_dist<<",candidate_avg_dist:,"<<candidate_pdb->compute_mean_finite_h()<<",last_var:"<<last_var<<endl;
 	    }
 	  }
 	}

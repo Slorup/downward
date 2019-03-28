@@ -84,6 +84,14 @@ static options::PluginTypePlugin<PDBFactory> _type_plugin(
 	stored_pdbs[PDBKey(pattern, operator_costs)] = result;    
 	return result;
     }
+    bool PDBFactory::is_pdb_stored( const Pattern &pattern, 
+	const std::vector<int> &operator_costs) {
+      auto item = stored_pdbs.find(PDBKey(pattern, operator_costs));
+      if(item  != stored_pdbs.end()) {
+	return true;
+      }
+      return false;
+    }
 
 
     bool PDBFactory::release_memory_below_limit_mb(double memory_limit_mb) {

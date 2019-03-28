@@ -107,6 +107,8 @@ PDBFactory() : num_patterns_created(0), num_patterns_requested(0), num_patterns_
 		    const Pattern &pattern,
 		    const std::vector<int> &operator_costs = std::vector<int>()
 	    );
+    bool is_pdb_stored( const Pattern &pattern, 
+	const std::vector<int> &operator_costs);
 
     virtual std::string name() const = 0;
     void statistics() const;
