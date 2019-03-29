@@ -78,6 +78,29 @@ class QualityFilters(object):
             run.get('cost'), self.tasks_to_costs[self._get_task(run)])
         return run
 
+SANTI_OPTIMAL_SUITE = ['agricola','data_network',
+    'organic_synthesis','organic_synthesis_split','petri_net_alignment',
+    'settlers','snake','spider','termes', 'airport', 
+    'barman-opt11-strips', 'barman-opt14-strips', 'blocks',
+    'childsnack-opt14-strips', 'depot', 'driverlog',
+    'elevators-opt08-strips', 'elevators-opt11-strips',
+    'floortile-opt11-strips', 'floortile-opt14-strips', 'freecell',
+    'ged-opt14-strips', 'grid', 'gripper', 'hiking-opt14-strips',
+    'logistics00', 'logistics98', 'miconic', 'movie', 'mprime', 'mystery',
+    'nomystery-opt11-strips', 'openstacks-opt08-strips',
+    'openstacks-opt11-strips', 'openstacks-opt14-strips',
+    'openstacks-strips', 'parcprinter-08-strips',
+    'parcprinter-opt11-strips', 'parking-opt11-strips',
+    'parking-opt14-strips', 'pathways-noneg', 'pegsol-08-strips',
+    'pegsol-opt11-strips', 'pipesworld-notankage', 'pipesworld-tankage',
+    'psr-small', 'rovers', 'satellite', 'scanalyzer-08-strips',
+    'scanalyzer-opt11-strips', 'sokoban-opt08-strips',
+    'sokoban-opt11-strips', 'storage', 'tetris-opt14-strips',
+    'tidybot-opt11-strips', 'tidybot-opt14-strips', 'tpp',
+    'transport-opt08-strips', 'transport-opt11-strips',
+    'transport-opt14-strips', 'trucks-strips', 'visitall-opt11-strips',
+    'visitall-opt14-strips', 'woodworking-opt08-strips',
+    'woodworking-opt11-strips', 'zenotravel']
 
 DEFAULT_OPTIMAL_SUITE = [
     'agricola-opt18-strips', 'airport', 'barman-opt11-strips',

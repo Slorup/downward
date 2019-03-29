@@ -130,35 +130,47 @@ def main(revisions=None):
 
 #CGAMER
     exp.add_fetcher('/mnt/data_server/franco/lab-data/interleaved-search/lemmy-experiments/CGamer',filter_algorithm=['CGamer'], merge=True)
-#LG-RW-DL-YI    
-    exp.add_fetcher('/mnt/data_server/franco/lab-data/interleaved-search/lemmy-experiments/GamerLocal-RandWalk-DynLims-YesReqImprov', filter_algorithm=[
-        'LG-RW-DL-YI',
-    ],merge=True)
-#LG-AD-DL-YI    
+#D    
     exp.add_fetcher('/mnt/data_server/franco/lab-data/interleaved-search/lemmy-experiments/GamerLocal-AvgDist-DynLims-YesReqImprov', filter_algorithm=[
-        'LG-AD-DL-YI',
+        'D',
+    ],merge=True)
+#R    
+    exp.add_fetcher('/mnt/data_server/franco/lab-data/interleaved-search/lemmy-experiments/GamerLocal-RandWalk-DynLims-YesReqImprov', filter_algorithm=[
+        'R',
+    ],merge=True)
+#RT    
+    exp.add_fetcher('/mnt/data_server/franco/lab-data/interleaved-search/lemmy-experiments/GamerLocal-RandWalk-DynLims-YesReqImprov-YesTieBreak', filter_algorithm=[
+        'RT',
     ],merge=True)
 
-#ILG-AD-DL-YI    
+#ID    
     exp.add_fetcher('/mnt/data_server/franco/lab-data/interleaved-search/lemmy-experiments/Interleaved-GamerLocal-AvgDist-DynLims-YesReqImprov', filter_algorithm=[
-        'ILG-AD-DL-YI',
+        'ID',
     ],merge=True)
-#ILG-RW-DL-YI    
+#IR    
     exp.add_fetcher('/mnt/data_server/franco/lab-data/interleaved-search/lemmy-experiments/Interleaved-LocalGamer-RandWalk-AvgH-DynLims-YesReqImprov', filter_algorithm=[
-        'ILG-RW-DL-YI',
+        'IR',
     ],merge=True)
-#ILG-OL-DL-YI    
+#IO    
     exp.add_fetcher('/mnt/data_server/franco/lab-data/interleaved-search/lemmy-experiments/Interleaved-LocalGamer-OpenListNoRandWalk-DynLims-YesReqImprov', filter_algorithm=[
-        'ILG-OL-DL-YI',
+        'IO',
     ],merge=True)
-#ILG-OL+RW-DL-YI
+#IOR
     exp.add_fetcher('/mnt/data_server/franco/lab-data/interleaved-search/lemmy-experiments/Interleaved-GamerLocal-OpenListWithRandomWalk-DynLims-YesReqImprov-NoTieBreak', filter_algorithm=[
-        'ILG-OL+RW-DL-YI',
+        'IOR',
+    ],merge=True)
+#IRT    
+    exp.add_fetcher('/mnt/data_server/franco/lab-data/interleaved-search/lemmy-experiments/Interleaved-GamerLocal-RandWalk-DynLims-YesReqImprov-YesTieBreak', filter_algorithm=[
+        'IRT',
+    ],merge=True)
+#IOT
+    exp.add_fetcher('/mnt/data_server/franco/lab-data/interleaved-search/lemmy-experiments/Interleaved-GamerLocal-OpenListNoRandomWalkRandomWalk-DynLims-YesReqImprov-YesTieBreak/', filter_algorithm=[
+        'IOT',
     ],merge=True)
 
-#ILG-OL+RW+TB-DL-YI    
+#IORT
     exp.add_fetcher('/mnt/data_server/franco/lab-data/interleaved-search/lemmy-experiments/Interleaved-GamerLocal-OpenListWithRandomWalk-DynLims-YesReqImprov-YesTieBreak', filter_algorithm=[
-        'ILG-OL+RW+TB-DL-YI',
+        'IORT',
     ],merge=True)
 
     outfile1 = os.path.join(exp.eval_dir, 'Gamer-RequireImprov.html')
@@ -170,11 +182,16 @@ def main(revisions=None):
 #    )
     exp.add_report(AbsoluteReport(attributes=attributes,
         filter_algorithm=[
-         'LG-RW-DL-YI',
-         'LG-AD-DL-YI',
-         'ILG-AD-DL-YI',
-         'ILG-RW-DL-YI',
-         'ILG-OL-DL-YI',
+         'D',
+         'R',
+         'RT',
+         'ID',
+         'IR',
+         'IO',
+         'IOR',
+         'IRT',
+         'IOT',
+         'IORT',
          ],
         format='html',
         ),
@@ -204,12 +221,16 @@ def main(revisions=None):
     exp.add_report(
         DomainComparisonReport(
         filter_algorithm=[
-         'LG-AD-DL-YI',
-         'LG-RW-DL-YI',
-         'ILG-AD-DL-YI',
-         'ILG-RW-DL-YI',
-         'ILG-OL-DL-YI',
-         'ILG-OL+RW+TB-DL-YI',
+         'D',
+         'R',
+         'RT',
+         'ID',
+         'IR',
+         'IO',
+         'IOR',
+         'IRT',
+         'IOT',
+         'IORT',
          ],
         format='tex',
         attributes=['coverage'],
@@ -238,7 +259,7 @@ def main(revisions=None):
         report = ScatterPlotReport(
             filter_algorithm=[algo1, algo2],
             attributes=[attribute],
-            format='png',
+            format='tex',
         )
         report(
             exp.eval_dir,
