@@ -40,6 +40,10 @@ class EagerSearchInterleaved : public SearchEngine {
     int improvement_time=0;
     bool improvement_found=false;
     std::vector<int> last_key_removed;
+    bool improvements_finished=false;
+    int overall_time_limit=0;
+    int min_time_search=0;
+    int min_time_improv=30;
 
 protected:
     virtual void initialize() override;

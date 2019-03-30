@@ -32,7 +32,9 @@ EagerSearchInterleaved::EagerSearchInterleaved(const Options &opts)
                 create_state_open_list()),
       f_evaluator(opts.get<ScalarEvaluator *>("f_eval", nullptr)),
       preferred_operator_heuristics(opts.get_list<Heuristic *>("preferred")),
-      pruning_method(opts.get<shared_ptr<PruningMethod>>("pruning")) {
+      pruning_method(opts.get<shared_ptr<PruningMethod>>("pruning")),
+      overall_time_limit(opts.get<int>("overall_time_limit")) ,
+      min_time_search(opts.get<int>("min_time_search")) {
 	opts2=opts;
 }
 
@@ -105,40 +107,53 @@ void EagerSearchInterleaved::print_statistics() const {
 }
 
 SearchStatus EagerSearchInterleaved::step() {
-  if(utils::g_timer()-start_time-improvement_time>max_search_time){
-    cout<<"Interleaved_search choosing to search for heuristic improvement,start_time:,"<<start_time<<",search_time:,"<<utils::g_timer()-start_time-improvement_time<<",max_search_time:,"<<max_search_time<<",improvement_time_till_now:"<<improvement_time;
+  if(!improvements_finished&&utils::g_timer()-start_time-improvement_time>max_search_time){
+    cout<<"Interleaved_search choosing to search for heuristic improvement,start_time:,"<<start_time<<",search_time:,"<<utils::g_timer()-start_time-improvement_time<<",max_search_time:,"<<max_search_time<<",improvement_time_till_now:"<<improvement_time<<endl;
     max_search_time*=2;
-    cout<<",new max_search_time:"<<max_search_time<<flush<<endl;
-    //load list of states for evaluation of improvements by the heuristic
-    //tried to pass the open_list into the heuristic, but it was a nightmare
-    //so doing ugly hack, updating global list of state_ids
-    shared_ptr<vector<StateID> > states_to_eval=make_shared<vector<StateID> >();
-    const GlobalState &initial_state = state_registry.get_initial_state();
-    states_to_eval->push_back(initial_state.get_id());
-    open_list->load_states(1000,states_to_eval);//So we can access from pattern_collection_evaluator_open_list
-    cout<<"states_to_eval size:"<<states_to_eval->size()<<flush<<endl;
-    states_loaded_from_open_list=states_to_eval;
-    cout<<"states_loaded_from_open_list:"<<states_loaded_from_open_list->size()<<flush<<endl;
-
-
-    int start_improvement_time=utils::g_timer();
-    for (Heuristic *heuristic : heuristics) {
-      if(heuristic->check_for_solution()){//in case solution already found via perimeter PDB
-	break;
-      }
-      improvement_found=heuristic->find_improvements(max_search_time);
-      //RESTARTING NOT WORKING, PROBABLY EASIEST TO CREATE A NEW SEARCH SPACE
-      //CURRENTLY COMPLAINING ABOUT DELETED CONSTRUCTOR
-      //if(improvement_found){
-	//cout<<"time:"<<utils::g_timer<<",RESTARTING SEARCH"<<endl;
-	//restart_search();
-	//improvement_found=false;
-	//reopened_once=true;
-	//return IN_PROGRESS;
-      //}
+    int time_left=overall_time_limit-utils::g_timer();
+    cout<<"Interleaved,time_left:"<<time_left<<endl;
+    
+    if(max_search_time>min_time_search+min_time_improv){
+      max_search_time=min(time_left-min_time_search,max_search_time);
     }
-    improvement_time+=utils::g_timer()-start_improvement_time;
-    start_time=utils::g_timer();
+    else if(time_left<min_time_search+min_time_improv){
+      improvements_finished=true;
+      cout<<"finished with improvements at:"<<utils::g_timer()<<",only "<<time_left<<" secs left to improve,min_time_improv:"<<min_time_improv<<",min_time_search:"<<min_time_search<<endl;
+    }
+
+    if(!improvements_finished){
+      cout<<",new max_search_time:"<<max_search_time<<",improvements_finished:"<<improvements_finished<<",time_left:,"<<time_left<<endl;
+      //load list of states for evaluation of improvements by the heuristic
+      //tried to pass the open_list into the heuristic, but it was a nightmare
+      //so doing ugly hack, updating global list of state_ids
+      shared_ptr<vector<StateID> > states_to_eval=make_shared<vector<StateID> >();
+      const GlobalState &initial_state = state_registry.get_initial_state();
+      states_to_eval->push_back(initial_state.get_id());
+      open_list->load_states(1000,states_to_eval);//So we can access from pattern_collection_evaluator_open_list
+      cout<<"states_to_eval size:"<<states_to_eval->size()<<flush<<endl;
+      states_loaded_from_open_list=states_to_eval;
+      cout<<"states_loaded_from_open_list:"<<states_loaded_from_open_list->size()<<flush<<endl;
+
+
+      int start_improvement_time=utils::g_timer();
+      for (Heuristic *heuristic : heuristics) {
+	if(heuristic->check_for_solution()){//in case solution already found via perimeter PDB
+	  break;
+	}
+	improvement_found=heuristic->find_improvements(max_search_time);
+	//RESTARTING NOT WORKING, PROBABLY EASIEST TO CREATE A NEW SEARCH SPACE
+	//CURRENTLY COMPLAINING ABOUT DELETED CONSTRUCTOR
+	//if(improvement_found){
+	  //cout<<"time:"<<utils::g_timer<<",RESTARTING SEARCH"<<endl;
+	  //restart_search();
+	  //improvement_found=false;
+	  //reopened_once=true;
+	  //return IN_PROGRESS;
+	//}
+      }
+      improvement_time+=utils::g_timer()-start_improvement_time;
+      start_time=utils::g_timer();
+    }
   }
     pair<SearchNode, bool> n = fetch_next_node();
     if (!n.second) {
@@ -500,6 +515,12 @@ static SearchEngine *_parse_astar_interleaved(OptionParser &parser) {
     parser.add_option<ScalarEvaluator *>("eval", "evaluator for h-value");
     parser.add_option<bool>("mpd",
                             "use multi-path dependence (LM-A*)", "false");
+    parser.add_option<int>(
+        "overall_time_limit",
+        "needed to estimate how long do we have left", "1800");
+    parser.add_option<int>(
+        "min_time_search",
+        "Only do improvement if we have enough time", "100");
 
     add_pruning_option(parser);
     SearchEngine::add_options_to_parser(parser);
@@ -566,6 +587,12 @@ static SearchEngine *_parse_greedy(OptionParser &parser) {
     parser.add_option<int>(
         "boost",
         "boost value for preferred operator open lists", "0");
+    parser.add_option<int>(
+        "overall_time_limit",
+        "needed to estimate how long do we have left", "1800");
+    parser.add_option<int>(
+        "min_time_search",
+        "Only do improvement if we have enough time", "100");
 
     add_pruning_option(parser);
     SearchEngine::add_options_to_parser(parser);
