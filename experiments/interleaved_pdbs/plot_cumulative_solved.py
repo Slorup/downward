@@ -2,6 +2,9 @@
 
 from collections import defaultdict
 
+import os
+from lab import tools
+
 from matplotlib import ticker
 
 from downward.reports.plot import MatplotlibPlot, Matplotlib, PgfPlots, PlotReport, MIN_AXIS
@@ -23,7 +26,7 @@ class CumulativePgfPlots(PgfPlots):
         options = cls._get_axis_options(report)
         lines.append('\\begin{axis}[%s]' % cls._format_options(options))
         for category, coords in sorted(report.categories.items()):
-            plot = {'only marks': True}
+            plot = {'no marks' : True}#{'only marks': True}
             lines.append(
                 '\\addplot+[%s] coordinates {\n%s\n};' % (
                     cls._format_options(plot),
@@ -34,33 +37,12 @@ class CumulativePgfPlots(PgfPlots):
                 # None is treated as the default category if using multiple
                 # categories. Add a corresponding entry to the legend.
                 lines.append('\\addlegendentry{default}')
-        # Add black line.
-        start = min(report.min_x, report.min_y)
-        if report.xlim_left is not None:
-            start = min(start, report.xlim_left)
-        if report.ylim_bottom is not None:
-            start = min(start, report.ylim_bottom)
-        end = max(report.max_x, report.max_y)
-        if report.xlim_right:
-            end = max(end, report.xlim_right)
-        if report.ylim_top:
-            end = max(end, report.ylim_top)
-        if report.show_missing:
-            end = max(end, report.missing_val)
-        lines.append(
-            '\\addplot[color=black] coordinates {(%f, %f) (%d, %d)};' %
-            (start, start, end, end))
         lines.append('\\end{axis}')
         return lines
 
     @classmethod
     def _get_axis_options(cls, report):
-        opts = PgfPlots._get_axis_options(report)
-        # Add line for missing values.
-        for axis in ['x', 'y']:
-            opts['extra %s ticks' % axis] = report.missing_val
-            opts['extra %s tick style' % axis] = 'grid=major'
-        return opts
+        return {'xmode' : 'log', 'legend pos':'outer north east', 'ymin' : '0', 'ymax' : str(report.max_coverage)}
 
 
 
@@ -91,7 +73,7 @@ class PlotCumulativeReport(PlotReport):
         self.xlim_left = self.xlim_left or MIN_AXIS
         self.ylim_bottom = self.ylim_bottom or MIN_AXIS
         if self.output_format == 'tex':
-            self.writer = ScatterPgfPlots
+            self.writer = CumulativePgfPlots
         else:
             self.writer = ScatterMatplotlib
 
@@ -103,34 +85,37 @@ class PlotCumulativeReport(PlotReport):
         # We discard the *runs* parameter.
         # Map category names to value tuples
         categories = defaultdict(list)
-        xvalues = set()
+        xvalues = defaultdict(set)
         algorithms = set()
         for (domain, problem), runs in self.problem_runs.items():
             for run in runs:
                 if run['coverage'] == 1:
-                    xvalues.add(run[self.attribute])
-                    algorithms.add(run[self.algorithm])
+                    xvalues[run["algorithm"]].add(int(run[self.attribute]))
+                    algorithms.add(run["algorithm"])
 
-        
         values = {}
         for a in algorithms:
+            xvalues[a] = sorted(list(xvalues[a]))
             values [a] = {} 
-            for x in xvalues:
+            for x in xvalues[a]:
                 values[a][x] = 0
 
         for (domain, problem), runs in self.problem_runs.items():
             for run in runs:
                 if run['coverage'] == 1:
                     x = run[self.attribute]
-                    a = run[self.algorithm]
+                    a = run["algorithm"]
 
-                    for xs in xvalues:
-                        if xs <= x:
+                    for xs in xvalues[a]:
+                        if xs >= x:
                             values[a][xs] += 1
 
+        self.max_coverage = 0
         for a in algorithms:
-            for x in xvalues:
+            self.max_coverage = max(self.max_coverage, values[a][xvalues[a][-1]])
+            for x in xvalues[a]:
                 categories[a].append((x, values[a][x]))
+
         return categories
 
     
