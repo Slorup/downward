@@ -381,7 +381,7 @@ ModularHeuristic::ModularHeuristic(const Options &opts)
       generator_type=true;
 
       cout<<"FINDING IMPROVEMENTES"<<flush<<endl;
-      if(!pdb_factory->is_solved()){
+      /*if(!pdb_factory->is_solved()){
 	bool improvement_found=find_improvements(modular_time_limit);
 	cout<<"time:,"<<utils::g_timer()<<",improvement_found:"<<improvement_found<<endl;
 	cout<<"CBP calls:,"<<pattern_generator->get_CBP_calls()<<",RBP calls:,"<<pattern_generator->get_RBP_calls()<<endl;
@@ -389,7 +389,7 @@ ModularHeuristic::ModularHeuristic(const Options &opts)
       }
       else{
 	cout<<"skipping looking for improvement because valid optimal solution already found in pdb_factory"<<endl;
-      }
+      }*/
     }
 
 int ModularHeuristic::compute_heuristic(const GlobalState &global_state) {

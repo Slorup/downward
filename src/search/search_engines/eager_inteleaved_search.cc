@@ -107,8 +107,8 @@ void EagerSearchInterleaved::print_statistics() const {
 }
 
 SearchStatus EagerSearchInterleaved::step() {
-  if(!improvements_finished&&utils::g_timer()-start_time-improvement_time>max_search_time){
-    cout<<"Interleaved_search choosing to search for heuristic improvement,start_time:,"<<start_time<<",search_time:,"<<utils::g_timer()-start_time-improvement_time<<",max_search_time:,"<<max_search_time<<",improvement_time_till_now:"<<improvement_time<<endl;
+  if(!improvements_finished&&utils::g_timer()-start_time>max_search_time){
+    cout<<"Interleaved_search choosing to search for heuristic improvement,start_time:,"<<start_time<<",search_time:,"<<utils::g_timer()-start_time<<",max_search_time:,"<<max_search_time<<",improvement_time_till_now:"<<improvement_time<<endl;
     max_search_time*=2;
     int time_left=overall_time_limit-utils::g_timer();
     cout<<"Interleaved,time_left:"<<time_left<<endl;
