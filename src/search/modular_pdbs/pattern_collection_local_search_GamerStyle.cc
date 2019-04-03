@@ -189,7 +189,6 @@ inline std::ostream& operator << (std::ostream& os, const std::vector<T>& v)
     candidates_backup=candidates;
     while(candidates.size()){
       if(local_search_timer->is_expired()){
-	all_pdbs_finished=false;
 	if(verbose)
 	  cout<<"Breaking out of candidate loop, local_search_timer is expired"<<endl;
 	break;
@@ -202,7 +201,7 @@ inline std::ostream& operator << (std::ostream& os, const std::vector<T>& v)
       int start_pdb_time=utils::g_timer();
       shared_ptr<PatternDatabaseInterface> candidate_pdb = pdb_factory->compute_pdb(task_proxy, candidate_pattern, operator_costs);
       if(verbose)
-	cout<<"candidate:"<<candidate_pattern<<",construction time:"<<utils::g_timer()-start_pdb_time<<endl;
+	cout<<"candidate:"<<candidate_pattern<<",construction time:"<<utils::g_timer()-start_pdb_time<<",finished:"<<candidate_pdb->is_finished()<<endl;
       PDBCollection temp;temp.push_back(candidate_pdb);
       
       if(pdb_factory->is_solved()){
@@ -212,7 +211,6 @@ inline std::ostream& operator << (std::ostream& os, const std::vector<T>& v)
       }
 
       if(local_search_timer->is_expired()){
-	all_pdbs_finished=false;
 	if(verbose)
 	  cout<<"Breaking out of candidate loop, local_search_timer is expired"<<endl;
 	break;
@@ -254,6 +252,34 @@ inline std::ostream& operator << (std::ostream& os, const std::vector<T>& v)
       }
     }
 
+    //Check if all candidate_patterns were actually finished
+    if(all_pdbs_finished){
+      candidates=candidates_backup;
+      while(candidates.size()){
+	last_var=candidates.back();
+	candidates.pop_back();
+	Pattern candidate_pattern=old_pattern;
+	candidate_pattern.push_back(last_var);
+	if(!pdb_factory->is_pdb_stored(candidate_pattern, operator_costs)){
+	  all_pdbs_finished=false;//if it is not stored, it was not finished!
+	  break;
+	}
+	else{
+	  shared_ptr<PatternDatabaseInterface> candidate_pdb = pdb_factory->retrieve_pdb(task_proxy, candidate_pattern, operator_costs);
+	  if(!candidate_pdb->is_finished()){
+	    all_pdbs_finished=false;
+	    break;
+	  }
+	}
+      }
+    }
+
+    if(verbose){
+      cout<<"time:,"<<utils::g_timer()<<",all_pdbs_finished:,"<<all_pdbs_finished<<",pdb_total_memory:,"<<pdb_factory->get_current_memory_in_kb()/(1024.0*1024.0)<<",overall_memory:,";
+      cout<<utils::get_current_memory_in_kb()/1024.0<<endl;
+    }
+
+
     if(improving_vars.size()==0){
       cout<<"\t NO IMPROVING VARS"<<endl;
 	if(pdb_factory->is_solved()){
@@ -273,13 +299,13 @@ inline std::ostream& operator << (std::ostream& os, const std::vector<T>& v)
 	    sort(candidate_pattern.begin(), candidate_pattern.end());
 	    
 	    if(!pdb_factory->is_pdb_stored(candidate_pattern, operator_costs)){
-				if(verbose)
-					cout<<"pdb associtated to pattern:"<<candidate_pattern<<"is not stored, skipping"<<endl;
-				continue;
+	      if(verbose)
+		cout<<"pdb associtated to pattern:"<<candidate_pattern<<"is not stored, skipping"<<endl;
+	      continue;
 	    }
-			else if(verbose){
-					cout<<"retrieving pdb associtated to pattern:"<<candidate_pattern<<endl;
-			}
+	    else if(verbose){
+	      cout<<"retrieving pdb associtated to pattern:"<<candidate_pattern<<endl;
+	    }
 
 	    shared_ptr<PatternDatabaseInterface> candidate_pdb = pdb_factory->retrieve_pdb(task_proxy, candidate_pattern, operator_costs);
 	    if(candidate_pdb->compute_mean_finite_h()>sample_avg_dist){
@@ -288,7 +314,7 @@ inline std::ostream& operator << (std::ostream& os, const std::vector<T>& v)
 	      improving_vars.push_back(make_pair<int,double>(int(last_var),candidate_pdb->compute_mean_finite_h()));
 	      improving_pdbs.push_back(candidate_pdb);
 	      if(verbose)
-					cout<<"Selected,sample_avg_dist:,"<<sample_avg_dist<<",candidate_avg_dist:,"<<candidate_pdb->compute_mean_finite_h()<<",last_var:"<<last_var<<endl;
+		cout<<"Selected,sample_avg_dist:,"<<sample_avg_dist<<",candidate_avg_dist:,"<<candidate_pdb->compute_mean_finite_h()<<",last_var:"<<last_var<<endl;
 	    }
 	  }
 	}

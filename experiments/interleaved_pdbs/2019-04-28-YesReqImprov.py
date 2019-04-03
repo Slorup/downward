@@ -172,6 +172,15 @@ def main(revisions=None):
     exp.add_fetcher('/mnt/data_server/franco/lab-data/interleaved-search/lemmy-experiments/Interleaved-GamerLocal-OpenListWithRandomWalk-DynLims-YesReqImprov-YesTieBreak', filter_algorithm=[
         'IORT',
     ],merge=True)
+#IOT-SS    
+    exp.add_fetcher('/mnt/data_server/franco/lab-data/interleaved-search/lemmy-experiments/IOT-SS', filter_algorithm=[
+        'IOT-SS',
+    ],merge=True)
+    exp.add_fetcher('/mnt/data_server/franco/lab-data/interleaved-search/lemmy-experiments/IOT-BP', filter_algorithm=[
+        'IOT-BP',
+    ],merge=True)
+
+
 
     outfile1 = os.path.join(exp.eval_dir, 'Gamer-RequireImprov.html')
     
@@ -198,19 +207,12 @@ def main(revisions=None):
         outfile=outfile1,
     )
 
-    outfile = os.path.join(exp.eval_dir, get_experiment_name() + '-vs-regular-GamerLocal.html')
+    #outfile = os.path.join(exp.eval_dir, get_experiment_name() + '-vs-regular-GamerLocal.html')
+    outfile = os.path.join(exp.eval_dir, 'IOT-SS-vs-IOT-BP.html')
     exp.add_report(
         ComparativeReport(
             algorithm_pairs=[
-                ('CGamer','Interleaved-LocalGamer-RandWalk-AvgH-DynLims-YesReqImprov'),
-                ('CGamer','Interleaved-LocalGamer-RandWalk-AvgH-DynLims-YesReqImprov'),
-                ('CGamer','Interleaved-LocalGamer-RandWalk-AvgH-DynLims-NoReqImprov'),
-                #('LocalGamer-3GB', 'Interleaved-LocalGamer-3GB-AvgH'),
-                #('LocalGamer-3GB', 'Interleaved-LocalGamer-3GB-OpenList-AvgH'),
-                #('LocalGamer-3GB-AvgH', 'Interleaved-LocalGamer-3GB-OpenList-AvgH'),
-                #('LocalGamer-3GB', 'LocalGamer-RandWalk'),
-                #('LocalGamer-RandWalk','Interleaved-LocalGamer-RandWalk-AvgH'),
-                #('Interleaved-LocalGamer-3GB-OpenList-AvgH','Interleaved-LocalGamer-RandWalk-AvgH'),
+                ('IOT-SS','IOT-BP'),
             ],
             format='html',
             attributes=attributes,
