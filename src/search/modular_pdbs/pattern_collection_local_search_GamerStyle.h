@@ -57,6 +57,7 @@ class PatternCollectionLocalSearchGamerStyle : public PatternCollectionLocalSear
   virtual void print_name() override {std::cout<<"Doing LocalSearchGamerStyle"<<std::endl;}
   virtual std::string get_name() override {std::string output="LocalSearchGamerStyle";return output;};
   bool impossible_to_improve(std::shared_ptr<PatternCollectionInformation> current_result);
+  int calculate_unterminated_candidates_size(Pattern old_pattern,  std::shared_ptr<PDBFactory> pdb_factory);
   std::shared_ptr<ModularZeroOnePDBs> compound_local_search(PatternCollectionContainer old_PC,std::shared_ptr<PatternCollectionInformation> current_result,std::shared_ptr<PDBFactory> pdb_factory);
 };
 

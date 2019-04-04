@@ -130,7 +130,6 @@ inline std::ostream& operator << (std::ostream& os, const std::vector<T>& v)
    }
    //Pattern temp2={0,3,6,7,28,32,33,37,38,42,43,47,58,60,63,64,65,66,67,68,69,70,71,72,73,74,76,77,78,79};
    //old_pattern=temp2;
-   vector<int> candidates;
    vector<int> candidates_backup;
    set<int> input_pattern(old_pattern.begin(), old_pattern.end());
    TaskProxy task_proxy(*(g_root_task()));
@@ -180,9 +179,11 @@ inline std::ostream& operator << (std::ostream& os, const std::vector<T>& v)
     
     //SET PRECONSTRUCTION TIME AS A FUNCTION OF NUMER OF VARIABLES AND AIALABLE TIME
     //We set the minimum time to be 100 ms
-    double pdb_preconst_time=1000.0*(double(local_search_timer->get_remaining_time())/double(candidates.size()))*0.6666;
+    //Note: we need to reduce number of candidates if any of them are re-visited and fully constructed
+    int num_unterminated_candidates=calculate_unterminated_candidates_size(old_pattern,pdb_factory);
+    double pdb_preconst_time=1000.0*(double(local_search_timer->get_remaining_time())/double(num_unterminated_candidates)*0.6666);
     pdb_preconst_time=max(100,int(pdb_preconst_time));
-    cout<<"local_search_timer:"<<local_search_timer->get_remaining_time()<<",pdb_preconst_time:"<<pdb_preconst_time<<",num_candidates:"<<candidates.size()<<endl;
+    cout<<"local_search_timer:"<<local_search_timer->get_remaining_time()<<",pdb_preconst_time:"<<pdb_preconst_time<<",num_unterm_candidates:"<<num_unterminated_candidates<<",candidates:"<<candidates.size()<<endl;
     pdb_factory->set_new_max_time(int(pdb_preconst_time));
 
     //Now create candidate patterns to evaluate which vars to add
@@ -500,6 +501,24 @@ inline std::ostream& operator << (std::ostream& os, const std::vector<T>& v)
     if(verbose)
       cout<<"do_local_search, posible_improvement:"<<impossible_to_improve<<endl;
     return impossible_to_improve;
+  }
+  int PatternCollectionLocalSearchGamerStyle::calculate_unterminated_candidates_size(Pattern old_pattern,  shared_ptr<PDBFactory> pdb_factory){//with regards to adding one variable
+    int num_unterm_candidates=0;
+    TaskProxy task_proxy(*(g_root_task()));
+    for(auto var : candidates){
+      Pattern candidate_pattern=old_pattern;
+      candidate_pattern.push_back(var);
+      if(pdb_factory->is_pdb_stored(candidate_pattern, operator_costs)){
+	shared_ptr<PatternDatabaseInterface> candidate_pdb = pdb_factory->retrieve_pdb(task_proxy, candidate_pattern, operator_costs);
+	if(!candidate_pdb->is_finished()){//Only add to count if unterminated or not started
+	  num_unterm_candidates++;
+	}
+      }
+      else{
+	num_unterm_candidates++;
+      }
+    }
+   return num_unterm_candidates;
   }
 
   static shared_ptr<PatternCollectionLocalSearch>_parse(options::OptionParser &parser) {
