@@ -104,8 +104,8 @@ namespace pdbs3 {
       double ratio=double(min_max_time)/double(precomputation_time_ms);
       precomputation_time_ms=min_max_time;
       precomputation_step_time_ms=double(precomputation_step_time_ms)*ratio;
-      precomputation_nodes=double(precomputation_nodes)*ratio;
-      cout<<"New limits, precomputation_time_ms:,"<<precomputation_time_ms<<",precomputation_step_time_ms:,"<<precomputation_step_time_ms<<",precomputation nodes:,"<<precomputation_nodes<<endl;
+      //precomputation_nodes=double(precomputation_nodes)*ratio;
+      cout<<"ratio:"<<ratio<<",New limits, precomputation_time_ms:,"<<precomputation_time_ms<<",precomputation_step_time_ms:,"<<precomputation_step_time_ms<<",precomputation nodes:,"<<precomputation_nodes<<endl;
     }
 
 
