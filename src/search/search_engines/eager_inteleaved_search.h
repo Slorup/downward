@@ -22,6 +22,9 @@ class EagerSearchInterleaved : public SearchEngine {
     const bool reopen_closed_nodes;
     const bool use_multi_path_dependence;
 
+    long re_eval_nodes=0;
+    long re_insert_nodes=0;
+
     std::shared_ptr<StateOpenList> open_list;
     ScalarEvaluator *f_evaluator;
 

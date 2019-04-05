@@ -102,6 +102,8 @@ void EagerSearchInterleaved::print_statistics() const {
     statistics.print_detailed_statistics();
     search_space.print_statistics();
     pruning_method->print_statistics();
+    cout<<"re_eval_nodes:"<<re_eval_nodes<<" state(s)."<<endl;
+    cout<<"re_insert_nodes:"<<re_insert_nodes<<" state(s)."<<endl;
 }
 
 SearchStatus EagerSearchInterleaved::step() {
@@ -168,6 +170,8 @@ SearchStatus EagerSearchInterleaved::step() {
       return IN_PROGRESS;
     }
     int new_val=eval_context.get_result(heuristics[0]).get_h_value();
+    re_eval_nodes++;
+
 	
     //Note: h values are not stored in the open_list so nothing has 
     //changed regarding search_space class itself, no reopen
@@ -179,6 +183,7 @@ SearchStatus EagerSearchInterleaved::step() {
       //int new_f_val2 = eval_context.get_heuristic_value(f_evaluator);
       //cout<<"new_val:"<<new_val<<",new_val2:,"<<new_val2<<",old_val:,"<<old_val<<",g:"<<node.get_g()<<",REINSETING NODE, new f_value:"<<new_val+node.get_g()<<",new_f_val2:"<<new_f_val2<<",old_f_value:"<<statistics.get_lastjump_f_value()<<endl;
       open_list->insert(eval_context, s.get_id());
+      re_insert_nodes++;
       return IN_PROGRESS;
     }
     else if(new_val+node.get_g()<last_key_removed[0]){
