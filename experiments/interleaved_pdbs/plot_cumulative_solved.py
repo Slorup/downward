@@ -42,7 +42,7 @@ class CumulativePgfPlots(PgfPlots):
 
     @classmethod
     def _get_axis_options(cls, report):
-        return {'xmode' : 'log', 'legend pos':'outer north east', 'ymin' : '0', 'ymax' : str(report.max_coverage)}
+        return {'xmode' : 'log', 'legend pos':'outer north east', 'xmin' : 1,  'ymin' : '0', 'ymax' : str(report.max_coverage)}
 
 
 
