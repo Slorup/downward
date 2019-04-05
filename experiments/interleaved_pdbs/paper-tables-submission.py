@@ -23,6 +23,7 @@ from common_setup import IssueExperiment,SANTI_OPTIMAL_SUITE
 from domain_comparison import DomainComparisonReport
 #from oracle import OracleReport
 from plot_cumulative_solved import PlotCumulativeReport
+from relative_scatter import RelativeScatterPlotReport
 
 exp = FastDownwardExperiment()
 
@@ -144,14 +145,31 @@ def make_scatter_plot(algo1, algo2, attribute):
     name = "-".join([attribute, algo1, 'vs', algo2])
     print "Make scatter plots for", name
 
-    report = ScatterPlotReport(
+    report = RelativeScatterPlotReport(
         filter_algorithm=[algo1, algo2],
+        filter_domain=SANTI_OPTIMAL_SUITE,
         attributes=[attribute],
         format='tex',
     )
     report(
         exp.eval_dir,
         os.path.join(scatter_dir, name))
+
+def make_scatter_plot(algo1, algo2, attribute, attribute2):
+    name = "-".join([attribute, algo1, 'vs', algo2])
+    print "Make scatter plots for", name
+
+    report = RelativeScatterPlotReport(
+        filter_algorithm=[algo1, algo2],
+        filter_domain=SANTI_OPTIMAL_SUITE,
+        attributes=[attribute],
+        secondary_attribute=attribute2
+        format='tex',
+    )
+    report(
+        exp.eval_dir,
+        os.path.join(scatter_dir, name))
+
 
 def make_scatter_plots():
     for algo_pair in tex_comparison_algo_pairs:

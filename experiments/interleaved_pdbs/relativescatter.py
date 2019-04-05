@@ -56,12 +56,14 @@ class RelativeScatterPlotReport(ScatterPlotReport):
     of algorithm 2 on the y-axis.
     """
 
-    def __init__(self, show_missing=True, get_category=None, **kwargs):
+    def __init__(self, show_missing=True, get_category=None, secondary_attribute=None, **kwargs):
         ScatterPlotReport.__init__(self, show_missing, get_category, **kwargs)
         if self.output_format == 'tex':
             raise "not supported"
         else:
             self.writer = RelativeScatterMatplotlib
+
+        self.secondary_attribute = secondary_attribute
 
     def _fill_categories(self, runs):
         # We discard the *runs* parameter.
@@ -77,7 +79,7 @@ class RelativeScatterPlotReport(ScatterPlotReport):
             assert (run1['algorithm'] == self.algorithms[0] and
                     run2['algorithm'] == self.algorithms[1])
             val1 = run1.get(self.attribute)
-            val2 = run2.get(self.attribute)
+            val2 = run2.get(self.secondary_attribute if self.secondary_attribute else attribute)
             if val1 is None or val2 is None:
                 continue
             category = self.get_category(run1, run2)
