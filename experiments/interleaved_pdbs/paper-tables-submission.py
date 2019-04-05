@@ -61,7 +61,12 @@ exp.add_fetcher('/mnt/data_server/franco/lab-data/interleaved-search/lemmy-exper
 ],merge=True)
 
 
+re_eval_nodes = Attribute('re_eval_nodes', absolute=False, min_wins=True, functions=[geometric_mean])
+re_insert_nodes = Attribute('re_insert_nodes', absolute=False, min_wins=True, functions=[geometric_mean])
+
 attributes = list(IssueExperiment.DEFAULT_TABLE_ATTRIBUTES)
+#attributes.extend(extra_attributes)
+
 
 all_configs = [
         'D',
@@ -74,6 +79,8 @@ all_configs = [
         'IOT-BP',
 ]
 
+
+
 ## HTML reports
 
 exp.add_report(AbsoluteReport(attributes=['coverage'],filter_algorithm=all_configs))
@@ -83,7 +90,7 @@ exp.add_report(AbsoluteReport(attributes=['coverage'],filter_algorithm=all_confi
 algo_to_print = {
     'D': 'G',
     'R': 'R',
-    'RT': 'R',
+    'RT': '900',
     'ID-BP': 'IG',
     'IR-BP': 'IR',
     'IO-BP': 'IO',
