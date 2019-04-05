@@ -42,7 +42,7 @@ class CumulativePgfPlots(PgfPlots):
 
     @classmethod
     def _get_axis_options(cls, report):
-        return {'xmode' : 'log', 'legend pos':'outer north east', 'xmin' : 1,  'ymin' : '0', 'ymax' : str(report.max_coverage)}
+        return {'xmode' : 'log', 'legend pos':'outer north east', 'xmin' : 1,  'ymin' : '0', 'ymax' : str(report.max_coverage), 'cycle list name' : 'color list'}
 
 
 
@@ -50,7 +50,7 @@ class PlotCumulativeReport(PlotReport):
     """
     Generate a cumulative coverage plot for a specific attribute.
     """
-    def __init__(self, show_missing=True, get_category=None, **kwargs):
+    def __init__(self, show_missing=True, get_category=None, algo_to_print={}, **kwargs):
         """
         See :class:`.PlotReport` for inherited arguments.
 
@@ -60,6 +60,7 @@ class PlotCumulativeReport(PlotReport):
         add a coordinate if *show_missing* is True.
 
         """
+        self.algo_to_print = algo_to_print
         # If the size has not been set explicitly, make it a square.
         matplotlib_options = kwargs.get('matplotlib_options', {})
         matplotlib_options.setdefault('figure.figsize', [8, 8])
@@ -112,9 +113,11 @@ class PlotCumulativeReport(PlotReport):
 
         self.max_coverage = 0
         for a in algorithms:
+            if a not in self.algo_to_print:
+                self.algo_to_print[a] = a
             self.max_coverage = max(self.max_coverage, values[a][xvalues[a][-1]])
             for x in xvalues[a]:
-                categories[a].append((x, values[a][x]))
+                categories[self.algo_to_print[a]].append((x, values[a][x]))
 
         return categories
 
