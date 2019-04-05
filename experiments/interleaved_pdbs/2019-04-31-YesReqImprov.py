@@ -145,34 +145,38 @@ def main(revisions=None):
     ],merge=True)
 
 #ID    
-    exp.add_fetcher('/mnt/data_server/franco/lab-data/interleaved-search/lemmy-experiments/Interleaved-GamerLocal-AvgDist-DynLims-YesReqImprov', filter_algorithm=[
-        'ID',
+    exp.add_fetcher('/mnt/data_server/franco/lab-data/interleaved-search/lemmy-experiments/ID-BP', filter_algorithm=[
+        'ID-BP',
     ],merge=True)
 #IR    
-    exp.add_fetcher('/mnt/data_server/franco/lab-data/interleaved-search/lemmy-experiments/Interleaved-LocalGamer-RandWalk-AvgH-DynLims-YesReqImprov', filter_algorithm=[
-        'IR',
+    exp.add_fetcher('/mnt/data_server/franco/lab-data/interleaved-search/lemmy-experiments/IR-BP', filter_algorithm=[
+        'IR-BP',
     ],merge=True)
 #IO    
-    exp.add_fetcher('/mnt/data_server/franco/lab-data/interleaved-search/lemmy-experiments/Interleaved-LocalGamer-OpenListNoRandWalk-DynLims-YesReqImprov', filter_algorithm=[
-        'IO',
+    exp.add_fetcher('/mnt/data_server/franco/lab-data/interleaved-search/lemmy-experiments/IO-BP', filter_algorithm=[
+        'IO-BP',
     ],merge=True)
 #IOR
-    exp.add_fetcher('/mnt/data_server/franco/lab-data/interleaved-search/lemmy-experiments/Interleaved-GamerLocal-OpenListWithRandomWalk-DynLims-YesReqImprov-NoTieBreak', filter_algorithm=[
-        'IOR',
+#    exp.add_fetcher('/mnt/data_server/franco/lab-data/interleaved-search/lemmy-experiments/Interleaved-GamerLocal-OpenListWithRandomWalk-DynLims-YesReqImprov-NoTieBreak', filter_algorithm=[
+#        'IOR',
+#    ],merge=True)
+#IRT  -BP  
+    exp.add_fetcher('/mnt/data_server/franco/lab-data/interleaved-search/lemmy-experiments/IRT-BP/', filter_algorithm=[
+        'IRT-BP',
     ],merge=True)
 #IRT    
-    exp.add_fetcher('/mnt/data_server/franco/lab-data/interleaved-search/lemmy-experiments/Interleaved-GamerLocal-RandWalk-DynLims-YesReqImprov-YesTieBreak', filter_algorithm=[
+    exp.add_fetcher('/mnt/data_server/franco/lab-data/interleaved-search/lemmy-experiments/IRT/', filter_algorithm=[
         'IRT',
     ],merge=True)
 #IOT
-    exp.add_fetcher('/mnt/data_server/franco/lab-data/interleaved-search/lemmy-experiments/Interleaved-GamerLocal-OpenListNoRandomWalkRandomWalk-DynLims-YesReqImprov-YesTieBreak/', filter_algorithm=[
-        'IOT',
+    exp.add_fetcher('/mnt/data_server/franco/lab-data/interleaved-search/lemmy-experiments/IOT-BP/', filter_algorithm=[
+        'IOT-BP',
     ],merge=True)
 
 #IORT
-    exp.add_fetcher('/mnt/data_server/franco/lab-data/interleaved-search/lemmy-experiments/Interleaved-GamerLocal-OpenListWithRandomWalk-DynLims-YesReqImprov-YesTieBreak', filter_algorithm=[
-        'IORT',
-    ],merge=True)
+#    exp.add_fetcher('/mnt/data_server/franco/lab-data/interleaved-search/lemmy-experiments/Interleaved-GamerLocal-OpenListWithRandomWalk-DynLims-YesReqImprov-YesTieBreak', filter_algorithm=[
+#        'IORT',
+#    ],merge=True)
     
     exp.add_fetcher('/mnt/data_server/franco/lab-data/interleaved-search/lemmy-experiments/LmCut', filter_algorithm=[
         'LmCut',
@@ -189,6 +193,30 @@ def main(revisions=None):
     exp.add_fetcher('/mnt/data_server/franco/lab-data/interleaved-search/lemmy-experiments/RT-600secss', filter_algorithm=[
         'RT-600secs',
     ],merge=True)
+    exp.add_fetcher('/mnt/data_server/franco/lab-data/interleaved-search/lemmy-experiments/RT-900secss', filter_algorithm=[
+        'RT-900secs',
+    ],merge=True)
+    exp.add_fetcher('/mnt/data_server/franco/lab-data/interleaved-search/lemmy-experiments/RT-1200secss', filter_algorithm=[
+        'RT-1200secs',
+    ],merge=True)
+    #IOT
+    exp.add_fetcher('/mnt/data_server/franco/lab-data/interleaved-search/lemmy-experiments/IOT', filter_algorithm=[
+        'IOT',
+    ],merge=True)
+    #IOT-BP
+    #exp.add_fetcher('/mnt/data_server/franco/lab-data/interleaved-search/lemmy-experiments/IOT-BP', filter_algorithm=[
+    #    'IOT-BP',
+    #],merge=True)
+    exp.add_fetcher('/mnt/data_server/franco/lab-data/interleaved-search/ipc-2018-seq-opt/Complementary2', filter_algorithm=[
+        'Complementary2',
+    ],merge=True)
+    exp.add_fetcher('/mnt/data_server/franco/lab-data/interleaved-search/lemmy-experiments/Scorpion', filter_algorithm=[
+        'Scorpion',
+    ],merge=True)
+    exp.add_fetcher('/mnt/data_server/franco/lab-data/interleaved-search/h2-preprocessor/Cartesian-Online', filter_algorithm=[
+        'Cartesian-Online',
+    ],merge=True)
+
 
     outfile1 = os.path.join(exp.eval_dir, 'Gamer-RequireImprov.html')
     
@@ -202,18 +230,20 @@ def main(revisions=None):
          'D',
          'R',
          'RT',
-         'ID',
-         'IR',
-         'IO',
-         'IOR',
-         'IRT',
-         'IOT',
-         'IORT',
+         'ID-BP',
+         'IR-BP',
+         'IO-BP',
+#         'IOR',
+         'IRT-BP',
+         'IOT-BP',
+#         'IORT',
          'LmCut'
          'RT-10sec',
          'RT-100secs',
          'RT-300secs',
          'RT-600secs',
+         'RT-1200secs',
+         'RT-1500secs',
          ],
         format='html',
         ),
@@ -221,12 +251,11 @@ def main(revisions=None):
     )
 
     outfile = os.path.join(exp.eval_dir, get_experiment_name() + '-vs-regular-GamerLocal.html')
+    outfile = os.path.join(exp.eval_dir, 'IOT-SS-vs-IOT-BP.html')
     exp.add_report(
         ComparativeReport(
             algorithm_pairs=[
-                ('CGamer','Interleaved-LocalGamer-RandWalk-AvgH-DynLims-YesReqImprov'),
-                ('CGamer','Interleaved-LocalGamer-RandWalk-AvgH-DynLims-YesReqImprov'),
-                ('CGamer','Interleaved-LocalGamer-RandWalk-AvgH-DynLims-NoReqImprov'),
+                ('IOT-SS','IOT-BP'),
                 #('LocalGamer-3GB', 'Interleaved-LocalGamer-3GB-AvgH'),
                 #('LocalGamer-3GB', 'Interleaved-LocalGamer-3GB-OpenList-AvgH'),
                 #('LocalGamer-3GB-AvgH', 'Interleaved-LocalGamer-3GB-OpenList-AvgH'),
@@ -246,18 +275,27 @@ def main(revisions=None):
          'D',
          'R',
          'RT',
-         'ID',
-         'IR',
-         'IO',
-         'IOR',
+         'ID-BP',
+         'IR-BP',
+         'IO-BP',
+         'IRT-BP',
          'IRT',
+         'IOT-BP',
          'IOT',
-         'IORT',
+         'Scorpion',
+         'Complementary2',
+         'Cartesian-Online',
          'LmCut',
-         'RT-10sec',
-         'RT-100secs',
-         'RT-300secs',
-         'RT-600secs',
+#         'IOT-SS',
+##         'IORT',
+###         'IOR',
+#         'IOT',
+#         'RT-10sec',
+#         'RT-100secs',
+#         'RT-300secs',
+#         'RT-600secs',
+#         'RT-1200secs',
+#         'RT-1500secs',
          ],
         filter_domain=SANTI_OPTIMAL_SUITE,
         format='tex',

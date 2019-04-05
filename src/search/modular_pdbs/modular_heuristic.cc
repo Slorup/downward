@@ -380,7 +380,7 @@ ModularHeuristic::ModularHeuristic(const Options &opts)
       //bool terminate_or_not=true;
       generator_type=true;
 
-      cout<<"FINDING IMPROVEMENTES"<<flush<<endl;
+      //cout<<"FINDING IMPROVEMENTES"<<flush<<endl;
       /*if(!pdb_factory->is_solved()){
 	bool improvement_found=find_improvements(modular_time_limit);
 	cout<<"time:,"<<utils::g_timer()<<",improvement_found:"<<improvement_found<<endl;
