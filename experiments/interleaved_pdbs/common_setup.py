@@ -80,7 +80,7 @@ class QualityFilters(object):
 
 SANTI_OPTIMAL_SUITE = ['agricola','data_network',
     'organic_synthesis','organic_synthesis_split','petri_net_alignment',
-    'settlers','snake','spider','termes', 'airport', 
+    'snake','spider','termes', 'airport', 
     'barman-opt11-strips', 'barman-opt14-strips', 'blocks',
     'childsnack-opt14-strips', 'depot', 'driverlog',
     'elevators-opt08-strips', 'elevators-opt11-strips',

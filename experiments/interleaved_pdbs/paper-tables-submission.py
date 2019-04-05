@@ -18,7 +18,7 @@ from lab.reports import Attribute, geometric_mean
 
 from lab import tools
 
-from common_setup import IssueExperiment
+from common_setup import IssueExperiment,SANTI_OPTIMAL_SUITE
 
 from domain_comparison import DomainComparisonReport
 #from oracle import OracleReport
@@ -43,20 +43,20 @@ exp.add_fetcher('/mnt/data_server/franco/lab-data/interleaved-search/lemmy-exper
 exp.add_fetcher('/mnt/data_server/franco/lab-data/interleaved-search/lemmy-experiments/ID-BP', filter_algorithm=[
     'ID-BP',
 ],merge=True)
-#IR    
-exp.add_fetcher('/mnt/data_server/franco/lab-data/interleaved-search/lemmy-experiments/IR-BP', filter_algorithm=[
-    'IR-BP',
-],merge=True)
-#IO    
-exp.add_fetcher('/mnt/data_server/franco/lab-data/interleaved-search/lemmy-experiments/IO-BP', filter_algorithm=[
-    'IO-BP',
-],merge=True)
+##IR    
+#exp.add_fetcher('/mnt/data_server/franco/lab-data/interleaved-search/lemmy-experiments/IR-BP', filter_algorithm=[
+#    'IR-BP',
+#],merge=True)
+##IO    
+#exp.add_fetcher('/mnt/data_server/franco/lab-data/interleaved-search/lemmy-experiments/IO-BP', filter_algorithm=[
+#    'IO-BP',
+#],merge=True)
 #IRT-BP  
 exp.add_fetcher('/mnt/data_server/franco/lab-data/interleaved-search/lemmy-experiments/IRT-BP/', filter_algorithm=[
     'IRT-BP',
 ],merge=True)
 #IOT
-exp.add_fetcher('/mnt/data_server/franco/lab-data/interleaved-search/lemmy-experiments/IOT-BP/', filter_algorithm=[
+exp.add_fetcher('/mnt/data_server/franco/lab-data/interleaved-search/lemmy-experiments/IOT-BP-BeforePrintingRe_Evaluated/', filter_algorithm=[
     'IOT-BP',
 ],merge=True)
 
@@ -65,11 +65,11 @@ attributes = list(IssueExperiment.DEFAULT_TABLE_ATTRIBUTES)
 
 all_configs = [
         'D',
-        'R',
+#        'R',
         'RT',
         'ID-BP',
-        'IR-BP',
-        'IO-BP',
+#        'IR-BP',
+#        'IO-BP',
         'IRT-BP',
         'IOT-BP',
 ]
@@ -81,24 +81,31 @@ exp.add_report(AbsoluteReport(attributes=['coverage'],filter_algorithm=all_confi
 ## Latex reports
 
 algo_to_print = {
-    'D': 'D',
+    'D': 'G',
     'R': 'R',
-    'RT': 'RT',
-    'ID-BP': 'ID',
+    'RT': 'R',
+    'ID-BP': 'IG',
     'IR-BP': 'IR',
     'IO-BP': 'IO',
-    'IRT-BP': 'IRT',
-    'IOT-BP': 'IOT',
+    'IRT-BP': 'IR',
+    'IOT-BP': 'IO',
     'LmCut': 'LC',
     'Complementary2': 'C2',
     'Scorpion': 'Sc',
     'Cartesian-Online': 'CO',
+    'RT-10sec' : '10s',
+    'RT-100secs' : '100s',
+    'RT-300secs': '300s',
+    'RT-600secs' : '600s',
+    'RT-1200secs': '1200s',
+    'RT-1500secs': '1500s',
 }
 
 exp.add_report(
     DomainComparisonReport(
         filter_algorithm=all_configs,
         algo_to_print=algo_to_print,
+        filter_domain=SANTI_OPTIMAL_SUITE,
         format='tex',
         attributes=['coverage'],
     ),
@@ -109,28 +116,17 @@ exp.add_report(
 # plots
 
 comparison_algo_pairs = [
-    ('astar-hmax', 'astar-hmax-transform-atomic'),
-    ('astar-hmax', 'astar-hmax-transform-atomic-bisim-labelreduction'),
-    ('astar-hmax', 'astar-hmax-transform-full-bisim-labelreduction-dfp1000-t900'),
-    ('astar-hmax-transform-atomic', 'astar-hmax-transform-atomic-bisim-labelreduction'),
-    ('astar-hmax-transform-atomic', 'astar-hmax-transform-full-bisim-labelreduction-dfp1000-t900'),
-
-    ('astar-masdfpbisim50k', 'astar-masdfpbisim50k-transform-atomic'),
-    ('astar-masdfpbisim50k', 'astar-masdfpbisim50k-transform-atomic-bisim-labelreduction'),
-    ('astar-masdfpbisim50k', 'astar-masdfpbisim50k-transform-full-bisim-labelreduction-dfp1000-t900'),
-    ('astar-masdfpbisim50k-transform-atomic', 'astar-masdfpbisim50k-transform-atomic-bisim-labelreduction'),
-    ('astar-masdfpbisim50k-transform-atomic', 'astar-masdfpbisim50k-transform-full-bisim-labelreduction-dfp1000-t900'),
+    ('RT', 'IRT'),
+    ('IRT', 'IOT'),
 ]
 
 tex_comparison_algo_pairs = [
-    ('astar-hmax-transform-atomic', 'astar-hmax-transform-atomic-bisim-labelreduction'),
-    ('astar-hmax-transform-atomic-bisim-labelreduction', 'astar-hmax-transform-full-bisim-labelreduction-dfp1000-t900'),
-    ('astar-masdfpbisim50k-transform-atomic', 'astar-masdfpbisim50k-transform-atomic-bisim-labelreduction'),
-    ('astar-masdfpbisim50k-transform-atomic-bisim-labelreduction', 'astar-masdfpbisim50k-transform-full-bisim-labelreduction-dfp1000-t900'),
+    ('RT', 'IRT-BP'),
+    ('IRT-BP', 'IOT-BP'),
 ]
 
 comparison_attributes = [
-#    'expansions_until_last_jump',
+    'expansions_until_last_jump',
 #    'search_time',
     'total_time',
 ]
@@ -163,8 +159,9 @@ def make_cumulative_plot(attribute, alg_list_name,alg_list):
     
     report = PlotCumulativeReport(
         filter_algorithm=alg_list,
-#        algo_to_print=algo_to_print,
+        algo_to_print=algo_to_print,
         attributes=[attribute],
+        filter_domain=SANTI_OPTIMAL_SUITE,
         format='tex',
     )
     report(
@@ -207,6 +204,7 @@ exp.add_report(
     DomainComparisonReport(
         filter_algorithm=soa_configs,
         algo_to_print=algo_to_print,
+        filter_domain=SANTI_OPTIMAL_SUITE,
         format='tex',
         attributes=['coverage'],
     ),
@@ -221,5 +219,51 @@ def make_cumulative_plots_SOA():
     make_cumulative_plot("total_time", "SOA", ["IOT-BP","LmCut","Complementary2","Scorpion","Cartesian-Online"])
 
 exp.add_step("make-cumulative-plots_SOA", make_cumulative_plots_SOA)
+
+######################################################################
+#Fixed times
+
+exp.add_fetcher('/mnt/data_server/franco/lab-data/interleaved-search/lemmy-experiments/RT-10secs', filter_algorithm=[
+'RT-10sec',
+],merge=True)
+exp.add_fetcher('/mnt/data_server/franco/lab-data/interleaved-search/lemmy-experiments/RT-100secss', filter_algorithm=[
+    'RT-100secs',
+],merge=True)
+exp.add_fetcher('/mnt/data_server/franco/lab-data/interleaved-search/lemmy-experiments/RT-300secss', filter_algorithm=[
+    'RT-300secs',
+],merge=True)
+exp.add_fetcher('/mnt/data_server/franco/lab-data/interleaved-search/lemmy-experiments/RT-600secss', filter_algorithm=[
+    'RT-600secs',
+],merge=True)
+exp.add_fetcher('/mnt/data_server/franco/lab-data/interleaved-search/lemmy-experiments/RT-1200secss', filter_algorithm=[
+    'RT-1200secs',
+],merge=True)
+
+timing_configs = [
+        'RT-10sec',
+        'RT-100secs',
+        'RT-300secs',
+        'RT-600secs',
+        'RT',
+        'RT-1200secs',
+        'IOT-BP',
+        ]
+
+exp.add_report(
+    DomainComparisonReport(
+        filter_algorithm=timing_configs,
+        algo_to_print=algo_to_print,
+        filter_domain=SANTI_OPTIMAL_SUITE,
+        format='tex',
+        attributes=['coverage'],
+    ),
+    outfile=os.path.join(exp.eval_dir, 'domain-comparison-timings.tex'),
+    )
+
+def make_cumulative_plots_timings():
+    make_cumulative_plot("total_time", "Timings", 
+        ["IOT-BP", "RT-10sec", "RT-100secs", "RT-300secs", "RT-600secs", "RT", "RT-1200secs",]
+        )
+exp.add_step("make-cumulative-plots_timings", make_cumulative_plots_timings)
 
 exp.run_steps()
