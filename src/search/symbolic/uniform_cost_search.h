@@ -146,6 +146,10 @@ namespace symbolic {
 	void filterMutex (Bucket & bucket) {
 	    mgr->filterMutex(bucket, fw, initialization());
 	}
+
+        
+        virtual BDD get_seen_states(bool fw_dir) const override ;
+
     private: 
 
 	void violated(TruncatedReason reason , double time, 

@@ -56,6 +56,9 @@ namespace symbolic_search {
     public:
 	SymbolicUniformCostSearch(const options::Options &opts, bool _fw);
 	virtual ~SymbolicUniformCostSearch() = default;
+
+        virtual  void handle_unsolvable_problem() override;
+         
     };
 
     

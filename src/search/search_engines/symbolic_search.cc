@@ -56,7 +56,13 @@ namespace symbolic_search {
 	}
 	
 	search.reset(uni_search.release());
+    }
 
+
+    void SymbolicUniformCostSearch::handle_unsolvable_problem() {
+        BDD seen = search->get_seen_states(true);
+        
+        cout << "States reached: " << vars->numStates(seen) << endl;
     }
 
 
@@ -67,7 +73,6 @@ namespace symbolic_search {
 	if(getLowerBound() < getUpperBound()){
 	    return IN_PROGRESS;
 	}else if (found_solution()) {
-	    
 	    return SOLVED;
 	}else{ 
 	    return FAILED;

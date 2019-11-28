@@ -63,6 +63,7 @@ public:
                          p.getAllotedNodes(nextStepNodesResult()));
     }
 
+
     virtual bool stepImage(int maxTime, int maxNodes) = 0;
   
     virtual int getF() const = 0;
@@ -75,6 +76,9 @@ public:
     virtual void statistics() const = 0;
 
     virtual bool isSearchableWithNodes(int maxNodes) const = 0;
+
+    virtual BDD get_seen_states(bool fw_dir) const = 0;
+        
 
 };
 }

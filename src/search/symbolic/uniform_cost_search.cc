@@ -95,6 +95,15 @@ namespace symbolic {
 		closed->setHNotClosed(numeric_limits<int>::max());
 		closed->setFNotClosed(numeric_limits<int>::max());
 		if(isOriginal()) engine->setLowerBound(getF());
+
+                cout << "Search finished" << endl;
+
+                // cout << ">> Step: " << *mgr << (fw ? " fw " : " bw ") << ", g=" << frontier.g()
+                //      << " frontierNodes: " << frontier.nodes() << " [" << frontier.buckets() << "]" 
+                //      << " total time: " << g_timer 
+                //      << " total nodes: " << mgr->totalNodes() 
+                //      << " total memory: " << mgr->totalMemory() << endl;
+
 		return; //Search finished
 	    }
 
@@ -153,7 +162,7 @@ namespace symbolic {
 		 << " total time: " << g_timer 
 		 << " total nodes: " << mgr->totalNodes() 
 		 << " total memory: " << mgr->totalMemory() << endl;
-    }
+        }
 
 #ifdef DEBUG_GST
 	gst_plan.checkUcs(this );
@@ -375,4 +384,10 @@ namespace symbolic {
     	    std::reverse(path.begin(), path.end());
     	} 
     }
+
+
+    BDD UniformCostSearch::get_seen_states(bool ) const {
+        return closed->getClosed();
+    }
+
 }

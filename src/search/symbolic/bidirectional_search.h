@@ -57,6 +57,14 @@ public:
         return bw.get();
     }
 
+    virtual BDD get_seen_states(bool fw_dir) const override {
+        if (fw_dir){
+            return fw->get_seen_states(fw_dir);
+        } else {
+            return bw->get_seen_states(fw_dir);
+        }
+    }
+
     friend std::ostream &operator<<(std::ostream &os, const BidirectionalSearch &other);
 };
 }
