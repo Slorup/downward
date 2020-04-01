@@ -1,27 +1,13 @@
 Bootstrap: docker
 From: ubuntu:xenial
 
-%setup
-     ## The "%setup"-part of this script is called to bootstrap an empty
-     ## container. It copies the source files from the branch of your
-     ## repository where this file is located into the container to the
-     ## directory "/planner". Do not change this part unless you know
-     ## what you are doing and you are certain that you have to do so.
-
-    REPO_ROOT=`dirname $SINGULARITY_BUILDDEF`
-    cp -r $REPO_ROOT/ $SINGULARITY_ROOTFS/planner
-
 %post
-
-    ## The "%post"-part of this script is called after the container has
-    ## been created with the "%setup"-part above and runs "inside the
-    ## container". Most importantly, it is used to install dependencies
-    ## and build the planner. Add all commands that have to be executed
-    ## once before the planner runs in this part of the script.
-
     ## Install all necessary dependencies.
     apt-get update
-    apt-get -y install cmake g++ make python autotools-dev automake gcc g++-multilib
+    apt-get -y install cmake g++ make python autotools-dev automake gcc g++-multilib ca-certificates git
+    rm -rf /var/lib/apt/lists/*
+
+    git clone -b ipc-2018-seq-opt https://bitbucket.org/ipc2018-classical/team32.git /planner
 
     ## Build your planner
     cd /planner
@@ -48,7 +34,7 @@ From: ubuntu:xenial
 %labels
 Name        Complementary2
 Description PDB heuristic which learns in situ how to adapt its pattern selection parameteres to maximize chance of finding "good" patterns as seach progresses and also complements any input heuristic.  This is an implementation of the complementary heuristic with an input perimeter PDB and symbolic PDBs, as described in the IJCAI paper: https://www.ijcai.org/proceedings/2017/601
-Authors Santiago Franco<santiago.franco@gmail.com>, Levi H S Lelis<levilelis@gmail.com> and Mike W Barley<m.barley@auckland.ac.nz>     
+Authors Santiago Franco<santiago.franco@gmail.com>, Levi H S Lelis<levilelis@gmail.com> and Mike W Barley<m.barley@auckland.ac.nz>
 SupportsDerivedPredicates no
 SupportsQuantifiedPreconditions no
 SupportsQuantifiedEffects yes
