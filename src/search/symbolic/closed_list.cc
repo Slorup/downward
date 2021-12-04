@@ -51,7 +51,7 @@ namespace symbolic {
 
 	closedTotal = mgr->shrinkForall(other.closedTotal);
 	closed[0] = closedTotal;
-	newHValue(0);	
+	newHValue(0);
     }
 
     void ClosedList::newHValue(int h_value) {
@@ -146,7 +146,7 @@ namespace symbolic {
 			BDD intersection = succ * zeroCostClosed.at(h)[newSteps0];
 			if (!intersection.IsZero()) {
 			    steps0 = newSteps0;
-			    cut = succ;
+			    cut = intersection;
 			    //DEBUG_MSG(cout << "Adding " << (*(tr.getOps().begin()))->get_name() << endl;);
 			    path.push_back(*(tr.getOps().begin()));
 			    foundZeroCost = true;
@@ -368,14 +368,14 @@ namespace symbolic {
 
     const std::set<int> &ClosedList::getHValues() {
 	assert(h_values.count(hNotClosed));
-    
+
 	return h_values;
     }
 
 
     double ClosedList::average_hvalue() const {
 	double averageHeuristic = 0;
-	double heuristicSize = 0; 
+	double heuristicSize = 0;
 	for (const auto & item : closed) {
 	    double currentSize = mgr->getVars()->numStates(item.second);
 	    DEBUG_MSG(cout << item.first << " " << currentSize << endl;);
@@ -385,10 +385,10 @@ namespace symbolic {
 	double notClosedSize = mgr->getVars()->numStates(notClosed());
 	heuristicSize += notClosedSize;
 	int maxH = (closed.empty() ? 0 : closed.rbegin()->first);
-    
+
 	DEBUG_MSG(cout << maxH << " " << notClosedSize << endl;
 		  cout << "Max size: " << heuristicSize << endl << endl;);
-        
+
 	averageHeuristic += notClosedSize * maxH;
 	return averageHeuristic / heuristicSize;
     }

@@ -415,7 +415,7 @@ static ParseTree generate_parse_tree(string config) {
     ParseTree::iterator top = tr.begin();
     ParseTree::sibling_iterator pseudoroot =
         tr.insert(top, ParseNode("pseudoroot", ""));
-    ParseTree::sibling_iterator cur_node = pseudoroot;
+    auto cur_node = pseudoroot;
     string buffer(""), key("");
     char next = ' ';
     for (size_t i = 0; i < config.size(); ++i) {
