@@ -16,7 +16,7 @@ public:
 
     BidirectionalSearch(SymController * eng,
 			const SymParamsSearch &params, std::unique_ptr<UnidirectionalSearch> fw,
-			std::unique_ptr<UnidirectionalSearch> bw); 
+			std::unique_ptr<UnidirectionalSearch> bw);
 
 
     virtual bool finished() const override;
@@ -28,7 +28,10 @@ public:
 
     virtual int getF() const override {
 	return std::max<int>(std::max<int>(fw->getF(), bw->getF()),
-			     fw->getG() + bw->getG() + mgr->getAbsoluteMinTransitionCost());
+			     fw->getG() + bw->getG() + 1);
+        //TODO: we could use fw->getG() + bw->getG() mgr->getAbsoluteMinTransitionCost()
+        //if we checked against the opposite frontier
+
     }
 
     virtual bool isSearchableWithNodes(int maxNodes) const override {
@@ -38,11 +41,11 @@ public:
     virtual long nextStepTime() const override {
 	return std::min<int>(fw->nextStepTime(), bw->nextStepTime());
     }
-    
+
     virtual long nextStepNodes() const override {
 	return std::min<int>(fw->nextStepNodes(), bw->nextStepNodes());
     }
-    
+
     virtual long nextStepNodesResult() const override {
 	return std::min<int>(fw->nextStepNodesResult(), bw->nextStepNodesResult());
     }

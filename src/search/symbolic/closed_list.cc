@@ -288,6 +288,8 @@ namespace symbolic {
 	    }
 	}
 
+
+
 	cerr << "Error: Cut with closedTotal but not found on closed" << endl;
 	utils::exit_with(utils::ExitCode::CRITICAL_ERROR);
     }
