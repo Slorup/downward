@@ -1,3 +1,5 @@
+import functools
+
 class FunctionalExpression:
     def __init__(self, parts):
         self.parts = tuple(parts)
@@ -16,6 +18,9 @@ class NumericConstant(FunctionalExpression):
         if value != int(value):
             raise ValueError("Fractional numbers are not supported")
         self.value = int(value)
+
+    def __hash__(self):
+        return hash(self.value)
     def __eq__(self, other):
         return (self.__class__ == other.__class__ and self.value == other.value)
     def __str__(self):
@@ -25,11 +30,23 @@ class NumericConstant(FunctionalExpression):
     def instantiate(self, var_mapping, init_facts):
         return self
 
+
 class PrimitiveNumericExpression(FunctionalExpression):
     parts = ()
+    arithmetic_operations = {
+        "*": lambda args: functools.reduce(lambda a, b: a * b, args),
+        "/": lambda args: functools.reduce(lambda a, b: a / b, args),
+        "+": lambda args: functools.reduce(lambda a, b: a + b, args),
+        "-": lambda args: functools.reduce(lambda a, b: a - b, args)
+    }
+
     def __init__(self, symbol, args):
         self.symbol = symbol
-        self.args = tuple(args)
+
+        if self.symbol in self.arithmetic_operations.keys():
+            self.args = tuple([NumericConstant(int(a)) if not isinstance(a, list) else PrimitiveNumericExpression(a[0], a[1:]) for a in args])
+        else:
+            self.args = tuple(args)
         self.hash = hash((self.__class__, self.symbol, self.args))
     def __hash__(self):
         return self.hash
@@ -43,14 +60,25 @@ class PrimitiveNumericExpression(FunctionalExpression):
     def _dump(self):
         return str(self)
     def instantiate(self, var_mapping, init_assignments):
-        args = [var_mapping.get(arg, arg) for arg in self.args]
-        pne = PrimitiveNumericExpression(self.symbol, args)
-        assert self.symbol != "total-cost"
-        # We know this expression is constant. Substitute it by corresponding
-        # initialization from task.
-        result = init_assignments.get(pne)
-        assert result is not None, "Could not find instantiation for PNE: %r" % (str(pne),)
-        return result
+
+        def getvalue(exp):
+            if isinstance(exp, NumericConstant):
+                return exp.value
+            else:
+                return exp.instantiate(var_mapping, init_assignments).value
+
+        if self.symbol in self.arithmetic_operations.keys():
+            op = self.arithmetic_operations[self.symbol]
+            return NumericConstant(op([getvalue(a) for a in self.args]))
+        else:
+            args = [var_mapping.get(arg, arg) for arg in self.args]
+            pne = PrimitiveNumericExpression(self.symbol, args)
+            assert self.symbol != "total-cost"
+            # We know this expression is constant. Substitute it by corresponding
+            # initialization from task.
+            result = init_assignments.get(pne)
+            assert result is not None, "Could not find instantiation for PNE: %r" % (str(pne),)
+            return result
 
 class FunctionAssignment:
     def __init__(self, fluent, expression):
