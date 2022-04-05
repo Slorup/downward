@@ -22,6 +22,7 @@ private:
 public:
 
 	Type();
+    	Type(const Type &) = default;
 	Type(long parent, int heuristic);
 
 	void addAddtionalInfo(int);
