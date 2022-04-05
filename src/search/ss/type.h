@@ -22,6 +22,7 @@ private:
 public:
 
 	Type();
+    	Type(const Type &) = default;
 	Type(long parent, int heuristic);
 
 	void addAddtionalInfo(int);
@@ -35,7 +36,7 @@ public:
 
         Type &operator=(const Type &rhs);
         bool operator==(const Type &rhs) const;
-        //bool operator<(const Type &rhs) const;        
+        //bool operator<(const Type &rhs) const;
 
 
 	int getH() const {return h;}
