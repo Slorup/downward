@@ -15,10 +15,7 @@ class FunctionalExpression:
 class NumericConstant(FunctionalExpression):
     parts = ()
     def __init__(self, value):
-        # if value != int(value):
-        #     value = round(value)
-            #raise ValueError("Fractional numbers are not supported")
-        self.value = value
+        self.value = float(value)
 
     def __hash__(self):
         return hash(self.value)
@@ -45,7 +42,6 @@ class PrimitiveNumericExpression(FunctionalExpression):
         self.symbol = symbol
 
         if self.symbol in self.arithmetic_operations.keys():
-            from math import ceil
             self.args = tuple([NumericConstant(float(a)) if not isinstance(a, list) else PrimitiveNumericExpression(a[0], a[1:]) for a in args])
         else:
             self.args = tuple(args)
