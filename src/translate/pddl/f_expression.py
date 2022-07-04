@@ -37,7 +37,9 @@ class PrimitiveNumericExpression(FunctionalExpression):
         "*": lambda args: functools.reduce(lambda a, b: a * b, args),
         "/": lambda args: functools.reduce(lambda a, b: a / b, args),
         "+": lambda args: functools.reduce(lambda a, b: a + b, args),
-        "-": lambda args: functools.reduce(lambda a, b: a - b, args)
+        "-": lambda args: functools.reduce(lambda a, b: a - b, args),
+        "max": lambda args: max(args),
+        "min": lambda args: min(args)
     }
 
     def __init__(self, symbol, args):
