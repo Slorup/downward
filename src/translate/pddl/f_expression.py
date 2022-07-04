@@ -15,8 +15,6 @@ class FunctionalExpression:
 class NumericConstant(FunctionalExpression):
     parts = ()
     def __init__(self, value):
-        # if value != int(value):
-        #     raise ValueError("Fractional numbers are not supported")
         self.value = float(value)
 
     def __hash__(self):

@@ -1,4 +1,5 @@
 import copy
+from math import ceil
 
 from . import conditions
 
@@ -91,8 +92,10 @@ class Action:
                 if self.cost is None:
                     cost = 0
                 else:
-                    cost = max(0, int(self.cost.instantiate(
-                        var_mapping, init_assignments).expression.value))
+                    cost = ceil(self.cost.instantiate(
+                        var_mapping, init_assignments).expression.value)
+                    if cost < 0:
+                        raise Exception(f"Negative cost of action: {name}")
             else:
                 cost = 1
             return PropositionalAction(name, precondition, effects, cost)
