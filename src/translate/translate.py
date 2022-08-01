@@ -1,9 +1,10 @@
 #! /usr/bin/env python3
 
-
 import os
 import sys
 import traceback
+
+import networkx
 
 def python_version_supported():
     return sys.version_info >= (3, 6)
@@ -685,6 +686,9 @@ def main():
         task = pddl_parser.open(
             domain_filename=options.domain, task_filename=options.task)
 
+    if options.remove_irrelevant_predicates_actions:
+        remove_irrelevant_predicates_actions(task)
+
     with timers.timing("Normalizing task"):
         normalize.normalize(task)
 
@@ -703,6 +707,49 @@ def main():
             sas_task.output(output_file)
     print("Done! %s" % timer)
 
+def remove_irrelevant_predicates_actions(task):
+    depen_graph = networkx.DiGraph()
+
+    #Add nodes to dependency graph
+    for action in task.actions:
+        depen_graph.add_node(action.name)
+    for pred in task.predicates:
+        depen_graph.add_node(pred.name)
+
+    #Add edges to dependency graph
+    for action in task.actions:
+        for precon in list(action.precondition.parts):
+            depen_graph.add_edge(precon.predicate, action.name)
+        for eff in action.effects:
+            depen_graph.add_edge(action.name, eff.literal.predicate)
+
+    nodes = list(depen_graph.nodes) #Nodes that can reach a goal
+
+
+    #Find nodes that can reach goal predicates
+    relevant_nodes = [node for node in depen_graph.nodes if can_reach_goal_pred(node, depen_graph, task.goal)]
+
+    irrelevant_actions = [action for action in task.actions if action.name not in relevant_nodes]
+    irrelevant_predicates = [pred for pred in task.predicates if pred.name not in relevant_nodes]
+    print(f"{len(irrelevant_actions)} irrelevant actions removed: {list(map(lambda a: a.name, irrelevant_actions))}")
+    print(f"{len(irrelevant_predicates)} irrelevant predicates removed: {list(map(lambda a: a.name, irrelevant_predicates))}")
+
+    task.actions = [action for action in task.actions if action.name in relevant_nodes]
+    task.predicates = [pred for pred in task.predicates if pred.name in relevant_nodes]
+
+def can_reach_goal_pred(src, graph, goal):
+    if isinstance(goal, pddl.Conjunction):
+        for g in list(goal.parts):
+            if not can_reach_goal_pred(src, graph, g):
+                return False
+        return True
+    elif isinstance(goal, pddl.Disjunction):
+        for g in list(goal.parts):
+            if can_reach_goal_pred(src, graph, g):
+                return True
+        return False
+    elif isinstance(goal, pddl.Atom):
+        return networkx.has_path(graph, src, goal.predicate)
 
 def handle_sigxcpu(signum, stackframe):
     print()
